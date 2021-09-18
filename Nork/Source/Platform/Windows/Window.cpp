@@ -75,7 +75,7 @@ namespace Nork
 
 	void OnClose(const Event& ev)
 	{
-		auto e = static_cast<const Events::WindowClose&>(ev);
+		auto& e = static_cast<const Events::WindowClose&>(ev);
 		if (!e.calledByWindow)
 		{
 			glfwSetWindowShouldClose(windowPtr, 1);
@@ -84,18 +84,18 @@ namespace Nork
 	}
 	void OnResize(const Event& ev)
 	{
-		auto e = static_cast<const Events::WindowResize&>(ev);
+		auto& e = static_cast<const Events::WindowResize&>(ev);
 		width = e.width;
 		height = e.height;
 	}
 	void OnKeyDown(const Event& ev)
 	{
-		auto e = static_cast<const Events::KeyDown&>(ev);
+		auto& e = static_cast<const Events::KeyDown&>(ev);
 		keys[e.keyCode] = true;
 	}
 	void OnKeyUp(const Event& ev)
 	{
-		auto e = static_cast<const Events::KeyUp&>(ev);
+		auto& e = static_cast<const Events::KeyUp&>(ev);
 		keys[e.keyCode] = false;
 	}
 
@@ -156,7 +156,7 @@ namespace Nork
 		eventMan.Subscribe<KeyUp>(&OnKeyUp);
 	}
 
-	Window<int>::Window(int w, int h)
+	Window<GLFWwindow>::Window(int w, int h)
 	{
 		width = w;
 		height = h;
@@ -166,39 +166,43 @@ namespace Nork
 		isRunning = true;
 	}
 
-	Window<int>::~Window()
+	Window<GLFWwindow>::~Window()
 	{
 		Logger::Info("Quitting...");
 		glfwTerminate();
 		Logger::Info("Window destroyed");
 	}
 
-	void Window<int>::Refresh()
+	void Window<GLFWwindow>::Refresh()
 	{
 		glfwSwapBuffers(windowPtr);
 		glfwPollEvents();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // is Depth Clearing necessary?
 	}
-	void Window<int>::Close()
+	void Window<GLFWwindow>::Close()
 	{
 		eventMan.RaiseEvent(Events::WindowClose(true));
 	}
-	bool Window<int>::IsKeyDown(int keyCode)
+	bool Window<GLFWwindow>::IsKeyDown(int keyCode)
 	{
 		return keys[keyCode];
 	}
-	void Window<int>::SetSize(int w, int h)
+	void Window<GLFWwindow>::SetSize(int w, int h)
 	{
 		width = w;
 		height = h;
 		glfwSetWindowSize(windowPtr, width, height);
 	}
-	bool Window<int>::IsRunning()
+	bool Window<GLFWwindow>::IsRunning()
 	{
 		return isRunning;
 	}
-	EventManager& Window<int>::GetEventManager()
+	EventManager& Window<GLFWwindow>::GetEventManager()
 	{
 		return eventMan;
+	}
+	GLFWwindow& Window<GLFWwindow>::GetData()
+	{
+		return *windowPtr;
 	}
 }

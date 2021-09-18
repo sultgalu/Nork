@@ -40,7 +40,7 @@ namespace Nork
 		Level level = Level::None;
 	private:
 		const char* GetLevelName(Logger::Level level) const;
-		const const char* GetCurrentTimeFormatted() const;
+		const char* GetCurrentTimeFormatted() const;
 
 		// Helper functions for templated functionality
 		template<typename T, typename... R>

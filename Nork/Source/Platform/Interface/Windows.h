@@ -12,9 +12,10 @@ namespace Nork
 		~Window();
 		void Refresh();
 		void Close();
-		bool IsKeyDown(int);
 		void SetSize(int width, int height);
+		bool IsKeyDown(int);
 		bool IsRunning();
 		EventManager& GetEventManager();
+		T& GetData();
 	};
 }

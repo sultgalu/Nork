@@ -4,7 +4,9 @@
 #include "format"
 #include "Utils/Timer.h"
 #include "Modules/ECS/Storage.h"
+#include "Editor/Editor.h"
 #include <Platform/Interface/Windows.h>
+
 
 using namespace Nork;
 using namespace Events;
@@ -51,7 +53,7 @@ int main()
 	entt::registry reg0;
 	auto id = reg0.create();
 	reg0.emplace<EventManager>(id);
-	auto man = reg0.get<EventManager>(id);
+	auto& man = reg0.get<EventManager>(id);
 
 	q.Enqueue(KeyDown(2));
 	Logger::PushStream(std::cout);
@@ -113,9 +115,13 @@ int main()
 
 	Logger::Info(Holder<int>().GetName());
 
-	Window<int> win(1000, 1000);
+	Window<GLFWwindow> win(1000, 1000);
+
+	Editor::Editor<GLFWwindow> editor(win);
+
 	while (win.IsRunning())
 	{
+		editor.Render();
 		win.Refresh();
 		win.GetEventManager().PollEvents();
 	}
