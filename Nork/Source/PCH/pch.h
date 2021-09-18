@@ -57,7 +57,7 @@
 
 #include <filesystem>
 
-#include <entt/src/entt/entity/registry.hpp>
+#include <entt/single_include/entt/entt.hpp>
 #include <glfw/glfw3.h>
 #include <glad/glad.h>
 
