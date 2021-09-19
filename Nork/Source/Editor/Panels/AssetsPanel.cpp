@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "AssetsPanel.h"
-#include <imgui/imgui.h>
 
 namespace Nork::Editor
 {

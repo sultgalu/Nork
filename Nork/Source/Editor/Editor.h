@@ -4,11 +4,10 @@
 
 namespace Nork::Editor
 {
-	template<typename T>
 	class Editor
 	{
 	public:
-		Editor(Window<T>&);
+		Editor(Window& win);
 		void Render();
 	};
 }

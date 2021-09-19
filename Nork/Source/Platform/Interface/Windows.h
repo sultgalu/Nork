@@ -5,11 +5,11 @@
 namespace Nork
 {
 	template<typename T>
-	class Window
+	class _Window
 	{
 	public:
-		Window(int width, int height);
-		~Window();
+		_Window(int width, int height);
+		~_Window();
 		void Refresh();
 		void Close();
 		void SetSize(int width, int height);
@@ -18,4 +18,10 @@ namespace Nork
 		EventManager& GetEventManager();
 		T& GetData();
 	};
+
+#ifdef _WIN64
+	typedef _Window<GLFWwindow> Window;
+#else
+	typedef _Window<int> Window;
+#endif
 }

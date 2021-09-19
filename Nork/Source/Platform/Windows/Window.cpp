@@ -8,10 +8,10 @@ namespace Nork
 	void APIENTRY glDebugOutput(GLenum source, GLenum type, unsigned int id, GLenum severity, GLsizei length, const char* message, const void* userParam)
 	{
 #define nork_name_of(T) #T
-		constexpr int debugSize = sizeof("asda");
-		constexpr char sourceOffs = 10 + 7;
-		constexpr char typeOffs = 10 + 4;
-		constexpr char severityOffs = 10 + 8; // use these to avoid whole GL_DEBUG... stuff
+		constexpr int debugSize = sizeof("GL_DEBUG__") - 1;
+		constexpr char sourceOffs = debugSize + 7;
+		constexpr char typeOffs = debugSize + 4;
+		constexpr char severityOffs = debugSize + 8; // use these to avoid whole GL_DEBUG... stuff
 		// ignore non-significant error/warning codes
 		if (id == 131169 || id == 131185 || id == 131218 || id == 131204) return;
 
@@ -43,7 +43,7 @@ namespace Nork
 	{
 		const GLFWvidmode* vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 		refreshRate = vidmode->refreshRate;
-		windowPtr = glfwCreateWindow(width, height, "GameEngine", nullptr, nullptr);
+		windowPtr = glfwCreateWindow(width, height, "Nork", nullptr, nullptr);
 
 		if (!windowPtr)
 		{
@@ -156,7 +156,7 @@ namespace Nork
 		eventMan.Subscribe<KeyUp>(&OnKeyUp);
 	}
 
-	Window<GLFWwindow>::Window(int w, int h)
+	_Window<GLFWwindow>::_Window(int w, int h)
 	{
 		width = w;
 		height = h;
@@ -166,42 +166,42 @@ namespace Nork
 		isRunning = true;
 	}
 
-	Window<GLFWwindow>::~Window()
+	_Window<GLFWwindow>::~_Window()
 	{
 		Logger::Info("Quitting...");
 		glfwTerminate();
 		Logger::Info("Window destroyed");
 	}
 
-	void Window<GLFWwindow>::Refresh()
+	void _Window<GLFWwindow>::Refresh()
 	{
 		glfwSwapBuffers(windowPtr);
 		glfwPollEvents();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // is Depth Clearing necessary?
 	}
-	void Window<GLFWwindow>::Close()
+	void _Window<GLFWwindow>::Close()
 	{
 		eventMan.RaiseEvent(Events::WindowClose(true));
 	}
-	bool Window<GLFWwindow>::IsKeyDown(int keyCode)
+	bool _Window<GLFWwindow>::IsKeyDown(int keyCode)
 	{
 		return keys[keyCode];
 	}
-	void Window<GLFWwindow>::SetSize(int w, int h)
+	void _Window<GLFWwindow>::SetSize(int w, int h)
 	{
 		width = w;
 		height = h;
 		glfwSetWindowSize(windowPtr, width, height);
 	}
-	bool Window<GLFWwindow>::IsRunning()
+	bool _Window<GLFWwindow>::IsRunning()
 	{
 		return isRunning;
 	}
-	EventManager& Window<GLFWwindow>::GetEventManager()
+	EventManager& _Window<GLFWwindow>::GetEventManager()
 	{
 		return eventMan;
 	}
-	GLFWwindow& Window<GLFWwindow>::GetData()
+	GLFWwindow& _Window<GLFWwindow>::GetData()
 	{
 		return *windowPtr;
 	}

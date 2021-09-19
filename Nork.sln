@@ -5,8 +5,6 @@ VisualStudioVersion = 17.0.31612.314
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Nork", "Nork\Nork.vcxproj", "{F3BD8D82-A67D-4C72-9A00-D04012C88A1A}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Tests", "Tests\Tests.vcxproj", "{1D7D1B14-0648-4A8B-98EE-D6A7B94DD5E6}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -23,14 +21,6 @@ Global
 		{F3BD8D82-A67D-4C72-9A00-D04012C88A1A}.Release|x64.Build.0 = Release|x64
 		{F3BD8D82-A67D-4C72-9A00-D04012C88A1A}.Release|x86.ActiveCfg = Release|Win32
 		{F3BD8D82-A67D-4C72-9A00-D04012C88A1A}.Release|x86.Build.0 = Release|Win32
-		{1D7D1B14-0648-4A8B-98EE-D6A7B94DD5E6}.Debug|x64.ActiveCfg = Debug|x64
-		{1D7D1B14-0648-4A8B-98EE-D6A7B94DD5E6}.Debug|x64.Build.0 = Debug|x64
-		{1D7D1B14-0648-4A8B-98EE-D6A7B94DD5E6}.Debug|x86.ActiveCfg = Debug|Win32
-		{1D7D1B14-0648-4A8B-98EE-D6A7B94DD5E6}.Debug|x86.Build.0 = Debug|Win32
-		{1D7D1B14-0648-4A8B-98EE-D6A7B94DD5E6}.Release|x64.ActiveCfg = Release|x64
-		{1D7D1B14-0648-4A8B-98EE-D6A7B94DD5E6}.Release|x64.Build.0 = Release|x64
-		{1D7D1B14-0648-4A8B-98EE-D6A7B94DD5E6}.Release|x86.ActiveCfg = Release|Win32
-		{1D7D1B14-0648-4A8B-98EE-D6A7B94DD5E6}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

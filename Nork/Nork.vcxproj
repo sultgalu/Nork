@@ -164,6 +164,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Editor\Panels\MainPanel.cpp" />
     <ClCompile Include="Source\Editor\Panels\AssetsPanel.cpp" />
     <ClCompile Include="Source\Editor\Panels\Base\Panel.cpp" />
     <ClCompile Include="Source\Editor\Editor.cpp" />
@@ -233,6 +234,7 @@
     <ClCompile Include="Source\Platform\Windows\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Editor\Panels\MainPanel.h" />
     <ClInclude Include="Source\Editor\Panels\AssetsPanel.h" />
     <ClInclude Include="Source\Editor\Panels\Base\Panel.h" />
     <ClInclude Include="Source\Editor\Editor.h" />

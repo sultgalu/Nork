@@ -1,0 +1,11 @@
+"git pull --recurse-submodules" -> updates submodules as well
+"git submodule update --init --recursive" ("changed the URL of the submodule in the .gitmodules")
+"git submodule update --remote --rebase/--merge" -> pull from remote and merge with local branch. (git pull origin master)
+"git push --recurse-submodules=on-demand" -> push submodules as well
+
+git submodule foreach 'git stash' stash changes
+git submodule foreach 'git checkout -b featureA'. For new branch
+
+git config alias.supdate 'submodule update --remote --merge' -> make alias
+
+"git remote update" -> syncing private mirror repos

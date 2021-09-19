@@ -115,9 +115,9 @@ int main()
 
 	Logger::Info(Holder<int>().GetName());
 
-	Window<GLFWwindow> win(1000, 1000);
+	Window win(1280, 720);
 
-	Editor::Editor<GLFWwindow> editor(win);
+	Editor::Editor editor(win);
 
 	while (win.IsRunning())
 	{

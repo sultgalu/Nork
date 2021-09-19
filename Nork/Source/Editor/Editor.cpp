@@ -2,13 +2,14 @@
 #include "Editor.h"
 #include "Panels/Base/Panel.h"
 #include "Panels/AssetsPanel.h"
+#include "Panels/MainPanel.h"
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include <imgui/backends/imgui_impl_glfw.h>
 
 namespace Nork::Editor
 {
-	Editor<GLFWwindow>::Editor(Window<GLFWwindow>& win)
+	Editor::Editor(Window& win)
 	{
 		ImGui::CreateContext();
 		ImGui::StyleColorsClassic();
@@ -16,7 +17,7 @@ namespace Nork::Editor
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
 		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking	
-		//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 		//io.ConfigViewportsNoAutoMerge = true;
 		//io.ConfigViewportsNoDefaultParent = true;
 		//io.ConfigDockingNoSplit = true;
@@ -34,10 +35,10 @@ namespace Nork::Editor
 		ImGui_ImplGlfw_InitForOpenGL(&win.GetData(), true);
 	}
 
-	Panel* _panels[] = { new AssetsPanel() };
+	Panel* _panels[] = { new MainPanel(), new AssetsPanel() };
 	auto panels= std::span<Panel*>(_panels);
 
-	void Editor<GLFWwindow>::Render()
+	void Editor::Render()
 	{
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
