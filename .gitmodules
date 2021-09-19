@@ -1,6 +1,6 @@
 [submodule "Nork/Source/ThirdParty/include/entt"]
 	path = Nork/Source/ThirdParty/include/entt
-	url = https://github.com/skypjack/entt.git
+	url = https://github.com/sultgalu/entt
 	branch = master
 [submodule "Nork/Source/ThirdParty/include/imgui"]
 	path = Nork/Source/ThirdParty/include/imgui
