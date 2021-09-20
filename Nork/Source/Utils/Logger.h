@@ -1,5 +1,9 @@
 #pragma once
 
+#include <iostream>
+#include <vector>
+#include <source_location>
+
 namespace Nork
 {
 	class Logger

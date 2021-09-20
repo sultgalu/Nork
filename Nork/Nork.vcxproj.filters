@@ -60,6 +60,42 @@
     <ClCompile Include="Source\Editor\Panels\MainPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Modules\Renderer\Abstractions\Shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\DeferredPipeline.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\LightManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\Skybox.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Modules\Renderer\PostProcessing\PostProcess.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Modules\Renderer\Proxies\GLProxy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Modules\Renderer\Utils\Builders\FramebufferBuilder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Modules\Renderer\Utils\Builders\VertexArrayObjectBuilder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Modules\Renderer\Utils\Helpers\DrawHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Modules\Renderer\Utils\StaticHelpers\CommonUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Modules\Renderer\Utils\StaticHelpers\MeshUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Modules\Renderer\Utils\StaticHelpers\TextureUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\PCH\pch.h">
@@ -90,6 +126,51 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Panels\MainPanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Abstractions\Lights.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Abstractions\Mesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Abstractions\Shader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\DeferredPipeline.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\LightManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\Skybox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\PostProcessing\PostProcess.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Proxies\GLProxy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Utils\Builders\FramebufferBuilder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Utils\Builders\VertexArrayObjectBuilder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Utils\Helpers\DrawHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Utils\StaticHelpers\CommonUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Utils\StaticHelpers\MeshUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Utils\StaticHelpers\TextureUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Utils\Utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -6,3 +6,7 @@
 	path = Nork/Source/ThirdParty/include/imgui
 	url = https://github.com/sultgalu/imgui
 	branch = docking
+[submodule "Nork/Source/ThirdParty/include/glm"]
+	path = Nork/Source/ThirdParty/include/glm
+	url = https://github.com/sultgalu/glm
+	branch = master
