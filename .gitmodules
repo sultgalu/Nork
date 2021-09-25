@@ -10,3 +10,6 @@
 	path = Nork/Source/ThirdParty/include/glm
 	url = https://github.com/sultgalu/glm
 	branch = master
+[submodule "Nork/Source/ThirdParty/include/stb"]
+	path = Nork/Source/ThirdParty/include/stb
+	url = https://github.com/sultgalu/stb
