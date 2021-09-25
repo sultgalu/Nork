@@ -6,6 +6,8 @@
 #include "Modules/ECS/Storage.h"
 #include "Editor/Editor.h"
 #include <Platform/Interface/Windows.h>
+#include <Modules/Renderer/Data/Shader.h>
+#include <Modules/Renderer/Utils/Utils.h>
 
 
 using namespace Nork;
@@ -38,6 +40,23 @@ struct Holder
 		return name_of(T);
 	}
 };
+
+Renderer::Shader CreateShaderFromSource(std::string_view src)
+{
+	GLuint program = Renderer::Utils::Shader::GetProgramFromSource(src);
+	return Renderer::Shader(program, Renderer::Utils::Shader::GetUniforms(program));
+}
+Renderer::Shader CreateShaderFromPath(std::string_view path)
+{
+	std::ifstream stream(path.data());
+	std::stringstream buf;
+	buf << stream.rdbuf();
+	std::string src = buf.str();
+
+	auto shad = CreateShaderFromSource(src);
+	stream.close();
+	return shad;
+}
 
 int main() 
 {
@@ -118,6 +137,8 @@ int main()
 	Window win(1280, 720);
 
 	Editor::Editor editor(win);
+
+	Renderer::Shader shader = CreateShaderFromPath("Source/Shaders/lightPass.shader");
 
 	while (win.IsRunning())
 	{

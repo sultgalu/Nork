@@ -13,3 +13,4 @@
 [submodule "Nork/Source/ThirdParty/include/stb"]
 	path = Nork/Source/ThirdParty/include/stb
 	url = https://github.com/sultgalu/stb
+	branch = master

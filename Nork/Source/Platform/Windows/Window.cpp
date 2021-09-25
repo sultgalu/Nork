@@ -15,7 +15,7 @@ namespace Nork
 		// ignore non-significant error/warning codes
 		if (id == 131169 || id == 131185 || id == 131218 || id == 131204) return;
 
-		std::cout << "(GL_DEBUG_MSG:" << id << "): " << message << std::endl;
+		//std::cout << "(GL_DEBUG_MSG:" << id << "): " << message << std::endl;
 		Logger::Debug("OpenGL Driver Debug Message: Severity(", nork_name_of(severity), "), Source(", nork_name_of(source), "), Type(", nork_name_of(type), ")\n\t", message);
 #undef nork_name_of
 	}

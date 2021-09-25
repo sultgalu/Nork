@@ -1,15 +1,15 @@
 #pragma once
-
 #include "Base/Panel.h"
 
 namespace Nork::Editor
 {
-	class AssetsPanel: public Panel
+	class LogPanel : public Panel
 	{
 	public:
-		AssetsPanel() : Panel(std::string("Assets").c_str(), true) {}
+		LogPanel();
+		~LogPanel();
 	protected:
 		virtual void DrawContent() override;
+	private:
 	};
 }
-

@@ -3,12 +3,16 @@
 #include "Panels/Base/Panel.h"
 #include "Panels/AssetsPanel.h"
 #include "Panels/MainPanel.h"
+#include "Panels/LogPanel.h"
+#include "Panels/ViewportPanel.h"
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include <imgui/backends/imgui_impl_glfw.h>
 
 namespace Nork::Editor
 {
+	std::vector<Panel*> panels;
+
 	Editor::Editor(Window& win)
 	{
 		ImGui::CreateContext();
@@ -33,10 +37,9 @@ namespace Nork::Editor
 
 		ImGui_ImplOpenGL3_Init();
 		ImGui_ImplGlfw_InitForOpenGL(&win.GetData(), true);
-	}
 
-	Panel* _panels[] = { new MainPanel(), new AssetsPanel() };
-	auto panels= std::span<Panel*>(_panels);
+		panels = std::vector<Panel*>{ new MainPanel(), new AssetsPanel(), new LogPanel(), new ViewportPanel() };
+	}
 
 	void Editor::Render()
 	{

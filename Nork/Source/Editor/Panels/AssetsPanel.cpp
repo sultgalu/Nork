@@ -5,7 +5,7 @@ namespace Nork::Editor
 {
 	void AssetsPanel::DrawContent()
 	{
-		ImGui::Begin("Assets");
+		ImGui::Begin(this->GetName().data());
 
 		static char name[100];
 		if (ImGui::InputTextWithHint("file", "<filename>", name, 100, ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_EnterReturnsTrue))
