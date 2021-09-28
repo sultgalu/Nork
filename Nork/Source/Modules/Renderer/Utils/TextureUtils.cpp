@@ -1,12 +1,20 @@
-#include "Utils.h"
+#include "../Utils.h"
+
 #define STB_IMAGE_IMPLEMENTATION
+#define STBI_NO_BMP
+#define STBI_NO_PSD
+#define STBI_NO_TGA
+#define STBI_NO_GIF
+#define STBI_NO_HDR
+#define STBI_NO_PIC
+#define STBI_NO_PNM
 #include <stb/stb_image.h>
 
 namespace Nork::Renderer::Utils::Texture
 {
-	GLenum GetType(TextureFormat f)
+	GLenum GetType(Format f)
 	{
-		using enum TextureFormat;
+		using enum Format;
 
 		switch (f)
 		{
@@ -51,9 +59,9 @@ namespace Nork::Renderer::Utils::Texture
 			return GL_NONE;
 		}
 	}
-	GLenum GetFormat(TextureFormat f)
+	GLenum GetFormat(Format f)
 	{
-		using enum TextureFormat;
+		using enum Format;
 		switch (f)
 		{
 		case RGBA:
@@ -93,11 +101,55 @@ namespace Nork::Renderer::Utils::Texture
 			return GL_NONE;
 		}
 	}
-	GLenum GetInternalFormat(TextureFormat f)
+	std::vector<unsigned char> LoadImageData(std::string_view path, int& width, int& height, int& channels)
 	{
-		return static_cast<GLenum>(f);
+		unsigned char* data = stbi_load(path.data(), &width, &height, &channels, 0);
+		size_t size = (size_t)width * height * channels;
+		if (data)
+		{
+			auto result = std::vector<unsigned char>(/*data, data + size*/);
+			result.assign(data, data + size);
+			stbi_image_free(data);
+
+			return result;
+		}
+		else
+		{
+			Logger::Error("Failed to load texture data from ", path);
+			return std::vector<unsigned char>();
+		}
 	}
-	unsigned int CreateTexture2D(int width, int height, TextureFormat texFormat, int sampleCount, bool repeat, void* data, bool linear)
+	unsigned int CreateTexture2D(const void* data, int width, int height, int channels, Wrap wrap, Filter filter, bool magLinear, bool genMipmap)
+	{
+		unsigned int handle = 0;
+		glGenTextures(1, &handle);
+		glBindTexture(GL_TEXTURE_2D, handle);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, static_cast<GLenum>(wrap));
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, static_cast<GLenum>(wrap));
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, static_cast<GLenum>(filter));
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magLinear ? GL_LINEAR : GL_NEAREST);
+
+		GLenum format;
+		if (channels == 3) [[likely]]
+			format = GL_RGB;
+		else if (channels == 4)
+			format = GL_RGBA;
+		else if (channels == 1)
+			format = GL_RED;
+		else [[unlikely]]
+		{
+			Logger::Error(channels, " number of channels is not supported");
+			return 0;
+		}
+
+		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, false, format, GL_UNSIGNED_BYTE, data);
+		if (genMipmap)
+			glGenerateMipmap(GL_TEXTURE_2D);
+
+		return handle;
+	}
+	unsigned int CreateTexture2D(int width, int height, Format texFormat, int sampleCount, bool repeat, void* data, bool linear)
 	{
 		unsigned int handle = 0;
 		glGenTextures(1, &handle);
@@ -126,55 +178,6 @@ namespace Nork::Renderer::Utils::Texture
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, repeat ? GL_REPEAT : GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, linear ? GL_LINEAR : GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, linear ? GL_LINEAR : GL_NEAREST);
-
-		return handle;
-	}
-	unsigned int CreateTexture2D(std::string path, bool repeat)
-	{
-		unsigned int handle = 0;
-		glGenTextures(1, &handle);
-		glBindTexture(GL_TEXTURE_2D, handle);
-
-		if (repeat)
-		{
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		}
-		else
-		{
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		}
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-		int width, height, nrChannels;
-		unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrChannels, 0);
-
-		if (data)
-		{
-			GLenum format;
-			if (nrChannels == 3)
-				format = GL_RGB;
-			else if (nrChannels == 4)
-				format = GL_RGBA;
-			else if (nrChannels == 1)
-				format = GL_RED;
-			else
-			{
-				std::cout << "ERR::TEXTURE FORMAT NOT SUPPORTED" << std::endl;
-				std::abort();
-			}
-
-			glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, false, format, GL_UNSIGNED_BYTE, data);
-			//glGenerateMipmap(GL_TEXTURE_2D);
-			stbi_image_free(data);
-		}
-		else
-		{
-			std::cout << "ERR::FAILED TO LOAD TEXTURE" << std::endl;
-			std::abort();
-		}
 
 		return handle;
 	}
@@ -214,7 +217,7 @@ namespace Nork::Renderer::Utils::Texture
 
 		return id;
 	}
-	unsigned int CreateTextureCube(int width, int height, TextureFormat texFormat, int sampleCount)
+	unsigned int CreateTextureCube(int width, int height, Format texFormat, int sampleCount)
 	{
 		unsigned int id;
 		glGenTextures(1, &id);
@@ -234,15 +237,6 @@ namespace Nork::Renderer::Utils::Texture
 		}
 
 		return id;
-	}
-	unsigned int CreateUniformBufferObject(unsigned int idx, int size, GLenum usage)
-	{
-		unsigned int ubo;
-		glGenBuffers(1, &ubo);
-		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-		glBufferData(GL_UNIFORM_BUFFER, size, NULL, usage);
-		glBindBufferBase(GL_UNIFORM_BUFFER, idx, ubo);
-		return ubo;
 	}
 	void BindTexture(unsigned int handle, int slot)
 	{

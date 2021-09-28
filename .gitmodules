@@ -14,3 +14,6 @@
 	path = Nork/Source/ThirdParty/include/stb
 	url = https://github.com/sultgalu/stb
 	branch = master
+[submodule "Nork/Source/ThirdParty/include/assimp"]
+	path = Nork/Source/ThirdParty/include/assimp
+	url = https://github.com/sultgalu/assimp

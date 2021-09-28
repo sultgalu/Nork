@@ -66,13 +66,9 @@
 #include <imgui/imgui.h>
 #include <glm/glm/gtc/matrix_transform.hpp>
 
-////#include <glad/glad.h>
-//#include <GLWF/glfw3.h>
-//#include <glm/gtc/matrix_transform.hpp>
-//
-//#include <assimp/scene.h>
-//#include <assimp/postprocess.h>
-//#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+#include <assimp/Importer.hpp>
 //
 ////-----------------EDITOR-----------------------
 //

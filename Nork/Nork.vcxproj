@@ -78,14 +78,14 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)\Source\ThirdParty\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>$(ProjectDir)\Source\ThirdParty\include\assimp\include;$(ProjectDir)\Source\ThirdParty\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <SourcePath>$(VC_SourcePath);</SourcePath>
     <ReferencePath>$(VC_ReferencesPath_x64);</ReferencePath>
     <LibraryPath>$(ProjectDir)\Source\ThirdParty\libs;$(ProjectDir)\Source\ThirdParty\glfw\src;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)\Source\ThirdParty\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>$(ProjectDir)\Source\ThirdParty\include\assimp\include;$(ProjectDir)\Source\ThirdParty\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <SourcePath>$(VC_SourcePath);</SourcePath>
     <ReferencePath>$(VC_ReferencesPath_x64);</ReferencePath>
     <LibraryPath>$(ProjectDir)\Source\ThirdParty\libs;$(ProjectDir)\Source\ThirdParty\glfw\src;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
@@ -138,7 +138,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>opengl32.lib;glfw3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>assimp-vc142-mtd.lib;opengl32.lib;glfw3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -160,17 +160,19 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>opengl32.lib;glfw3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>assimp-vc142-mtd.lib;opengl32.lib;glfw3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Editor\Panels\LogPanel.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Loaders\Loaders.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Resource\DefaultResources.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Resource\ResourceManager.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Utils\DrawUtils.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Utils\FramebufferUtils.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Utils\MeshUtils.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Utils\OtherUtils.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Utils\ShaderUtils.cpp" />
-    <ClCompile Include="Source\Modules\Renderer\Data\Shader.cpp" />
     <ClCompile Include="Source\Editor\Panels\MainPanel.cpp" />
     <ClCompile Include="Source\Editor\Panels\AssetsPanel.cpp" />
     <ClCompile Include="Source\Editor\Panels\Base\Panel.cpp" />
@@ -252,7 +254,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\Panels\LogPanel.h" />
-    <ClInclude Include="Source\Modules\Renderer\Utils\Utils.h" />
+    <ClInclude Include="Source\Modules\Renderer\Data\Mesh.h" />
+    <ClInclude Include="Source\Modules\Renderer\Data\Texture.h" />
+    <ClInclude Include="Source\Modules\Renderer\Loaders\Loaders.h" />
+    <ClInclude Include="Source\Modules\Renderer\Resource\DefaultResources.h" />
+    <ClInclude Include="Source\Modules\Renderer\Resource\ResourceManager.h" />
+    <ClInclude Include="Source\Modules\Renderer\Utils.h" />
     <ClInclude Include="Source\Modules\Renderer\Config.h" />
     <ClInclude Include="Source\Modules\Renderer\Data\Shader.h" />
     <ClInclude Include="Source\Editor\Panels\MainPanel.h" />

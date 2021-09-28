@@ -1,8 +1,8 @@
-#include "Utils.h"
+#include "../Utils.h"
 
 namespace Nork::Renderer::Utils::Other
 {
-	void ReadPixels(unsigned int fbo, int colorAtt, int x, int y, Texture::TextureFormat format, void* buf)
+	void ReadPixels(unsigned int fbo, int colorAtt, int x, int y, Texture::Format format, void* buf)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		glReadBuffer(GL_COLOR_ATTACHMENT0 + colorAtt); // namedfbReadPixels doesn't work

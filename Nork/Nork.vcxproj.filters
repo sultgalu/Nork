@@ -60,9 +60,6 @@
     <ClCompile Include="Source\Editor\Panels\MainPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Data\Shader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Modules\Renderer\Utils\ShaderUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -88,6 +85,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Modules\Renderer\Utils\OtherUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Modules\Renderer\Resource\ResourceManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Modules\Renderer\Resource\DefaultResources.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Modules\Renderer\Loaders\Loaders.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -128,13 +134,28 @@
     <ClInclude Include="Source\Modules\Renderer\Config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Utils\Utils.h">
+    <ClInclude Include="Source\Modules\Renderer\Utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Panels\LogPanel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Panels\ViewportPanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Data\Mesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Data\Texture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Resource\ResourceManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Resource\DefaultResources.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Loaders\Loaders.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

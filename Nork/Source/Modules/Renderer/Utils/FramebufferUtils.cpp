@@ -1,4 +1,4 @@
-#include "Utils.h"
+#include "../Utils.h"
 
 namespace Nork::Renderer::Utils::Framebuffer
 {
@@ -13,7 +13,7 @@ namespace Nork::Renderer::Utils::Framebuffer
 		glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, handler, 0);
 		return *this;
 	}
-	Builder& Builder::AddTexture(unsigned int* handler, Texture::TextureFormat format, GLenum attachment)
+	Builder& Builder::AddTexture(unsigned int* handler, Texture::Format format, GLenum attachment)
 	{
 		*handler = Texture::CreateTexture2D(this->width, this->height, format);
 		Texture::BindTexture(*handler); // do you need bind??
@@ -21,7 +21,7 @@ namespace Nork::Renderer::Utils::Framebuffer
 
 		return *this;
 	}
-	Builder& Builder::AddRenderbuffer(unsigned int* handler, Texture::TextureFormat format, GLenum attachment)
+	Builder& Builder::AddRenderbuffer(unsigned int* handler, Texture::Format format, GLenum attachment)
 	{
 		glGenRenderbuffers(1, handler);
 		glBindRenderbuffer(GL_RENDERBUFFER, *handler);

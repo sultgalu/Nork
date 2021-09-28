@@ -12,9 +12,9 @@ namespace Nork::Editor
 
 		struct MouseState
 		{
-			int mousePosX, mousePosY;
-			bool isViewportHovered;
-			bool isViewportDoubleClicked;
+			int mousePosX = 0, mousePosY = 0;
+			bool isViewportHovered = false;
+			bool isViewportDoubleClicked = false;
 		};
 		inline MouseState GetMouseState() { return mouseState; }
 
@@ -25,7 +25,7 @@ namespace Nork::Editor
 		{
 			glm::vec2 uv_min = glm::vec2(0, 1);
 			glm::vec2 uv_max = glm::vec2(1, 0);
-			unsigned int texture;
+			unsigned int texture = 0;
 			glm::vec2 resolution = glm::vec2(1920, 1080);
 		};
 

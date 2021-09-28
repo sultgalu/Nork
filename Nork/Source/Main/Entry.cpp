@@ -1,14 +1,17 @@
 #include "pch.h"
 #include "Core/Event.h"
 #include "Utils/Logger.h"
-#include "format"
 #include "Utils/Timer.h"
 #include "Modules/ECS/Storage.h"
 #include "Editor/Editor.h"
-#include <Platform/Interface/Windows.h>
-#include <Modules/Renderer/Data/Shader.h>
-#include <Modules/Renderer/Utils/Utils.h>
-
+#include "Platform/Interface/Windows.h"
+#include "Modules/Renderer/Data/Shader.h"
+#include "Modules/Renderer/Data/Mesh.h"
+#include "Modules/Renderer/Data/Texture.h"
+#include "Modules/Renderer/Utils.h"
+#include "Modules/Renderer/Resource/ResourceManager.h"
+#include "Modules/Renderer/Resource/DefaultResources.h"
+#include "Modules/Renderer/Loaders/Loaders.h"
 
 using namespace Nork;
 using namespace Events;
@@ -41,21 +44,18 @@ struct Holder
 	}
 };
 
-Renderer::Shader CreateShaderFromSource(std::string_view src)
+Renderer::Data::Shader CreateShaderFromPath(std::string_view path)
 {
-	GLuint program = Renderer::Utils::Shader::GetProgramFromSource(src);
-	return Renderer::Shader(program, Renderer::Utils::Shader::GetUniforms(program));
-}
-Renderer::Shader CreateShaderFromPath(std::string_view path)
-{
+	using namespace Renderer;
+
 	std::ifstream stream(path.data());
 	std::stringstream buf;
 	buf << stream.rdbuf();
-	std::string src = buf.str();
 
-	auto shad = CreateShaderFromSource(src);
+	auto data = Data::ShaderData{ .source = buf.str() };
+	auto resource = Resource::CreateShader(data);
 	stream.close();
-	return shad;
+	return Data::Shader(resource);
 }
 
 int main() 
@@ -137,13 +137,29 @@ int main()
 	Window win(1280, 720);
 
 	Editor::Editor editor(win);
+	Renderer::Data::Shader shader = CreateShaderFromPath("Source/Shaders/lightPass.shader");
+	shader.Use();
 
-	Renderer::Shader shader = CreateShaderFromPath("Source/Shaders/lightPass.shader");
+	// MUST
+	Renderer::Resource::DefaultResources::Init();
+	auto model = Renderer::Loaders::LoadModel("Resources/Models/lamp/untitled.obj");
+	std::vector<Renderer::Data::MeshResource> meshResources;
+	std::vector<Renderer::Data::Mesh> meshes;
+	for (size_t i = 0; i < model.size(); i++)
+	{
+		meshResources.push_back(Renderer::Resource::CreateMesh(model[i]));
+		meshes.push_back(Renderer::Data::Mesh(meshResources[i]));
+	}
 
 	while (win.IsRunning())
 	{
 		editor.Render();
 		win.Refresh();
 		win.GetEventManager().PollEvents();
+	}
+
+	for (size_t i = 0; i < meshResources.size(); i++)
+	{
+		Renderer::Resource::DeleteMesh(meshResources[i]);
 	}
 }

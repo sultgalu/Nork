@@ -1,3 +1,3 @@
 #pragma once
 
-#define OPTIMIZE_SHADER_BINDING
+#define NORK_ASSERT

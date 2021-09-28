@@ -2,7 +2,9 @@
 #include "ViewportPanel.h"
 
 int viewportCounter = 0;
-Nork::Editor::ViewportPanel::ViewportPanel() : Nork::Editor::Panel(std::format("Viewport#{}", viewportCounter++).c_str(), true)
+Nork::Editor::ViewportPanel::ViewportPanel() 
+	: Nork::Editor::Panel(std::format("Viewport#{}", viewportCounter++).c_str(), true),
+	mouseState(MouseState{}), image(ImageConfig{})
 {
 }
 
