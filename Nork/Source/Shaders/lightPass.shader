@@ -127,7 +127,8 @@ void main()
 	{
 		result += pLight(pLs[i], material, worldPos, normal, viewDir);
 	}
-	fColor = vec4(result, 1.0f);
+	//fColor = vec4(result, 1.0f);
+	fColor = vec4(diff_spec.rgb, 1.0f);
 }
 
 vec3 dLight(DirLight light, Materials material, vec3 normal, vec3 viewDir)

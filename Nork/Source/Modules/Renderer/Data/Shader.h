@@ -27,23 +27,44 @@ namespace Nork::Renderer::Data
 		}
 		inline void SetMat4(std::string_view name, glm::mat4& value)
 		{
-			glUniformMatrix4fv(this->uniformLocations[name], 1, false, (const GLfloat*)(&value));
+			auto loc = this->uniformLocations.find(name);
+			if (loc != this->uniformLocations.end())
+			{
+				glUniformMatrix4fv( (*loc).second, 1, false, (const GLfloat*)(&value));
+			}
 		}
 		inline void SetVec4(std::string_view name, glm::vec4& value)
 		{
-			glUniform4f(this->uniformLocations[name], value.x, value.y, value.z, value.w);
+			auto loc = this->uniformLocations.find(name);
+			if (loc != this->uniformLocations.end())
+			{
+				glUniform4f((*loc).second, value.x, value.y, value.z, value.w);
+			}
+			
 		}
 		inline void SetVec3(std::string_view name, glm::vec3& value)
 		{
-			glUniform3f(this->uniformLocations[name], value.x, value.y, value.z);
+			auto loc = this->uniformLocations.find(name);
+			if (loc != this->uniformLocations.end())
+			{
+				glUniform3f((*loc).second, value.x, value.y, value.z);
+			}
 		}
 		inline void SetFloat(std::string_view name, float value)
 		{
-			glUniform1f(this->uniformLocations[name], value);
+			auto loc = this->uniformLocations.find(name);
+			if (loc != this->uniformLocations.end())
+			{
+				glUniform1f((*loc).second, value);
+			}
 		}
 		inline void SetInt(std::string_view name, int value)
 		{
-			glUniform1i(this->uniformLocations[name], value);
+			auto loc = this->uniformLocations.find(name);
+			if (loc != this->uniformLocations.end())
+			{
+				glUniform1i((*loc).second, value);
+			}
 		}
 
 		inline GLuint GetProgram() { return program; }

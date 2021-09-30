@@ -17,7 +17,7 @@ namespace Nork::Editor
 			bool isViewportDoubleClicked = false;
 		};
 		inline MouseState GetMouseState() { return mouseState; }
-
+		inline void SetTexture(GLuint tex) { image.texture = tex; }
 	private:
 		virtual void DrawContent() override;
 	private:

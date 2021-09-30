@@ -164,6 +164,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\Deferred.cpp" />
     <ClCompile Include="Source\Editor\Panels\LogPanel.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Loaders\Loaders.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Resource\DefaultResources.cpp" />
@@ -253,6 +254,8 @@
     <ClCompile Include="Source\Editor\Panels\ViewportPanel.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Modules\Renderer\Data\Ligths.h" />
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\Deferred.h" />
     <ClInclude Include="Source\Editor\Panels\LogPanel.h" />
     <ClInclude Include="Source\Modules\Renderer\Data\Mesh.h" />
     <ClInclude Include="Source\Modules\Renderer\Data\Texture.h" />
@@ -276,7 +279,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\OneDrive\Dokumentumok\GameEngine_0\GameEngineEditor\resources\shaders\lightPass.shader" />
+    <None Include="Source\Shaders\gPass.shader" />
     <None Include="Source\Shaders\lightPass.shader" />
+    <None Include="Source\Shaders\skybox.shader" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

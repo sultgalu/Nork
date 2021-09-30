@@ -3,7 +3,7 @@
 namespace Nork::Renderer::Utils::Draw
 {
 	unsigned int quadVao, quadVb, quadIb;
-	void DrawQuad()
+	void Quad()
 	{
 		static bool initialized = false;
 		if (!initialized)
@@ -31,7 +31,7 @@ namespace Nork::Renderer::Utils::Draw
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 	}
 	unsigned int cubeVao, cubeVb, cubeIb;
-	void DrawCubemap()
+	void Cubemap()
 	{
 		static bool initialized = false;
 		if (!initialized)

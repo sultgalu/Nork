@@ -68,4 +68,14 @@ namespace Nork::Editor
 			glfwMakeContextCurrent(backup_current_context);
 		}
 	}
+	void Editor::SetDisplayTexture(GLuint tex)
+	{
+		for (auto& panel : panels)
+		{
+			if (typeid(*panel).hash_code() == typeid(ViewportPanel).hash_code())
+			{
+				(*((ViewportPanel*)panel)).SetTexture(tex);
+			}
+		}
+	}
 }

@@ -36,13 +36,13 @@ namespace Nork::Renderer::Utils
 		};
 
 		std::vector<unsigned char> LoadImageData(std::string_view path, int& width, int& height, int& channels);
-		unsigned int CreateTexture2D(const void* data, int width, int height, int channels, Wrap wrap = Wrap::Repeat, Filter filter = Filter::LinearMipmapNearest, bool magLinear = true, bool genMipmap = true);
-		unsigned int CreateTexture2D(int width, int height, Format texFormat, int sampleCount = 1, bool repeat = false, void* data = nullptr, bool linear = true);
-		unsigned int CreateTextureCube(std::string dirPath, std::string extension);
-		unsigned int CreateTextureCube(int width, int height, Format texFormat, int sampleCount = 1);
-		void BindTexture(unsigned int handle, int slot = 0);
-		void BindTextureMS(unsigned int handle, int slot = 0);
-		void BindTextureCube(unsigned int handle, int slot = 0);
+		unsigned int Create2D(const void* data, int width, int height, int channels, Wrap wrap = Wrap::Repeat, Filter filter = Filter::LinearMipmapNearest, bool magLinear = true, bool genMipmap = true);
+		unsigned int Create2D(int width, int height, Format texFormat, int sampleCount = 1, bool repeat = false, void* data = nullptr, bool linear = true);
+		unsigned int CreateCube(std::string dirPath, std::string extension);
+		unsigned int CreateCube(int width, int height, Format texFormat, int sampleCount = 1);
+		void Bind(unsigned int handle, int slot = 0);
+		void BindMS(unsigned int handle, int slot = 0);
+		void BindCube(unsigned int handle, int slot = 0);
 	}
 
 	namespace VAO

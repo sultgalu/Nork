@@ -9,5 +9,6 @@ namespace Nork::Editor
 	public:
 		Editor(Window& win);
 		void Render();
+		void SetDisplayTexture(GLuint tex);
 	};
 }

@@ -13,7 +13,7 @@ namespace Nork::Renderer::Resource
 		using namespace Utils::Texture;
 		return TextureResource
 		{
-			.id = CreateTexture2D(data.data.data(),
+			.id = Create2D(data.data.data(),
 				data.width, data.height, data.channels,
 				Wrap::ClampToEdge, Filter::LinearMipmapNearest,
 				true, true)

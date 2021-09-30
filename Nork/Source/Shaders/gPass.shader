@@ -1,0 +1,77 @@
+#type vertex
+
+#version 330 core
+
+layout(location = 0) in vec3 vPos;
+layout(location = 1) in vec3 vNormal;
+layout(location = 2) in vec2 vTexCoord;
+layout(location = 3) in vec3 vTangent;
+layout(location = 4) in vec3 vBiTangent; // = cross(vNormal, vTangent)
+
+out vec3 worldPos;
+out vec2 texCoord;
+out vec4 lightViewPos; // new
+out mat3 TBN;
+out vec3 vNorm;
+
+uniform mat4 model;
+uniform mat4 VP;
+
+void main()
+{
+	worldPos = (model * vec4(vPos, 1.0f)).xyz;
+	gl_Position = VP * vec4(worldPos, 1.0f);
+
+	texCoord = vTexCoord;
+	vNorm = vNormal;
+
+	vec3 T = normalize(vec3(model * vec4(vTangent, 0.0f)));
+	vec3 B = normalize(vec3(model * vec4(vBiTangent, 0.0f)));
+	vec3 N = normalize(vec3(model * vec4(vNormal, 0.0f)));
+
+#ifdef IDKWHATTOCALLTHISBUTITISHERE
+	// re-orthogonalize T with respect to N
+	T = normalize(T - dot(T, N) * N);
+	// then retrieve perpendicular vector B with the cross product of T and N
+	B = cross(N, T);
+#endif 
+
+	TBN = mat3(T, B, N);
+}
+
+#type fragment
+
+#version 330 core
+
+layout(location = 0) out vec3 pos; // 3 used
+layout(location = 1) out vec4 diffuse_spec;
+layout(location = 2) out vec3 normal; // 3 used
+
+uniform struct MaterialTex
+{
+	sampler2D diffuse; // passed
+	sampler2D normals; // used
+	sampler2D roughness; // passed
+	sampler2D reflect; // set, not passed (metallic)
+} materialTex;
+
+in vec3 worldPos;
+in vec2 texCoord;
+in mat3 TBN; // could do with lights from vert. shader (linear interpolation would help -> less matrix multiplications)(inverse -> transpose)
+in vec3 vNorm;
+
+uniform int id;
+
+void main()
+{
+	pos = worldPos;
+	diffuse_spec = vec4(texture(materialTex.diffuse, texCoord).rgb, 1 - texture(materialTex.roughness, texCoord).r);
+	//diffuse_spec = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	vec3 norm = texture(materialTex.normals, texCoord).rgb;
+	norm = norm * 2.0f - 1.0f; // [0;1] -> [-1;1]
+	normal = normalize(TBN * norm); // transforming from tangent-space -> world space
+
+	// normal = texture(materialTex.normals, texCoord).rgb;
+	// normal = normalize(vNorm);
+}

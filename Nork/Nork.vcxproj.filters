@@ -96,6 +96,9 @@
     <ClCompile Include="Source\Modules\Renderer\Loaders\Loaders.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\Deferred.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\PCH\pch.h">
@@ -158,9 +161,17 @@
     <ClInclude Include="Source\Modules\Renderer\Loaders\Loaders.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\Deferred.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Data\Ligths.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\OneDrive\Dokumentumok\GameEngine_0\GameEngineEditor\resources\shaders\lightPass.shader" />
     <None Include="Source\Shaders\lightPass.shader" />
+    <None Include="Source\Shaders\gPass.shader" />
+    <None Include="Source\Shaders\skybox.shader" />
   </ItemGroup>
 </Project>

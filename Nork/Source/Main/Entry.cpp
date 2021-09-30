@@ -12,6 +12,7 @@
 #include "Modules/Renderer/Resource/ResourceManager.h"
 #include "Modules/Renderer/Resource/DefaultResources.h"
 #include "Modules/Renderer/Loaders/Loaders.h"
+#include "Modules/Renderer/Pipeline/Deferred.h"
 
 using namespace Nork;
 using namespace Events;
@@ -151,8 +152,23 @@ int main()
 		meshes.push_back(Renderer::Data::Mesh(meshResources[i]));
 	}
 
+	Renderer::Pipeline::Deferred pipeline(Renderer::Pipeline::DeferredData (
+		Renderer::Pipeline::DeferredData::Shaders
+		{
+			.gPass = CreateShaderFromPath("Source/Shaders/gPass.shader"),
+			.lPass = CreateShaderFromPath("Source/Shaders/lightPass.shader"),
+			.skybox = CreateShaderFromPath("Source/Shaders/skybox.shader"),
+		}));
+
+	std::vector<Renderer::Data::Model> models;
+	std::vector<Renderer::Data::DirLight> dLights;
+	std::vector<Renderer::Data::PointLight> pLights;
+	models.push_back(Renderer::Data::Model(meshes, glm::identity<glm::mat4>()));
+
+	editor.SetDisplayTexture(pipeline.data.lightPass.tex);
 	while (win.IsRunning())
 	{
+		pipeline.DrawScene(models, dLights, pLights);
 		editor.Render();
 		win.Refresh();
 		win.GetEventManager().PollEvents();

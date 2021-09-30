@@ -119,7 +119,7 @@ namespace Nork::Renderer::Utils::Texture
 			return std::vector<unsigned char>();
 		}
 	}
-	unsigned int CreateTexture2D(const void* data, int width, int height, int channels, Wrap wrap, Filter filter, bool magLinear, bool genMipmap)
+	unsigned int Create2D(const void* data, int width, int height, int channels, Wrap wrap, Filter filter, bool magLinear, bool genMipmap)
 	{
 		unsigned int handle = 0;
 		glGenTextures(1, &handle);
@@ -149,7 +149,7 @@ namespace Nork::Renderer::Utils::Texture
 
 		return handle;
 	}
-	unsigned int CreateTexture2D(int width, int height, Format texFormat, int sampleCount, bool repeat, void* data, bool linear)
+	unsigned int Create2D(int width, int height, Format texFormat, int sampleCount, bool repeat, void* data, bool linear)
 	{
 		unsigned int handle = 0;
 		glGenTextures(1, &handle);
@@ -181,7 +181,7 @@ namespace Nork::Renderer::Utils::Texture
 
 		return handle;
 	}
-	unsigned int CreateTextureCube(std::string dirPath, std::string extension)
+	unsigned int CreateCube(std::string dirPath, std::string extension)
 	{
 		unsigned int id;
 		glGenTextures(1, &id);
@@ -217,7 +217,7 @@ namespace Nork::Renderer::Utils::Texture
 
 		return id;
 	}
-	unsigned int CreateTextureCube(int width, int height, Format texFormat, int sampleCount)
+	unsigned int CreateCube(int width, int height, Format texFormat, int sampleCount)
 	{
 		unsigned int id;
 		glGenTextures(1, &id);
@@ -238,17 +238,17 @@ namespace Nork::Renderer::Utils::Texture
 
 		return id;
 	}
-	void BindTexture(unsigned int handle, int slot)
+	void Bind(unsigned int handle, int slot)
 	{
 		glActiveTexture(GL_TEXTURE0 + slot);
 		glBindTexture(GL_TEXTURE_2D, handle);
 	}
-	void BindTextureMS(unsigned int handle, int slot)
+	void BindMS(unsigned int handle, int slot)
 	{
 		glActiveTexture(GL_TEXTURE0 + slot);
 		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, handle);
 	}
-	void BindTextureCube(unsigned int handle, int slot)
+	void BindCube(unsigned int handle, int slot)
 	{
 		glActiveTexture(GL_TEXTURE0 + slot);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, handle);
