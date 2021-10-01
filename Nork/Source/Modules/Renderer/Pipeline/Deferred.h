@@ -5,11 +5,6 @@
 #include "../Data/Mesh.h"
 #include "../Data/Ligths.h"
 
-namespace Nork::Renderer::Data
-{
-	typedef std::pair<std::vector<Mesh>, glm::mat4> Model;
-}
-
 using namespace Nork::Renderer::Data;
 
 namespace Nork::Renderer::Pipeline
@@ -54,10 +49,10 @@ namespace Nork::Renderer::Pipeline
 	public:
 		Deferred(DeferredData);
 		~Deferred() = default;
-		void DrawScene(std::span<Model> models, std::span<DirLight> dLights, std::span<PointLight> pLights);
+		void DrawScene(std::span<Model> models);
 	private:
 		void DrawGBuffers(std::span<Model> models);
-		void DrawLightPass(std::span<DirLight> dLights, std::span<PointLight> pLights);
+		void DrawLightPass();
 		void DrawSkybox();
 	public:
 		DeferredData data;

@@ -66,10 +66,10 @@ namespace Nork::Renderer::Pipeline
 	}
 	static std::chrono::high_resolution_clock clock;
 
-	void Deferred::DrawScene(std::span<Model> models, std::span<DirLight> dLights, std::span<PointLight> pLights)
+	void Deferred::DrawScene(std::span<Model> models)
 	{
 		DrawGBuffers(models);
-		DrawLightPass(dLights, pLights);
+		DrawLightPass();
 		//DrawSkybox();
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
@@ -101,7 +101,7 @@ namespace Nork::Renderer::Pipeline
 			};
 		}
 	}
-	void Deferred::DrawLightPass(std::span<DirLight> dLights, std::span<PointLight> pLights)
+	void Deferred::DrawLightPass()
 	{
 		glDisable(GL_DEPTH_TEST);
 		glViewport(0, 0, data.mainResX, data.mainResY);

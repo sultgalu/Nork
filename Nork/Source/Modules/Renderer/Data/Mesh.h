@@ -53,4 +53,6 @@ namespace Nork::Renderer::Data
 			glDrawElements(GL_TRIANGLES, indices, GL_UNSIGNED_INT, 0);
 		}
 	};
+
+	typedef std::pair<std::vector<Mesh>, glm::mat4> Model;
 }

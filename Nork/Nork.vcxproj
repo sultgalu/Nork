@@ -164,6 +164,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\LightStorage.cpp" />
+    <ClCompile Include="Source\Components\Impl\Camera.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Pipeline\Deferred.cpp" />
     <ClCompile Include="Source\Editor\Panels\LogPanel.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Loaders\Loaders.cpp" />
@@ -254,6 +256,11 @@
     <ClCompile Include="Source\Editor\Panels\ViewportPanel.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Components\Converters\Lights.h" />
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\LightStorage.h" />
+    <ClInclude Include="Source\Components\Camera.h" />
+    <ClInclude Include="Source\Components\Common.h" />
+    <ClInclude Include="Source\Components\Lights.h" />
     <ClInclude Include="Source\Modules\Renderer\Data\Ligths.h" />
     <ClInclude Include="Source\Modules\Renderer\Pipeline\Deferred.h" />
     <ClInclude Include="Source\Editor\Panels\LogPanel.h" />
