@@ -1,8 +1,13 @@
 #include "pch.h"
 #include "LightStorage.h"
+#include "../Utils.h"
 
 namespace Nork::Renderer::Pipeline
 {
+	LightStorage::LightStorage()
+	{
+		ubo = Utils::Other::CreateUBO(0, 10000, GL_DYNAMIC_DRAW);
+	}
 	void LightStorage::OverwriteAll(std::span<Data::DirLight> dLights, std::span<Data::PointLight> pLights)
 	{
 		// NINCSENEK RENDEZVE SHADOW SZERINT!!!
@@ -21,7 +26,7 @@ namespace Nork::Renderer::Pipeline
 		{
 			auto& dl = dLights[i];
 
-			if (dl.shadow.fb != 0)
+			/*if (dl.shadow.fb != 0)
 			{
 				auto getVP = dl.GetVP();
 				float* vp = (float*)&getVP;
@@ -34,7 +39,7 @@ namespace Nork::Renderer::Pipeline
 
 				Utils::BindTexture(dl.shadow.texture, 10 + dShadowCount);
 				dShadowCount++;
-			}
+			}*/
 			buf[dlIdx++] = dl.direction.x; buf[dlIdx++] = dl.direction.y; buf[dlIdx++] = dl.direction.z; buf[dlIdx++] = 0;
 			buf[dlIdx++] = dl.color.r; buf[dlIdx++] = dl.color.g; buf[dlIdx++] = dl.color.b; buf[dlIdx++] = dl.color.a;
 
@@ -45,7 +50,7 @@ namespace Nork::Renderer::Pipeline
 		{
 			auto& pl = pLights[i];
 
-			if (pl.shadow.fb != 0)
+			/*if (pl.shadow.fb != 0)
 			{
 				buf[pShadIdx++] = pl.bias; buf[pShadIdx++] = pl.biasMin; buf[pShadIdx++] = pl.blur; buf[pShadIdx++] = pl.radius;
 				buf[pShadIdx++] = pl.far;
@@ -56,10 +61,10 @@ namespace Nork::Renderer::Pipeline
 
 				Utils::BindTextureCube(pl.shadow.texture, 15 + pShadowCount);
 				pShadowCount++;
-			}
-			buf[plIdx++] = tr.position.x; buf[plIdx++] = tr.position.y; buf[plIdx++] = tr.position.z; buf[plIdx++] = 0;
+			}*/
+			buf[plIdx++] = pl.position.x; buf[plIdx++] = pl.position.y; buf[plIdx++] = pl.position.z; buf[plIdx++] = 0;
 			buf[plIdx++] = pl.color.r; buf[plIdx++] = pl.color.g; buf[plIdx++] = pl.color.b; buf[plIdx++] = pl.color.a;
-			buf[plIdx++] = pl.GetLinear(); buf[plIdx++] = pl.GetQuadratic(); buf[plIdx++] = 0; buf[plIdx++] = 0;
+			buf[plIdx++] = pl.linear; buf[plIdx++] = pl.quadratic; buf[plIdx++] = 0; buf[plIdx++] = 0;
 
 			pLightCount++;
 		}
@@ -69,7 +74,7 @@ namespace Nork::Renderer::Pipeline
 		buf[2] = pLightCount;
 		buf[3] = pShadowCount;
 
-		glBindBuffer(GL_UNIFORM_BUFFER, this->dLightUBO);
+		glBindBuffer(GL_UNIFORM_BUFFER, this->ubo);
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(buf), buf);
 		//glNamedBufferSubData(this->dLightUBO, 0, sizeof(buf), buf);
 		//glUnmapBuffer(GL_UNIFORM_BUFFER);

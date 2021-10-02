@@ -1,0 +1,4 @@
+Program Events: Before/After Render, OnNewFrame -> camera canContr. can update it's VP on this.
+Store VP (with any other common render data) in ubo. Need Render Api (like lightStorage) for this stuff
+	-> Need separate (from win's) eventMan for these, events need to get called on raising (frameEventMan or smt)
+	-> OR add method SubscribeForImmadiate() and have to sep. func. vectors

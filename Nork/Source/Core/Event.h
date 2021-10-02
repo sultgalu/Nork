@@ -13,6 +13,9 @@ namespace Nork
 
 		template<std::derived_from<Event> T>
 		inline const bool IsType() const { return typeid(T).hash_code() == GetType(); }
+
+		template<std::derived_from<Event> T>
+		inline const T& As() const { return static_cast<const T&>(*this); }
 	};
 
 	namespace Events
@@ -132,6 +135,12 @@ namespace Nork
 		void Subscribe(std::function<void(const Event&)> callback)
 		{
 			this->dispatcher.Subscribe<T>(callback);
+		}
+
+		template<std::derived_from<Event> T, typename F, typename M>
+		void Subscribe(F func, M member)
+		{
+			this->dispatcher.Subscribe<T>(std::bind(func, member, std::placeholders::_1));
 		}
 
 	private:

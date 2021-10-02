@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Core/Event.h"
+#include "Core/CameraController.h"
 #include "Utils/Logger.h"
 #include "Utils/Timer.h"
 #include "Modules/ECS/Storage.h"
@@ -165,10 +166,12 @@ int main()
 	std::vector<Renderer::Data::PointLight> pLights;
 	models.push_back(Renderer::Data::Model(meshes, glm::identity<glm::mat4>()));
 
+	Components::Camera cam;
+	auto camController = CameraController(win.GetEventManager(), std::shared_ptr<Components::Camera>(&cam));
 	editor.SetDisplayTexture(pipeline.data.lightPass.tex);
 	while (win.IsRunning())
 	{
-		pipeline.DrawScene(models, dLights, pLights);
+		pipeline.DrawScene(models);
 		editor.Render();
 		win.Refresh();
 		win.GetEventManager().PollEvents();

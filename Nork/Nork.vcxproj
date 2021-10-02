@@ -164,6 +164,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Core\CameraController.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Pipeline\LightStorage.cpp" />
     <ClCompile Include="Source\Components\Impl\Camera.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Pipeline\Deferred.cpp" />
@@ -256,6 +257,7 @@
     <ClCompile Include="Source\Editor\Panels\ViewportPanel.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Core\CameraController.h" />
     <ClInclude Include="Source\Components\Converters\Lights.h" />
     <ClInclude Include="Source\Modules\Renderer\Pipeline\LightStorage.h" />
     <ClInclude Include="Source\Components\Camera.h" />
