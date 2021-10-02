@@ -1,8 +1,11 @@
 #pragma once
 
+#include "Platform/Input.h"
+
 namespace Nork
 {
 	// For switch statements to work, and for compile-time evaluation of GetType(), use hard coded values in each derived Events instead of typeid() (which evaluates at runtime)
+	// Also now every GetType() costs a v-table lookup instead of being compile-time evaluated (can be optimized later)
 
 	struct Event
 	{
@@ -15,58 +18,72 @@ namespace Nork
 		inline const bool IsType() const { return typeid(T).hash_code() == GetType(); }
 
 		template<std::derived_from<Event> T>
-		inline const T& As() const { return static_cast<const T&>(*this); }
+		inline const constexpr T& As() const { return static_cast<const T&>(*this); }
 	};
+
+	// These events get dispatched when events get polled.
+	struct QueuedEvent : public Event {};
+
+	// Contrary to basic Event types, these get dispatched immediately, bypassing the event queue.
+	struct ImmediateEvent : public Event {};
 
 	namespace Events
 	{
-		struct KeyDown : public Event
+		using namespace Input;
+		struct KeyDown : public QueuedEvent
 		{
-			KeyDown(int code) : keyCode(code) {}
-			const int keyCode;
+			KeyDown(Key key) : key(key) {}
+			const Key key;
 		};
 
-		struct KeyUp : public Event
+		struct KeyUp : public QueuedEvent
 		{
-			KeyUp(int code) : keyCode(code) {}
-			const int keyCode;
+			KeyUp(Key key) : key(key) {}
+			const Key key;
 		};
 
-		struct MouseDown : public Event
+		struct MouseDown : public QueuedEvent
 		{
-			MouseDown(int code) : buttonCode(code) {}
-			int buttonCode;
+			MouseDown(MouseButton button) : button(button) {}
+			MouseButton button;
 		};
 
-		struct MouseUp : public Event
+		struct MouseUp : public QueuedEvent
 		{
-			MouseUp(int code) : buttonCode(code) {}
-			int buttonCode;
+			MouseUp(MouseButton button) : button(button) {}
+			MouseButton button;
 		};
 
-		struct MouseMove : public Event
+		struct MouseMove : public QueuedEvent
 		{
 			MouseMove(double offsetX, double offsetY) : offsetX(offsetX), offsetY(offsetY) {}
 			double offsetX, offsetY;
 		};
 
-		struct MouseScroll : public Event
+		struct MouseScroll : public QueuedEvent
 		{
 			MouseScroll(double offset) : offset(offset) {}
 			double offset;
 		};
 
-		struct WindowResize : public Event
+		struct WindowResize : public QueuedEvent
 		{
 			WindowResize(int width, int height) : width(width), height(height) {}
 			int width, height;
 		};
 
-		struct WindowClose : public Event
+		struct WindowClose : public QueuedEvent
 		{
 			WindowClose(bool calledByWindow) : calledByWindow(calledByWindow) {}
 			bool calledByWindow;
 		};
+
+		struct OnUpdate : public ImmediateEvent {};
+		struct Updated : public ImmediateEvent {};
+		struct OnRenderUpdate : public ImmediateEvent {};
+		struct RenderUpdated : public ImmediateEvent {};
+		struct OnPhysicsUpdate : public ImmediateEvent {};
+		struct PhysicsUpdated : public ImmediateEvent {};
 	}
 
 	class EventQueue
@@ -116,10 +133,16 @@ namespace Nork
 	class EventManager
 	{
 	public:
-		template<std::derived_from<Event> T>
+		template<std::derived_from<QueuedEvent> T>
 		void RaiseEvent(T e)
 		{
 			this->queue.Enqueue(e);
+		}
+
+		template<std::derived_from<ImmediateEvent> T>
+		void RaiseEvent(T e)
+		{
+			this->dispatcher.Dispatch(e);
 		}
 
 		void PollEvents()

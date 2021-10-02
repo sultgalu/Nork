@@ -27,6 +27,10 @@ namespace Nork
 	{
 		auto& ev = event.As<Events::MouseUp>();
 	}
+	void CameraController::HandleOnUpdate(const Event& event)
+	{
+		auto& ev = event.As<Events::OnUpdate>();
+	}
 	void CameraController::SubscribeEvents(EventManager& em)
 	{
 		em.Subscribe<Events::KeyUp>(&CameraController::HandleKeyUp, this);
@@ -35,6 +39,7 @@ namespace Nork
 		em.Subscribe<Events::MouseMove>(&CameraController::HandleMouseMove, this);
 		em.Subscribe<Events::MouseDown>(&CameraController::HandleMouseDown, this);
 		em.Subscribe<Events::MouseUp>(&CameraController::HandleMouseUp, this);
+		em.Subscribe<Events::OnUpdate>(&CameraController::HandleOnUpdate, this);
 	}
 }
 

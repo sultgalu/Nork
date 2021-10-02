@@ -22,15 +22,15 @@ void EventHandler(const Event& e)
 {
 	if (e.IsType<KeyDown>())
 	{
-		Logger::Error.Log("KEYDOWN event, keycode: ", std::to_string(static_cast<const KeyDown&>(e).keyCode).c_str());
+		Logger::Error.Log("KEYDOWN event, keycode: ", std::to_string(std::to_underlying(static_cast<const KeyDown&>(e).key)).c_str());
 	}
 	if (e.IsType<KeyUp>())
 	{
-		Logger::Error.Log("KEYUP event, keycode: ", std::to_string(static_cast<const KeyUp&>(e).keyCode).c_str());
+		Logger::Error.Log("KEYUP event, keycode: ", std::to_string(std::to_underlying(static_cast<const KeyUp&>(e).key)).c_str());
 	}
 	if (e.IsType<MouseDown>())
 	{
-		Logger::Error.Log("MOUSEDOWN event, keycode: ", std::to_string(static_cast<const MouseDown&>(e).buttonCode).c_str());
+		Logger::Error.Log("MOUSEDOWN event, keycode: ", std::to_string(std::to_underlying(static_cast<const MouseDown&>(e).button)).c_str());
 	}
 }
 
@@ -59,6 +59,7 @@ Renderer::Data::Shader CreateShaderFromPath(std::string_view path)
 	stream.close();
 	return Data::Shader(resource);
 }
+using namespace Input;
 
 int main() 
 {
@@ -66,7 +67,7 @@ int main()
 	
 	EventDispatcher ed;
 	ed.Subscribe<Event>([](const Event& e) { return; });
-	auto key = KeyDown(2);
+	auto key = KeyDown(Key::Up);
 	ed.Dispatch(key);
 
 	EventQueue q;
@@ -76,29 +77,29 @@ int main()
 	reg0.emplace<EventManager>(id);
 	auto& man = reg0.get<EventManager>(id);
 
-	q.Enqueue(KeyDown(2));
+	q.Enqueue(KeyDown(Key::Up));
 	Logger::PushStream(std::cout);
 
 	Logger::Info.Log("asd", "aaaa", "123");
 	man.Subscribe<KeyDown>([](const Event& e)
 		{
 			KeyDown ev = static_cast<const KeyDown&>(e);
-			Logger::Debug.Log("KeyDown Event: ", std::to_string(ev.keyCode).c_str(), " typeID: ", std::to_string(e.GetType()).c_str());
+			Logger::Debug.Log("KeyDown Event: ", Input::ToString(ev.key).c_str(), " typeID: ", std::to_string(e.GetType()).c_str());
 		});
 
 	man.Subscribe<KeyUp>([](const Event& e)
 		{
 			KeyUp ev = static_cast<const KeyUp&>(e);
-			Logger::Debug.Log("KeyUp Event: ", std::to_string(ev.keyCode).c_str(), " typeID: ", std::to_string(e.GetType()).c_str());
+			Logger::Debug.Log("KeyUp Event: ", Input::ToString(ev.key).c_str(), " typeID: ", std::to_string(e.GetType()).c_str());
 		});
 
 	man.Subscribe<KeyDown>(&EventHandler);
 	man.Subscribe<KeyUp>(&EventHandler);
 	man.Subscribe<MouseDown>(&EventHandler);
 
-	man.RaiseEvent(KeyDown(4));
-	man.RaiseEvent(KeyUp(6));
-	man.RaiseEvent(MouseDown(2));
+	man.RaiseEvent(KeyDown(Key::A));
+	man.RaiseEvent(KeyUp(Key::W));
+	man.RaiseEvent(MouseDown(MouseButton::Left));
 
 	man.PollEvents();
 
@@ -171,9 +172,11 @@ int main()
 	editor.SetDisplayTexture(pipeline.data.lightPass.tex);
 	while (win.IsRunning())
 	{
+		win.GetEventManager().RaiseEvent(Events::OnUpdate());
 		pipeline.DrawScene(models);
 		editor.Render();
 		win.Refresh();
+		win.GetEventManager().RaiseEvent(Events::Updated());
 		win.GetEventManager().PollEvents();
 	}
 

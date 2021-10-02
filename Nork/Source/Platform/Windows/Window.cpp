@@ -2,6 +2,9 @@
 #include "Utils/Logger.h"
 #include "Platform/Interface/Windows.h"
 #include "Core/Event.h"
+#include "Platform/Input.h"
+
+using namespace Nork::Input;
 
 namespace Nork
 {
@@ -23,11 +26,13 @@ namespace Nork
 	GLFWwindow* windowPtr;
 	int width, height, refreshRate;
 	bool isRunning;
-	std::unordered_map<int, bool> keys;
+	std::bitset<ToInt(Key::Max)> keys;
 	EventManager eventMan;
 
 	void GLFWInit()
 	{
+		std::bitset<12> set;
+		set[3].flip();
 		glfwInit();
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -90,13 +95,11 @@ namespace Nork
 	}
 	void OnKeyDown(const Event& ev)
 	{
-		auto& e = static_cast<const Events::KeyDown&>(ev);
-		keys[e.keyCode] = true;
+		keys[ToInt(ev.As<Events::KeyUp>().key)].flip();
 	}
 	void OnKeyUp(const Event& ev)
 	{
-		auto& e = static_cast<const Events::KeyUp&>(ev);
-		keys[e.keyCode] = false;
+		keys[ToInt(ev.As<Events::KeyUp>().key)].flip();
 	}
 
 	inline EventManager& GetEventManager()
@@ -120,22 +123,22 @@ namespace Nork
 			{
 				if (action == GLFW_PRESS)
 				{
-					eventMan.RaiseEvent(KeyDown(key));
+					eventMan.RaiseEvent(KeyDown(static_cast<Key>(key)));
 				}
 				else if (action == GLFW_RELEASE)
 				{
-					eventMan.RaiseEvent(KeyUp(key));
+					eventMan.RaiseEvent(KeyUp(static_cast<Key>(key)));
 				}
 			});
 		glfwSetMouseButtonCallback(windowPtr, [](GLFWwindow* winPtr, int button, int action, int mods)
 			{
 				if (action == GLFW_PRESS)
 				{
-					eventMan.RaiseEvent(MouseDown(button));
+					eventMan.RaiseEvent(MouseDown(static_cast<MouseButton>(button)));
 				}
 				else if (action == GLFW_RELEASE)
 				{
-					eventMan.RaiseEvent(MouseUp(button));
+					eventMan.RaiseEvent(MouseUp(static_cast<MouseButton>(button)));
 				}
 			});
 		glfwSetCursorPosCallback(windowPtr, [](GLFWwindow* winPtr, double xPos, double yPos)

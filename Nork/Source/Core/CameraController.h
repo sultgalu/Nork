@@ -21,6 +21,7 @@ namespace Nork
 		void HandleMouseMove(const Event& event);
 		void HandleMouseDown(const Event& event);
 		void HandleMouseUp(const Event& event);
+		void HandleOnUpdate(const Event& event);
 	public:
 		std::shared_ptr<Components::Camera> camera;
 	};
