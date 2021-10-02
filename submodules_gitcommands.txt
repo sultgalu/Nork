@@ -1,3 +1,4 @@
+"git submodule update --init --recursive" -> after clone, initializes the submodules
 "git pull --recurse-submodules" -> updates submodules as well
 "git submodule update --init --recursive" ("changed the URL of the submodule in the .gitmodules")
 "git submodule update --remote --rebase/--merge" -> pull from remote and merge with local branch. (git pull origin master)
