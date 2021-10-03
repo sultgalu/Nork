@@ -167,8 +167,9 @@ int main()
 	std::vector<Renderer::Data::PointLight> pLights;
 	models.push_back(Renderer::Data::Model(meshes, glm::identity<glm::mat4>()));
 
-	Components::Camera cam;
-	auto camController = CameraController(win.GetEventManager(), std::shared_ptr<Components::Camera>(&cam));
+	auto cam = std::make_shared<Components::Camera>();
+	
+	auto camController = CameraController(win.GetEventManager(), cam);
 	editor.SetDisplayTexture(pipeline.data.lightPass.tex);
 	while (win.IsRunning())
 	{
