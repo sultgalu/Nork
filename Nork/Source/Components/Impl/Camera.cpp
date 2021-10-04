@@ -19,46 +19,33 @@ namespace Nork::Components
 		this->UpdateViewProjection();
 	}
 
-	void Camera::UpdateView()
+	void Camera::Move(Direction direction, float delta)
 	{
-		this->view = glm::lookAt(this->position, this->position + this->front, this->up);
-	}
-	void Camera::UpdateProjection()
-	{
-		this->projection = glm::perspective<float>(this->FOV, this->ratio, this->nearClip, this->farClip);
-	}
-
-	void Camera::UpdateViewProjection()
-	{
-		this->viewProjection = this->projection * this->view;
-	}
-
-	void Camera::Move(MoveDirection direction, float delta)
-	{
-		if ((direction & MoveDirection::Up) != MoveDirection::None)
+		using enum Direction;
+		switch (direction)
 		{
+		case Up:
 			this->position += glm::normalize(this->up) * this->moveSpeed * delta;
-		}
-		if ((direction & MoveDirection::Down) != MoveDirection::None)
-		{
+			break;
+		case Down:
 			this->position -= glm::normalize(this->up) * this->moveSpeed * delta;
-		}
-		if ((direction & MoveDirection::Left) != MoveDirection::None)
-		{
-			this->position -= GetRight() * this->moveSpeed * delta;
-		}
-		if ((direction & MoveDirection::Rigth) != MoveDirection::None)
-		{
-			this->position += GetRight() * this->moveSpeed * delta;
-		}
-		if ((direction & MoveDirection::Forward) != MoveDirection::None)
-		{
+			break;
+		case Left:
+			this->position -= right * this->moveSpeed * delta;
+			break;
+		case Rigth:
+			this->position += right * this->moveSpeed * delta;
+			break;
+		case Forward:
 			this->position += this->front * this->moveSpeed * delta;
-		}
-		if ((direction & MoveDirection::Backward) != MoveDirection::None)
-		{
+			break;
+		case Backward:
 			this->position -= this->front * this->moveSpeed * delta;
+			break; 
+		case None: [[unlikely]]
+			break;
 		}
+
 		this->UpdateView();
 		this->UpdateViewProjection();
 	}
@@ -83,6 +70,13 @@ namespace Nork::Components
 		this->UpdateViewProjection();
 	}
 
+	void Camera::SetPosition(glm::vec3 pos)
+	{
+		position = pos; 
+		this->UpdateView();
+		this->UpdateViewProjection();
+	}
+
 	void Camera::SetRotation(float pitch, float yaw)
 	{
 		this->pitch = pitch;
@@ -98,7 +92,7 @@ namespace Nork::Components
 
 		this->yaw = yaw;
 
-		this->UpdateFront();
+		this->UpdateFrontRight();
 		this->UpdateView();
 		this->UpdateViewProjection();
 	}
@@ -116,17 +110,18 @@ namespace Nork::Components
 		}
 		this->yaw += (deltaYaw * rotationSpeed);
 
-		this->UpdateFront();
+		this->UpdateFrontRight();
 		this->UpdateView();
 		this->UpdateViewProjection();
 	}
 
-	void Camera::UpdateFront()
+	void Camera::UpdateFrontRight()
 	{
 		glm::vec3 newDirection;
 		newDirection.x = glm::cos(glm::radians(this->yaw)) * glm::cos(glm::radians(this->pitch));
 		newDirection.y = glm::sin(glm::radians(this->pitch));
 		newDirection.z = glm::sin(glm::radians(this->yaw)) * glm::cos(glm::radians(this->pitch));
 		this->front = glm::normalize(newDirection);
+		this->right = glm::cross(front, up);
 	}
 }

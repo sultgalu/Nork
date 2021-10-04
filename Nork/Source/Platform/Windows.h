@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Core/Event.h>
+#include "Core/Input.h"
 
 namespace Nork
 {
@@ -13,9 +13,8 @@ namespace Nork
 		void Refresh();
 		void Close();
 		void SetSize(int width, int height);
-		bool IsKeyDown(int);
 		bool IsRunning();
-		EventManager& GetEventManager();
+		Input::Input& GetInput();
 		T& GetData();
 	};
 

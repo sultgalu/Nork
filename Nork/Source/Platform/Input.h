@@ -13,6 +13,7 @@ namespace Nork::Input
 		Space = GLFW_KEY_SPACE,
 		Enter = GLFW_KEY_ENTER,
 		Esc = GLFW_KEY_ESCAPE,
+		Super = GLFW_KEY_LEFT_SUPER,
 
 		Shift = GLFW_KEY_LEFT_SHIFT,
 		RightShift = GLFW_KEY_RIGHT_SHIFT,
@@ -29,6 +30,7 @@ namespace Nork::Input
 		E = GLFW_KEY_E,
 		R = GLFW_KEY_R,
 		T = GLFW_KEY_T,
+		M = GLFW_KEY_M,
 
 		Max = GLFW_KEY_LAST
 	};

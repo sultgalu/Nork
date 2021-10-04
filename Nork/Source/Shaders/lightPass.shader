@@ -76,8 +76,8 @@ uniform sampler2D gNorm;
 #define MAX_NUM_OF_P_LIGHTS 10
 #define MAX_NUM_OF_P_SHADOWS 5
 
-uniform sampler2D shadowMaps[MAX_NUM_OF_DIR_SHADOWS];
-uniform samplerCube shadowMapsCube[MAX_NUM_OF_P_SHADOWS];
+uniform sampler2D shadowMaps[1/*MAX_NUM_OF_DIR_SHADOWS*/]; // doesn't work with anything other than 1 rn.
+uniform samplerCube shadowMapsCube[1/*MAX_NUM_OF_P_SHADOWS*/];
 
 layout(std140) uniform dLightsUni
 {
@@ -128,7 +128,7 @@ void main()
 		result += pLight(pLs[i], material, worldPos, normal, viewDir);
 	}
 	//fColor = vec4(result, 1.0f);
-	fColor = vec4(diff_spec.rgb, 1.0f);
+	fColor = vec4(worldPos.rgb, 1.0f);
 }
 
 vec3 dLight(DirLight light, Materials material, vec3 normal, vec3 viewDir)

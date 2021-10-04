@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Platform/Interface/Windows.h>
+#include <Platform/Windows.h>
 
 namespace Nork::Editor
 {

@@ -79,6 +79,8 @@ namespace Nork::Renderer::Utils::Shader
 			if (!success)
 			{
 				Logger::Error("SHADER::COMPILATION_FAILED");
+				glGetShaderInfoLog(handle, 512, NULL, infoLog);
+				Logger::Error(infoLog);
 				return 0;
 			}
 			handles[s.first] = handle;
@@ -96,6 +98,8 @@ namespace Nork::Renderer::Utils::Shader
 		if (!success)
 		{
 			Logger::Error("SHADER::LINKING_FAILED");
+			glGetProgramInfoLog(program, 512, NULL, infoLog);
+			Logger::Error(infoLog);
 			return 0;
 		}
 
@@ -107,9 +111,9 @@ namespace Nork::Renderer::Utils::Shader
 		return program;
 	}
 	
-	std::unordered_map<std::string_view, GLint> GetUniforms(GLuint program)
+	std::unordered_map<std::string, GLint> GetUniforms(GLuint program)
 	{
-		std::unordered_map<std::string_view, GLint> retval;
+		std::unordered_map<std::string, GLint> retval;
 		int count = 0;
 		glUseProgram(program);
 		glGetProgramiv(program, GL_ACTIVE_UNIFORMS, &count);
@@ -134,9 +138,9 @@ namespace Nork::Renderer::Utils::Shader
 
 		return retval;
 	}
-	std::unordered_map<std::string_view, bool> GetMacros(std::string_view str)
+	std::unordered_map<std::string, bool> GetMacros(std::string str)
 	{
-		std::unordered_map<std::string_view, bool> result;
+		std::unordered_map<std::string, bool> result;
 
 		const char* definition = "#define";
 		size_t defLen = strlen(definition);
@@ -147,7 +151,7 @@ namespace Nork::Renderer::Utils::Shader
 		while (prevLineEnd != std::string::npos)
 		{
 			size_t lineEnd = str.find_first_of('\n', prevLineEnd + 1);
-			std::string_view line = str.substr(prevLineEnd + 1, lineEnd);
+			std::string line = str.substr(prevLineEnd + 1, lineEnd);
 			prevLineEnd = lineEnd;
 			
 			size_t definePos = line.find_first_of("#define");
@@ -155,7 +159,7 @@ namespace Nork::Renderer::Utils::Shader
 				continue;
 			size_t macroPos = line.find_first_not_of(' ', definePos + sizeof("#define"));
 			size_t macroLen = line.find_first_of(' ', macroPos) - macroPos;
-			std::string_view macroName = line.substr(macroPos, macroLen);
+			std::string macroName = line.substr(macroPos, macroLen);
 
 			if (macroPos != std::string::npos)
 			{
@@ -172,9 +176,8 @@ namespace Nork::Renderer::Utils::Shader
 	}
 
 	// Can only set the macros present in "src"
-	std::string SetMacros(std::string_view src, std::unordered_map<std::string_view, bool> macros)
+	std::string SetMacros(std::string src, std::unordered_map<std::string, bool> macros)
 	{
-		std::string str = std::string(src);
 		std::unordered_map<std::string_view, bool> result;
 
 		const char* definition = "#define";
@@ -183,23 +186,23 @@ namespace Nork::Renderer::Utils::Shader
 
 		while (pos != std::string::npos)
 		{
-			size_t definePos = str.find_first_of("#define", pos);
-			size_t macroPos = str.find_first_not_of(' ', definePos + sizeof("#define"));
-			size_t macroLen = str.find_first_of(' ', macroPos) - macroPos;
-			std::string_view macroName = str.substr(macroPos, macroLen);
+			size_t definePos = src.find_first_of("#define", pos);
+			size_t macroPos = src.find_first_not_of(' ', definePos + sizeof("#define"));
+			size_t macroLen = src.find_first_of(' ', macroPos) - macroPos;
+			std::string macroName = src.substr(macroPos, macroLen);
 			if (macros.contains(macroName))
 			{
 				bool shouldBeCommented = macros[macroName];
-				size_t lineBegin = str.substr(pos, definePos).find_last_of('\n') + 1;
-				size_t commentPos = str.substr(lineBegin, definePos - lineBegin).find_first_of("//");
+				size_t lineBegin = src.substr(pos, definePos).find_last_of('\n') + 1;
+				size_t commentPos = src.substr(lineBegin, definePos - lineBegin).find_first_of("//");
 				if (commentPos != std::string::npos && !shouldBeCommented)
-					str.erase(commentPos, 2);
+					src.erase(commentPos, 2);
 				else if (commentPos == std::string::npos && shouldBeCommented)
-					str.insert(lineBegin, 2, '/');
+					src.insert(lineBegin, 2, '/');
 			}
-			pos = str.find_first_of('\n', pos);
+			pos = src.find_first_of('\n', pos);
 		}
-		return str;
+		return src;
 	}
 
 }

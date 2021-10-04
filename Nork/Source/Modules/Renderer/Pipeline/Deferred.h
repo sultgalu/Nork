@@ -28,7 +28,13 @@ namespace Nork::Renderer::Pipeline
 			Shader skybox;
 		};
 
-		DeferredData(Shaders shaders) : shaders(shaders) {}
+		DeferredData(Shaders shaders, GLuint skyboxTex)
+		{
+			SetGPassShader(shaders.gPass);
+			SetLPassShader(shaders.lPass);
+			this->shaders.skybox = shaders.skybox;
+			this->skyboxTex = skyboxTex;
+		}
 
 		GBufferData gBuffer = GBufferData{};
 		LightPassData lightPass = LightPassData{};

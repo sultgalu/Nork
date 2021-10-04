@@ -5,9 +5,9 @@ namespace Nork::Renderer::Utils
 	namespace Shader
 	{
 		GLuint GetProgramFromSource(std::string_view src);
-		std::unordered_map<std::string_view, GLint> GetUniforms(GLuint program);
-		std::unordered_map<std::string_view, bool> GetMacros(const char* path);
-		std::string SetMacros(std::string_view src, std::unordered_map<std::string_view, bool> macros);
+		std::unordered_map<std::string, GLint> GetUniforms(GLuint program);
+		std::unordered_map<std::string, bool> GetMacros(const char* path);
+		std::string SetMacros(std::string src, std::unordered_map<std::string, bool> macros);
 	}
 
 	namespace Texture

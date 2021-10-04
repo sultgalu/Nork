@@ -39,6 +39,7 @@ namespace Nork::Renderer::Pipeline
 	{
 		shaders.lPass = shader;
 
+		shader.Use();
 		shader.SetInt("gPos", 0);
 		shader.SetInt("gDiff", 1);
 		shader.SetInt("gNorm", 2);
@@ -52,6 +53,7 @@ namespace Nork::Renderer::Pipeline
 	{
 		shaders.gPass = shader;
 
+		shader.Use();
 		shader.SetInt("materialTex.diffuse", (int)TextureType::Diffuse);
 		shader.SetInt("materialTex.normals", (int)TextureType::Normal);
 		shader.SetInt("materialTex.roughness", (int)TextureType::Roughness);
@@ -70,7 +72,7 @@ namespace Nork::Renderer::Pipeline
 	{
 		DrawGBuffers(models);
 		DrawLightPass();
-		//DrawSkybox();
+		DrawSkybox();
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 	void Deferred::DrawGBuffers(std::span<Model> models)
@@ -88,10 +90,13 @@ namespace Nork::Renderer::Pipeline
 		glClearColor(0, 0, 0, 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		data.shaders.gPass.Use();
+		auto vp = glm::identity<glm::mat4>();
 		for (size_t i = 0; i < models.size(); i++)
 		{
 			auto& meshes = models[i].first;
 			auto& mat = models[i].second;
+			auto def = glm::identity<glm::mat4>();
 
 			data.shaders.gPass.SetMat4("model", mat);
 			for (int i = 0; i < meshes.size(); i++)

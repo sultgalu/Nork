@@ -259,6 +259,7 @@
   <ItemGroup>
     <ClInclude Include="Source\Core\CameraController.h" />
     <ClInclude Include="Source\Components\Converters\Lights.h" />
+    <ClInclude Include="Source\Core\Input.h" />
     <ClInclude Include="Source\Platform\Input.h" />
     <ClInclude Include="Source\Modules\Renderer\Pipeline\LightStorage.h" />
     <ClInclude Include="Source\Components\Camera.h" />
@@ -280,7 +281,7 @@
     <ClInclude Include="Source\Editor\Panels\Base\Panel.h" />
     <ClInclude Include="Source\Editor\Editor.h" />
     <ClInclude Include="Source\Core\Event.h" />
-    <ClInclude Include="Source\Platform\Interface\Windows.h" />
+    <ClInclude Include="Source\Platform\Windows.h" />
     <ClInclude Include="Source\Utils\Logger.h" />
     <ClInclude Include="Source\Utils\Timer.h" />
     <ClInclude Include="Source\PCH\pch.h" />

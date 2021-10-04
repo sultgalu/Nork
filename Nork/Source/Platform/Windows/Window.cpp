@@ -1,8 +1,9 @@
 #include "pch.h"
 #include "Utils/Logger.h"
-#include "Platform/Interface/Windows.h"
+#include "Platform/Windows.h"
 #include "Core/Event.h"
 #include "Platform/Input.h"
+#include "Core/Input.h"
 
 using namespace Nork::Input;
 
@@ -26,8 +27,7 @@ namespace Nork
 	GLFWwindow* windowPtr;
 	int width, height, refreshRate;
 	bool isRunning;
-	std::bitset<ToInt(Key::Max)> keys;
-	EventManager eventMan;
+	Input::Input input;
 
 	void GLFWInit()
 	{
@@ -93,14 +93,6 @@ namespace Nork
 		width = e.width;
 		height = e.height;
 	}
-	void OnKeyDown(const Event& ev)
-	{
-		keys[ToInt(ev.As<Events::KeyUp>().key)].flip();
-	}
-	void OnKeyUp(const Event& ev)
-	{
-		keys[ToInt(ev.As<Events::KeyUp>().key)].flip();
-	}
 
 	inline EventManager& GetEventManager()
 	{
@@ -113,50 +105,61 @@ namespace Nork
 
 		glfwSetWindowCloseCallback(windowPtr, [](GLFWwindow* winPtr)
 			{
-				eventMan.RaiseEvent(WindowClose(true));
+				input.GetEventManager().RaiseEvent(WindowClose(true));
 			});
 		glfwSetWindowSizeCallback(windowPtr, [](GLFWwindow* winPtr, GLint width, GLint height)
 			{
-				eventMan.RaiseEvent(WindowResize(width, height));
+				input.GetEventManager().RaiseEvent(WindowResize(width, height));
 			});
 		glfwSetKeyCallback(windowPtr, [](GLFWwindow* winPtr, int key, int scancode, int action, int mods)
 			{
 				if (action == GLFW_PRESS)
 				{
-					eventMan.RaiseEvent(KeyDown(static_cast<Key>(key)));
+					input.GetEventManager().RaiseEvent(KeyDown(static_cast<Key>(key)));
 				}
 				else if (action == GLFW_RELEASE)
 				{
-					eventMan.RaiseEvent(KeyUp(static_cast<Key>(key)));
+					input.GetEventManager().RaiseEvent(KeyUp(static_cast<Key>(key)));
 				}
 			});
 		glfwSetMouseButtonCallback(windowPtr, [](GLFWwindow* winPtr, int button, int action, int mods)
 			{
 				if (action == GLFW_PRESS)
 				{
-					eventMan.RaiseEvent(MouseDown(static_cast<MouseButton>(button)));
+					input.GetEventManager().RaiseEvent(MouseDown(static_cast<MouseButton>(button)));
 				}
 				else if (action == GLFW_RELEASE)
 				{
-					eventMan.RaiseEvent(MouseUp(static_cast<MouseButton>(button)));
+					input.GetEventManager().RaiseEvent(MouseUp(static_cast<MouseButton>(button)));
 				}
 			});
 		glfwSetCursorPosCallback(windowPtr, [](GLFWwindow* winPtr, double xPos, double yPos)
 			{
-				eventMan.RaiseEvent(MouseMove(xPos, yPos));
+				input.GetEventManager().RaiseEvent(MouseMove(xPos, yPos));
 			});
 		glfwSetScrollCallback(windowPtr, [](GLFWwindow* winPtr, double xOff, double yOff)
 			{
-				eventMan.RaiseEvent(MouseScroll(yOff));
+				input.GetEventManager().RaiseEvent(MouseScroll(yOff));
 			});
 		glfwSetCharCallback(windowPtr, [](GLFWwindow* winPtr, unsigned int character)
 			{
-				// GetEventManager().RaiseEvent(KeyTyped(0, character)); // keycode is 0 here.
+				input.GetEventManager().RaiseEvent(Type(character));
 			});
-		eventMan.Subscribe<WindowClose>(&OnClose);
-		eventMan.Subscribe<WindowResize>(&OnResize);
-		eventMan.Subscribe<KeyDown>(&OnKeyDown);
-		eventMan.Subscribe<KeyUp>(&OnKeyUp);
+		glfwSetCursorEnterCallback(windowPtr, [](GLFWwindow* winPtr, int didEnter)
+			{
+				input.GetEventManager().RaiseEvent(didEnter == GLFW_TRUE ? CursorEnteredWindow().As<InputEvent>() : CursorLeftWindow());
+			});
+		glfwSetMonitorCallback([](GLFWmonitor* monitor, int didConnect)
+			{
+				input.GetEventManager().RaiseEvent(didConnect == GLFW_TRUE ? MonitorConnect().As<InputEvent>() : MonitorDisconnect());
+			});
+		glfwSetWindowFocusCallback(windowPtr, [](GLFWwindow* winPtr, int focused)
+			{
+				input.GetEventManager().RaiseEvent(focused == GLFW_TRUE ? WindowInFocus().As<InputEvent>() : WindowOutOfFocus());
+			});
+
+		input.GetEventManager().Subscribe<WindowClose>(&OnClose);
+		input.GetEventManager().Subscribe<WindowResize>(&OnResize);
 	}
 
 	_Window<GLFWwindow>::_Window(int w, int h)
@@ -179,16 +182,13 @@ namespace Nork
 	void _Window<GLFWwindow>::Refresh()
 	{
 		glfwSwapBuffers(windowPtr);
-		glfwPollEvents();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // is Depth Clearing necessary?
+		glfwPollEvents();
+		input.GetEventManager().PollEvents();
 	}
 	void _Window<GLFWwindow>::Close()
 	{
-		eventMan.RaiseEvent(Events::WindowClose(true));
-	}
-	bool _Window<GLFWwindow>::IsKeyDown(int keyCode)
-	{
-		return keys[keyCode];
+		input.GetEventManager().RaiseEvent(Events::WindowClose(true));
 	}
 	void _Window<GLFWwindow>::SetSize(int w, int h)
 	{
@@ -200,9 +200,9 @@ namespace Nork
 	{
 		return isRunning;
 	}
-	EventManager& _Window<GLFWwindow>::GetEventManager()
+	Input::Input& _Window<GLFWwindow>::GetInput()
 	{
-		return eventMan;
+		return input;
 	}
 	GLFWwindow& _Window<GLFWwindow>::GetData()
 	{

@@ -1,20 +1,27 @@
 #pragma once
 
-#include "Event.h"
+#include "Input.h"
 #include "Components/Camera.h"
 
 namespace Nork
 {
-	class CameraController
+	class BuiltInScript
 	{
 	public:
-		CameraController(EventManager& em, std::shared_ptr<Components::Camera> cam = std::shared_ptr<Components::Camera>())
-			: camera(cam)
-		{
+		virtual void OnUpdate(float delta) {}
+	};
 
+	class CameraController : public BuiltInScript
+	{
+	public:
+		CameraController(Input::Input& input, std::shared_ptr<Components::Camera> cam = std::shared_ptr<Components::Camera>())
+			: camera(cam), input(input)
+		{
+			SetupInputHandling();
 		}
 	private:
-		void SubscribeEvents(EventManager& em);
+		void OnUpdate(float delta) override;
+		void SetupInputHandling();
 		void HandleKeyUp(const Event& event);
 		void HandleKeyDown(const Event& event);
 		void HandleScroll(const Event& event);
@@ -24,5 +31,7 @@ namespace Nork
 		void HandleOnUpdate(const Event& event);
 	public:
 		std::shared_ptr<Components::Camera> camera;
+	private:
+		Input::Input& input;
 	};
 }

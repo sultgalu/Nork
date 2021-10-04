@@ -22,68 +22,92 @@ namespace Nork
 	};
 
 	// These events get dispatched when events get polled.
-	struct QueuedEvent : public Event {};
+	struct InputEvent : public Event {};
 
 	// Contrary to basic Event types, these get dispatched immediately, bypassing the event queue.
-	struct ImmediateEvent : public Event {};
+	struct AppEvent : public Event {};
 
 	namespace Events
 	{
 		using namespace Input;
-		struct KeyDown : public QueuedEvent
+		struct KeyEvent : InputEvent
 		{
-			KeyDown(Key key) : key(key) {}
+			KeyEvent(Key key) : key(key) {}
 			const Key key;
 		};
 
-		struct KeyUp : public QueuedEvent
+		struct KeyDown : public KeyEvent
 		{
-			KeyUp(Key key) : key(key) {}
-			const Key key;
+			KeyDown(Key key) : KeyEvent(key) {}
 		};
 
-		struct MouseDown : public QueuedEvent
+		struct KeyUp : public KeyEvent
 		{
-			MouseDown(MouseButton button) : button(button) {}
+			KeyUp(Key key) : KeyEvent(key) {}
+		};
+
+		struct Type : public InputEvent
+		{
+			Type(unsigned int c) : character(c) {}
+			const unsigned int character;
+		};
+
+		struct CursorLeftWindow : public InputEvent {};
+		struct CursorEnteredWindow : public InputEvent {};
+
+		struct MonitorConnect : public InputEvent {};
+		struct MonitorDisconnect : public InputEvent {};
+
+		struct MouseEvent : InputEvent {};
+		struct MouseButtonEvent : MouseEvent
+		{
+			MouseButtonEvent(MouseButton button) : button(button) {}
 			MouseButton button;
 		};
 
-		struct MouseUp : public QueuedEvent
+		struct MouseDown : public MouseButtonEvent
 		{
-			MouseUp(MouseButton button) : button(button) {}
-			MouseButton button;
+			MouseDown(MouseButton button) : MouseButtonEvent(button) {}
 		};
 
-		struct MouseMove : public QueuedEvent
+		struct MouseUp : public MouseButtonEvent
+		{
+			MouseUp(MouseButton button) : MouseButtonEvent(button) {}
+		};
+
+		struct MouseMove : public MouseEvent
 		{
 			MouseMove(double offsetX, double offsetY) : offsetX(offsetX), offsetY(offsetY) {}
 			double offsetX, offsetY;
 		};
 
-		struct MouseScroll : public QueuedEvent
+		struct MouseScroll : public InputEvent
 		{
 			MouseScroll(double offset) : offset(offset) {}
 			double offset;
 		};
 
-		struct WindowResize : public QueuedEvent
+		struct WindowInFocus : public InputEvent {};
+		struct WindowOutOfFocus : public InputEvent {};
+
+		struct WindowResize : public InputEvent
 		{
 			WindowResize(int width, int height) : width(width), height(height) {}
 			int width, height;
 		};
 
-		struct WindowClose : public QueuedEvent
+		struct WindowClose : public InputEvent
 		{
 			WindowClose(bool calledByWindow) : calledByWindow(calledByWindow) {}
 			bool calledByWindow;
 		};
 
-		struct OnUpdate : public ImmediateEvent {};
-		struct Updated : public ImmediateEvent {};
-		struct OnRenderUpdate : public ImmediateEvent {};
-		struct RenderUpdated : public ImmediateEvent {};
-		struct OnPhysicsUpdate : public ImmediateEvent {};
-		struct PhysicsUpdated : public ImmediateEvent {};
+		struct OnUpdate : public AppEvent {};
+		struct Updated : public AppEvent {};
+		struct OnRenderUpdate : public AppEvent {};
+		struct RenderUpdated : public AppEvent {};
+		struct OnPhysicsUpdate : public AppEvent {};
+		struct PhysicsUpdated : public AppEvent {};
 	}
 
 	class EventQueue
@@ -133,13 +157,13 @@ namespace Nork
 	class EventManager
 	{
 	public:
-		template<std::derived_from<QueuedEvent> T>
+		template<std::derived_from<InputEvent> T>
 		void RaiseEvent(T e)
 		{
 			this->queue.Enqueue(e);
 		}
 
-		template<std::derived_from<ImmediateEvent> T>
+		template<std::derived_from<AppEvent> T>
 		void RaiseEvent(T e)
 		{
 			this->dispatcher.Dispatch(e);

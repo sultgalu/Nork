@@ -4,8 +4,9 @@
 #include "Utils/Logger.h"
 #include "Utils/Timer.h"
 #include "Modules/ECS/Storage.h"
+#include "Components/Common.h"
 #include "Editor/Editor.h"
-#include "Platform/Interface/Windows.h"
+#include "Platform/Windows.h"
 #include "Modules/Renderer/Data/Shader.h"
 #include "Modules/Renderer/Data/Mesh.h"
 #include "Modules/Renderer/Data/Texture.h"
@@ -14,6 +15,7 @@
 #include "Modules/Renderer/Resource/DefaultResources.h"
 #include "Modules/Renderer/Loaders/Loaders.h"
 #include "Modules/Renderer/Pipeline/Deferred.h"
+#include "Core/CameraController.h"
 
 using namespace Nork;
 using namespace Events;
@@ -84,13 +86,13 @@ int main()
 	man.Subscribe<KeyDown>([](const Event& e)
 		{
 			KeyDown ev = static_cast<const KeyDown&>(e);
-			Logger::Debug.Log("KeyDown Event: ", Input::ToString(ev.key).c_str(), " typeID: ", std::to_string(e.GetType()).c_str());
+			Logger::Debug.Log("KeyDown Event: ", ToString(ev.key).c_str(), " typeID: ", std::to_string(e.GetType()).c_str());
 		});
 
 	man.Subscribe<KeyUp>([](const Event& e)
 		{
 			KeyUp ev = static_cast<const KeyUp&>(e);
-			Logger::Debug.Log("KeyUp Event: ", Input::ToString(ev.key).c_str(), " typeID: ", std::to_string(e.GetType()).c_str());
+			Logger::Debug.Log("KeyUp Event: ", ToString(ev.key).c_str(), " typeID: ", std::to_string(e.GetType()).c_str());
 		});
 
 	man.Subscribe<KeyDown>(&EventHandler);
@@ -140,11 +142,10 @@ int main()
 	Window win(1280, 720);
 
 	Editor::Editor editor(win);
-	Renderer::Data::Shader shader = CreateShaderFromPath("Source/Shaders/lightPass.shader");
-	shader.Use();
 
 	// MUST
 	Renderer::Resource::DefaultResources::Init();
+	GLuint skyboxTex = Renderer::Utils::Texture::CreateCube("Resources/Textures/skybox", ".jpg");
 	auto model = Renderer::Loaders::LoadModel("Resources/Models/lamp/untitled.obj");
 	std::vector<Renderer::Data::MeshResource> meshResources;
 	std::vector<Renderer::Data::Mesh> meshes;
@@ -160,25 +161,68 @@ int main()
 			.gPass = CreateShaderFromPath("Source/Shaders/gPass.shader"),
 			.lPass = CreateShaderFromPath("Source/Shaders/lightPass.shader"),
 			.skybox = CreateShaderFromPath("Source/Shaders/skybox.shader"),
-		}));
+		}, skyboxTex));
 
 	std::vector<Renderer::Data::Model> models;
 	std::vector<Renderer::Data::DirLight> dLights;
 	std::vector<Renderer::Data::PointLight> pLights;
 	models.push_back(Renderer::Data::Model(meshes, glm::identity<glm::mat4>()));
 
-	auto cam = std::make_shared<Components::Camera>();
+	std::vector<std::shared_ptr<BuiltInScript>> scripts;
 	
-	auto camController = CameraController(win.GetEventManager(), cam);
+	auto camera = std::make_shared<Components::Camera>();
+	auto camController = std::make_shared<CameraController>(win.GetInput(), camera);
+	scripts.push_back(camController);
+
+	EventManager appEventMan;
+	appEventMan.Subscribe<Events::OnUpdate>([&](const Event& e)
+		{
+			for (size_t i = 0; i < scripts.size(); i++)
+			{
+				scripts[i]->OnUpdate(1.0f); 
+			}
+
+			static Components::Transform tr;
+
+			static constinit float  speed = 0.005;
+			if (win.GetInput().IsKeyDown(Key::Up))
+			{
+				tr.position.y += speed;
+			}
+			if (win.GetInput().IsKeyDown(Key::Down))
+			{
+				tr.position.y -= speed;
+			}
+			if (win.GetInput().IsKeyDown(Key::Right))
+			{
+				tr.position.x += speed;
+			}
+			if (win.GetInput().IsKeyDown(Key::Left))
+			{
+				tr.position.x -= speed;
+			}
+			models[0].second = glm::translate(glm::identity<glm::mat4>(), tr.position);
+			//lightMan.dShadowMapShader->SetMat4("VP", vp);
+			pipeline.data.shaders.gPass.Use();
+			pipeline.data.shaders.gPass.SetMat4("VP", camera->viewProjection);
+
+			pipeline.data.shaders.lPass.Use();
+			pipeline.data.shaders.lPass.SetVec3("viewPos", camera->position);
+
+			pipeline.data.shaders.skybox.Use();
+			auto vp = camera->projection * glm::mat4(glm::mat3(camera->view));
+			pipeline.data.shaders.skybox.SetMat4("VP", vp);
+		});
+
 	editor.SetDisplayTexture(pipeline.data.lightPass.tex);
 	while (win.IsRunning())
 	{
-		win.GetEventManager().RaiseEvent(Events::OnUpdate());
+		appEventMan.RaiseEvent(Events::OnUpdate());
 		pipeline.DrawScene(models);
 		editor.Render();
 		win.Refresh();
-		win.GetEventManager().RaiseEvent(Events::Updated());
-		win.GetEventManager().PollEvents();
+		appEventMan.RaiseEvent(Events::Updated());
+		appEventMan.PollEvents();
 	}
 
 	for (size_t i = 0; i < meshResources.size(); i++)

@@ -2,3 +2,8 @@ Program Events: Before/After Render, OnNewFrame -> camera canContr. can update i
 Store VP (with any other common render data) in ubo. Need Render Api (like lightStorage) for this stuff
 	-> Need separate (from win's) eventMan for these, events need to get called on raising (frameEventMan or smt)
 	-> OR add method SubscribeForImmadiate() and have to sep. func. vectors
+
+Make Event Categories. eg. WindowClose should not be INPUT. 
+	-> Make EventManager templated by these categories
+CameraController will need a parameter that has AppEvents, so it can listen to onUpdate().
+	Or make onUpdate() method and call from outside?

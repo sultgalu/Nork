@@ -44,9 +44,9 @@ namespace Nork::Renderer::Utils::Texture
 			return GL_UNSIGNED_INT;
 
 		case RGBA:
-			return GL_RGBA;
+			return GL_FLOAT;
 		case RGB:
-			return GL_RGB;
+			return GL_FLOAT;
 
 
 		case Depth24Stencil8:
@@ -197,6 +197,8 @@ namespace Nork::Renderer::Utils::Texture
 			"right", "left","top","bottom","front","back",
 		};
 
+		if (dirPath.at(dirPath.size() - 1) != '/')
+			dirPath.append("/");
 		for (int i = 0; i < 6; i++)
 		{
 			int width, height, nrChannels;
@@ -204,6 +206,7 @@ namespace Nork::Renderer::Utils::Texture
 
 			if (data)
 			{
+				Logger::Debug("Loading Cubemap face #", i);
 				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, false, GL_RGB, GL_UNSIGNED_BYTE, data);
 				//glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 				stbi_image_free(data);
