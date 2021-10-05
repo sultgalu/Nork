@@ -32,17 +32,13 @@ namespace Nork
 		~Engine();
 		void Launch();
 	private:
+		void ViewProjectionUpdate();
 		void FreeResources();
 	public:
 		Window window;
 		Deferred pipeline;
 		CameraController camController;
 		EventManager appEventMan;
-
-		std::vector<Renderer::Data::Model> models;
-		std::vector<Renderer::Data::DirLight> dLights;
-		std::vector<Renderer::Data::PointLight> pLights;
-		ECS::Registry registry;
 		Resources resources;
 		Scene::Scene scene;
 	};

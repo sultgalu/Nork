@@ -21,8 +21,8 @@ namespace Nork::Renderer::Resource
 	}
 	inline void DeleteTexture(TextureResource& resource) { glDeleteTextures(1, &resource.id); }
 
-	MeshResource CreateMesh(MeshData& data);
-	void DeleteMesh(MeshResource& resource);
+	extern MeshResource CreateMesh(MeshData& data);
+	extern void DeleteMesh(MeshResource& resource);
 
 	inline ShaderResource CreateShader(ShaderData& data) { return ShaderResource{ .program = Utils::Shader::GetProgramFromSource(data.source) }; }
 	inline void DeleteShader(ShaderResource& resource) { glDeleteProgram(resource.program); }

@@ -5,7 +5,7 @@
 
 namespace Nork
 {
-	Data::Shader CreateShaderFromPath(std::string_view path)
+	static Data::Shader CreateShaderFromPath(std::string_view path)
 	{
 		std::ifstream stream(path.data());
 		std::stringstream buf;
@@ -17,7 +17,7 @@ namespace Nork
 		return Data::Shader(resource);
 	}
 
-	DeferredData CreatePipelineResources()
+	static DeferredData CreatePipelineResources()
 	{
 		GLuint skyboxTex = Renderer::Utils::Texture::CreateCube("Resources/Textures/skybox", ".jpg");
 
@@ -29,94 +29,73 @@ namespace Nork
 			}, skyboxTex);
 	}
 
+	static std::vector<Data::Model> GetModels(ECS::Registry& r)
+	{
+		std::vector<std::pair<std::vector<Data::Mesh>, glm::mat4>> result;
+		auto& reg = r.GetUnderlying();
+
+		auto view = reg.view<Components::Model, Components::Transform>();
+		result.reserve(view.size_hint());
+
+		for (auto& id : view)
+		{
+			auto& model = view.get(id)._Myfirst._Val;
+			auto& tr = view.get(id)._Get_rest()._Myfirst._Val;
+
+			glm::mat4 rot = glm::rotate(glm::identity<glm::mat4>(), tr.rotation.z, glm::vec3(0, 0, 1));
+			rot *= glm::rotate(glm::identity<glm::mat4>(), tr.rotation.x, glm::vec3(1, 0, 0));
+			rot *= glm::rotate(glm::identity<glm::mat4>(), tr.rotation.y, glm::vec3(0, 1, 0)); // rotation around y-axis stays local (most used rotation usually)
+
+			result.push_back(std::pair(model.meshes,
+				glm::scale(glm::translate(glm::identity<glm::mat4>(), tr.position) * rot, tr.scale)));
+		}
+
+		return result;
+	}
+
 	Engine::Engine(EngineConfig& config)
 		:window(config.width, config.height), pipeline(CreatePipelineResources()),
 		camController(window.GetInput(), std::make_shared<Components::Camera>())
 	{
-		Renderer::Resource::DefaultResources::Init();
-		GLuint skyboxTex = Renderer::Utils::Texture::CreateCube("Resources/Textures/skybox", ".jpg");
-		std::string modelPath = "Resources/Models/lamp/untitled.obj";
-		auto model = Renderer::Loaders::LoadModel(modelPath);
-		std::vector<Renderer::Data::Mesh> meshes;
-		for (size_t i = 0; i < model.size(); i++)
-		{
-			resources.models[modelPath].push_back(Renderer::Resource::CreateMesh(model[i]));
-			meshes.push_back(Renderer::Data::Mesh(resources.models[modelPath][i]));
-		}
-
-		models.push_back(Renderer::Data::Model(meshes, glm::identity<glm::mat4>()));
-
-		appEventMan.Subscribe<Events::OnUpdate>([&](const Event& e)
-			{
-				using namespace Input;
-				camController.OnUpdate(1.0f);
-
-				static Components::Transform tr;
-
-				static constinit float  speed = 0.005;
-				if (window.GetInput().IsKeyDown(Key::Up))
-				{
-					tr.position.y += speed;
-				}
-				if (window.GetInput().IsKeyDown(Key::Down))
-				{
-					tr.position.y -= speed;
-				}
-				if (window.GetInput().IsKeyDown(Key::Right))
-				{
-					tr.position.x += speed;
-				}
-				if (window.GetInput().IsKeyDown(Key::Left))
-				{
-					tr.position.x -= speed;
-				}
-				models[0].second = glm::translate(glm::identity<glm::mat4>(), tr.position);
-				//lightMan.dShadowMapShader->SetMat4("VP", vp);
-				pipeline.data.shaders.gPass.Use();
-				pipeline.data.shaders.gPass.SetMat4("VP", camController.camera->viewProjection);
-
-				pipeline.data.shaders.lPass.Use();
-				pipeline.data.shaders.lPass.SetVec3("viewPos", camController.camera->position);
-
-				pipeline.data.shaders.skybox.Use();
-				auto vp = camController.camera->projection * glm::mat4(glm::mat3(camController.camera->view));
-				pipeline.data.shaders.skybox.SetMat4("VP", vp);
-			});
-
-		window.GetInput().GetEventManager().Subscribe<Events::KeyDown>([&](const Event& ev)
-			{
-				if (ev.As<Events::KeyDown>().key == Input::Key::Esc)
-				{
-					for (auto& model : this->resources.models)
-					{
-						auto& meshes = model.second;
-						for (size_t i = 0; i < meshes.size(); i++)
-						{
-							Renderer::Resource::DeleteMesh(meshes[i]);
-						}
-					}
-				}
-			});
-
 		Logger::PushStream(std::cout);
+		Renderer::Resource::DefaultResources::Init();
 	}
-	
+
 	void Engine::Launch()
 	{
 		while (window.IsRunning())
 		{
 			appEventMan.RaiseEvent(Events::OnUpdate());
 			appEventMan.RaiseEvent(Events::OnRenderUpdate());
+
+			auto models = GetModels(this->scene.registry);
+			ViewProjectionUpdate();
 			pipeline.DrawScene(models);
+
 			appEventMan.RaiseEvent(Events::RenderUpdated());
 			window.Refresh();
 			appEventMan.PollEvents();
+
 			appEventMan.RaiseEvent(Events::Updated());
 		}
 	}
 	Engine::~Engine()
 	{
 		FreeResources();
+	}
+	void Engine::ViewProjectionUpdate()
+	{
+		camController.OnUpdate(1.0f);
+		//lightMan.dShadowMapShader->SetMat4("VP", vp);
+		pipeline.data.shaders.gPass.Use();
+		pipeline.data.shaders.gPass.SetMat4("VP", camController.camera->viewProjection);
+
+		pipeline.data.shaders.lPass.Use();
+		pipeline.data.shaders.lPass.SetVec3("viewPos", camController.camera->position);
+
+		pipeline.data.shaders.skybox.Use();
+		auto vp = camController.camera->projection * glm::mat4(glm::mat3(camController.camera->view));
+		pipeline.data.shaders.skybox.SetMat4("VP", vp);
 	}
 	void Engine::FreeResources()
 	{

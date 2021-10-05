@@ -41,5 +41,32 @@ int main()
 			editor.Render();
 		});
 
+	auto node = engine.scene.CreateNode();
+	engine.scene.AddModelComponent(node, "Resources/Models/lamp/untitled.obj");
+	auto& tr = engine.scene.AddComponent<Components::Transform>(node);
+
+	engine.appEventMan.Subscribe<Events::OnUpdate>([&](const Event& e)
+		{
+			using namespace Input;
+			
+			static constinit float  speed = 0.005;
+			if (engine.window.GetInput().IsKeyDown(Key::Up))
+			{
+				tr.position.y += speed;
+			}
+			if (engine.window.GetInput().IsKeyDown(Key::Down))
+			{
+				tr.position.y -= speed;
+			}
+			if (engine.window.GetInput().IsKeyDown(Key::Right))
+			{
+				tr.position.x += speed;
+			}
+			if (engine.window.GetInput().IsKeyDown(Key::Left))
+			{
+				tr.position.x -= speed;
+			}
+		});
+
 	engine.Launch();
 }

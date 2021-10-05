@@ -16,7 +16,7 @@ namespace Nork::Renderer::Data
 
 	struct Shader
 	{
-		inline Shader() {} // for convinience. Could cause issues
+		inline Shader() : program(0) {} // for convinience. Could cause issues
 		inline Shader(const ShaderResource resource)
 			: program(resource.program)
 		{

@@ -9,18 +9,21 @@ namespace Nork::Scene
 	using namespace Renderer::Data;
 	class Scene
 	{
+	public:
+		inline ECS::Id CreateNode()
+		{
+			return registry.CreateEntity();
+		}
 		template<typename T, typename... A>
 		T& AddComponent(ECS::Id id, A... args)
 		{
-			registry.Emplace<T>(id, args...);
+			return registry.Emplace<T>(id, args...);
 		}
-		template<>
-		Components::Model& AddComponent<Components::Model, std::string>(ECS::Id id, std::string src)
+		Components::Model& AddModelComponent(ECS::Id id, std::string src)
 		{
 			return registry.Emplace<Components::Model>(id, GetModelByResource(resMan.GetMeshes(src)));
 		}
-		template<>
-		Components::Model& AddComponent<Components::Model>(ECS::Id id)
+		Components::Model& AddModelComponent(ECS::Id id)
 		{
 			return registry.Emplace<Components::Model>(id, GetModelByResource(resMan.GetCube()));
 		}	
@@ -39,7 +42,7 @@ namespace Nork::Scene
 		{
 			return std::rand();
 		}
-	private:
+	public:
 		ECS::Registry registry;
 		ResourceManager resMan;
 	};
