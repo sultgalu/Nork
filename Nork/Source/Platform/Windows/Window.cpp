@@ -27,7 +27,7 @@ namespace Nork
 	GLFWwindow* windowPtr;
 	int width, height, refreshRate;
 	bool isRunning;
-	Input::Input input;
+	Input::Input input = Input::Input();
 
 	void GLFWInit()
 	{
@@ -158,6 +158,7 @@ namespace Nork
 				input.GetEventManager().RaiseEvent(focused == GLFW_TRUE ? WindowInFocus().As<InputEvent>() : WindowOutOfFocus());
 			});
 
+		//input = Nork::Input::Input();
 		input.GetEventManager().Subscribe<WindowClose>(&OnClose);
 		input.GetEventManager().Subscribe<WindowResize>(&OnResize);
 	}

@@ -11,13 +11,13 @@ namespace Nork::Renderer::Data
 
 	struct ShaderResource
 	{
-		const GLuint program;
+		GLuint program;
 	};
 
 	struct Shader
 	{
 		inline Shader() {} // for convinience. Could cause issues
-		inline Shader(ShaderResource resource) 
+		inline Shader(const ShaderResource resource)
 			: program(resource.program)
 		{
 			uniformLocations = Utils::Shader::GetUniforms(program);

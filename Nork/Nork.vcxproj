@@ -164,7 +164,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Scene\Scene.cpp" />
+    <ClCompile Include="Source\Scene\ResourceManager.cpp" />
     <ClCompile Include="Source\Core\CameraController.cpp" />
+    <ClCompile Include="Source\Core\Engine.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Pipeline\LightStorage.cpp" />
     <ClCompile Include="Source\Components\Impl\Camera.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Pipeline\Deferred.cpp" />
@@ -257,9 +260,15 @@
     <ClCompile Include="Source\Editor\Panels\ViewportPanel.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Scene\Scene.h" />
+    <ClInclude Include="Source\Scene\ResourceManager.h" />
+    <ClInclude Include="Source\Components\All.h" />
+    <ClInclude Include="Source\Components\Model.h" />
+    <ClInclude Include="Source\Core\Engine.h" />
     <ClInclude Include="Source\Core\CameraController.h" />
     <ClInclude Include="Source\Components\Converters\Lights.h" />
     <ClInclude Include="Source\Core\Input.h" />
+    <ClInclude Include="Source\Modules\Renderer\Helpers\Helpers.h" />
     <ClInclude Include="Source\Platform\Input.h" />
     <ClInclude Include="Source\Modules\Renderer\Pipeline\LightStorage.h" />
     <ClInclude Include="Source\Components\Camera.h" />

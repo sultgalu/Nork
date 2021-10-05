@@ -40,6 +40,11 @@ namespace Nork::ECS
 		{
 			return reg.emplace<T>(id);
 		}
+		template<typename T, typename... A>
+		T& Emplace(Id id, A... args)
+		{
+			return reg.emplace<T>(id, args...);
+		}
 		template<typename... T>
 		auto GetComponents()
 		{

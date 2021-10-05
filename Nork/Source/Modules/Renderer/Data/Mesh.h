@@ -21,18 +21,18 @@ namespace Nork::Renderer::Data
 	struct MeshResource
 	{
 		GLuint vao, vb, ib;
-		GLuint textures[textureTypeCount];
+		TextureResource textures[textureTypeCount];
 		GLsizei idxCount;
 	};
 
 	struct Mesh
 	{
-		Mesh(MeshResource& resource)
+		Mesh(const MeshResource& resource)
 		{
 			this->vao = resource.vao;
 			this->indices = resource.idxCount;
 			for (uint8_t i = 0; i < textureTypeCount; i++)
-				this->textures[i] = resource.textures[i];
+				this->textures[i] = resource.textures[i].id;
 		}
 
 		GLuint vao;

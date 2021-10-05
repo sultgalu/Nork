@@ -10,7 +10,7 @@ namespace Nork::Input
 	class Input
 	{
 	public:
-		Input() : eventMan(EventManager())
+		Input()
 		{
 			eventMan.Subscribe<Events::KeyUp>(&Input::HandleKeyEvent, this);
 			eventMan.Subscribe<Events::KeyDown>(&Input::HandleKeyEvent, this);

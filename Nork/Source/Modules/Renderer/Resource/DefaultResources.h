@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Data/Texture.h"
+#include "../Data/Mesh.h"
 
 namespace Nork::Renderer::Resource
 {
@@ -9,6 +10,8 @@ namespace Nork::Renderer::Resource
 	public:
 		static void Init();
 		static void Free();
-		inline static unsigned int textures[Data::textureTypeCount];
+
+		inline static Data::MeshResource cube;
+		inline static Data::TextureResource textures[Data::textureTypeCount];
 	};
 }

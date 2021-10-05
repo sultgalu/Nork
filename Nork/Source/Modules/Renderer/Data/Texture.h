@@ -17,6 +17,13 @@ namespace Nork::Renderer::Data
 
 	struct TextureResource
 	{
-		unsigned int id;
+		GLuint id;
+	};
+
+	struct Texture
+	{
+		Texture(const TextureResource& res)
+			: id(res.id) {}
+		GLuint id;
 	};
 }

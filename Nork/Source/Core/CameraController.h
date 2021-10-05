@@ -19,8 +19,8 @@ namespace Nork
 		{
 			SetupInputHandling();
 		}
-	private:
 		void OnUpdate(float delta) override;
+	private:
 		void SetupInputHandling();
 		void HandleKeyUp(const Event& event);
 		void HandleKeyDown(const Event& event);

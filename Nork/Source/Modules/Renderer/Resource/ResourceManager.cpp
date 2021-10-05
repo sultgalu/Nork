@@ -23,7 +23,7 @@ namespace Nork::Renderer::Resource
 		for (auto& tex : data.textures)
 		{
 			auto texRes = CreateTexture(tex.second);
-			resource.textures[static_cast<uint8_t>(tex.first)] = texRes.id;
+			resource.textures[static_cast<uint8_t>(tex.first)] = texRes;
 		}
 
 		return resource;
@@ -37,8 +37,8 @@ namespace Nork::Renderer::Resource
 		std::vector<unsigned int> toDelTexs;
 		for (size_t i = 0; i < textureTypeCount; i++)
 		{
-			if (resource.textures[i] != DefaultResources::textures[i])
-				toDelTexs.push_back(resource.textures[i]);
+			if (resource.textures[i].id != DefaultResources::textures[i].id)
+				toDelTexs.push_back(resource.textures[i].id);
 		}
 		glDeleteTextures((int)toDelTexs.size(), toDelTexs.data());
     }
