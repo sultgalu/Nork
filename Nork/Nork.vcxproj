@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -164,11 +164,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\SharedData.h" />
     <ClCompile Include="Source\Scene\Scene.cpp" />
     <ClCompile Include="Source\Scene\ResourceManager.cpp" />
     <ClCompile Include="Source\Core\CameraController.cpp" />
     <ClCompile Include="Source\Core\Engine.cpp" />
-    <ClCompile Include="Source\Modules\Renderer\Pipeline\LightStorage.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\LightManager.cpp" />
     <ClCompile Include="Source\Components\Impl\Camera.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Pipeline\Deferred.cpp" />
     <ClCompile Include="Source\Editor\Panels\LogPanel.cpp" />
@@ -270,7 +271,7 @@
     <ClInclude Include="Source\Core\Input.h" />
     <ClInclude Include="Source\Modules\Renderer\Helpers\Helpers.h" />
     <ClInclude Include="Source\Platform\Input.h" />
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\LightStorage.h" />
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\LightManager.h" />
     <ClInclude Include="Source\Components\Camera.h" />
     <ClInclude Include="Source\Components\Common.h" />
     <ClInclude Include="Source\Components\Lights.h" />

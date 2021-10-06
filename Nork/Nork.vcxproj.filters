@@ -102,7 +102,7 @@
     <ClCompile Include="Source\Components\Impl\Camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Pipeline\LightStorage.cpp">
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\LightManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\CameraController.cpp">
@@ -116,6 +116,9 @@
     </ClCompile>
     <ClCompile Include="Source\Scene\Scene.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\SharedData.h">
+      <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -194,7 +197,7 @@
     <ClInclude Include="Source\Components\Common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\LightStorage.h">
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\LightManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Components\Converters\Lights.h">

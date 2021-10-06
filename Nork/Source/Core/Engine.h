@@ -1,6 +1,7 @@
 #pragma once
 #include "Platform/Windows.h"
 #include "Modules/Renderer/Pipeline/Deferred.h"
+#include "Modules/Renderer/Pipeline/LightManager.h"
 #include "Core/CameraController.h"
 #include "Editor/Editor.h"
 #include "Scene/Scene.h"
@@ -32,11 +33,13 @@ namespace Nork
 		~Engine();
 		void Launch();
 	private:
+		void UpdateLights();
 		void ViewProjectionUpdate();
 		void FreeResources();
 	public:
 		Window window;
 		Deferred pipeline;
+		LightManager lightMan;
 		CameraController camController;
 		EventManager appEventMan;
 		Resources resources;

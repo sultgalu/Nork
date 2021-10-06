@@ -57,9 +57,6 @@
 
 #include <filesystem>
 
-#include "Utils/Logger.h"
-#include "Utils/Timer.h"
-
 #include <entt/single_include/entt/entt.hpp>
 #include <glfw/glfw3.h>
 #include <glad/glad.h>
@@ -69,6 +66,11 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <assimp/Importer.hpp>
+
+//--------------OURS----------------
+
+#include "Utils/Logger.h"
+#include "Utils/Timer.h"
 //
 ////-----------------EDITOR-----------------------
 //

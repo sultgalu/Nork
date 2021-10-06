@@ -70,6 +70,7 @@ namespace Nork
 
 			auto models = GetModels(this->scene.registry);
 			ViewProjectionUpdate();
+			UpdateLights();
 			pipeline.DrawScene(models);
 
 			appEventMan.RaiseEvent(Events::RenderUpdated());
@@ -82,6 +83,27 @@ namespace Nork
 	Engine::~Engine()
 	{
 		FreeResources();
+	}
+	void Engine::UpdateLights()
+	{
+		auto& reg = scene.registry.GetUnderlying();
+		auto dLights = reg.view<Components::DirLight>();
+		auto pLights = reg.view<Components::PointLight>();
+	
+		std::vector<Data::DirLight> DL;
+		std::vector<Data::PointLight> PL;
+		DL.reserve(dLights.size());
+		DL.reserve(pLights.size());
+
+		for (auto& id : dLights)
+		{
+			DL.push_back(dLights.get(id)._Myfirst._Val.GetData());
+		}
+		for (auto& id : pLights)
+		{
+			PL.push_back(pLights.get(id)._Myfirst._Val.GetData());
+		}
+		lightMan.Update(DL, PL);
 	}
 	void Engine::ViewProjectionUpdate()
 	{
