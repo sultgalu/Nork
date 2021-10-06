@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "DefaultResources.h"
-#include "ResourceManager.h"
+#include "ResourceCreator.h"
 #include "../Utils.h"
 
 namespace Nork::Renderer::Resource
