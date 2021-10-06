@@ -31,12 +31,12 @@ namespace Nork::Renderer
 			glBindBuffer(GL_UNIFORM_BUFFER, ubo);
 			glBufferSubData(GL_UNIFORM_BUFFER, from, sizeof(M), &data);
 		}
-		template<typename M>
+		/*template<typename M>
 		void UpdateAt(M& data, T::* memPtr)
 		{
 			glBindBuffer(GL_UNIFORM_BUFFER, ubo);
 			glBufferSubData(GL_UNIFORM_BUFFER, memPtr, sizeof(M), &data);
-		}
+		}*/
 	private:
 		GLuint ubo;
 	};
