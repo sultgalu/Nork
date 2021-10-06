@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "ResourceManager.h"
+#include "ResourceCreator.h"
 #include "DefaultResources.h"
 
 namespace Nork::Renderer::Resource

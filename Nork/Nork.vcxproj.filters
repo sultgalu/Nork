@@ -87,7 +87,7 @@
     <ClCompile Include="Source\Modules\Renderer\Utils\OtherUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Resource\ResourceManager.cpp">
+    <ClCompile Include="Source\Modules\Renderer\Resource\ResourceCreator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Modules\Renderer\Resource\DefaultResources.cpp">
@@ -170,7 +170,7 @@
     <ClInclude Include="Source\Modules\Renderer\Data\Texture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Resource\ResourceManager.h">
+    <ClInclude Include="Source\Modules\Renderer\Resource\ResourceCreator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Modules\Renderer\Resource\DefaultResources.h">

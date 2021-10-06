@@ -5,7 +5,7 @@
 #include "Modules/Renderer/Data/Texture.h"
 
 #include "Modules/Renderer/Loaders/Loaders.h"
-#include "Modules/Renderer/Resource/ResourceManager.h"
+#include "Modules/Renderer/Resource/ResourceCreator.h"
 #include "Modules/Renderer/Resource/DefaultResources.h"
 
 namespace Nork::Scene

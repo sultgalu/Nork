@@ -11,7 +11,7 @@
 #include "Modules/Renderer/Data/Mesh.h"
 #include "Modules/Renderer/Data/Texture.h"
 #include "Modules/Renderer/Utils.h"
-#include "Modules/Renderer/Resource/ResourceManager.h"
+#include "Modules/Renderer/Resource/ResourceCreator.h"
 #include "Modules/Renderer/Resource/DefaultResources.h"
 #include "Modules/Renderer/Loaders/Loaders.h"
 #include "Modules/Renderer/Pipeline/Deferred.h"

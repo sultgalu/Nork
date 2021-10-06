@@ -174,7 +174,7 @@
     <ClCompile Include="Source\Editor\Panels\LogPanel.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Loaders\Loaders.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Resource\DefaultResources.cpp" />
-    <ClCompile Include="Source\Modules\Renderer\Resource\ResourceManager.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Resource\ResourceCreator.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Utils\DrawUtils.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Utils\FramebufferUtils.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Utils\MeshUtils.cpp" />
@@ -281,7 +281,7 @@
     <ClInclude Include="Source\Modules\Renderer\Data\Texture.h" />
     <ClInclude Include="Source\Modules\Renderer\Loaders\Loaders.h" />
     <ClInclude Include="Source\Modules\Renderer\Resource\DefaultResources.h" />
-    <ClInclude Include="Source\Modules\Renderer\Resource\ResourceManager.h" />
+    <ClInclude Include="Source\Modules\Renderer\Resource\ResourceCreator.h" />
     <ClInclude Include="Source\Modules\Renderer\Utils.h" />
     <ClInclude Include="Source\Modules\Renderer\Config.h" />
     <ClInclude Include="Source\Modules\Renderer\Data\Shader.h" />
