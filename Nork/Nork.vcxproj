@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -164,17 +164,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\SharedData.h" />
     <ClCompile Include="Source\Scene\Scene.cpp" />
     <ClCompile Include="Source\Scene\ResourceManager.cpp" />
     <ClCompile Include="Source\Core\CameraController.cpp" />
     <ClCompile Include="Source\Core\Engine.cpp" />
-    <ClCompile Include="Source\Modules\Renderer\Pipeline\LightStorage.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\LightManager.cpp" />
     <ClCompile Include="Source\Components\Impl\Camera.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Pipeline\Deferred.cpp" />
     <ClCompile Include="Source\Editor\Panels\LogPanel.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Loaders\Loaders.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Resource\DefaultResources.cpp" />
-    <ClCompile Include="Source\Modules\Renderer\Resource\ResourceManager.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Resource\ResourceCreator.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Utils\DrawUtils.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Utils\FramebufferUtils.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Utils\MeshUtils.cpp" />
@@ -270,7 +271,7 @@
     <ClInclude Include="Source\Core\Input.h" />
     <ClInclude Include="Source\Modules\Renderer\Helpers\Helpers.h" />
     <ClInclude Include="Source\Platform\Input.h" />
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\LightStorage.h" />
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\LightManager.h" />
     <ClInclude Include="Source\Components\Camera.h" />
     <ClInclude Include="Source\Components\Common.h" />
     <ClInclude Include="Source\Components\Lights.h" />
@@ -281,7 +282,7 @@
     <ClInclude Include="Source\Modules\Renderer\Data\Texture.h" />
     <ClInclude Include="Source\Modules\Renderer\Loaders\Loaders.h" />
     <ClInclude Include="Source\Modules\Renderer\Resource\DefaultResources.h" />
-    <ClInclude Include="Source\Modules\Renderer\Resource\ResourceManager.h" />
+    <ClInclude Include="Source\Modules\Renderer\Resource\ResourceCreator.h" />
     <ClInclude Include="Source\Modules\Renderer\Utils.h" />
     <ClInclude Include="Source\Modules\Renderer\Config.h" />
     <ClInclude Include="Source\Modules\Renderer\Data\Shader.h" />
