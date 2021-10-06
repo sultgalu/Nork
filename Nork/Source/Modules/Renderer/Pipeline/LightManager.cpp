@@ -18,8 +18,8 @@ namespace Nork::Renderer::Pipeline
 			newData.PL[i] = pLights[i];
 		}
 
-		newData.dLightCount = dLights.size();
-		newData.pLightCount = pLights.size();
+		newData.dLightCount = (float)dLights.size();
+		newData.pLightCount = (float)pLights.size();
 		this->data.Update(newData);
 	}
 }
