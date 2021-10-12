@@ -1,9 +1,8 @@
 #pragma once
-#include "Platform/Windows.h"
+#include "Platform/Window.h"
 #include "Modules/Renderer/Pipeline/Deferred.h"
 #include "Modules/Renderer/Pipeline/LightManager.h"
 #include "Core/CameraController.h"
-#include "Editor/Editor.h"
 #include "Scene/Scene.h"
 
 namespace Nork
@@ -33,19 +32,19 @@ namespace Nork
 		~Engine();
 		void Launch();
 	private:
+		void SyncComponents();
 		void UpdateLights();
 		void ViewProjectionUpdate();
-		void FreeResources();
 	public:
 		Window window;
 		Deferred pipeline;
 		LightManager lightMan;
-		CameraController camController;
-		EventManager appEventMan;
+		Event::Dispatcher appEventMan;
 		Resources resources;
 		Scene::Scene scene;
 	};
 
+	extern std::optional<Components::Camera*> GetActiveCamera();
 	extern Engine& GetEngine();
 
 }

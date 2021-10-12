@@ -3,108 +3,59 @@
 
 namespace Nork
 {
-	static bool isVerticalMovement = true;
-
-	void CameraController::OnUpdate(float delta)
+	void CameraController::Update(float delta)
 	{
 		using namespace Input;
+
 		using enum Components::Camera::Direction;
-		if (input.IsKeyDown(Key::W))
-		{
-			auto dir = isVerticalMovement ? Up : Forward;
-			camera->Move(dir, delta);
-		}
-		if (input.IsKeyDown(Key::S))
-		{
-			auto dir = isVerticalMovement ? Down : Backward;
-			camera->Move(dir, delta);
-		}
-		if (input.IsKeyDown(Key::A))
-		{
-			camera->Move(Left, delta);
-		}
-		if (input.IsKeyDown(Key::D))
-		{
-			camera->Move(Rigth, delta);
-		}
-	}
-	void CameraController::SetupInputHandling()
-	{
-		input.GetEventManager().Subscribe<Events::KeyUp>(&CameraController::HandleKeyUp, this);
-		input.GetEventManager().Subscribe<Events::KeyDown>(&CameraController::HandleKeyDown, this);
-		input.GetEventManager().Subscribe<Events::MouseScroll>(&CameraController::HandleScroll, this);
-		input.GetEventManager().Subscribe<Events::MouseMove>(&CameraController::HandleMouseMove, this);
-		input.GetEventManager().Subscribe<Events::MouseDown>(&CameraController::HandleMouseDown, this);
-		input.GetEventManager().Subscribe<Events::MouseUp>(&CameraController::HandleMouseUp, this);
-		input.GetEventManager().Subscribe<Events::OnUpdate>(&CameraController::HandleOnUpdate, this);
-	}
 
-	void CameraController::HandleKeyUp(const Event& event)
-	{
-		using enum Input::Key;
-
-		switch (event.As<Events::KeyDown>().key)
+		if (input.Is(KeyType::W, KeyState::Down))
 		{
-		case Shift:
-			isVerticalMovement = true;
-			break;
-		case Space:
-			camera->moveSpeed /= 10.0f;
-			break;
-		default:
-			break;
+			auto dir = input.Is(KeyType::Shift, KeyState::Down) ? Up : Forward;
+			camera.Move(dir, delta);
 		}
-	}
-	void CameraController::HandleKeyDown(const Event& event)
-	{
-		using enum Input::Key;
-
-		switch (event.As<Events::KeyDown>().key)
+		if (input.Is(KeyType::S, KeyState::Down))
 		{
-		case Shift:
-			isVerticalMovement = false;
-			break;
-		case Space:
-			camera->moveSpeed *= 10.0f;
-			break;
-		default:
-			break;
+			auto dir = input.Is(KeyType::Shift, KeyState::Down) ? Down : Backward;
+			camera.Move(dir, delta);
 		}
-	}
-	void CameraController::HandleScroll(const Event& event)
-	{
-		auto& ev = event.As<Events::MouseScroll>();
+		if (input.Is(KeyType::A, KeyState::Down))
+		{
+			camera.Move(Left, delta);
+		}
+		if (input.Is(KeyType::D, KeyState::Down))
+		{
+			camera.Move(Rigth, delta);
+		}
 
-		camera->Zoom(ev.offset);
+		static float baseSpeed = camera.moveSpeed;
+		camera.moveSpeed = input.Is(KeyType::Space, KeyState::Down) ? baseSpeed * 10.0f : baseSpeed;
 	}
-	void CameraController::HandleMouseMove(const Event& event)
+	void CameraController::SetupInputHandling(Event::Receiver& receiver)
 	{
+		receiver.Subscribe<Event::Types::MouseScroll>(&CameraController::HandleScroll, this);
+		receiver.Subscribe<Event::Types::MouseMove>(&CameraController::HandleMouseMove, this);
+	}
+	void CameraController::HandleScroll(const Event::Types::MouseScroll& event)
+	{
+		camera.Zoom(event.offset);
+	}
+	void CameraController::HandleMouseMove(const Event::Types::MouseMove& event)
+	{
+		using namespace Input;
+		
 		static double x = 0;
 		static double y = 0;
 
-		auto& ev = event.As<Events::MouseMove>();
+		double offsX = x - event.offsetX;
+		double offsY = y - event.offsetY;
 
-		double offsX = x - ev.offsetX;
-		double offsY = y - ev.offsetY;
-
-		if (input.IsMouseButtonDown(Input::MouseButton::Left))
+		if (input.Is(MouseButtonType::Left, MouseButtonState::Down))
 		{
-			camera->Rotate(-offsY, offsX);
+			camera.Rotate(-offsY, offsX);
 		}
-		x = ev.offsetX;
-		y = ev.offsetY;
-	}
-	void CameraController::HandleMouseDown(const Event& event)
-	{
-		auto& ev = event.As<Events::MouseDown>();
-	}
-	void CameraController::HandleMouseUp(const Event& event)
-	{
-		auto& ev = event.As<Events::MouseUp>();
-	}
-	void CameraController::HandleOnUpdate(const Event& event)
-	{
-		// auto& ev = event.As<Events::OnUpdate>();
+		x = event.offsetX;
+		y = event.offsetY;
 	}
 }
 

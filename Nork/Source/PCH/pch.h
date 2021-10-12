@@ -57,20 +57,26 @@
 
 #include <filesystem>
 
-#include <entt/single_include/entt/entt.hpp>
-#include <glfw/glfw3.h>
 #include <glad/glad.h>
-#include <imgui/imgui.h>
 #include <glm/glm/gtc/matrix_transform.hpp>
+
+#include <glfw/glfw3.h>
+
+#include <imgui/imgui.h>
+#include <imgui/backends/imgui_impl_opengl3.h>
+#include <imgui/backends/imgui_impl_glfw.h>
 
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <assimp/Importer.hpp>
 
+#include <entt/single_include/entt/entt.hpp>
+
 //--------------OURS----------------
 
 #include "Utils/Logger.h"
 #include "Utils/Timer.h"
+#include "Utils/Template.h"
 //
 ////-----------------EDITOR-----------------------
 //

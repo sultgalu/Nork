@@ -1,11 +1,12 @@
 #include "pch.h"
 #include "Utils/Logger.h"
-#include "Platform/Windows.h"
+#include "Platform/Window.h"
 #include "Core/Event.h"
 #include "Platform/Input.h"
 #include "Core/Input.h"
 
 using namespace Nork::Input;
+using namespace Nork::Input::Types;
 
 namespace Nork
 {
@@ -27,12 +28,9 @@ namespace Nork
 	GLFWwindow* windowPtr;
 	int width, height, refreshRate;
 	bool isRunning;
-	Input::Input input = Input::Input();
 
 	void GLFWInit()
 	{
-		std::bitset<12> set;
-		set[3].flip();
 		glfwInit();
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -78,89 +76,96 @@ namespace Nork
 		Logger::Info("GLFW window created, context made current");
 	}
 
-	void OnClose(const Event& ev)
+	void OnClose(const Event::Types::WindowClose& e)
 	{
-		auto& e = static_cast<const Events::WindowClose&>(ev);
 		if (!e.calledByWindow)
 		{
 			glfwSetWindowShouldClose(windowPtr, 1);
 		}
 		isRunning = false;
 	}
-	void OnResize(const Event& ev)
+	void OnResize(const Event::Types::WindowResize& e)
 	{
-		auto& e = static_cast<const Events::WindowResize&>(ev);
 		width = e.width;
 		height = e.height;
 	}
 
-	inline EventManager& GetEventManager()
+	/*inline Event::Registry& GetEventManager()
 	{
-		return *static_cast<EventManager*>(glfwGetWindowUserPointer(windowPtr));
+		return *static_cast<Event::Registry*>(glfwGetWindowUserPointer(windowPtr));
+	}*/
+
+	inline Event::Sender& GetEventSender()
+	{
+		return static_cast<Event::Dispatcher*>(glfwGetWindowUserPointer(windowPtr))->GetSender();
 	}
 
-	void SetupEventCallbacks()
+	void _Window<GLFWwindow>::SetupEventCallbacks()
 	{
-		using namespace Events;
+		using namespace Event::Types;
+
+		glfwSetWindowUserPointer(windowPtr, &this->reg);
 
 		glfwSetWindowCloseCallback(windowPtr, [](GLFWwindow* winPtr)
 			{
-				input.GetEventManager().RaiseEvent(WindowClose(true));
+				GetEventSender().Send(WindowClose(true));
 			});
 		glfwSetWindowSizeCallback(windowPtr, [](GLFWwindow* winPtr, GLint width, GLint height)
 			{
-				input.GetEventManager().RaiseEvent(WindowResize(width, height));
+				GetEventSender().Send(WindowResize(width, height));
 			});
 		glfwSetKeyCallback(windowPtr, [](GLFWwindow* winPtr, int key, int scancode, int action, int mods)
 			{
 				if (action == GLFW_PRESS)
 				{
-					input.GetEventManager().RaiseEvent(KeyDown(static_cast<Key>(key)));
+					GetEventSender().Send(KeyDown(static_cast<Key>(key)));
 				}
 				else if (action == GLFW_RELEASE)
 				{
-					input.GetEventManager().RaiseEvent(KeyUp(static_cast<Key>(key)));
+					GetEventSender().Send(KeyUp(static_cast<Key>(key)));
 				}
 			});
 		glfwSetMouseButtonCallback(windowPtr, [](GLFWwindow* winPtr, int button, int action, int mods)
 			{
 				if (action == GLFW_PRESS)
 				{
-					input.GetEventManager().RaiseEvent(MouseDown(static_cast<MouseButton>(button)));
+					GetEventSender().Send(MouseDown(static_cast<MouseButton>(button)));
 				}
 				else if (action == GLFW_RELEASE)
 				{
-					input.GetEventManager().RaiseEvent(MouseUp(static_cast<MouseButton>(button)));
+					GetEventSender().Send(MouseUp(static_cast<MouseButton>(button)));
 				}
 			});
 		glfwSetCursorPosCallback(windowPtr, [](GLFWwindow* winPtr, double xPos, double yPos)
 			{
-				input.GetEventManager().RaiseEvent(MouseMove(xPos, yPos));
+				GetEventSender().Send(MouseMove(xPos, yPos));
 			});
 		glfwSetScrollCallback(windowPtr, [](GLFWwindow* winPtr, double xOff, double yOff)
 			{
-				input.GetEventManager().RaiseEvent(MouseScroll(yOff));
+				GetEventSender().Send(MouseScroll(yOff));
 			});
 		glfwSetCharCallback(windowPtr, [](GLFWwindow* winPtr, unsigned int character)
 			{
-				input.GetEventManager().RaiseEvent(Type(character));
+				GetEventSender().Send(Type(character));
 			});
 		glfwSetCursorEnterCallback(windowPtr, [](GLFWwindow* winPtr, int didEnter)
 			{
-				input.GetEventManager().RaiseEvent(didEnter == GLFW_TRUE ? CursorEnteredWindow().As<InputEvent>() : CursorLeftWindow());
+				if (didEnter == GLFW_TRUE) GetEventSender().Send(CursorEnteredWindow());
+				else GetEventSender().Send(CursorLeftWindow());
 			});
 		glfwSetMonitorCallback([](GLFWmonitor* monitor, int didConnect)
 			{
-				input.GetEventManager().RaiseEvent(didConnect == GLFW_TRUE ? MonitorConnect().As<InputEvent>() : MonitorDisconnect());
+				if (didConnect == GLFW_TRUE) GetEventSender().Send(MonitorConnect());
+				else GetEventSender().Send(MonitorDisconnect());
 			});
 		glfwSetWindowFocusCallback(windowPtr, [](GLFWwindow* winPtr, int focused)
 			{
-				input.GetEventManager().RaiseEvent(focused == GLFW_TRUE ? WindowInFocus().As<InputEvent>() : WindowOutOfFocus());
+				if (focused == GLFW_TRUE) GetEventSender().Send(WindowInFocus());
+				else GetEventSender().Send(WindowOutOfFocus());
 			});
 
-		//input = Nork::Input::Input();
-		input.GetEventManager().Subscribe<WindowClose>(&OnClose);
-		input.GetEventManager().Subscribe<WindowResize>(&OnResize);
+		reg.GetReceiver().Subscribe<WindowClose>(&OnClose);
+		reg.GetReceiver().Subscribe<WindowResize>(&OnResize);
 	}
 
 	_Window<GLFWwindow>::_Window(int w, int h)
@@ -185,11 +190,10 @@ namespace Nork
 		glfwSwapBuffers(windowPtr);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // is Depth Clearing necessary?
 		glfwPollEvents();
-		input.GetEventManager().PollEvents();
 	}
 	void _Window<GLFWwindow>::Close()
 	{
-		input.GetEventManager().RaiseEvent(Events::WindowClose(true));
+		reg.GetSender().Send(Event::Types::WindowClose(true));
 	}
 	void _Window<GLFWwindow>::SetSize(int w, int h)
 	{
@@ -201,12 +205,20 @@ namespace Nork
 	{
 		return isRunning;
 	}
-	Input::Input& _Window<GLFWwindow>::GetInput()
-	{
-		return input;
-	}
 	GLFWwindow& _Window<GLFWwindow>::GetData()
 	{
 		return *windowPtr;
+	}
+	void Input::StateListener::QueryCurrentState()
+	{
+		static constinit size_t size = sizeof(keys) / sizeof(State::Key);
+		for (size_t i = 0; i < size; i++)
+		{
+			keys[i] = glfwGetKey(windowPtr, i) == GLFW_PRESS ? KeyState::Down : KeyState::Up;
+		}
+		for (size_t i = 0; i < size; i++)
+		{
+			mouseButtons[i] = glfwGetKey(windowPtr, i) == GLFW_PRESS ? MouseButtonState::Down : MouseButtonState::Up;
+		}
 	}
 }

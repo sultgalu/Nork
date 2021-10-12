@@ -1,0 +1,178 @@
+#pragma once
+
+namespace Nork
+{
+	namespace Template
+	{
+		namespace Types
+		{
+			struct Base {};
+
+			struct NoConstruct : Base
+			{
+				NoConstruct() = delete;
+			};
+			struct NoCopyConstruct : Base
+			{
+				NoCopyConstruct() = default;
+				NoCopyConstruct(const NoCopyConstruct&) = delete;
+				NoCopyConstruct(NoCopyConstruct&) = delete;
+			};
+			struct NoCopyAssign : std::_Deleted_copy_assign<Base> {};
+			struct NoMoveAssign : std::_Deleted_move_assign<Base> {};
+
+			struct NoCopy : NoCopyAssign, NoCopyConstruct {};
+			struct NoMove : NoMoveAssign {};
+
+			struct OnlyConstruct : NoCopy, NoMove {};
+
+			using Static = NoConstruct;
+
+			struct VirtualType
+			{
+				virtual VirtualType* GetParent() const
+				{
+					return nullptr;
+				}
+				virtual size_t GetParentSize() const
+				{
+					return 0;	
+				}
+				size_t GetId() const // no need for virtual here
+				{
+					return typeid(*this).hash_code();
+				}
+				const char* GetName() const // no need for virtual here
+				{
+					return typeid(*this).name();
+				}
+				virtual std::vector<size_t> GetIds() const
+				{
+					return std::vector<size_t> { GetId() };
+				}
+				virtual std::vector<size_t> GetSizes() const
+				{
+					return std::vector<size_t> { GetParentSize() };
+				}
+				virtual std::vector<const char*> GetNames() const
+				{
+					return std::vector<const char*> { GetName() };
+				}
+			};
+
+			template<std::derived_from<VirtualType> T>
+			struct MetaInherited : T
+			{
+				using T::T; // using T's constructors
+
+				virtual VirtualType* GetParent() const override
+				{
+					static T cached = static_cast<T>(*this);
+					return &cached;
+				}
+				virtual size_t GetParentSize() const override
+				{
+					return sizeof(T);
+				}
+				virtual std::vector<size_t> GetIds() const override
+				{
+					/*auto getCached = [&]()
+					{
+						auto ids = this->GetParent()->GetIds();
+						ids.push_back(this->GetId());
+						return ids;
+					};
+					static auto cached = getCached();
+					return cached;*/
+					auto ids = this->GetParent()->GetIds();
+					ids.push_back(this->GetId());
+					return ids;
+				}
+				virtual std::vector<const char*> GetNames() const override
+				{
+					auto getCached = [&]()
+					{
+						auto names = this->GetParent()->GetNames();
+						names.push_back(this->GetName());
+						return names;
+					};
+					static auto cached = getCached();
+					return cached;
+				}
+				virtual std::vector<size_t> GetSizes() const override
+				{
+					auto getCached = [&]()
+					{
+						auto sizes = this->GetParent()->GetSizes();
+						sizes.push_back(this->GetParentSize());
+						return sizes;
+					};
+					static auto cached = getCached();
+					return cached;
+				}
+			};
+
+		}
+	}
+	
+	// For enum classes: Automatic implementation of bitwise operations
+	template<typename T>
+	constexpr T operator|(const T bit1, const T bit2)
+	{
+		return static_cast<T>(std::to_underlying(bit1) | std::to_underlying(bit2));
+	}
+	template<typename T>
+	constexpr T operator&(const T bit1, const T bit2)
+	{
+		return static_cast<T>(std::to_underlying(bit1) & std::to_underlying(bit2));
+	}
+
+	template<typename T>
+	constexpr T& operator|=(T& bit1, const T bit2)
+	{
+		return bit1 = bit1 | bit2;
+	}
+	template<typename T>
+	constexpr T& operator&=(T& bit1, const T bit2)
+	{
+		return bit1 = bit1 & bit2;
+	}
+
+	template<typename T>
+	constexpr T operator^(const T bit1, const T bit2)
+	{
+		return static_cast<T>(std::to_underlying(bit1) ^ std::to_underlying(bit2));
+	}
+	template<typename T>
+	constexpr T& operator^=(T& bit1, const T bit2) noexcept
+	{ 
+		return bit1 = bit1 ^ bit2;
+	}
+	template<typename T>
+	constexpr T operator~(const T bit1)
+	{
+		return static_cast<T>(~std::to_underlying(bit1));
+	}
+
+	template<typename T, std::integral I>
+	constexpr T operator>>(const T bit1, I shift)
+	{
+		return static_cast<T>(std::to_underlying(bit1) >> shift);
+	}
+	template<typename T, std::integral I>
+	constexpr T operator<<(const T bit1, I shift)
+	{
+		return static_cast<T>(std::to_underlying(bit1) << shift);
+	}
+
+	template<typename T, std::integral I>
+	constexpr T& operator>>=(T bit1, I shift)
+	{
+		return bit1 =  bit1 >> shift;
+	}
+	template<typename T, std::integral I>
+	constexpr T& operator<<=(T bit1, I shift)
+	{
+		return bit1 = bit1 << shift;
+	}
+}

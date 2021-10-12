@@ -1,12 +1,10 @@
 #include "pch.h"
-#include "AssetsPanel.h"
+#include "../AssetsPanel.h"
 
 namespace Nork::Editor
 {
 	void AssetsPanel::DrawContent()
 	{
-		ImGui::Begin(this->GetName().data());
-
 		static char name[100];
 		if (ImGui::InputTextWithHint("file", "<filename>", name, 100, ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_EnterReturnsTrue))
 		{
@@ -49,7 +47,5 @@ namespace Nork::Editor
 			}
 			ImGui::EndListBox();
 		}
-
-		ImGui::End();
 	}
 }

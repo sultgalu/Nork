@@ -42,4 +42,13 @@ namespace Nork::Renderer::Resource
 		}
 		glDeleteTextures((int)toDelTexs.size(), toDelTexs.data());
     }
+	ShaderResource CreateShader(ShaderData& data)
+	{ 
+		auto resource = ShaderResource{ .program = Utils::Shader::GetProgramFromSource(data.source) };
+		if (resource.program == 0)
+		{
+			Logger::Error("Failed to create shader.");
+		}
+		return resource;
+	}
 }

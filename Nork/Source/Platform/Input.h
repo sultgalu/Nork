@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Nork::Input
+namespace Nork::Input::Types
 {
 	enum class Key
 	{
@@ -48,4 +48,13 @@ namespace Nork::Input
 	inline std::string ToString(MouseButton button) { return std::to_string(std::to_underlying(button)); }
 	inline constexpr int ToInt(Key key) { return std::to_underlying(key); }
 	inline constexpr int ToInt(MouseButton button) { return std::to_underlying(button); }
+
+	static_assert(ToInt(Key::Max) < 1024);
+	static_assert(ToInt(MouseButton::Max) < 16);
+}
+
+namespace Nork::Input
+{
+	using KeyType = Types::Key;
+	using MouseButtonType = Types::MouseButton;
 }

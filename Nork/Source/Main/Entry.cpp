@@ -6,7 +6,7 @@
 #include "Modules/ECS/Storage.h"
 #include "Components/Common.h"
 #include "Editor/Editor.h"
-#include "Platform/Windows.h"
+#include "Platform/Window.h"
 #include "Modules/Renderer/Data/Shader.h"
 #include "Modules/Renderer/Data/Mesh.h"
 #include "Modules/Renderer/Data/Texture.h"
@@ -15,11 +15,9 @@
 #include "Modules/Renderer/Resource/DefaultResources.h"
 #include "Modules/Renderer/Loaders/Loaders.h"
 #include "Modules/Renderer/Pipeline/Deferred.h"
-#include "Core/CameraController.h"
 #include "Core/Engine.h"
 
 using namespace Nork;
-using namespace Events;
 using namespace Input;
 
 static Engine* enginePtr;
@@ -30,41 +28,56 @@ Engine& GetEngine()
 
 int main()
 {
+	Logger::PushStream(std::cout);
+
 	auto conf = EngineConfig().SetResolution(1280, 720);
 	Engine engine(conf);
 	enginePtr = &engine;
-	Editor::Editor editor(engine.window);
+	Editor::Editor editor(engine);
 
 	editor.SetDisplayTexture(engine.pipeline.data.lightPass.tex);
-	engine.appEventMan.Subscribe<Events::RenderUpdated>([&](const Event& ev)
+	engine.appEventMan.GetReceiver().Subscribe<Event::Types::RenderUpdated>([&](const Event::Types::RenderUpdated& ev)
 		{
 			editor.Render();
 		});
 
-	auto node = engine.scene.CreateNode();
-	engine.scene.AddModelComponent(node, "Resources/Models/lamp/untitled.obj");
-	auto& tr = engine.scene.AddComponent<Components::Transform>(node);
+	{
+		using namespace Event::Types;
+		using enum Input::KeyType;
+	}
 
-	engine.appEventMan.Subscribe<Events::OnUpdate>([&](const Event& e)
+	auto node = engine.scene.CreateNode();
+	engine.scene.AddModel(node, "Resources/Models/lamp/untitled.obj");
+	auto& tr = engine.scene.AddComponent<Components::Transform>(node);
+	//auto& dl = engine.scene.AddComponent<Components::DirLight>(node);
+	auto& pl = engine.scene.AddComponent<Components::PointLight>(node);
+	pl.SetPower(1);
+
+	/*engine.window.GetInputEvents().Subscribe<Event::Types::InputEvent>([](const Event::Types::InputEvent& ev)
+		{
+			Logger::Debug("Input Event: ", ev.GetName(), " From: ", ev.from.file_name(), ":", ev.from.line());
+		});*/
+
+	engine.appEventMan.GetReceiver().Subscribe<Event::Types::OnUpdate>([&](const Event::Types::OnUpdate& e)
 		{
 			using namespace Input;
 			
 			static constinit float  speed = 0.005;
-			if (engine.window.GetInput().IsKeyDown(Key::Up))
+			if (engine.window.GetInputState().Is(KeyType::Up, KeyState::Down))
 			{
-				tr.position.y += speed;
+				pl.GetMutableData().position.y += speed;
 			}
-			if (engine.window.GetInput().IsKeyDown(Key::Down))
+			if (engine.window.GetInputState().Is(KeyType::Down, KeyState::Down))
 			{
-				tr.position.y -= speed;
+				pl.GetMutableData().position.y -= speed;
 			}
-			if (engine.window.GetInput().IsKeyDown(Key::Right))
+			if (engine.window.GetInputState().Is(KeyType::Right, KeyState::Down))
 			{
-				tr.position.x += speed;
+				pl.GetMutableData().position.x += speed;
 			}
-			if (engine.window.GetInput().IsKeyDown(Key::Left))
+			if (engine.window.GetInputState().Is(KeyType::Left, KeyState::Down))
 			{
-				tr.position.x -= speed;
+				pl.GetMutableData().position.x -= speed;
 			}
 		});
 

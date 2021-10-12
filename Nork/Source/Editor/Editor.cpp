@@ -1,28 +1,22 @@
 #include "pch.h"
 #include "Editor.h"
-#include "Panels/Base/Panel.h"
-#include "Panels/AssetsPanel.h"
-#include "Panels/MainPanel.h"
-#include "Panels/LogPanel.h"
-#include "Panels/ViewportPanel.h"
-#include <imgui/imgui.h>
-#include <imgui/backends/imgui_impl_opengl3.h>
-#include <imgui/backends/imgui_impl_glfw.h>
+#include "Panels/All.h"
 
 namespace Nork::Editor
 {
 	std::vector<Panel*> panels;
 
-	void SetCallbacks(EventManager& evMan)
+	void SetCallbacks(Event::Receiver& disp)
 	{
 		auto& imIO = ImGui::GetIO();
+		auto ptr = &imIO;
 		/*evMan.Subscribe<Events::MouseMove>([&imIO](const Event& ev)
 			{
 				auto& e = ev.As<Events::MouseMove>();
 			});*/
-		evMan.Subscribe<Events::MouseScroll>([&imIO](const Event& ev)
+		disp.Subscribe<Event::Types::MouseScroll>([&imIO](const Event::Types::Base& ev)
 			{
-				imIO.MouseWheel += (float)ev.As<Events::MouseScroll>().offset;
+				imIO.MouseWheel += (float)ev.As<Event::Types::MouseScroll>().offset;
 			});
 		//evMan.Subscribe<Events::MouseDown>([&imIO](const Event& ev)
 		//	{
@@ -32,12 +26,11 @@ namespace Nork::Editor
 		//	{
 		//		imIO.MouseDown[Events::ToInt(ev.As<Events::MouseUp>().button)] = false; // left, right, middle for imgui
 		//	});
-		evMan.Subscribe<Events::KeyUp>([&imIO](const Event& ev)
+		disp.Subscribe<Event::Types::KeyUp>([&imIO](const Event::Types::KeyUp& ev)
 			{
-				Input::Key key = ev.As<Events::KeyUp>().key;
-				imIO.KeysDown[Events::ToInt(key)] = false;
-				using enum Input::Key;
-				switch (key)
+				imIO.KeysDown[ev.AsInt()] = false;
+				using enum Input::KeyType;
+				switch (ev.key)
 				{
 				case Shift:
 					imIO.KeyShift = false;
@@ -53,12 +46,11 @@ namespace Nork::Editor
 					break;
 				}
 			});
-		evMan.Subscribe<Events::KeyDown>([&imIO](const Event& ev)
+		disp.Subscribe<Event::Types::KeyDown>([&imIO](const Event::Types::KeyDown& ev)
 			{
-				Input::Key key = ev.As<Events::KeyDown>().key;
-				imIO.KeysDown[Events::ToInt(key)] = true;
-				using enum Input::Key;
-				switch (key)
+				imIO.KeysDown[ev.AsInt()] = false;
+				using enum Input::KeyType;
+				switch (ev.key)
 				{
 				case Shift:
 					imIO.KeyShift = true;
@@ -74,15 +66,15 @@ namespace Nork::Editor
 					break;
 				}
 			}); 
-		evMan.Subscribe<Events::Type>([&imIO](const Event& ev)
+		disp.Subscribe<Event::Types::Type>([&imIO](const Event::Types::Type& ev)
 			{
-				imIO.AddInputCharacter(ev.As<Events::Type>().character);
+				imIO.AddInputCharacter(ev.As<Event::Types::Type>().character);
 			});
-		evMan.Subscribe<Events::WindowInFocus>([&imIO](const Event& ev)
+		disp.Subscribe<Event::Types::WindowInFocus>([&imIO](const Event::Types::WindowInFocus& ev)
 			{
 				imIO.AddFocusEvent(true);
 			});
-		evMan.Subscribe<Events::WindowOutOfFocus>([&imIO](const Event& ev)
+		disp.Subscribe<Event::Types::WindowOutOfFocus>([&imIO](const Event::Types::WindowOutOfFocus& ev)
 			{
 				imIO.AddFocusEvent(false);
 			});
@@ -95,7 +87,7 @@ namespace Nork::Editor
 		//bd->PrevUserCallbackMonitor = glfwSetMonitorCallback(ImGui_ImplGlfw_MonitorCallback);
 	}
 
-	Editor::Editor(Window& win)
+	void InitImGui(Window& win)
 	{
 		ImGui::CreateContext();
 		ImGui::StyleColorsClassic();
@@ -119,9 +111,15 @@ namespace Nork::Editor
 
 		ImGui_ImplOpenGL3_Init();
 		ImGui_ImplGlfw_InitForOpenGL(&win.GetData(), false);
-		SetCallbacks(win.GetInput().GetEventManager());
+		SetCallbacks(win.GetInputEvents());
+	}
 
-		panels = std::vector<Panel*>{ new MainPanel(), new AssetsPanel(), new LogPanel(), new ViewportPanel() };
+	Editor::Editor(Engine& engine)
+		: data(engine)
+	{
+		InitImGui(engine.window);
+		panels = std::vector<Panel*>{ new MainPanel(data), new AssetsPanel(data), new LogPanel(data),
+			new ViewportPanel(data), new InspectorPanel(data), new HierarchyPanel(data) };
 	}
 
 	void Editor::Render()
@@ -133,10 +131,7 @@ namespace Nork::Editor
 
 		for (int i = 0; i < panels.size(); i++)
 		{
-			if (panels[i]->IsVisible())
-			{
-				panels[i]->Draw();
-			}
+			panels[i]->Draw();
 		}
 
 		ImGui::Render();

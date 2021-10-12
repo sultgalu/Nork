@@ -5,6 +5,13 @@
 
 namespace Nork::Scene
 {
+	template<typename T>
+	concept DefaultEmplaceable = true
+		&& std::_Not_same_as<T, Components::Model>;
+
+	template<typename T>
+	concept DefaultRemovable = true;
+
 	typedef uint64_t uuid;
 	using namespace Renderer::Data;
 	class Scene
@@ -14,36 +21,54 @@ namespace Nork::Scene
 		{
 			return registry.CreateEntity();
 		}
-		template<typename T, typename... A>
-		T& AddComponent(ECS::Id id, A... args)
+		template<DefaultEmplaceable T, typename... A>
+		inline T& AddComponent(ECS::Id id, A... args)
 		{
 			return registry.Emplace<T>(id, args...);
 		}
-		Components::Model& AddModelComponent(ECS::Id id, std::string src)
+		Components::Model& AddModel(ECS::Id id, std::string src)
 		{
+			ownedModels[id] = src;
 			return registry.Emplace<Components::Model>(id, GetModelByResource(resMan.GetMeshes(src)));
 		}
-		Components::Model& AddModelComponent(ECS::Id id)
+		Components::Model& AddModel(ECS::Id id)
 		{
+			ownedModels[id] = "";
 			return registry.Emplace<Components::Model>(id, GetModelByResource(resMan.GetCube()));
-		}	
+		}
+		template<DefaultRemovable T>
+		inline bool RemoveComponent(ECS::Id id)
+		{
+			return registry.Remove<T>(id) == 1;
+		}
+		void Load(std::string path);
+		void Save(std::string path);
 	private:
-		Components::Model GetModelByResource(std::vector<Renderer::Data::MeshResource> resource)
-		{
-			Components::Model model;
-			model.meshes.reserve(resource.size());
-			for (size_t i = 0; i < resource.size(); i++)
-			{
-				model.meshes.push_back(Renderer::Data::Mesh(resource[i]));
-			}
-			return model;
-		}
-		uuid GenUniqueId()
-		{
-			return std::rand();
-		}
+		Components::Model GetModelByResource(std::vector<Renderer::Data::MeshResource> resource);
+		uuid GenUniqueId();
 	public:
 		ECS::Registry registry;
 		ResourceManager resMan;
+
+		std::unordered_map<ECS::Id, std::string> ownedModels;
 	};
+
+	template<>
+	inline bool Scene::RemoveComponent<Components::Model>(ECS::Id id)
+	{
+		if (ownedModels.contains(id))
+		{ 
+			if (ownedModels[id]._Equal(""))
+			{
+				ownedModels.erase(id);
+				return registry.Remove<Components::Model>(id) == 1;
+			}
+
+			resMan.DroppedMeshResource(ownedModels[id]);
+			ownedModels.erase(id);
+			return registry.Remove<Components::Model>(id) == 1;
+		}
+		MetaLogger().Error(static_cast<size_t>(id), " is not owning any models.");
+		return false;
+	}
 }

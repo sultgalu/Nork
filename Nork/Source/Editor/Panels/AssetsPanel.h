@@ -7,7 +7,7 @@ namespace Nork::Editor
 	class AssetsPanel: public Panel
 	{
 	public:
-		AssetsPanel() : Panel(std::string("Assets").c_str(), true) {}
+		AssetsPanel(EditorData& data) : Panel("Assets", data) {}
 	protected:
 		virtual void DrawContent() override;
 	};

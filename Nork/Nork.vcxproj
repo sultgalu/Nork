@@ -164,6 +164,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Editor\Panels\Impl\HierarchyPanel.cpp" />
+    <ClCompile Include="Source\Platform\Windows\FileDialog.cpp" />
+    <ClCompile Include="Source\Serialization\Serializer.cpp" />
+    <ClCompile Include="Source\Editor\Panels\Impl\InspectorPanel.cpp" />
     <ClCompile Include="Source\Scene\Scene.cpp" />
     <ClCompile Include="Source\Scene\ResourceManager.cpp" />
     <ClCompile Include="Source\Core\CameraController.cpp" />
@@ -171,7 +175,7 @@
     <ClCompile Include="Source\Modules\Renderer\Pipeline\LightManager.cpp" />
     <ClCompile Include="Source\Components\Impl\Camera.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Pipeline\Deferred.cpp" />
-    <ClCompile Include="Source\Editor\Panels\LogPanel.cpp" />
+    <ClCompile Include="Source\Editor\Panels\Impl\LogPanel.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Loaders\Loaders.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Resource\DefaultResources.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Resource\ResourceCreator.cpp" />
@@ -180,8 +184,8 @@
     <ClCompile Include="Source\Modules\Renderer\Utils\MeshUtils.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Utils\OtherUtils.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Utils\ShaderUtils.cpp" />
-    <ClCompile Include="Source\Editor\Panels\MainPanel.cpp" />
-    <ClCompile Include="Source\Editor\Panels\AssetsPanel.cpp" />
+    <ClCompile Include="Source\Editor\Panels\Impl\MainPanel.cpp" />
+    <ClCompile Include="Source\Editor\Panels\Impl\AssetsPanel.cpp" />
     <ClCompile Include="Source\Editor\Panels\Base\Panel.cpp" />
     <ClCompile Include="Source\Editor\Editor.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Utils\TextureUtils.cpp" />
@@ -257,9 +261,15 @@
     </ClCompile>
     <ClCompile Include="Source\Main\Entry.cpp" />
     <ClCompile Include="Source\Platform\Windows\Window.cpp" />
-    <ClCompile Include="Source\Editor\Panels\ViewportPanel.cpp" />
+    <ClCompile Include="Source\Editor\Panels\Impl\ViewportPanel.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Editor\Panels\All.h" />
+    <ClInclude Include="Source\Editor\Panels\HierarchyPanel.h" />
+    <ClInclude Include="Source\Platform\FileDialog.h" />
+    <ClInclude Include="Source\Serialization\Serializer.h" />
+    <ClInclude Include="Source\Editor\EditorData.h" />
+    <ClInclude Include="Source\Editor\Panels\InspectorPanel.h" />
     <ClInclude Include="Source\Modules\Renderer\Pipeline\SharedData.h" />
     <ClInclude Include="Source\Scene\Scene.h" />
     <ClInclude Include="Source\Scene\ResourceManager.h" />
@@ -267,7 +277,6 @@
     <ClInclude Include="Source\Components\Model.h" />
     <ClInclude Include="Source\Core\Engine.h" />
     <ClInclude Include="Source\Core\CameraController.h" />
-    <ClInclude Include="Source\Components\Converters\Lights.h" />
     <ClInclude Include="Source\Core\Input.h" />
     <ClInclude Include="Source\Modules\Renderer\Helpers\Helpers.h" />
     <ClInclude Include="Source\Platform\Input.h" />
@@ -291,8 +300,9 @@
     <ClInclude Include="Source\Editor\Panels\Base\Panel.h" />
     <ClInclude Include="Source\Editor\Editor.h" />
     <ClInclude Include="Source\Core\Event.h" />
-    <ClInclude Include="Source\Platform\Windows.h" />
+    <ClInclude Include="Source\Platform\Window.h" />
     <ClInclude Include="Source\Utils\Logger.h" />
+    <ClInclude Include="Source\Utils\Template.h" />
     <ClInclude Include="Source\Utils\Timer.h" />
     <ClInclude Include="Source\PCH\pch.h" />
     <ClInclude Include="Source\Modules\ECS\Storage.h" />

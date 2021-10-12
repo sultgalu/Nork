@@ -12,7 +12,7 @@ namespace Nork::Renderer
 	public:
 		ShaderDataStorage()
 		{
-			Utils::Other::CreateUBO(idx, sizeof(T), GL_STATIC_DRAW);
+			ubo = Utils::Other::CreateUBO(idx, sizeof(T), GL_DYNAMIC_DRAW);
 		}
 		void Update(T& data)
 		{
@@ -55,7 +55,7 @@ namespace Nork::Renderer
 		static constexpr size_t DLLimit = c::dirLightsLimit;
 		static constexpr size_t PLLimit = c::pointLightsLimit;
 
-		float dLightCount, dShadowCount;
+		float dLightCount, dShadowCount; // lightCount means lights without shadows
 		float pLightCount, pShadowCount;
 
 		Data::DirShadow DS[DSLimit];

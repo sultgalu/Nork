@@ -1,14 +1,17 @@
 #pragma once
 
-#include <Platform/Windows.h>
+#include "Core/Engine.h"
+#include "EditorData.h"
 
 namespace Nork::Editor
 {
 	class Editor
 	{
 	public:
-		Editor(Window& win);
+		Editor(Engine& engine);
 		void Render();
 		void SetDisplayTexture(GLuint tex);
+	private:
+		EditorData data;
 	};
 }

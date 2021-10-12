@@ -5,33 +5,22 @@
 
 namespace Nork
 {
-	class BuiltInScript
+	class CameraController
 	{
 	public:
-		virtual void OnUpdate(float delta) {}
-	};
-
-	class CameraController : public BuiltInScript
-	{
-	public:
-		CameraController(Input::Input& input, std::shared_ptr<Components::Camera> cam = std::shared_ptr<Components::Camera>())
+		CameraController(Event::Receiver& receiver, Input::State& input, Components::Camera& cam)
 			: camera(cam), input(input)
 		{
-			SetupInputHandling();
+			SetupInputHandling(receiver);
 		}
-		void OnUpdate(float delta) override;
+		void Update(float delta);
 	private:
-		void SetupInputHandling();
-		void HandleKeyUp(const Event& event);
-		void HandleKeyDown(const Event& event);
-		void HandleScroll(const Event& event);
-		void HandleMouseMove(const Event& event);
-		void HandleMouseDown(const Event& event);
-		void HandleMouseUp(const Event& event);
-		void HandleOnUpdate(const Event& event);
+		void SetupInputHandling(Event::Receiver& receiver);
+		void HandleScroll(const Event::Types::MouseScroll& event);
+		void HandleMouseMove(const Event::Types::MouseMove& event);
 	public:
-		std::shared_ptr<Components::Camera> camera;
+		Components::Camera& camera;
 	private:
-		Input::Input& input;
+		Input::State& input;
 	};
 }

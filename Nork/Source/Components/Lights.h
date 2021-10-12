@@ -10,28 +10,45 @@ namespace Nork::Components
 	class Wrapper
 	{
 	public:
+		inline T& GetMutableData() { return data; }
 		inline const T& GetData() { return data; }
 	protected:
+		Wrapper(T&& t) : data(t) {}
+		Wrapper()
+		{
+			MetaLogger().Warning("Default constructor for type ", typeid(T).name, ".\n\tYou might want to set default values for it.");
+		}
 		T data;
 	};
 
 	struct PointLight : public Wrapper<Data::PointLight>
 	{
+		PointLight() 
+			: Wrapper(Data::PointLight{ .position = { 0,0,0 }, .color = { 1,1,1,1 }, .linear = linears[maxPower], .quadratic = quadratics[maxPower]})
+		{
+			power = maxPower;
+		}
+
 		inline void SetColor(glm::vec4& val) { data.color = glm::vec4(val); }
 		inline void SetPosition(glm::vec3& val) { data.position = glm::vec3(val); }
 		// val must be between 0 and PointLight.linears.size() - 1
 		inline void SetPower(int val)
 		{
-			if (val < linears.size())
+			if (val <= maxPower)
 			{
-				data.linear = linears[val];
-				data.quadratic = quadratics[val];
+				power = val;
+				data.linear = linears[power];
+				data.quadratic = quadratics[power];
 			}
-			else MetaLogger().Error("Light power out of bounds.");
+			else MetaLogger().Error("Trying to set light power (to ", val, ") higher than the maximum value (", maxPower ,").");
 		}
+		inline size_t GetPower() { return power; }
 
-		inline static const std::vector<float> linears = std::vector<float>({ 0.22f, 0.14f, 0.09f, 0.07f, 0.045f, 0.027f, 0.022f, 0.014f, 0.007f, 0.0014f });
-		inline static const std::vector<float> quadratics = std::vector<float>({ 0.20f, 0.07f, 0.032f, 0.017f, 0.0075f, 0.0028f, 0.0019f, 0.0007f, 0.0002f, 0.000007f });
+		inline static constexpr auto linears = std::array<float, 10>({ 0.22f, 0.14f, 0.09f, 0.07f, 0.045f, 0.027f, 0.022f, 0.014f, 0.007f, 0.0014f });
+		inline static constexpr auto quadratics = std::array<float, 10>({ 0.20f, 0.07f, 0.032f, 0.017f, 0.0075f, 0.0028f, 0.0019f, 0.0007f, 0.0002f, 0.000007f });
+		inline static constexpr size_t maxPower = linears.size() - 1;
+	private:
+		size_t power;
 	};
 
 	struct PointShadow : Wrapper<Data::PointShadow>
@@ -45,6 +62,11 @@ namespace Nork::Components
 
 	struct DirLight : Wrapper<Data::DirLight>
 	{
+		DirLight()
+			: Wrapper(Data::DirLight{ .direction = glm::normalize(glm::vec3(1.0f, 1.0f, 1.0f)), .color = {1,1,1,1} })
+		{
+		}
+
 		inline void SetColor(glm::vec4& val) { data.color = glm::vec4(val); }
 		inline void SetDirection(glm::vec3& val) { data.direction = glm::vec3(val); }
 	};

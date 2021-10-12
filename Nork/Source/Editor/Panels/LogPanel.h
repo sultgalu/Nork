@@ -6,10 +6,9 @@ namespace Nork::Editor
 	class LogPanel : public Panel
 	{
 	public:
-		LogPanel();
+		LogPanel(EditorData& d);
 		~LogPanel();
 	protected:
 		virtual void DrawContent() override;
-	private:
 	};
 }

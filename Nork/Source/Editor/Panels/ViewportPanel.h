@@ -7,7 +7,7 @@ namespace Nork::Editor
 	class ViewportPanel : public Panel
 	{
 	public:
-		ViewportPanel();
+		ViewportPanel(EditorData& d);
 		~ViewportPanel();
 
 		struct MouseState
@@ -19,6 +19,7 @@ namespace Nork::Editor
 		inline MouseState GetMouseState() { return mouseState; }
 		inline void SetTexture(GLuint tex) { image.texture = tex; }
 	private:
+		virtual void Begin() override;
 		virtual void DrawContent() override;
 	private:
 		struct ImageConfig
@@ -31,5 +32,6 @@ namespace Nork::Editor
 
 		MouseState mouseState;
 		ImageConfig image;
+		CameraController camContr;
 	};
 }

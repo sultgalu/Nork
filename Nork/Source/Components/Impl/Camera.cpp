@@ -11,6 +11,7 @@ namespace Nork::Components
 		this->farClip = farClip;
 		this->UpdateProjection();
 
+		this->right = glm::vec3(1.0f, 0.0f, 0.0f);
 		this->front = glm::vec3(0.0f, 0.0f, -1.0f);
 		this->up = glm::vec3(0.0f, 1.0f, 0.0f);
 		this->position = glm::vec3(0.0f, 0.0f, 0.0f);

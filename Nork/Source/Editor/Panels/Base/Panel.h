@@ -1,19 +1,33 @@
 #pragma once
 
+#include "Core/Engine.h"
+#include "Editor/EditorData.h"
+
 namespace Nork::Editor
 {
+	struct PanelState
+	{
+		bool isFocused, isHovered, isDocked, isAppearing, isCollapsed;
+	};
+
 	class Panel
 	{
 	public:
-		Panel(const char* name, bool visible = true) : isVisible(visible), name(name) {}
+		Panel(std::string name, EditorData& data);
 		void Draw();
-		inline bool IsVisible() { return isVisible; }
-		inline const std::string_view GetName() { return name; }
 	protected:
-		virtual void DrawContent() = 0;
-	private:
-		bool isVisible;
+		virtual void DrawContent() {}; // Draws the content of the panel
+		virtual void UpdateState(); // Updates state member
+		virtual void Begin(); // begin panel (should call ImGui::Begin())
+		virtual void End(); // end the panel (should call ImGui::End())
+
+		inline const std::string& GetName() { return name; }
+		inline const PanelState& GetState() { return state; }
+	protected:
+		PanelState state;
+		EditorData& data;
 		std::string name;
+		Event::Receiver events; // = reg.GetReceiver();
 	};
 }
 

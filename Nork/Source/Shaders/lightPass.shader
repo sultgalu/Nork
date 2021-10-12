@@ -39,8 +39,8 @@ struct DirLightWithShad
 
 struct PointLight
 {
-	vec4 color;
 	vec3 position;
+	vec4 color;
 
 	float linear, quadratic;
 };
@@ -79,12 +79,23 @@ uniform sampler2D gNorm;
 uniform sampler2D shadowMaps[1/*MAX_NUM_OF_DIR_SHADOWS*/]; // doesn't work with anything other than 1 rn.
 uniform samplerCube shadowMapsCube[1/*MAX_NUM_OF_P_SHADOWS*/];
 
+//layout(std140) uniform dLightsUni
+//{
+//	float dLightCount, dShadowCount;
+//	float pLightCount, pShadowCount;
+//	DirLightWithShad dLSs[MAX_NUM_OF_DIR_SHADOWS];
+//	PointLightWithShadow pLSs[MAX_NUM_OF_P_SHADOWS];
+//
+//	DirLight dLs[MAX_NUM_OF_DIR_LIGHTS];
+//	PointLight pLs[MAX_NUM_OF_P_LIGHTS];
+//};
+
 layout(std140) uniform dLightsUni
 {
 	float dLightCount, dShadowCount;
 	float pLightCount, pShadowCount;
-	DirLightWithShad dLSs[MAX_NUM_OF_DIR_SHADOWS];
-	PointLightWithShadow pLSs[MAX_NUM_OF_P_SHADOWS];
+	DirShadow dLSs[MAX_NUM_OF_DIR_SHADOWS];
+	PointShadow pLSs[MAX_NUM_OF_P_SHADOWS];
 
 	DirLight dLs[MAX_NUM_OF_DIR_LIGHTS];
 	PointLight pLs[MAX_NUM_OF_P_LIGHTS];
@@ -108,12 +119,11 @@ void main()
 	material.ambient = diff_spec.rgb;
 	material.diffuse = diff_spec.rgb;
 	material.specular = material.diffuse * diff_spec.a;
-
+	
 	vec3 result = vec3(0.0f);
 	for (int i = 0; i < int(dShadowCount); i++)
 	{
-		//result += vec3(dLSs[i].shadow.VP[0][0], 0, 0);
-		result += dLightShadow(dLSs[i].light, material, normal, viewDir, dLSs[i].shadow, i, worldPos);
+		result += dLightShadow(dLs[i], material, normal, viewDir, dLSs[i], i, worldPos);
 	}
 	for (int i = int(dShadowCount); i < int(dLightCount); i++)
 	{
@@ -121,14 +131,15 @@ void main()
 	}
 	for (int i = 0; i < int(pShadowCount); i++)
 	{
-		result += pLightShadow(pLSs[i].light, material, normal, viewDir, pLSs[i].shadow, i, worldPos);
+		//result += pLightShadow(pLs[i], material, normal, viewDir, pLSs[i], i, worldPos);
 	}
 	for (int i = int(pShadowCount); i < int(pLightCount); i++)
 	{
 		result += pLight(pLs[i], material, worldPos, normal, viewDir);
 	}
-	//fColor = vec4(result, 1.0f);
-	fColor = vec4(worldPos.rgb, 1.0f);
+	fColor = vec4(result, 1.0f);
+	//fColor = vec4(worldPos.rgb, 1.0f);
+	//fColor = vec4(0);
 }
 
 vec3 dLight(DirLight light, Materials material, vec3 normal, vec3 viewDir)
