@@ -12,11 +12,12 @@ namespace Nork::Renderer::Utils
 
 	namespace Texture
 	{
-		enum class Format
+		enum class Format: int
 		{
 			RGBA = GL_RGBA8, RGBA16F = GL_RGBA16F, RGB = GL_RGB8, RGB16F = GL_RGB16F, R32I = GL_R32I, R8 = GL_R8, R8I = GL_R8I, R32F = GL_R32F,
 			Depth32F = GL_DEPTH_COMPONENT32F, Depth32 = GL_DEPTH_COMPONENT32, Depth24 = GL_DEPTH_COMPONENT24, Depth16 = GL_DEPTH_COMPONENT16,
-			Depth24Stencil8 = GL_DEPTH24_STENCIL8, Depth32FStencil8 = GL_DEPTH32F_STENCIL8
+			Depth24Stencil8 = GL_DEPTH24_STENCIL8, Depth32FStencil8 = GL_DEPTH32F_STENCIL8,
+			None = GL_NONE
 		};
 
 		inline GLenum GetInternalFormat(Format f) { return static_cast<GLenum>(f); }

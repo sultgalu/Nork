@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Deferred.h"
 #include "../Utils.h"
+#include "../Config.h"
 
 namespace Nork::Renderer::Pipeline
 {
@@ -43,10 +44,10 @@ namespace Nork::Renderer::Pipeline
 		shader.SetInt("gPos", 0);
 		shader.SetInt("gDiff", 1);
 		shader.SetInt("gNorm", 2);
-		for (int i = 0; i < 5; i++)
-			shader.SetInt("shadowMaps[" + std::to_string(i) + "]", i + 10);
-		for (int i = 0; i < 5; i++)
-			shader.SetInt("shadowMapsCube[" + std::to_string(i) + "]", i + 15);
+		for (int i = 0; i < Config::LightData::dirShadowsLimit; i++)
+			shader.SetInt("dirShadowMaps[" + std::to_string(i) + "]", i + Config::LightData::dirShadowBaseIndex);
+		for (int i = 0; i < Config::LightData::pointShadowsLimit; i++)
+			shader.SetInt("pointShadowMaps[" + std::to_string(i) + "]", i + Config::LightData::pointShadowBaseIndex);
 	}
 
 	void DeferredData::SetGPassShader(Shader shader)
@@ -67,6 +68,17 @@ namespace Nork::Renderer::Pipeline
 		Logger::Info("Deferred pipeline initialized");
 	}
 	static std::chrono::high_resolution_clock clock;
+
+	void Deferred::UseShadowMap(DirShadow shadow, ShadowFramebuffer& fb)
+	{
+		GLuint depth = fb.GetDepthAttachment();
+		Utils::Texture::Bind(depth, shadow.idx + Config::LightData::dirShadowBaseIndex);
+	}
+	void Deferred::UseShadowMap(PointShadow shadow, ShadowFramebuffer& fb)
+	{
+		GLuint depth = fb.GetDepthAttachment();
+		Utils::Texture::Bind(depth, shadow.idx + Config::LightData::pointShadowBaseIndex);
+	}
 
 	void Deferred::DrawScene(std::span<Model> models)
 	{
@@ -89,14 +101,12 @@ namespace Nork::Renderer::Pipeline
 		glBindFramebuffer(GL_FRAMEBUFFER, data.gBuffer.fb);
 		glClearColor(0, 0, 0, 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+		
 		data.shaders.gPass.Use();
-		auto vp = glm::identity<glm::mat4>();
 		for (size_t i = 0; i < models.size(); i++)
 		{
 			auto& meshes = models[i].first;
 			auto& mat = models[i].second;
-			auto def = glm::identity<glm::mat4>();
 
 			data.shaders.gPass.SetMat4("model", mat);
 			for (int i = 0; i < meshes.size(); i++)

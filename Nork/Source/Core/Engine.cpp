@@ -2,7 +2,7 @@
 
 #include "Modules/Renderer/Loaders/Loaders.h"
 #include "Modules/Renderer/Resource/DefaultResources.h"
-#include "Serialization/Serializer.h"
+#include "Serialization/BinarySerializer.h"
 
 namespace Nork
 {
@@ -43,22 +43,56 @@ namespace Nork
 			auto& model = view.get(id)._Myfirst._Val;
 			auto& tr = view.get(id)._Get_rest()._Myfirst._Val;
 
-			glm::mat4 rot = glm::rotate(glm::identity<glm::mat4>(), tr.rotation.z, glm::vec3(0, 0, 1));
-			rot *= glm::rotate(glm::identity<glm::mat4>(), tr.rotation.x, glm::vec3(1, 0, 0));
-			rot *= glm::rotate(glm::identity<glm::mat4>(), tr.rotation.y, glm::vec3(0, 1, 0)); // rotation around y-axis stays local (most used rotation usually)
-
-			result.push_back(std::pair(model.meshes,
-				glm::scale(glm::translate(glm::identity<glm::mat4>(), tr.position) * rot, tr.scale)));
+			result.push_back(std::pair(model.meshes, tr.GetModelMatrix()));
 		}
 
 		return result;
 	}
 
+	static std::vector<uint8_t> dShadowIndices;
+	static std::vector<uint8_t> pShadowIndices;
+	static constexpr auto dShadIdxSize = Renderer::Config::LightData::dirShadowsLimit;
+	static constexpr auto pShadIdxSize = Renderer::Config::LightData::pointShadowsLimit;
+
+	void Engine::OnDShadowAdded(entt::registry& reg, entt::entity id)
+	{
+		auto& shad = reg.get<Components::DirShadow>(id);
+		shad.GetMutableData().idx = dShadowIndices.back();
+		dShadowIndices.pop_back();
+
+		// should handle it elsewhere
+		auto light = reg.try_get<Components::DirLight>(id);
+		if (light != nullptr)
+			shad.RecalcVP(light->GetView());
+	}
+	void Engine::OnDShadowRemoved(entt::registry& reg, entt::entity id)
+	{
+		auto& shad = reg.get<Components::DirShadow>(id);
+		dShadowIndices.push_back(shad.GetData().idx);
+	}
+
 	Engine::Engine(EngineConfig& config)
-		:window(config.width, config.height), pipeline(CreatePipelineResources())
+		: window(config.width, config.height), pipeline(CreatePipelineResources())
 	{
 		Renderer::Resource::DefaultResources::Init();
-		Serialization::Init();
+
+		dShadowFramebuffers.reserve(dShadIdxSize);
+		pShadowFramebuffers.reserve(pShadIdxSize);
+		for (int i = dShadIdxSize - 1; i > -1 ; i--)
+		{
+			dShadowIndices.push_back(i);
+			dShadowFramebuffers.push_back(ShadowFramebuffer(4000, 4000));
+		}
+		for (int i = pShadIdxSize - 1; i > -1 ; i--)
+		{
+			pShadowIndices.push_back(i);
+			pShadowFramebuffers.push_back(ShadowFramebuffer(6000, 1000));
+		}
+
+		auto& reg = scene.registry.GetUnderlyingMutable();
+		reg.on_construct<Components::DirShadow>().connect<&Engine::OnDShadowAdded>(this);
+		reg.on_destroy<Components::DirShadow>().connect<&Engine::OnDShadowRemoved>(this);
+		reg.on_update<Components::DirShadow>().connect<&Engine::OnDShadowRemoved>(this);
 	}
 
 	void Engine::Launch()
@@ -99,11 +133,22 @@ namespace Nork
 	}
 	void Engine::UpdateLights()
 	{
-		auto& reg = scene.registry.GetUnderlyingMutable();
+		auto& reg = scene.registry.GetUnderlying();
 		auto dLightsWS = reg.view<Components::DirLight, Components::DirShadow>();
 		auto pLightsWS = reg.view<Components::PointLight, Components::PointShadow>();
 		auto dLights = reg.view<Components::DirLight>(entt::exclude<Components::DirShadow>);
 		auto pLights = reg.view<Components::PointLight>(entt::exclude<Components::PointShadow>);
+		// for shadow map drawing only
+		static auto pShadowMapShader = CreateShaderFromPath("Source/Shaders/pointShadMap.shader");
+		static auto dShadowMapShader = CreateShaderFromPath("Source/Shaders/dirShadMap.shader");
+
+		auto modelView = reg.view<Components::Model, Components::Transform>();
+		std::vector<std::pair<std::vector<Data::Mesh>, glm::mat4>> models;
+		for (auto& id : modelView)
+		{
+			models.push_back(std::pair(modelView.get(id)._Myfirst._Val.meshes, modelView.get(id)._Get_rest()._Myfirst._Val.GetModelMatrix()));
+		}
+		// ---------------------------
 	
 		std::vector<std::pair<Data::DirLight, Data::DirShadow>> DS;
 		std::vector<std::pair<Data::PointLight, Data::PointShadow>> PS;
@@ -116,10 +161,13 @@ namespace Nork
 
 		for (auto& id : dLightsWS)
 		{
-			auto& light = dLightsWS.get(id)._Myfirst._Val.GetData();
-			auto& shadow = dLightsWS.get(id)._Get_rest()._Myfirst._Val.GetData();
+			const auto& light = dLightsWS.get(id)._Myfirst._Val.GetData();
+			const auto& shadow = dLightsWS.get(id)._Get_rest()._Myfirst._Val.GetData();
 			auto pair = std::pair<Data::DirLight, Data::DirShadow>(light, shadow);
 			DS.push_back(pair);
+
+			lightMan.DrawDirShadowMap(light, shadow, models, dShadowFramebuffers[shadow.idx], dShadowMapShader);
+			pipeline.UseShadowMap(shadow, dShadowFramebuffers[shadow.idx]);
 		}
 		for (auto& id : pLightsWS)
 		{
@@ -137,6 +185,7 @@ namespace Nork
 		}
 
 		lightMan.Update(DS, PS, DL, PL);
+
 	}
 	void Engine::ViewProjectionUpdate()
 	{

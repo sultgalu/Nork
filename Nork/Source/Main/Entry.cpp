@@ -53,6 +53,8 @@ int main()
 	auto& pl = engine.scene.AddComponent<Components::PointLight>(node);
 	pl.SetPower(1);
 
+	//test5();
+
 	/*engine.window.GetInputEvents().Subscribe<Event::Types::InputEvent>([](const Event::Types::InputEvent& ev)
 		{
 			Logger::Debug("Input Event: ", ev.GetName(), " From: ", ev.from.file_name(), ":", ev.from.line());

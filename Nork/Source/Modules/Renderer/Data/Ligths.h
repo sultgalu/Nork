@@ -12,8 +12,9 @@ namespace Nork::Renderer::Data
 	};
 	struct PointShadow
 	{
-		float bias, biasMin, blur, radius, far;
-		float dummies[3];
+		float bias, biasMin, blur, radius, far, near;
+		int idx;
+		float dummies[1];
 	};
 	struct DirLight
 	{
@@ -24,6 +25,7 @@ namespace Nork::Renderer::Data
 	struct DirShadow
 	{
 		glm::mat4 VP;
-		float bias, biasMin, pcfSize, dummy;
+		float bias, biasMin, pcfSize;
+		int idx;
 	};
 }

@@ -1,8 +1,24 @@
 #include "pch.h"
 #include "../MainPanel.h"
+#include "Platform/FileDialog.h"
 
 namespace Nork::Editor
 {
+	MainPanel::MainPanel(EditorData& d) : Panel("MainPanel", d)
+	{
+		this->events.Subscribe<Event::Types::KeyDown>([&](const Event::Types::KeyDown& ev)
+			{
+				using namespace Input;
+				if (ev.key == Input::KeyType::S && data.engine.window.GetInputState().Is<KeyState::Down>(KeyType::Ctrl))
+				{
+					SaveScene();
+				}
+				else if (ev.key == Input::KeyType::Q && data.engine.window.GetInputState().Is<KeyState::Down>(KeyType::Ctrl))
+				{
+					LoadScene();
+				}
+			});
+	}
 	void MainPanel::Begin()
 	{
 	}
@@ -15,15 +31,11 @@ namespace Nork::Editor
 			{
 				if (ImGui::MenuItem("Open Scene..", "Ctrl+O"))
 				{
-					/*std::string fileName = FileDialog::OpenFile(EngineFileTypes::None, L"Import Scene", L"Load");
-					if (!fileName.empty())
-						scene.Load(fileName);*/
+					LoadScene();
 				}
 				if (ImGui::MenuItem("Save Scene..", "Ctrl+S"))
 				{
-					/*std::string fileName = FileDialog::SaveFile(EngineFileTypes::None, L"Export Scene", L"Save");
-					if (!fileName.empty())
-						scene.Save(fileName);*/
+					SaveScene();
 				}
 				ImGui::MenuItem("Save All..", "Ctrl+Shift+S");
 				ImGui::EndMenu();
@@ -32,6 +44,22 @@ namespace Nork::Editor
 			ImGui::Text("fps");
 			ImGui::EndMainMenuBar();
 		}
+	}
+
+	void MainPanel::LoadScene()
+	{
+		using namespace FileDialog;
+		std::string fileName = FileDialog::OpenFile(EngineFileTypes::None, L"Import Scene", L"Load");
+		if (!fileName.empty())
+			data.engine.scene.Load(fileName);
+	}
+
+	void MainPanel::SaveScene()
+	{
+		using namespace FileDialog;
+		std::string fileName = FileDialog::SaveFile(EngineFileTypes::None, L"Export Scene", L"Save");
+		if (!fileName.empty())
+			data.engine.scene.Save(fileName);
 	}
 
 

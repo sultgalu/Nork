@@ -54,6 +54,9 @@ namespace Nork::Renderer::Utils::Texture
 		case Depth32FStencil8:
 			return GL_FLOAT_32_UNSIGNED_INT_24_8_REV;
 
+		case None:
+			MetaLogger().Error("Texture format \"None\" is an INVALID format.");
+
 		default:
 			Logger::Error("Unrecognized TextureFormat: ", (int)f);
 			return GL_NONE;
@@ -95,6 +98,9 @@ namespace Nork::Renderer::Utils::Texture
 			return GL_DEPTH_STENCIL;
 		case Depth32FStencil8:
 			return GL_DEPTH_STENCIL;
+
+		case None:
+			MetaLogger().Error("Texture format \"None\" is an INVALID format.");
 
 		default:
 			Logger::Error("Unrecognized TextureFormat: ", (int)f);

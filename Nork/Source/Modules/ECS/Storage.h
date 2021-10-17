@@ -19,7 +19,6 @@ namespace Nork::ECS
 		{
 			reg.view<T...>().each(func);
 		}
-
 	private:
 		const entt::registry& reg;
 	};
@@ -27,6 +26,10 @@ namespace Nork::ECS
 	class Registry
 	{
 	public:
+		inline void DeleteEntity(Id id)
+		{
+			reg.destroy(id);
+		}
 		inline Id CreateEntity(Id hint)
 		{
 			return reg.create(hint);
@@ -60,10 +63,23 @@ namespace Nork::ECS
 		{
 			return LazyQuery<T...>(reg);
 		}
+		template<typename T>
+		inline auto GetComponent(ECS::Id id) const
+		{
+			return reg.get<T>(id);
+		}
 		template<typename... T>
 		inline auto HasAny(ECS::Id id) const
 		{
 			return reg.any_of<T...>(id);
+		}
+		inline auto EntityCount() const
+		{
+			return reg.size();
+		}
+		inline auto EntitiesRaw() const
+		{
+			return reg.data();
 		}
 		inline const entt::registry& GetUnderlying() const
 		{
@@ -73,10 +89,14 @@ namespace Nork::ECS
 		{
 			return reg;
 		}
-		inline void Clear()
+		inline void Wipe()
+		{
+			reg = entt::registry();
+		}
+		/*inline void Clear()
 		{
 			reg.clear();
-		}
+		}*/
 	private:
 		entt::registry reg;
 	};

@@ -22,7 +22,8 @@ namespace Nork::Editor
 		void TransformComp(Transform*);
 		void ModelComp(Model*);
 		void PointLighComp(PointLight*);
-		void DirLightComp(DirLight*);
+		void DirLightComp(DirLight*, DirShadow*);
+		void DirShadowComp(DirShadow*, DirLight*);
 		void NameComp(Tag*);
 	private:
 		//entt::registry& reg;

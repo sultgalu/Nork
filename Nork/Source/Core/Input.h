@@ -106,6 +106,11 @@ namespace Nork::Input
 		{
 			return keys[Types::ToInt(key)];
 		}
+		template<State::Key State>
+		inline bool Is(Types::Key key)
+		{
+			return (keys[ToInt(key)] & State) == State;
+		}
 		inline bool Is(Types::Key key, Key state)
 		{
 			return (keys[ToInt(key)] & state) == state;

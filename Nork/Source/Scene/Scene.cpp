@@ -1,25 +1,39 @@
 #include "pch.h"
 #include "Scene.h"
-#include "Serialization/Serializer.h"
+#include "Serialization/BinarySerializer.h"
 
 namespace fs = std::filesystem;
 
 namespace Nork::Scene
 {
+	using namespace Components;
+	using namespace Serialization;
+	using Serializer = BinarySerializer
+		::WithTrivial<Transform,	DirLight, PointLight, DirShadow, PointShadow>
+		::WithCustome<Tag, Model>;
+
 	void Scene::Save(std::string path)
 	{
-		std::ofstream file(path, std::ios::binary);
-		Serialization::SerializeRegistry(this->registry, file);
-		file.close();
+		std::ofstream stream(path, std::ios::binary);
+		
+		auto vec = Serializer::Serialize(*this);
+		stream.write(vec.data(), vec.size());
+		stream.close();
 	}
 
 	void Scene::Load(std::string path)
 	{
-		std::string dirName = path.substr(path.find_last_of('\\') + 1, path.find_last_of('.') - (path.find_last_of('\\') + 1));
-		std::ifstream refFile(path, std::ios::binary);
-		this->registry.Clear();
-		Serialization::DeserializeRegistry(this->registry, refFile);
-		refFile.close();
+		FreeResources();
+		this->registry.Wipe();
+		std::ifstream stream(path, std::ios::binary | std::ios::ate);
+		
+		size_t size = stream.tellg();
+		stream.seekg(0, std::ios_base::beg);
+		std::vector<char> buf(size, '\0');
+		stream.read(buf.data(), size);
+		Serializer::Deserialize(*this, buf.data());
+		
+		stream.close();
 	}
 
 	Components::Model Nork::Scene::Scene::GetModelByResource(std::vector<Renderer::Data::MeshResource> resource)

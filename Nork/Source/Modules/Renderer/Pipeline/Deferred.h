@@ -4,6 +4,7 @@
 #include "../Data/Texture.h"
 #include "../Data/Mesh.h"
 #include "../Data/Ligths.h"
+#include "Framebuffer.h"
 
 using namespace Nork::Renderer::Data;
 
@@ -56,6 +57,8 @@ namespace Nork::Renderer::Pipeline
 		Deferred(DeferredData);
 		~Deferred() = default;
 		void DrawScene(std::span<Model> models);
+		void UseShadowMap(DirShadow shadow, ShadowFramebuffer& fb);
+		void UseShadowMap(PointShadow shadow, ShadowFramebuffer& fb);
 	private:
 		void DrawGBuffers(std::span<Model> models);
 		void DrawLightPass();

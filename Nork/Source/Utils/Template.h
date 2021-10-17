@@ -113,6 +113,46 @@ namespace Nork
 			};
 
 		}
+
+		namespace Utils
+		{
+			template<typename Element, size_t size, std::array<Element, size> arr>
+			struct Loop
+			{
+				template<typename Func>
+				Loop(Func func)
+				{
+					Recursive<0>(func);
+				}
+
+				Loop() = default;
+
+				template<typename Func>
+				consteval auto operator()(Func func)
+				{
+					return Recursive<0>(func);
+				}
+
+				template<size_t i, auto prev, typename Func>
+				static consteval auto Recursive(Func func)
+				{
+					if constexpr (i < arr.size() - 1)
+					{
+						return Recursive<i + 1, func(i, prev)>(func);
+					}
+					return func(i, prev);
+				}
+
+				template<size_t i, typename Func>
+				static consteval auto Recursive(Func func)
+				{
+					if constexpr (i < arr.size())
+					{
+						return Recursive<i + 1, func(i)>(func);
+					}
+				}
+			};
+		}
 	}
 	
 	// For enum classes: Automatic implementation of bitwise operations

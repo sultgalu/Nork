@@ -11,7 +11,7 @@ namespace Nork::Components
 	{
 	public:
 		inline T& GetMutableData() { return data; }
-		inline const T& GetData() { return data; }
+		inline const T& GetData() const { return data; }
 	protected:
 		Wrapper(T&& t) : data(t) {}
 		Wrapper()
@@ -67,17 +67,24 @@ namespace Nork::Components
 		{
 		}
 
+		inline glm::mat4 GetView() const { return glm::lookAt(glm::vec3(0) - data.direction, glm::vec3(0), glm::vec3(0.0f, 1.0f, 0.0f)); }
 		inline void SetColor(glm::vec4& val) { data.color = glm::vec4(val); }
 		inline void SetDirection(glm::vec3& val) { data.direction = glm::vec3(val); }
 	};
 	struct DirShadow : Wrapper<Data::DirShadow>
 	{
+		DirShadow() 
+			: Wrapper(Data::DirShadow {.VP = glm::identity<glm::mat4>(), .bias = 0.01f,
+				.biasMin = 0.01f , .pcfSize = 1})
+		{
+		}
 		inline void SetBias(float val) { data.bias = val; }
 		inline void SetBiasMin(float val) { data.biasMin = val; }
 		inline void SetPcfSize(float val) { data.pcfSize = val; }
-		inline void RecalcVP(float left, float right, float bottom, float top, float near, float far)
+		inline void RecalcVP(const glm::mat4& view)
 		{
-			data.VP = glm::ortho(left, right, bottom, top, near, far);
+			data.VP = glm::ortho(left, right, bottom, top, near, far) * view;
 		}
+		float left = -30, right = 30, bottom = -30, top = 30, near = -50, far = 50;
 	};
 }

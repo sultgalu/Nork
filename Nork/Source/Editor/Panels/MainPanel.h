@@ -6,11 +6,14 @@ namespace Nork::Editor
 	class MainPanel : public Panel
 	{
 	public:
-		MainPanel(EditorData& d) : Panel("MainPanel", d) {}
+		MainPanel(EditorData& d);
 	protected:
 		virtual void Begin() override;
 		virtual void End() override;
 		virtual void DrawContent() override;
+	private:
+		void LoadScene();
+		void SaveScene();
 	};
 }
 

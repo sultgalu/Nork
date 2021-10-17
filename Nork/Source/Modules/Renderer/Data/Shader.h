@@ -26,7 +26,7 @@ namespace Nork::Renderer::Data
 		{
 			glUseProgram(this->program);
 		}
-		inline void SetMat4(std::string name, glm::mat4& value)
+		inline void SetMat4(std::string name, const glm::mat4& value)
 		{
 			auto loc = this->uniformLocations.find(name);
 			if (loc != this->uniformLocations.end())
@@ -52,7 +52,7 @@ namespace Nork::Renderer::Data
 					), "\"");
 			}
 		}
-		inline void SetVec4(std::string name, glm::vec4& value)
+		inline void SetVec4(std::string name, const glm::vec4& value)
 		{
 			auto loc = this->uniformLocations.find(name);
 			if (loc != this->uniformLocations.end())
@@ -66,13 +66,13 @@ namespace Nork::Renderer::Data
 				this->uniformLocations[name] = newLoc;
 				if (newLoc != -1)
 				{
-					glUniformMatrix4fv(newLoc, 1, false, (const GLfloat*)(&value));
+					glUniform4f(newLoc, value.x, value.y, value.z, value.w);
 					MetaLogger().Warning("GetUniforms didn't find uniform \"", name, "\", but the shader cached it.");
 				}
 				else MetaLogger().Error("Trying to set invalid shader uniform: \"", name, "\" to \"", std::format("({},{},{},{})", value.x, value.y, value.z, value.w), "\"");
 			}
 		}
-		inline void SetVec3(std::string name, glm::vec3& value)
+		inline void SetVec3(std::string name, const glm::vec3& value)
 		{
 			auto loc = this->uniformLocations.find(name);
 			if (loc != this->uniformLocations.end())
@@ -86,7 +86,7 @@ namespace Nork::Renderer::Data
 				this->uniformLocations[name] = newLoc;
 				if (newLoc != -1)
 				{
-					glUniformMatrix4fv(newLoc, 1, false, (const GLfloat*)(&value));
+					glUniform3f(newLoc, value.x, value.y, value.z);
 					MetaLogger().Warning("GetUniforms didn't find uniform \"", name, "\", but the shader cached it.");
 				}
 				else MetaLogger().Error("Trying to set invalid shader uniform: \"", name, "\" to \"", std::format("({},{},{})", value.x, value.y, value.z), "\"");
@@ -106,7 +106,7 @@ namespace Nork::Renderer::Data
 				this->uniformLocations[name] = newLoc;
 				if (newLoc != -1)
 				{
-					glUniformMatrix4fv(newLoc, 1, false, (const GLfloat*)(&value));
+					glUniform1f(newLoc, value);
 					MetaLogger().Warning("GetUniforms didn't find uniform \"", name, "\", but the shader cached it.");
 				}
 				else MetaLogger().Error("Trying to set invalid shader uniform: \"", name, "\" to \"", value, "\"");
@@ -126,7 +126,7 @@ namespace Nork::Renderer::Data
 				this->uniformLocations[name] = newLoc;
 				if (newLoc != -1)
 				{
-					glUniformMatrix4fv(newLoc, 1, false, (const GLfloat*)(&value));
+					glUniform1i(newLoc, value);
 					MetaLogger().Warning("GetUniforms didn't find uniform \"", name, "\", but the shader cached it.");
 				}
 				else MetaLogger().Error("Trying to set invalid shader uniform: \"", name, "\" to \"", value, "\"");

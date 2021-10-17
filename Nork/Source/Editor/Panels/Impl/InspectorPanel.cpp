@@ -199,12 +199,14 @@ namespace Nork::Editor
 			ImGui::TreePop();
 		}
 	}
-	void InspectorPanel::DirLightComp(DirLight* dL)
+	void InspectorPanel::DirLightComp(DirLight* dL, DirShadow* ds)
 	{
 		if (ImGui::TreeNodeEx("Directional light", ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			if (ImGui::SliderFloat3("Direction", (float*)&(dL->GetMutableData().direction.x), -1, 1))
 			{
+				if (ds != nullptr)
+					ds->RecalcVP(dL->GetView());
 				// dL->SetDirection(std::forward<glm::vec3&>(glm::normalize(dL->GetData().direction)));
 			}
 			if (ImGui::ColorEdit4("Color", &(dL->GetMutableData().color.r))) {}
@@ -233,6 +235,48 @@ namespace Nork::Editor
 			if (ImGui::Button("Delete"))
 			{
 				scene.RemoveComponent<DirLight>(data.selectedEnt);
+			}
+			ImGui::PopStyleColor();
+
+			ImGui::TreePop();
+		}
+	}
+	void InspectorPanel::DirShadowComp(DirShadow* comp, DirLight* dl)
+	{
+		if (ImGui::TreeNodeEx("Directional shadow", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			if (ImGui::DragFloat2("Left, Right", &comp->left))
+			{
+				comp->RecalcVP(dl->GetView());
+			}
+			if (ImGui::DragFloat2("Borrom, Top", &comp->bottom))
+			{
+				comp->RecalcVP(dl->GetView());
+			}
+			if (ImGui::DragFloat2("Near, Far", &comp->near))
+			{
+				comp->RecalcVP(dl->GetView());
+			}
+			float bias = comp->GetData().bias;
+			float biasMin = comp->GetData().biasMin;
+			int pcfSize = (int)comp->GetData().pcfSize;
+			if (ImGui::SliderFloat("Bias", &bias, 0, 1, "%.5f", ImGuiSliderFlags_Logarithmic))
+			{
+				comp->SetBias(bias);
+			}
+			if (ImGui::SliderFloat("Minimum bias", &biasMin, 0, 1, "%.5f", ImGuiSliderFlags_Logarithmic))
+			{
+				comp->SetBiasMin(biasMin);
+			}
+			if (ImGui::SliderInt("PCF quality", &pcfSize, 0, 9))
+			{
+				comp->SetPcfSize(pcfSize);
+			}
+			if (ImGui::SliderInt("IDX", &comp->GetMutableData().idx, 0, 4));
+			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
+			if (ImGui::Button("Delete"))
+			{
+				scene.RemoveComponent<DirShadow>(data.selectedEnt);
 			}
 			ImGui::PopStyleColor();
 
@@ -298,6 +342,7 @@ namespace Nork::Editor
 			this->CompSelector<Transform>();
 			this->CompSelector<PointLight>();
 			this->CompSelector<DirLight>();
+			this->CompSelector<DirShadow>();
 			this->CompSelector<Camera>();
 			this->CompSelector<Model>();
 
@@ -318,6 +363,7 @@ namespace Nork::Editor
 			auto* pL = reg.try_get<PointLight>(selected);
 			//auto* sL = scene.ents.try_get<SpotLight>(selected);
 			auto* dL = reg.try_get<DirLight>(selected);
+			auto* dS = reg.try_get<DirShadow>(selected);
 			auto* name = reg.try_get<Tag>(selected);
 			auto* model = reg.try_get<Model>(selected);
 			auto* cam = reg.try_get<Camera>(selected);
@@ -339,7 +385,12 @@ namespace Nork::Editor
 			}
 			if (dL != nullptr)
 			{
-				DirLightComp(dL);
+				DirLightComp(dL, dS);
+				ImGui::Separator();
+			}
+			if (dS != nullptr && dL != nullptr)
+			{
+				DirShadowComp(dS, dL);
 				ImGui::Separator();
 			}
 			if (name != nullptr)

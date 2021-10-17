@@ -164,9 +164,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Serialization\BinarySerializer.cpp" />
     <ClCompile Include="Source\Editor\Panels\Impl\HierarchyPanel.cpp" />
     <ClCompile Include="Source\Platform\Windows\FileDialog.cpp" />
-    <ClCompile Include="Source\Serialization\Serializer.cpp" />
     <ClCompile Include="Source\Editor\Panels\Impl\InspectorPanel.cpp" />
     <ClCompile Include="Source\Scene\Scene.cpp" />
     <ClCompile Include="Source\Scene\ResourceManager.cpp" />
@@ -264,10 +264,11 @@
     <ClCompile Include="Source\Editor\Panels\Impl\ViewportPanel.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Serialization\BinarySerializer.h" />
     <ClInclude Include="Source\Editor\Panels\All.h" />
     <ClInclude Include="Source\Editor\Panels\HierarchyPanel.h" />
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\Framebuffer.h" />
     <ClInclude Include="Source\Platform\FileDialog.h" />
-    <ClInclude Include="Source\Serialization\Serializer.h" />
     <ClInclude Include="Source\Editor\EditorData.h" />
     <ClInclude Include="Source\Editor\Panels\InspectorPanel.h" />
     <ClInclude Include="Source\Modules\Renderer\Pipeline\SharedData.h" />
@@ -310,8 +311,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\OneDrive\Dokumentumok\GameEngine_0\GameEngineEditor\resources\shaders\lightPass.shader" />
+    <None Include="Source\Shaders\dirShadMap.shader" />
     <None Include="Source\Shaders\gPass.shader" />
     <None Include="Source\Shaders\lightPass.shader" />
+    <None Include="Source\Shaders\pointShadMap.shader" />
     <None Include="Source\Shaders\skybox.shader" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

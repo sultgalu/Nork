@@ -67,41 +67,45 @@ namespace Nork::Editor
 		ImGui::SameLine();
 		ImGui::Text((std::to_string(actualPos2.x) + ";" + std::to_string(actualPos2.y)).c_str());
 
-		static const char* const names[]
+		if (ImGui::BeginPopup("texturesToDisplay"))
 		{
-			"Final",
-			"GPosition", "GDiffuse", "GNormal", "GDepth", "DeferredResult", "GOutl",
-			"DirShadow", "LightPass", "Bloom" , "SSAO", "SSAONoise", "dShadow0", "dShadow1", "dShadow2"
-		};
-		int channels[] = { 3, 3, 3, 3, 1, 1, 3, 3, 1, 3 };
-		static int selected = 0;
-
-		//if (ImGui::BeginPopup("texturesToDisplay"))
-		//{
-		//	for (int i = 0; i < sizeof(names) / sizeof(char*); i++)
-		//	{
-		//		if (ImGui::Selectable(names[i]))
-		//		{
-		//			selected = i;
-		//			//this->data.tex = scene.pipeline.GetTexture(textures[selected]);
-		//			if (selected == 0)
-		//				this->data.tex = scene.engine.GetPostProcessor().data.final.tex;
-		//			if (selected == 1)
-		//				this->data.tex = scene.engine.GetDefPipeline().data.gBuffer.pos;
-		//			if (selected == 2)
-		//				this->data.tex = scene.engine.GetDefPipeline().data.gBuffer.diff;
-		//			if (selected == 3)
-		//				this->data.tex = scene.engine.GetDefPipeline().data.gBuffer.norm;
-		//			if (selected == 4)
-		//				this->data.tex = scene.engine.GetDefPipeline().data.gBuffer.depth;
-		//			if (selected == 5)
-		//				this->data.tex = scene.engine.GetDefPipeline().data.lightPass.tex;
-		//		}
-		//		if (i == selected)
-		//			ImGui::SetItemDefaultFocus();
-		//	}
-		//	ImGui::EndPopup();
-		//}
+			if (ImGui::Selectable("Default"))
+			{
+				image.texture = data.engine.pipeline.data.lightPass.tex;
+			}
+			if (ImGui::Selectable("GBuffer: depth"))
+			{
+				image.texture = data.engine.pipeline.data.gBuffer.depth;
+			}
+			if (ImGui::Selectable("GBuffer: diffuse"))
+			{
+				image.texture = data.engine.pipeline.data.gBuffer.diff;
+			}
+			if (ImGui::Selectable("GBuffer: normal"))
+			{
+				image.texture = data.engine.pipeline.data.gBuffer.norm;
+			}
+			if (ImGui::Selectable("GBuffer: position"))
+			{
+				image.texture = data.engine.pipeline.data.gBuffer.pos;
+			}
+			for (size_t i = 0; i < data.engine.dShadowFramebuffers.size(); i++)
+			{
+				if (ImGui::Selectable(("Dirlight ShadowMap #" + std::to_string(i)).c_str()))
+				{
+					image.texture = data.engine.dShadowFramebuffers[i].GetDepthAttachment();
+				}
+			}
+			for (size_t i = 0; i < data.engine.pShadowFramebuffers.size(); i++)
+			{
+				if (ImGui::Selectable(("Pointlight ShadowMap #" + std::to_string(i)).c_str()))
+				{
+					image.texture = data.engine.pShadowFramebuffers[i].GetDepthAttachment();
+				}
+			}
+			
+			ImGui::EndPopup();
+		}
 	}
 }
 

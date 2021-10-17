@@ -1,13 +1,12 @@
 #pragma once
 
-#define NORK_ASSERT
-
 namespace Nork::Renderer::Config
 {
 	struct LightData
 	{
 		inline static constexpr size_t dirLightsLimit = 10, dirShadowsLimit = 5,
 			pointLightsLimit = 10, pointShadowsLimit = 5;
+		inline static int dirShadowBaseIndex = 10, pointShadowBaseIndex = 15;
 	};
 	struct UBOIdx
 	{

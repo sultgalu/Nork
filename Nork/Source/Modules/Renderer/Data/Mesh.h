@@ -35,6 +35,8 @@ namespace Nork::Renderer::Data
 				this->textures[i] = resource.textures[i].id;
 		}
 
+		Mesh() = default;
+
 		GLuint vao;
 		GLsizei indices;
 		GLuint textures[textureTypeCount];

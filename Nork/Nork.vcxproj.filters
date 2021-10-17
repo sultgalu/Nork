@@ -120,13 +120,13 @@
     <ClCompile Include="Source\Editor\Panels\Impl\InspectorPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Serialization\Serializer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Platform\Windows\FileDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Panels\Impl\HierarchyPanel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Serialization\BinarySerializer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -245,9 +245,6 @@
     <ClInclude Include="Source\Editor\EditorData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Serialization\Serializer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Editor\Panels\All.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -260,11 +257,19 @@
     <ClInclude Include="Source\Utils\Template.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\Framebuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Serialization\BinarySerializer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\OneDrive\Dokumentumok\GameEngine_0\GameEngineEditor\resources\shaders\lightPass.shader" />
     <None Include="Source\Shaders\lightPass.shader" />
     <None Include="Source\Shaders\gPass.shader" />
     <None Include="Source\Shaders\skybox.shader" />
+    <None Include="Source\Shaders\dirShadMap.shader" />
+    <None Include="Source\Shaders\pointShadMap.shader" />
   </ItemGroup>
 </Project>

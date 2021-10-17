@@ -10,7 +10,7 @@ void Nork::Editor::HierarchyPanel::DrawContent()
 			if (name == nullptr)
 				str = std::string(("UNNAMED(ID=" + std::to_string(static_cast<int>(ent)) + ")").c_str());
 			else
-				str = name->tag;
+				str = std::string(name->tag);
 
 			if (ImGui::Selectable(str.c_str(), data.selectedEnt == ent))
 				data.selectedEnt = ent;
@@ -25,7 +25,7 @@ void Nork::Editor::HierarchyPanel::DrawContent()
 	{
 		if (ImGui::Selectable("Delete"))
 		{
-			reg.destroy(data.selectedEnt);
+			data.engine.scene.DeleteNode(data.selectedEnt);
 			data.selectedEnt = entt::null;
 			ImGui::CloseCurrentPopup();
 		}

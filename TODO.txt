@@ -7,3 +7,6 @@ Make Event Categories. eg. WindowClose should not be INPUT.
 	-> Make EventManager templated by these categories
 CameraController will need a parameter that has AppEvents, so it can listen to onUpdate().
 	Or make onUpdate() method and call from outside?
+
+REMOVE ECS::REGISTRY. Just use entt, no wrapping needed it's whatever.
+rename Renderer::Data::* -> RawData::*, APIData::*, ResourceData::* OR Data::Raw::*, Data::API::*, Data::Resource::*

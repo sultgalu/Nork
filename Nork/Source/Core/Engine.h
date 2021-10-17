@@ -35,6 +35,8 @@ namespace Nork
 		void SyncComponents();
 		void UpdateLights();
 		void ViewProjectionUpdate();
+		void OnDShadowAdded(entt::registry& reg, entt::entity ent);
+		void OnDShadowRemoved(entt::registry& reg, entt::entity ent);
 	public:
 		Window window;
 		Deferred pipeline;
@@ -42,6 +44,9 @@ namespace Nork
 		Event::Dispatcher appEventMan;
 		Resources resources;
 		Scene::Scene scene;
+		
+		std::vector<Renderer::ShadowFramebuffer> dShadowFramebuffers;
+		std::vector<Renderer::ShadowFramebuffer> pShadowFramebuffers;
 	};
 
 	extern std::optional<Components::Camera*> GetActiveCamera();
