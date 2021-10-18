@@ -10,6 +10,35 @@ using namespace Nork::Renderer::Data;
 
 namespace Nork::Renderer::Pipeline
 {
+	using GFB = Framebuffer<TextureFormat::Depth16, TextureFormat::RGBA16F, TextureFormat::RGBA16F, TextureFormat::RGBA16F>;
+
+	class GeometryFramebuffer : private GFB
+	{
+		using GFB::GFB;
+		using GFB::Use;
+		using GFB::Clear;
+		using GFB::ClearAndUse;
+		using GFB::Width;
+		using GFB::Height;
+
+		inline GLuint Depth()
+		{
+			return depth;
+		}
+		inline GLuint Position()
+		{
+			return colors[0];
+		}
+		inline GLuint Diffuse()
+		{
+			return colors[1];
+		}
+		inline GLuint Normal()
+		{
+			return colors[2];
+		}
+	};
+
 	struct DeferredData
 	{
 		struct GBufferData
