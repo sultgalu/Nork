@@ -107,6 +107,7 @@ namespace Nork::Renderer::Utils::Texture
 			return GL_NONE;
 		}
 	}
+	
 	std::vector<unsigned char> LoadImageData(std::string_view path, int& width, int& height, int& channels)
 	{
 		unsigned char* data = stbi_load(path.data(), &width, &height, &channels, 0);
@@ -124,6 +125,41 @@ namespace Nork::Renderer::Utils::Texture
 			Logger::Error("Failed to load texture data from ", path);
 			return std::vector<unsigned char>();
 		}
+	}
+	template<TextureType Type>
+	unsigned int Create2D(int width, int height, Format format, const void** data, Wrap wrap, Filter filter, bool magLinear, bool genMipmap)
+	{
+		unsigned int handle = 0;
+		auto target = GetTarget<Type>();
+		glGenTextures(1, &handle);
+		glBindTexture(target, handle);
+
+		glTexParameteri(target, GL_TEXTURE_MIN_FILTER, static_cast<GLenum>(filter));
+		glTexParameteri(target, GL_TEXTURE_MAG_FILTER, magLinear ? GL_LINEAR : GL_NEAREST);
+		glTexParameteri(target, GL_TEXTURE_WRAP_S, static_cast<GLenum>(wrap));
+		glTexParameteri(target, GL_TEXTURE_WRAP_T, static_cast<GLenum>(wrap));
+		if constexpr (Type == TextureType::Cube)
+			glTexParameteri(target, GL_TEXTURE_WRAP_R, static_cast<GLenum>(wrap));
+
+		if constexpr (Type == TextureType::_2D)
+			glTexImage2D(GL_TEXTURE_2D, 0, GetInternalFormat(format), width, height, false, GetFormat(format), GL_UNSIGNED_BYTE, data);
+		else if constexpr (Type == TextureType::Cube)
+		{
+			for (size_t i = 0; i < 6; i++)
+			{
+				Logger::Debug("Loading Cubemap face #", i);
+				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GetInternalFormat(format), width, height, false, GetFormat(format), GL_UNSIGNED_BYTE, data);
+			}
+		}
+		else
+		{
+			MetaLogger().Error("This type of texture creaton is not implemented yet.");
+		}
+
+		if (genMipmap)
+			glGenerateMipmap(target);
+
+		return handle;
 	}
 	unsigned int Create2D(const void* data, int width, int height, int channels, Wrap wrap, Filter filter, bool magLinear, bool genMipmap)
 	{
@@ -187,6 +223,27 @@ namespace Nork::Renderer::Utils::Texture
 
 		return handle;
 	}
+	unsigned int CreateCube(int width, int height, Format texFormat, int sampleCount)
+	{
+		unsigned int id;
+		glGenTextures(1, &id);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, id);
+
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+		for (int i = 0; i < 6; i++)
+		{
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GetInternalFormat(texFormat),
+				width, height, 0, GetFormat(texFormat), GetType(texFormat), 0);
+		}
+
+		return id;
+	}
 	unsigned int CreateCube(std::string dirPath, std::string extension)
 	{
 		unsigned int id;
@@ -225,41 +282,5 @@ namespace Nork::Renderer::Utils::Texture
 		}
 
 		return id;
-	}
-	unsigned int CreateCube(int width, int height, Format texFormat, int sampleCount)
-	{
-		unsigned int id;
-		glGenTextures(1, &id);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, id);
-
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-		for (int i = 0; i < 6; i++)
-		{
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GetInternalFormat(texFormat),
-				width, height, 0, GetFormat(texFormat), GetType(texFormat), 0);
-		}
-
-		return id;
-	}
-	void Bind(unsigned int handle, int slot)
-	{
-		glActiveTexture(GL_TEXTURE0 + slot);
-		glBindTexture(GL_TEXTURE_2D, handle);
-	}
-	void BindMS(unsigned int handle, int slot)
-	{
-		glActiveTexture(GL_TEXTURE0 + slot);
-		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, handle);
-	}
-	void BindCube(unsigned int handle, int slot)
-	{
-		glActiveTexture(GL_TEXTURE0 + slot);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, handle);
 	}
 }

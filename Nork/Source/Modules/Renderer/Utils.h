@@ -12,6 +12,11 @@ namespace Nork::Renderer::Utils
 
 	namespace Texture
 	{
+		enum class TextureType : uint8_t
+		{
+			_2D, _2DMS, _2DArray, Cube
+		};
+
 		enum class Format: int
 		{
 			RGBA = GL_RGBA8, RGBA16F = GL_RGBA16F, RGB = GL_RGB8, RGB16F = GL_RGB16F, R32I = GL_R32I, R8 = GL_R8, R8I = GL_R8I, R32F = GL_R32F,
@@ -37,13 +42,45 @@ namespace Nork::Renderer::Utils
 		};
 
 		std::vector<unsigned char> LoadImageData(std::string_view path, int& width, int& height, int& channels);
-		unsigned int Create2D(const void* data, int width, int height, int channels, Wrap wrap = Wrap::Repeat, Filter filter = Filter::LinearMipmapNearest, bool magLinear = true, bool genMipmap = true);
+		template<TextureType Type = TextureType::_2D>
+		unsigned int Create2D(int width, int height, Format texFormat, const void** data = nullptr, Wrap wrap = Wrap::Repeat, Filter filter = Filter::LinearMipmapNearest, bool magLinear = true, bool genMipmap = true);
+		/*unsigned int Create2D(const void* data, int width, int height, int channels, Wrap wrap = Wrap::Repeat, Filter filter = Filter::LinearMipmapNearest, bool magLinear = true, bool genMipmap = true);
 		unsigned int Create2D(int width, int height, Format texFormat, int sampleCount = 1, bool repeat = false, void* data = nullptr, bool linear = true);
+		unsigned int CreateCube(int width, int height, Format texFormat, int sampleCount = 1);*/
 		unsigned int CreateCube(std::string dirPath, std::string extension);
-		unsigned int CreateCube(int width, int height, Format texFormat, int sampleCount = 1);
-		void Bind(unsigned int handle, int slot = 0);
-		void BindMS(unsigned int handle, int slot = 0);
-		void BindCube(unsigned int handle, int slot = 0);
+
+		template<TextureType Type>
+		static consteval GLenum GetTarget()
+		{
+			if constexpr (Type == TextureType::_2D)
+			{
+				return GL_TEXTURE_2D;
+			}
+			else if constexpr (Type == TextureType::Cube)
+			{
+				return GL_TEXTURE_CUBE_MAP;
+			}
+			else if constexpr (Type == TextureType::_2DMS)
+			{
+				return GL_TEXTURE_2D_MULTISAMPLE;
+			}
+			else if constexpr (Type == TextureType::_2DArray)
+			{
+				return GL_TEXTURE_2D_ARRAY;
+			}
+			else
+			{
+				MetaLogger().Error("Unhandled texture type here.");
+				return GL_NONE;
+			}
+		}
+
+		template<TextureType Type = TextureType::_2D>
+		void Bind(unsigned int handle, int slot)
+		{
+			glActiveTexture(GL_TEXTURE0 + slot);
+			glBindTexture(GetTarget<Type>(), handle);
+		}
 	}
 
 	namespace VAO

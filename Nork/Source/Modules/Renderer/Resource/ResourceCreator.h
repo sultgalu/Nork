@@ -11,10 +11,28 @@ namespace Nork::Renderer::Resource
 	inline TextureResource CreateTexture(TextureData& data)
 	{
 		using namespace Utils::Texture;
+		Format format;
+		switch (data.channels)
+		{
+			using enum Format;
+		case 3: [[likely]]
+			format = RGB;
+			break;
+		case 4:
+			format = RGBA;
+			break;
+		case 1:
+			format = R8;
+			break;
+		default:
+			MetaLogger().Error("Unexpected channel number here");
+			format = None;
+			break;
+		}
 		return TextureResource
 		{
-			.id = Create2D(data.data.data(),
-				data.width, data.height, data.channels,
+			.id = Create2D(
+				data.width, data.height, format, data.data.data(),
 				Wrap::ClampToEdge, Filter::LinearMipmapNearest,
 				true, true)
 		};
