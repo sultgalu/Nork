@@ -39,7 +39,7 @@ namespace Nork::Renderer::Data
 				this->uniformLocations[name] = newLoc;
 				if (newLoc != -1)
 				{
-					if ((*loc).second != -1)
+					if (newLoc != -1)
 						glUniformMatrix4fv(newLoc, 1, false, (const GLfloat*)(&value));
 					MetaLogger().Warning("GetUniforms didn't find uniform \"", name, "\", but the shader cached it.");
 				}

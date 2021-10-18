@@ -4,6 +4,12 @@
 
 namespace Nork::Renderer::Data
 {
+	enum class TextureUse : uint8_t
+	{
+		Diffuse = 0, Normal, Roughness, Reflection, COUNT
+	};
+	constinit const uint8_t textureTypeCount = static_cast<uint8_t>(TextureUse::COUNT);
+
 	struct Vertex
 	{
 		glm::vec3 Position, Normal;
@@ -15,7 +21,7 @@ namespace Nork::Renderer::Data
 	{
 		std::vector<Vertex> vertices;
 		std::vector<unsigned int> indices;
-		std::vector<std::pair<TextureType, TextureData>> textures;
+		std::vector<std::pair<TextureUse, TextureData>> textures;
 	};
 
 	struct MeshResource

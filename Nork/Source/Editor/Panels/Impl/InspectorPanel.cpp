@@ -107,25 +107,25 @@ namespace Nork::Editor
 				{
 					if (ImGui::BeginTabItem("Diffuse"))
 					{
-						ImGui::Image((ImTextureID)model->meshes[meshIdx].textures[(int)TextureType::Diffuse], ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
+						ImGui::Image((ImTextureID)model->meshes[meshIdx].textures[(int)TextureUse::Diffuse], ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
 							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
 						ImGui::EndTabItem();
 					}
 					if (ImGui::BeginTabItem("Normal"))
 					{
-						ImGui::Image((ImTextureID)model->meshes[meshIdx].textures[(int)TextureType::Normal], ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
+						ImGui::Image((ImTextureID)model->meshes[meshIdx].textures[(int)TextureUse::Normal], ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
 							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
 						ImGui::EndTabItem();
 					}
 					if (ImGui::BeginTabItem("Roughness"))
 					{
-						ImGui::Image((ImTextureID)model->meshes[meshIdx].textures[(int)TextureType::Roughness], ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
+						ImGui::Image((ImTextureID)model->meshes[meshIdx].textures[(int)TextureUse::Roughness], ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
 							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
 						ImGui::EndTabItem();
 					}
 					if (ImGui::BeginTabItem("Metalness"))
 					{
-						ImGui::Image((ImTextureID)model->meshes[meshIdx].textures[(int)TextureType::Reflection], ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
+						ImGui::Image((ImTextureID)model->meshes[meshIdx].textures[(int)TextureUse::Reflection], ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
 							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
 						ImGui::EndTabItem();
 					}
@@ -159,7 +159,7 @@ namespace Nork::Editor
 			ImGui::TreePop();
 		}
 	}
-	void InspectorPanel::PointLighComp(PointLight* pL)
+	void InspectorPanel::PointLighComp(PointLight* pL, PointShadow* shad)
 	{
 		if (ImGui::TreeNodeEx("PLight", ImGuiTreeNodeFlags_DefaultOpen))
 		{
@@ -193,6 +193,45 @@ namespace Nork::Editor
 			if (ImGui::Button("Delete"))
 			{
 				scene.RemoveComponent<PointLight>(data.selectedEnt);
+			}
+			ImGui::PopStyleColor();
+
+			ImGui::TreePop();
+		}
+	}
+	void InspectorPanel::PointShadowComp(PointShadow* comp, PointLight* light)
+	{
+		if (ImGui::TreeNodeEx("Directional shadow", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			if (ImGui::DragFloat2("Near, Far", &comp->GetMutableData().near))
+			{
+				//comp->RecalcVP(dl->GetView());
+			}
+			float bias = comp->GetData().bias;
+			float biasMin = comp->GetData().biasMin;
+			int blur = (int)comp->GetData().blur;
+			int rad = (int)comp->GetData().radius;
+			if (ImGui::SliderFloat("Bias", &bias, 0, 1, "%.5f", ImGuiSliderFlags_Logarithmic))
+			{
+				comp->SetBias(bias);
+			}
+			if (ImGui::SliderFloat("Minimum bias", &biasMin, 0, 1, "%.5f", ImGuiSliderFlags_Logarithmic))
+			{
+				comp->SetBiasMin(biasMin);
+			}
+			if (ImGui::SliderInt("Blur", &blur, 0, 9))
+			{
+				comp->SetBlur(blur);
+			}
+			if (ImGui::SliderInt("Radian", &rad, 0, 9))
+			{
+				comp->SetBlur(rad);
+			}
+			if (ImGui::SliderInt("IDX", &comp->GetMutableData().idx, 0, 4));
+			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
+			if (ImGui::Button("Delete"))
+			{
+				scene.RemoveComponent<DirShadow>(data.selectedEnt);
 			}
 			ImGui::PopStyleColor();
 
@@ -341,6 +380,7 @@ namespace Nork::Editor
 			this->CompSelector<Tag>();
 			this->CompSelector<Transform>();
 			this->CompSelector<PointLight>();
+			this->CompSelector<PointShadow>();
 			this->CompSelector<DirLight>();
 			this->CompSelector<DirShadow>();
 			this->CompSelector<Camera>();
@@ -361,6 +401,7 @@ namespace Nork::Editor
 		{
 			auto* tr = reg.try_get<Transform>(selected);
 			auto* pL = reg.try_get<PointLight>(selected);
+			auto* pS = reg.try_get<PointShadow>(selected);
 			//auto* sL = scene.ents.try_get<SpotLight>(selected);
 			auto* dL = reg.try_get<DirLight>(selected);
 			auto* dS = reg.try_get<DirShadow>(selected);
@@ -375,7 +416,12 @@ namespace Nork::Editor
 			}
 			if (pL != nullptr)
 			{
-				PointLighComp(pL);
+				PointLighComp(pL, pS);
+				ImGui::Separator();
+			}
+			if (pS != nullptr)
+			{
+				PointShadowComp(pS, pL);
 				ImGui::Separator();
 			}
 			if (model != nullptr)

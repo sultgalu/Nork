@@ -10,10 +10,12 @@ using namespace Nork::Renderer::Data;
 
 namespace Nork::Renderer::Pipeline
 {
-	using GFB = Framebuffer<TextureFormat::Depth16, TextureFormat::RGBA16F, TextureFormat::RGBA16F, TextureFormat::RGBA16F>;
+	using GFB = Framebuffer<TextureFormat::Depth16, TextureFormat::RGB16F, TextureFormat::RGB16F, TextureFormat::RGB16F, TextureFormat::RGBA16F>;
+	using LFB = Framebuffer<TextureFormat::Depth16, TextureFormat::RGBA16F>;
 
 	class GeometryFramebuffer : private GFB
 	{
+	public:
 		using GFB::GFB;
 		using GFB::Use;
 		using GFB::Clear;
@@ -37,20 +39,45 @@ namespace Nork::Renderer::Pipeline
 		{
 			return colors[2];
 		}
+		inline GLuint Specular()
+		{
+			return colors[3];
+		}
+	};
+	class LightPassFramebuffer : private LFB
+	{
+	public:
+		LightPassFramebuffer(GLuint depth, uint32_t width, uint32_t height)
+			: LFB(std::unordered_map<TextureFormat, GLuint> { { TextureFormat::Depth16, depth } }, width, height)
+		{
+		}
+
+		using LFB::Use;
+		using LFB::Width;
+		using LFB::Height;
+		using LFB::Clear;
+		using LFB::ClearAndUse;
+
+		inline GLuint Result()
+		{
+			return colors[0];
+		}
+		inline GLuint Depth()
+		{
+			return depth;
+		}
+		inline void Clear()
+		{
+			Clear(GL_COLOR_BUFFER_BIT);
+		}
+		inline void ClearAndUse()
+		{
+			ClearAndUse(GL_COLOR_BUFFER_BIT);
+		}
 	};
 
 	struct DeferredData
 	{
-		struct GBufferData
-		{
-			GLuint fb, pos, diff, norm, depth;
-		};
-
-		struct LightPassData
-		{
-			GLuint  fb, tex;
-		};
-
 		struct Shaders
 		{
 			Shader gPass;
@@ -66,12 +93,8 @@ namespace Nork::Renderer::Pipeline
 			this->skyboxTex = skyboxTex;
 		}
 
-		GBufferData gBuffer = GBufferData{};
-		LightPassData lightPass = LightPassData{};
-
 		int mainResX, mainResY;
 
-		void SetMainRes(int x, int y);
 		void SetGPassShader(Shader shader);
 		void SetLPassShader(Shader shader);
 
@@ -85,12 +108,12 @@ namespace Nork::Renderer::Pipeline
 	public:
 		Deferred(DeferredData);
 		~Deferred() = default;
-		void DrawScene(std::span<Model> models);
+		void DrawScene(std::span<Model> models, LightPassFramebuffer& lightFb, GeometryFramebuffer& gFb);
 		void UseShadowMap(DirShadow shadow, ShadowFramebuffer& fb);
 		void UseShadowMap(PointShadow shadow, ShadowFramebuffer& fb);
 	private:
 		void DrawGBuffers(std::span<Model> models);
-		void DrawLightPass();
+		void DrawLightPass(GeometryFramebuffer& gFb);
 		void DrawSkybox();
 	public:
 		DeferredData data;

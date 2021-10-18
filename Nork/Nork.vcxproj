@@ -164,6 +164,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\Framebuffer.cpp" />
     <ClCompile Include="Source\Serialization\BinarySerializer.cpp" />
     <ClCompile Include="Source\Editor\Panels\Impl\HierarchyPanel.cpp" />
     <ClCompile Include="Source\Platform\Windows\FileDialog.cpp" />

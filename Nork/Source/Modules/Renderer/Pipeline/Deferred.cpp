@@ -5,7 +5,7 @@
 
 namespace Nork::Renderer::Pipeline
 {
-	void DeferredData::SetMainRes(int x, int y)
+	/*void DeferredData::SetMainRes(int x, int y)
 	{
 		mainResX = x; mainResY = y;
 
@@ -34,7 +34,7 @@ namespace Nork::Renderer::Pipeline
 
 		GLenum bufs2[] = { GL_COLOR_ATTACHMENT0 };
 		glDrawBuffers(sizeof(bufs2) / sizeof(GLenum), bufs2);
-	}
+	}*/
 
 	void DeferredData::SetLPassShader(Shader shader)
 	{
@@ -44,6 +44,7 @@ namespace Nork::Renderer::Pipeline
 		shader.SetInt("gPos", 0);
 		shader.SetInt("gDiff", 1);
 		shader.SetInt("gNorm", 2);
+		shader.SetInt("gSpec", 3);
 		for (int i = 0; i < Config::LightData::dirShadowsLimit; i++)
 			shader.SetInt("dirShadowMaps[" + std::to_string(i) + "]", i + Config::LightData::dirShadowBaseIndex);
 		for (int i = 0; i < Config::LightData::pointShadowsLimit; i++)
@@ -55,16 +56,16 @@ namespace Nork::Renderer::Pipeline
 		shaders.gPass = shader;
 
 		shader.Use();
-		shader.SetInt("materialTex.diffuse", (int)TextureType::Diffuse);
-		shader.SetInt("materialTex.normals", (int)TextureType::Normal);
-		shader.SetInt("materialTex.roughness", (int)TextureType::Roughness);
-		shader.SetInt("materialTex.reflect", (int)TextureType::Reflection);
+		shader.SetInt("materialTex.diffuse", (int)TextureUse::Diffuse);
+		shader.SetInt("materialTex.normals", (int)TextureUse::Normal);
+		shader.SetInt("materialTex.roughness", (int)TextureUse::Roughness);
+		shader.SetInt("materialTex.reflect", (int)TextureUse::Reflection);
 	}
 
 	Deferred::Deferred(DeferredData data)
 		: data(data)
 	{
-		this->data.SetMainRes(1080, 1920);
+		//this->data.SetMainRes(1080, 1920);
 		Logger::Info("Deferred pipeline initialized");
 	}
 	static std::chrono::high_resolution_clock clock;
@@ -80,12 +81,14 @@ namespace Nork::Renderer::Pipeline
 		Utils::Texture::Bind(depth, shadow.idx + Config::LightData::pointShadowBaseIndex);
 	}
 
-	void Deferred::DrawScene(std::span<Model> models)
+	void Deferred::DrawScene(std::span<Model> models, LightPassFramebuffer& lightFb, GeometryFramebuffer& gFb)
 	{
+		gFb.ClearAndUse();
 		DrawGBuffers(models);
-		DrawLightPass();
+		lightFb.ClearAndUse();
+		DrawLightPass(gFb);
 		DrawSkybox();
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		FramebufferBase::UseDefault();
 	}
 	void Deferred::DrawGBuffers(std::span<Model> models)
 	{
@@ -96,11 +99,6 @@ namespace Nork::Renderer::Pipeline
 		glCullFace(GL_BACK);
 
 		glDisable(GL_BLEND);
-
-		glViewport(0, 0, data.mainResX, data.mainResY);
-		glBindFramebuffer(GL_FRAMEBUFFER, data.gBuffer.fb);
-		glClearColor(0, 0, 0, 1);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
 		data.shaders.gPass.Use();
 		for (size_t i = 0; i < models.size(); i++)
@@ -116,16 +114,14 @@ namespace Nork::Renderer::Pipeline
 			};
 		}
 	}
-	void Deferred::DrawLightPass()
+	void Deferred::DrawLightPass(GeometryFramebuffer& gFb)
 	{
 		glDisable(GL_DEPTH_TEST);
-		glViewport(0, 0, data.mainResX, data.mainResY);
-		glBindFramebuffer(GL_FRAMEBUFFER, data.lightPass.fb); // gets cleared in BeginFrame
-		glClear(GL_COLOR_BUFFER_BIT);
 
-		Utils::Texture::Bind(data.gBuffer.pos, 0);
-		Utils::Texture::Bind(data.gBuffer.diff, 1);
-		Utils::Texture::Bind(data.gBuffer.norm, 2);
+		Utils::Texture::Bind(gFb.Position(), 0);
+		Utils::Texture::Bind(gFb.Diffuse(), 1);
+		Utils::Texture::Bind(gFb.Normal(), 2);
+		Utils::Texture::Bind(gFb.Specular(), 3);
 
 		data.shaders.lPass.Use();
 		Utils::Draw::Quad();
@@ -133,8 +129,6 @@ namespace Nork::Renderer::Pipeline
 	}
 	void Deferred::DrawSkybox()
 	{
-		//glBindFramebuffer(GL_FRAMEBUFFER, data.lightPass.fb); generates performance error with IntelHD
-
 		glDepthFunc(GL_LEQUAL);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, data.skyboxTex);

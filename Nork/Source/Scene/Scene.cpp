@@ -24,7 +24,7 @@ namespace Nork::Scene
 	void Scene::Load(std::string path)
 	{
 		FreeResources();
-		this->registry.Wipe();
+		registry.Wipe();
 		std::ifstream stream(path, std::ios::binary | std::ios::ate);
 		
 		size_t size = stream.tellg();

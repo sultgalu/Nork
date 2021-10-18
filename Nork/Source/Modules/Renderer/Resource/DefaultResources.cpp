@@ -12,10 +12,10 @@ namespace Nork::Renderer::Resource
 		float norm[]{ 0.5f, 0.5f, 1.0f };
 		float refl[]{ 0.0f };
 		float rough[]{ 1.0f };
-		DefaultResources::textures[static_cast<uint8_t>(Data::TextureType::Diffuse)] = Data::TextureResource{ .id = Create2D(1, 1, Format::RGBA, 1, false, diff) };
-		DefaultResources::textures[static_cast<uint8_t>(Data::TextureType::Normal)] = Data::TextureResource{ .id = Create2D(1, 1, Format::RGB, 1, false, norm) };
-		DefaultResources::textures[static_cast<uint8_t>(Data::TextureType::Reflection)] = Data::TextureResource{ .id = Create2D(1, 1, Format::R8, 1, false, refl) };
-		DefaultResources::textures[static_cast<uint8_t>(Data::TextureType::Roughness)] = Data::TextureResource{ .id = Create2D(1, 1, Format::R8, 1, false, rough) };
+		DefaultResources::textures[static_cast<uint8_t>(Data::TextureUse::Diffuse)] = Data::TextureResource{ .id = Create2D(1, 1, Format::RGBA, 1, false, diff) };
+		DefaultResources::textures[static_cast<uint8_t>(Data::TextureUse::Normal)] = Data::TextureResource{ .id = Create2D(1, 1, Format::RGB, 1, false, norm) };
+		DefaultResources::textures[static_cast<uint8_t>(Data::TextureUse::Reflection)] = Data::TextureResource{ .id = Create2D(1, 1, Format::R8, 1, false, refl) };
+		DefaultResources::textures[static_cast<uint8_t>(Data::TextureUse::Roughness)] = Data::TextureResource{ .id = Create2D(1, 1, Format::R8, 1, false, rough) };
 	}
 
 	static void InitCube()

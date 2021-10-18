@@ -24,7 +24,7 @@ namespace Nork::Components
 	struct PointLight : public Wrapper<Data::PointLight>
 	{
 		PointLight() 
-			: Wrapper(Data::PointLight{ .position = { 0,0,0 }, .color = { 1,1,1,1 }, .linear = linears[maxPower], .quadratic = quadratics[maxPower]})
+			: Wrapper(Data::PointLight{ .position = { 0,0,0 }, .color = { 1,1,1,1 }, .linear = linears[1], .quadratic = quadratics[maxPower]})
 		{
 			power = maxPower;
 		}
@@ -53,6 +53,10 @@ namespace Nork::Components
 
 	struct PointShadow : Wrapper<Data::PointShadow>
 	{
+		PointShadow()
+			: Wrapper(Data::PointShadow{ .bias = 0.0057, .biasMin = 0.0004 , .blur = 1, .radius = 0.024, .far = 50, .near = 1, .idx = 0 })
+		{
+		}
 		inline void SetBias(float val) { data.bias = val; }
 		inline void SetBiasMin(float val) { data.biasMin = val; }
 		inline void SetBlur(float val) { data.blur = val; }

@@ -47,6 +47,8 @@ namespace Nork
 		
 		std::vector<Renderer::ShadowFramebuffer> dShadowFramebuffers;
 		std::vector<Renderer::ShadowFramebuffer> pShadowFramebuffers;
+		Renderer::Pipeline::GeometryFramebuffer geometryFb;
+		Renderer::Pipeline::LightPassFramebuffer lightFb;
 	};
 
 	extern std::optional<Components::Camera*> GetActiveCamera();

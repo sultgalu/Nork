@@ -16,7 +16,6 @@ namespace Nork::Renderer::Utils::Framebuffer
 	Builder& Builder::AddTexture(unsigned int* handler, Texture::Format format, GLenum attachment)
 	{
 		*handler = Texture::Create2D(this->width, this->height, format);
-		Texture::Bind(*handler); // do you need bind??
 		glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, *handler, 0);
 
 		return *this;

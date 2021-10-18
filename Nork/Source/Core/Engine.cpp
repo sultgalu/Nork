@@ -72,7 +72,9 @@ namespace Nork
 	}
 
 	Engine::Engine(EngineConfig& config)
-		: window(config.width, config.height), pipeline(CreatePipelineResources())
+		: window(config.width, config.height), pipeline(CreatePipelineResources()),
+		geometryFb(Renderer::Pipeline::GeometryFramebuffer(1920, 1080)),
+		lightFb(Renderer::Pipeline::LightPassFramebuffer(geometryFb.Depth(), geometryFb.Width(), geometryFb.Height()))
 	{
 		Renderer::Resource::DefaultResources::Init();
 
@@ -107,7 +109,7 @@ namespace Nork
 			SyncComponents();
 			ViewProjectionUpdate();
 			UpdateLights();
-			pipeline.DrawScene(models);
+			pipeline.DrawScene(models, lightFb, geometryFb);
 
 			sender.Send(Event::Types::RenderUpdated());
 			window.Refresh();
@@ -174,6 +176,8 @@ namespace Nork
 			auto& light = pLightsWS.get(id)._Myfirst._Val.GetData();
 			auto& shadow = pLightsWS.get(id)._Get_rest()._Myfirst._Val.GetData();
 			PS.push_back(std::pair<Data::PointLight, Data::PointShadow>(light, shadow));
+
+			lightMan.DrawPointShadowMap(light, shadow, models, pShadowFramebuffers[shadow.idx], pShadowMapShader);
 		}
 		for (auto& id : dLights)
 		{

@@ -4,6 +4,25 @@
 
 namespace Nork::Renderer
 {
+	class FramebufferBase
+	{
+	public:
+		void Use();
+		void Clear(GLenum clearBits);
+		void ClearAndUse(GLenum clearBits);
+		FramebufferBase GetCurrentInUse();
+
+		inline bool operator==(const FramebufferBase& other)
+		{
+			return other.fbo == fbo;
+		}
+
+		static void UseDefault();
+
+		GLuint fbo = 0;
+		uint32_t width, height;
+	};
+
 	using TextureFormat = Utils::Texture::Format;
 
 	template<TextureFormat T>
@@ -45,15 +64,43 @@ namespace Nork::Renderer
 		requires isDepthFormat<Depth>;
 		requires AreColorFormats<Colors...>();
 	}
-	class Framebuffer
+	class Framebuffer : protected FramebufferBase
 	{
 		using Self = Framebuffer<Depth, Colors...>;
 	public:
-		Framebuffer(uint32_t width = 1000, uint32_t height = 1000) : width(width), height(height)
+		Framebuffer(std::unordered_map<TextureFormat, GLuint> externalAtts, uint32_t width, uint32_t height) 
+			: FramebufferBase {.width = width, .height = height}
 		{
 			auto builder = Utils::Framebuffer::Builder(width, height);
 
-			auto ptr = attachments.data();
+			if constexpr (HasDepth())
+			{
+				if (externalAtts.contains(Depth))
+					builder.AddTexture(externalAtts[Depth], GL_DEPTH_ATTACHMENT);
+				else
+					builder.AddTexture(&depth, Depth, GL_DEPTH_ATTACHMENT);
+			}
+			if constexpr (HasColor())
+			{
+				constexpr TextureFormat formats[] = { Colors... };
+				GLenum drawBufs[sizeof...(Colors)];
+				for (size_t i = 0; i < sizeof...(Colors); i++)
+				{
+					if (externalAtts.contains(formats[i]))
+						builder.AddTexture(externalAtts[formats[i]], GL_COLOR_ATTACHMENT0 + i);
+					else
+						builder.AddTexture(&colors[i], formats[i], GL_COLOR_ATTACHMENT0 + i);
+					drawBufs[i] = GL_COLOR_ATTACHMENT0 + i;
+				}
+				glDrawBuffers(sizeof...(Colors), drawBufs);
+			}
+			fbo = builder.GetFramebuffer(); 
+		}
+
+		Framebuffer(uint32_t width = 1000, uint32_t height = 1000)
+			: FramebufferBase{ .width = width, .height = height }
+		{
+			auto builder = Utils::Framebuffer::Builder(width, height);
 
 			if constexpr (HasDepth())
 			{
@@ -62,29 +109,30 @@ namespace Nork::Renderer
 
 			if constexpr (HasColor())
 			{
-				constexpr std::array<TextureFormat, sizeof...(Colors)> formats = { Colors... };
-				for (size_t i = 0; i < formats.size(); i++)
+				constexpr TextureFormat formats[] = { Colors... };
+				GLenum drawBufs[sizeof...(Colors)];
+				for (size_t i = 0; i < sizeof...(Colors); i++)
 				{
 					builder.AddTexture(&colors[i], formats[i], GL_COLOR_ATTACHMENT0 + i);
+					drawBufs[i] = GL_COLOR_ATTACHMENT0 + i;
 				}
+				glDrawBuffers(sizeof...(Colors), drawBufs);	
 			}
 
 			fbo = builder.GetFramebuffer();
 		}
 
-		inline void Use()
-		{
-			glViewport(0, 0, width, height);
-			glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-		}
+		using FramebufferBase::Use;
+		using FramebufferBase::Clear;
+		using FramebufferBase::ClearAndUse;
+
 		inline void Clear()
 		{
-			glClear(GetClearBits());
+			Clear(clearBits);
 		}
 		inline void ClearAndUse()
 		{
-			Use();
-			Clear();
+			ClearAndUse(clearBits);
 		}
 
 		template < typename = typename std::enable_if<Self::HasDepth()>::type >
@@ -92,10 +140,14 @@ namespace Nork::Renderer
 		{
 			return depth;
 		}
-
 		template < typename = typename std::enable_if<Self::HasColor()>::type >
 		GLuint GetColorAttachment(uint32_t idx)
 		{
+			if (idx >= ColorCount())
+			{
+				MetaLogger().Error("ColorCount is ", ColorCount(), ", idx is: ", idx);
+				return 0;
+			}
 			return colors(idx);
 		}
 
@@ -121,16 +173,10 @@ namespace Nork::Renderer
 		{
 			return height;
 		}
+		inline static constexpr GLenum clearBits = (HasColor() ? GL_COLOR_BUFFER_BIT : 0) | (HasDepth() ? GL_DEPTH_BUFFER_BIT : 0);
 	protected:
-		inline static consteval GLenum GetClearBits()
-		{
-			return (HasColor() ? GL_COLOR_BUFFER_BIT : 0) | (HasDepth() ? GL_DEPTH_BUFFER_BIT : 0);
-		}
-	protected:
-		GLuint fbo = 0;
 		std::enable_if<HasDepth(), GLuint>::type depth;
 		std::enable_if<HasDepth(), std::array<GLuint, ColorCount()>>::type colors = {};
-		size_t width, height;
 	};
 
 	using ShadowFramebuffer = Framebuffer<Utils::Texture::Format::Depth16, Utils::Texture::Format::None>;

@@ -35,7 +35,7 @@ int main()
 	enginePtr = &engine;
 	Editor::Editor editor(engine);
 
-	editor.SetDisplayTexture(engine.pipeline.data.lightPass.tex);
+	editor.SetDisplayTexture(engine.lightFb.Result());
 	engine.appEventMan.GetReceiver().Subscribe<Event::Types::RenderUpdated>([&](const Event::Types::RenderUpdated& ev)
 		{
 			editor.Render();
@@ -48,10 +48,12 @@ int main()
 
 	auto node = engine.scene.CreateNode();
 	engine.scene.AddModel(node, "Resources/Models/lamp/untitled.obj");
-	auto& tr = engine.scene.AddComponent<Components::Transform>(node);
-	//auto& dl = engine.scene.AddComponent<Components::DirLight>(node);
+	engine.scene.AddComponent<Components::Transform>(node);
 	auto& pl = engine.scene.AddComponent<Components::PointLight>(node);
-	pl.SetPower(1);
+	engine.scene.AddComponent<Components::PointShadow>(node);
+	auto model = engine.scene.CreateNode();
+	engine.scene.AddComponent<Components::Transform>(model).position.x = 2.5f;
+	engine.scene.AddModel(model);
 
 	//test5();
 

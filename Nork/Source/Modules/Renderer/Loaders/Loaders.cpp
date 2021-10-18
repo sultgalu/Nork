@@ -26,7 +26,7 @@ namespace Nork::Renderer::Loaders
 
 	std::string relativePath;
 
-	void LoadMaterialTextures(aiMaterial* mat, aiTextureType type, Data::TextureType texType, std::vector<std::pair<Data::TextureType, Data::TextureData>>& texs)
+	void LoadMaterialTextures(aiMaterial* mat, aiTextureType type, Data::TextureUse texType, std::vector<std::pair<Data::TextureUse, Data::TextureData>>& texs)
 	{
 		for (unsigned int i = 0; i < mat->GetTextureCount(type); i++)
 		{
@@ -80,10 +80,10 @@ namespace Nork::Renderer::Loaders
 		{
 			aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
-			LoadMaterialTextures(material, aiTextureType_DIFFUSE, Data::TextureType::Diffuse, data.textures);
-			LoadMaterialTextures(material, aiTextureType_HEIGHT, Data::TextureType::Normal, data.textures); // map_Bump
-			LoadMaterialTextures(material, aiTextureType_SHININESS, Data::TextureType::Roughness, data.textures);
-			LoadMaterialTextures(material, aiTextureType_AMBIENT, Data::TextureType::Reflection, data.textures); // You have to change the ".mtl" file. "refl" -> "map_Ka"
+			LoadMaterialTextures(material, aiTextureType_DIFFUSE, Data::TextureUse::Diffuse, data.textures);
+			LoadMaterialTextures(material, aiTextureType_HEIGHT, Data::TextureUse::Normal, data.textures); // map_Bump
+			LoadMaterialTextures(material, aiTextureType_SHININESS, Data::TextureUse::Roughness, data.textures);
+			LoadMaterialTextures(material, aiTextureType_AMBIENT, Data::TextureUse::Reflection, data.textures); // You have to change the ".mtl" file. "refl" -> "map_Ka"
 		}
 
 		return data;

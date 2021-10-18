@@ -65,6 +65,11 @@ namespace Nork::Scene
 		}
 		void Load(std::string path);
 		void Save(std::string path);
+		inline void Reset()
+		{
+			FreeResources();
+			registry.Wipe();
+		}
 	private:
 		Components::Model GetModelByResource(std::vector<Renderer::Data::MeshResource> resource);
 		void FreeResources()

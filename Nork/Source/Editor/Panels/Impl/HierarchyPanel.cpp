@@ -41,6 +41,26 @@ void Nork::Editor::HierarchyPanel::DrawContent()
 		name = std::string("ent #" + std::to_string(static_cast<int>(newEnt)));
 		reg.emplace<Components::Transform>(newEnt);
 	}
+	ImGui::SetCursorPosY(ImGui::GetWindowContentRegionMax().y - ImGui::GetTextLineHeight());
+	if (ImGui::Button("Reset to empty"))
+	{
+		ImGui::OpenPopup("SceneResetPopup");
+	}
+	if (ImGui::BeginPopupModal("SceneResetPopup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::Text("Reset The Whole Scene To Empty?");
+		if (ImGui::Button("Reset"))
+		{
+			data.engine.scene.Reset();
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel"))
+		{
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
 
 	/*ImGui::SliderFloat("Outliner Thickness", &scene.GetOutlinerThickness(), 0, 1);
 	ImGui::ColorEdit4("Outliner Color", &(scene.GetOutlinerColor().r));*/

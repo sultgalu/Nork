@@ -71,23 +71,27 @@ namespace Nork::Editor
 		{
 			if (ImGui::Selectable("Default"))
 			{
-				image.texture = data.engine.pipeline.data.lightPass.tex;
+				image.texture = data.engine.lightFb.Result();
 			}
 			if (ImGui::Selectable("GBuffer: depth"))
 			{
-				image.texture = data.engine.pipeline.data.gBuffer.depth;
-			}
-			if (ImGui::Selectable("GBuffer: diffuse"))
-			{
-				image.texture = data.engine.pipeline.data.gBuffer.diff;
-			}
-			if (ImGui::Selectable("GBuffer: normal"))
-			{
-				image.texture = data.engine.pipeline.data.gBuffer.norm;
+				image.texture = data.engine.geometryFb.Depth();
 			}
 			if (ImGui::Selectable("GBuffer: position"))
 			{
-				image.texture = data.engine.pipeline.data.gBuffer.pos;
+				image.texture = data.engine.geometryFb.Position();
+			}
+			if (ImGui::Selectable("GBuffer: normal"))
+			{
+				image.texture = data.engine.geometryFb.Normal();
+			}
+			if (ImGui::Selectable("GBuffer: diffuse"))
+			{
+				image.texture = data.engine.geometryFb.Diffuse();
+			}
+			if (ImGui::Selectable("GBuffer: specular"))
+			{
+				image.texture = data.engine.geometryFb.Specular();
 			}
 			for (size_t i = 0; i < data.engine.dShadowFramebuffers.size(); i++)
 			{

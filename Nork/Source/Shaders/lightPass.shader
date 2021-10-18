@@ -81,6 +81,7 @@ uniform vec3 viewPos;
 uniform sampler2D gPos;
 uniform sampler2D gDiff;
 uniform sampler2D gNorm;
+uniform sampler2D gSpec;
 
 uniform sampler2D dirShadowMaps[5]; // doesn't work with anything other than 1 rn.
 uniform sampler2D pointShadowMaps[1/*MAX_NUM_OF_P_SHADOWS*/];
@@ -94,15 +95,16 @@ vec3 pLightShadow(PointLight light, Materials material, vec3 normal, vec3 viewDi
 void main()
 {
 	vec3 worldPos = texture(gPos, texCoord).rgb;
-	vec4 diff_spec = texture(gDiff, texCoord).rgba;
+	vec3 diff = texture(gDiff, texCoord).rgb;
 	vec3 normal = texture(gNorm, texCoord).rgb;
+	float spec = texture(gSpec, texCoord).r;
 
 	vec3 viewDir = normalize(viewPos - worldPos);
 
 	Materials material;
-	material.ambient = diff_spec.rgb;
-	material.diffuse = diff_spec.rgb;
-	material.specular = material.diffuse * diff_spec.a;
+	material.ambient = diff.rgb;
+	material.diffuse = diff.rgb;
+	material.specular = material.diffuse * spec;
 	
 	vec3 result = vec3(0.0f);
 	for (int i = 0; i < int(dShadowCount); i++)

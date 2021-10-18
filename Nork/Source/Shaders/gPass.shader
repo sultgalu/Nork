@@ -44,8 +44,9 @@ void main()
 #version 330 core
 
 layout(location = 0) out vec3 pos; // 3 used
-layout(location = 1) out vec4 diffuse_spec;
+layout(location = 1) out vec3 diffuse_spec;
 layout(location = 2) out vec3 normal; // 3 used
+layout(location = 3) out float specular; // 3 used
 
 uniform struct MaterialTex
 {
@@ -65,7 +66,8 @@ uniform int id;
 void main()
 {
 	pos = worldPos;
-	diffuse_spec = vec4(texture(materialTex.diffuse, texCoord).rgb, 1 - texture(materialTex.roughness, texCoord).r);
+	diffuse_spec = texture(materialTex.diffuse, texCoord).rgb;
+	specular = 1 - texture(materialTex.roughness, texCoord).r;
 	//diffuse_spec = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	vec3 norm = texture(materialTex.normals, texCoord).rgb;
