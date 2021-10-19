@@ -28,6 +28,7 @@ namespace Nork
 		DeferredData CreatePipelineResources();
 		void SyncComponents();
 		void UpdateLights();
+		void PhysicsUpdate();
 		void ViewProjectionUpdate();
 		void OnDShadowAdded(entt::registry& reg, entt::entity ent);
 		void OnDShadowRemoved(entt::registry& reg, entt::entity ent);

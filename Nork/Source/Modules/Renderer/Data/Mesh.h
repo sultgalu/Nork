@@ -47,6 +47,8 @@ namespace Nork::Renderer::Data
 		GLsizei indices;
 		GLuint textures[textureTypeCount];
 
+		bool colliding = false; // TEMPMPPPMP
+
 		inline void BindTextures()
 		{
 			for (int i = 0; i < textureTypeCount; i++)

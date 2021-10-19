@@ -265,6 +265,7 @@
     <ClCompile Include="Source\Editor\Panels\Impl\ViewportPanel.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Modules\Physics\Data\Collider.h" />
     <ClInclude Include="Source\Serialization\BinarySerializer.h" />
     <ClInclude Include="Source\Editor\Panels\All.h" />
     <ClInclude Include="Source\Editor\Panels\HierarchyPanel.h" />

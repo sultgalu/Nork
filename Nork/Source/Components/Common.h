@@ -20,6 +20,14 @@ namespace Nork::Components
 			}
 			return modelMatrix;
 		}
+
+		glm::mat4 RotationMatrix()
+		{
+			glm::mat4 rot = glm::rotate(glm::identity<glm::mat4>(), rotation.z, glm::vec3(0, 0, 1));
+			rot *= glm::rotate(glm::identity<glm::mat4>(), rotation.x, glm::vec3(1, 0, 0));
+			rot *= glm::rotate(glm::identity<glm::mat4>(), rotation.y, glm::vec3(0, 1, 0));
+			return rot;
+		}
 	};
 
 	struct Tag

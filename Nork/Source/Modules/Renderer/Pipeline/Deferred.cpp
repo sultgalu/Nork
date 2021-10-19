@@ -108,6 +108,7 @@ namespace Nork::Renderer::Pipeline
 			auto& mat = models[i].second;
 
 			data.shaders.gPass.SetMat4("model", mat);
+			data.shaders.gPass.SetInt("colliding", meshes[0].colliding ? 1 : 0);
 			for (int i = 0; i < meshes.size(); i++)
 			{
 				meshes[i].BindTextures();

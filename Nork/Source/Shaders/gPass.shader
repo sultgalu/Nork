@@ -62,11 +62,12 @@ in mat3 TBN; // could do with lights from vert. shader (linear interpolation wou
 in vec3 vNorm;
 
 uniform int id;
+uniform int colliding;
 
 void main()
 {
 	pos = worldPos;
-	diffuse_spec = texture(materialTex.diffuse, texCoord).rgb;
+	diffuse_spec = colliding > 0 ? vec3(1.0f, 0.0f, 0.0f) : texture(materialTex.diffuse, texCoord).rgb;
 	specular = 1 - texture(materialTex.roughness, texCoord).r;
 	//diffuse_spec = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 

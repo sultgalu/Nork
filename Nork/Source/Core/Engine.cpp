@@ -108,7 +108,8 @@ namespace Nork
 		{
 			sender.Send(Event::Types::OnUpdate());
 			sender.Send(Event::Types::OnRenderUpdate());
-
+			
+			PhysicsUpdate(); // NEW
 			auto models = GetModels(this->scene.registry);
 			SyncComponents();
 			ViewProjectionUpdate();
@@ -194,6 +195,39 @@ namespace Nork
 		}
 
 		lightMan.Update(DS, PS, DL, PL);
+
+	}
+	void Engine::PhysicsUpdate()
+	{
+		using namespace Physics;
+		auto& reg = scene.registry.GetUnderlyingMutable();
+
+		auto view = reg.view<Components::Transform, Components::Model>();
+
+		for (auto id1 : view)
+		{
+			auto tr1 = view.get(id1)._Myfirst._Val;
+			auto& model = view.get(id1)._Get_rest()._Myfirst._Val;
+			
+			model.meshes[0].colliding = false;
+
+			BoxCollider bc1 = BoxCollider{ .x = tr1.scale.x, .y = tr1.scale.y , .z = tr1.scale.z };
+
+			for (auto id2 : view)
+			{
+				if (id1 == id2)
+					continue;
+
+				auto tr2 = view.get(id2)._Myfirst._Val;
+				BoxCollider bc2 = BoxCollider{ .x = tr2.scale.x, .y = tr2.scale.y , .z = tr2.scale.z };
+
+				if (BroadTest(bc1, bc2, tr1.position, tr2.position, tr1.RotationMatrix(), tr2.RotationMatrix()))
+				{
+					model.meshes[0].colliding = true;
+					break;
+				}
+			}
+		}
 
 	}
 	void Engine::ViewProjectionUpdate()

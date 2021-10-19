@@ -208,7 +208,7 @@ namespace Nork::Editor
 			{
 				static GLuint saved = data.engine.pipeline.data.skyboxTex;
 				if (on)
-					data.engine.pipeline.data.skyboxTex = data.engine.pShadowFramebuffers[0].Texture();
+					data.engine.pipeline.data.skyboxTex = data.engine.pShadowFramebuffers[comp->GetData().idx].Texture();
 				else
 					data.engine.pipeline.data.skyboxTex = saved;
 			}
@@ -219,7 +219,7 @@ namespace Nork::Editor
 			float bias = comp->GetData().bias;
 			float biasMin = comp->GetData().biasMin;
 			int blur = (int)comp->GetData().blur;
-			int rad = (int)comp->GetData().radius;
+			float rad = comp->GetData().radius;
 			if (ImGui::SliderFloat("Bias", &bias, 0, 1, "%.5f", ImGuiSliderFlags_Logarithmic))
 			{
 				comp->SetBias(bias);
@@ -232,7 +232,7 @@ namespace Nork::Editor
 			{
 				comp->SetBlur(blur);
 			}
-			if (ImGui::SliderInt("Radius", &rad, 0, 9))
+			if (ImGui::SliderFloat("Radius", &rad, 0.0f, 1.0f))
 			{
 				comp->SetRadius(rad);
 			}

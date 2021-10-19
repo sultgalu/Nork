@@ -90,7 +90,7 @@ vec3 dLight(DirLight light, Materials material, vec3 normal, vec3 viewDir);
 vec3 dLightShadow(DirLight light, Materials material, vec3 normal, vec3 viewDir, DirShadow shadow, vec3 worldPos);
 
 vec3 pLight(PointLight light, Materials material, vec3 worldPos, vec3 normal, vec3 viewDir);
-vec3 pLightShadow(PointLight light, Materials material, vec3 normal, vec3 viewDir, PointShadow shadow, int samplerIdx, vec3 worldPos);
+vec3 pLightShadow(PointLight light, Materials material, vec3 normal, vec3 viewDir, PointShadow shadow, vec3 worldPos);
 
 void main()
 {
@@ -117,7 +117,7 @@ void main()
 	}
 	for (int i = 0; i < int(pShadowCount); i++)
 	{
-		result += pLightShadow(pLs[i], material, normal, viewDir, pLSs[i], i, worldPos);
+		result += pLightShadow(pLs[i], material, normal, viewDir, pLSs[i], worldPos);
 	}
 	for (int i = int(pShadowCount); i < int(pLightCount); i++)
 	{
@@ -199,7 +199,7 @@ vec3 pLight(PointLight light, Materials material, vec3 worldPos, vec3 normal, ve
 	float attenuation = CalcLuminosity(light.position, worldPos, light.linear, light.quadratic);
 	return attenuation * (ambient + diffuse + specular);
 }
-float pShadow(PointShadow shadow, float bias, vec3 worldPos, vec3 lightPos, int samplerIdx)
+float pShadow(PointShadow shadow, float bias, vec3 worldPos, vec3 lightPos)
 {
 	vec3 direction = worldPos - lightPos;
 	float depth = length(direction);
@@ -217,13 +217,13 @@ float pShadow(PointShadow shadow, float bias, vec3 worldPos, vec3 lightPos, int 
 	bias *= shadow.far; // bias is given in [0;1] range, making it [0;far] 
 	for (int i = 0; i < int(shadow.blur); i++)
 	{
-		float closestDepth = texture(pointShadowMaps[samplerIdx], direction + offs[i] * shadow.radius).r;
+		float closestDepth = texture(pointShadowMaps[shadow.idx], direction + offs[i] * shadow.radius).r;
 		closestDepth *= shadow.far; // [0;1] -> [0;farPlane] (we divided it in shadowShader)
 		shad += closestDepth + bias < depth ? 0.0f : 1.0f;
 	}
 	return shad / (shadow.blur == 0 ? 1.0f : shadow.blur);
 }
-vec3 pLightShadow(PointLight light, Materials material, vec3 normal, vec3 viewDir, PointShadow shadow, int samplerIdx, vec3 worldPos)
+vec3 pLightShadow(PointLight light, Materials material, vec3 normal, vec3 viewDir, PointShadow shadow, vec3 worldPos)
 {
 	vec3 ambient = light.color.rgb * material.ambient;
 
@@ -236,7 +236,7 @@ vec3 pLightShadow(PointLight light, Materials material, vec3 normal, vec3 viewDi
 	vec3 specular = light.color.rgb * angle * material.specular;
 
 	float bias = max(shadow.bias * (1.0f - dot(normal, lightDir)), shadow.biasMin); // for huge angle, bias = 0.05f (perpendicular)
-	float shad = pShadow(shadow, bias, worldPos, light.position, samplerIdx);
+	float shad = pShadow(shadow, bias, worldPos, light.position);
 
 	float attenuation = CalcLuminosity(light.position, worldPos, light.linear, light.quadratic);
 	return attenuation * (ambient + shad * (diffuse + specular));
