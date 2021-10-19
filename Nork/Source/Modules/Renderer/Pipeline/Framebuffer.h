@@ -76,7 +76,10 @@ namespace Nork::Renderer
 			if constexpr (HasDepth())
 			{
 				if (externalAtts.contains(Depth))
+				{
 					builder.AddTexture(externalAtts[Depth], GL_DEPTH_ATTACHMENT);
+					depth = externalAtts[Depth];
+				}
 				else
 					builder.AddTexture(&depth, Depth, GL_DEPTH_ATTACHMENT);
 			}
@@ -87,13 +90,21 @@ namespace Nork::Renderer
 				for (size_t i = 0; i < sizeof...(Colors); i++)
 				{
 					if (externalAtts.contains(formats[i]))
+					{
 						builder.AddTexture(externalAtts[formats[i]], GL_COLOR_ATTACHMENT0 + i);
+						colors[i] = externalAtts[formats[i]];
+					}
 					else
 						builder.AddTexture(&colors[i], formats[i], GL_COLOR_ATTACHMENT0 + i);
 					drawBufs[i] = GL_COLOR_ATTACHMENT0 + i;
 				}
 				glDrawBuffers(sizeof...(Colors), drawBufs);
 			}
+			else
+			{
+				glDrawBuffer(GL_NONE);
+			}
+
 			fbo = builder.GetFramebuffer(); 
 		}
 
@@ -117,6 +128,10 @@ namespace Nork::Renderer
 					drawBufs[i] = GL_COLOR_ATTACHMENT0 + i;
 				}
 				glDrawBuffers(sizeof...(Colors), drawBufs);	
+			}
+			else
+			{
+				glDrawBuffer(GL_NONE);
 			}
 
 			fbo = builder.GetFramebuffer();
@@ -178,6 +193,4 @@ namespace Nork::Renderer
 		std::enable_if<HasDepth(), GLuint>::type depth;
 		std::enable_if<HasDepth(), std::array<GLuint, ColorCount()>>::type colors = {};
 	};
-
-	using ShadowFramebuffer = Framebuffer<Utils::Texture::Format::Depth16, Utils::Texture::Format::None>;
 }

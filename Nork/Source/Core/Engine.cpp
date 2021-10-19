@@ -6,6 +6,11 @@
 
 namespace Nork
 {
+	static std::vector<uint8_t> dShadowIndices;
+	static std::vector<uint8_t> pShadowIndices;
+	static constexpr auto dShadIdxSize = Renderer::Config::LightData::dirShadowsLimit;
+	static constexpr auto pShadIdxSize = Renderer::Config::LightData::pointShadowsLimit;
+
 	static Data::Shader CreateShaderFromPath(std::string_view path)
 	{
 		std::ifstream stream(path.data());
@@ -18,17 +23,15 @@ namespace Nork
 		return Data::Shader(resource);
 	}
 
-	static DeferredData CreatePipelineResources()
+	DeferredData Engine::CreatePipelineResources()
 	{
-		GLuint skyboxTex = Renderer::Utils::Texture::CreateCube("Resources/Textures/skybox", ".jpg");
-
 		return DeferredData (DeferredData::Shaders
 			{
 				.gPass = CreateShaderFromPath("Source/Shaders/gPass.shader"),
 				.lPass = CreateShaderFromPath("Source/Shaders/lightPass.shader"),
 				.skybox = CreateShaderFromPath("Source/Shaders/skybox.shader"),
-			}, skyboxTex);
-	}
+			}, 0);
+	} // TODO:: cannot do this well...
 
 	static std::vector<Data::Model> GetModels(ECS::Registry& r)
 	{
@@ -49,11 +52,6 @@ namespace Nork
 		return result;
 	}
 
-	static std::vector<uint8_t> dShadowIndices;
-	static std::vector<uint8_t> pShadowIndices;
-	static constexpr auto dShadIdxSize = Renderer::Config::LightData::dirShadowsLimit;
-	static constexpr auto pShadIdxSize = Renderer::Config::LightData::pointShadowsLimit;
-
 	void Engine::OnDShadowAdded(entt::registry& reg, entt::entity id)
 	{
 		auto& shad = reg.get<Components::DirShadow>(id);
@@ -72,29 +70,35 @@ namespace Nork
 	}
 
 	Engine::Engine(EngineConfig& config)
-		: window(config.width, config.height), pipeline(CreatePipelineResources()),
+		: window(config.width, config.height), scene(Scene::Scene()), pipeline(CreatePipelineResources()),
 		geometryFb(Renderer::Pipeline::GeometryFramebuffer(1920, 1080)),
 		lightFb(Renderer::Pipeline::LightPassFramebuffer(geometryFb.Depth(), geometryFb.Width(), geometryFb.Height()))
 	{
+		using namespace Renderer::Pipeline;
 		Renderer::Resource::DefaultResources::Init();
 
 		dShadowFramebuffers.reserve(dShadIdxSize);
 		pShadowFramebuffers.reserve(pShadIdxSize);
-		for (int i = dShadIdxSize - 1; i > -1 ; i--)
+		for (int i = dShadIdxSize - 1; i > -1; i--)
 		{
 			dShadowIndices.push_back(i);
-			dShadowFramebuffers.push_back(ShadowFramebuffer(4000, 4000));
+			dShadowFramebuffers.push_back(DirShadowFramebuffer(4000, 4000));
 		}
-		for (int i = pShadIdxSize - 1; i > -1 ; i--)
+		for (int i = pShadIdxSize - 1; i > -1; i--)
 		{
 			pShadowIndices.push_back(i);
-			pShadowFramebuffers.push_back(ShadowFramebuffer(6000, 1000));
+			pShadowFramebuffers.push_back(PointShadowFramebuffer(1000, 1000));
 		}
 
 		auto& reg = scene.registry.GetUnderlyingMutable();
 		reg.on_construct<Components::DirShadow>().connect<&Engine::OnDShadowAdded>(this);
 		reg.on_destroy<Components::DirShadow>().connect<&Engine::OnDShadowRemoved>(this);
 		reg.on_update<Components::DirShadow>().connect<&Engine::OnDShadowRemoved>(this);
+
+		using namespace Renderer::Utils::Texture;
+		auto skyboxResource = scene.resMan.GetCubemapTexture("Resources/Textures/skybox", ".jpg",
+			TextureParams{ .wrap = Wrap::ClampToEdge, .filter = Filter::Linear, .magLinear = false, .genMipmap = false });
+		pipeline.data.skyboxTex = skyboxResource.id;
 	}
 
 	void Engine::Launch()
@@ -178,6 +182,7 @@ namespace Nork
 			PS.push_back(std::pair<Data::PointLight, Data::PointShadow>(light, shadow));
 
 			lightMan.DrawPointShadowMap(light, shadow, models, pShadowFramebuffers[shadow.idx], pShadowMapShader);
+			pipeline.UseShadowMap(shadow, pShadowFramebuffers[shadow.idx]);
 		}
 		for (auto& id : dLights)
 		{

@@ -19,15 +19,19 @@ namespace Nork::Renderer::Utils::Texture
 		switch (f)
 		{
 		case R8:
-			return GL_FLOAT;
+			return GL_BYTE;
 		case R32F:
 			return GL_FLOAT;
 		case Depth32F:
 			return GL_FLOAT;
+		case RGBA32F:
+			return GL_FLOAT;
+		case RGB32F:
+			return GL_FLOAT;
 		case RGBA16F:
-			return GL_FLOAT;
+			return GL_HALF_FLOAT;
 		case RGB16F:
-			return GL_FLOAT;
+			return GL_HALF_FLOAT;
 
 		
 		case R32I:
@@ -41,12 +45,12 @@ namespace Nork::Renderer::Utils::Texture
 		case Depth24:
 			return GL_UNSIGNED_INT;
 		case Depth16:
-			return GL_UNSIGNED_INT;
+			return GL_UNSIGNED_SHORT;
 
-		case RGBA:
-			return GL_FLOAT;
-		case RGB:
-			return GL_FLOAT;
+		case RGBA8:
+			return GL_UNSIGNED_BYTE;
+		case RGB8:
+			return GL_UNSIGNED_BYTE;
 
 
 		case Depth24Stencil8:
@@ -71,9 +75,14 @@ namespace Nork::Renderer::Utils::Texture
 			return GL_RGBA;
 		case RGBA16F:
 			return GL_RGBA;
+		case RGBA32F:
+			return GL_RGBA;
+
 		case RGB:
 			return GL_RGB;
 		case RGB16F:
+			return GL_RGB;
+		case RGB32F:
 			return GL_RGB;
 
 		case R32I:
@@ -114,7 +123,7 @@ namespace Nork::Renderer::Utils::Texture
 		size_t size = (size_t)width * height * channels;
 		if (data)
 		{
-			auto result = std::vector<unsigned char>(/*data, data + size*/);
+			std::vector<unsigned char> result;
 			result.assign(data, data + size);
 			stbi_image_free(data);
 
@@ -126,42 +135,8 @@ namespace Nork::Renderer::Utils::Texture
 			return std::vector<unsigned char>();
 		}
 	}
-	template<TextureType Type>
-	unsigned int Create2D(int width, int height, Format format, const void** data, Wrap wrap, Filter filter, bool magLinear, bool genMipmap)
-	{
-		unsigned int handle = 0;
-		auto target = GetTarget<Type>();
-		glGenTextures(1, &handle);
-		glBindTexture(target, handle);
-
-		glTexParameteri(target, GL_TEXTURE_MIN_FILTER, static_cast<GLenum>(filter));
-		glTexParameteri(target, GL_TEXTURE_MAG_FILTER, magLinear ? GL_LINEAR : GL_NEAREST);
-		glTexParameteri(target, GL_TEXTURE_WRAP_S, static_cast<GLenum>(wrap));
-		glTexParameteri(target, GL_TEXTURE_WRAP_T, static_cast<GLenum>(wrap));
-		if constexpr (Type == TextureType::Cube)
-			glTexParameteri(target, GL_TEXTURE_WRAP_R, static_cast<GLenum>(wrap));
-
-		if constexpr (Type == TextureType::_2D)
-			glTexImage2D(GL_TEXTURE_2D, 0, GetInternalFormat(format), width, height, false, GetFormat(format), GL_UNSIGNED_BYTE, data);
-		else if constexpr (Type == TextureType::Cube)
-		{
-			for (size_t i = 0; i < 6; i++)
-			{
-				Logger::Debug("Loading Cubemap face #", i);
-				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GetInternalFormat(format), width, height, false, GetFormat(format), GL_UNSIGNED_BYTE, data);
-			}
-		}
-		else
-		{
-			MetaLogger().Error("This type of texture creaton is not implemented yet.");
-		}
-
-		if (genMipmap)
-			glGenerateMipmap(target);
-
-		return handle;
-	}
-	unsigned int Create2D(const void* data, int width, int height, int channels, Wrap wrap, Filter filter, bool magLinear, bool genMipmap)
+	
+	/*unsigned int Create2D(const void* data, int width, int height, int channels, Wrap wrap, Filter filter, bool magLinear, bool genMipmap)
 	{
 		unsigned int handle = 0;
 		glGenTextures(1, &handle);
@@ -243,36 +218,27 @@ namespace Nork::Renderer::Utils::Texture
 		}
 
 		return id;
-	}
-	unsigned int CreateCube(std::string dirPath, std::string extension)
+	}*/
+	/*GLuint LoadCubemap(std::string dirPath, std::string extension)
 	{
-		unsigned int id;
-		glGenTextures(1, &id);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, id);
-
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
 		static std::string suffixes[6]{
 			"right", "left","top","bottom","front","back",
 		};
 
 		if (dirPath.at(dirPath.size() - 1) != '/')
 			dirPath.append("/");
+		std::vector<std::vector<unsigned char>> datas;
+		int width, height, nrChannels;
+
 		for (int i = 0; i < 6; i++)
 		{
-			int width, height, nrChannels;
-			unsigned char* data = stbi_load((dirPath + suffixes[i] + extension).c_str(), &width, &height, &nrChannels, 0);
+			auto data = LoadImageData((dirPath + suffixes[i] + extension).c_str(), width, height, nrChannels);
+			datas.push_back(data);
 
-			if (data)
+			if (data.size() > 0)
 			{
 				Logger::Debug("Loading Cubemap face #", i);
-				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, false, GL_RGB, GL_UNSIGNED_BYTE, data);
-				//glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-				stbi_image_free(data);
+				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, false, GL_RGB, GL_UNSIGNED_BYTE, data.data());
 			}
 			else
 			{
@@ -280,7 +246,11 @@ namespace Nork::Renderer::Utils::Texture
 				std::abort();
 			}
 		}
-
-		return id;
-	}
+		std::vector<void*> pointers;
+		for (size_t i = 0; i < datas.size(); i++)
+		{
+			pointers.push_back(datas[i].data());
+		}
+		return Create<TextureType::Cube>(width, height, Format::RGB8, pointers.data(), TextureParams(Wrap::ClampToEdge, Filter::Linear, false, false));
+	}*/
 }

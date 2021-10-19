@@ -40,7 +40,7 @@ namespace Nork::Renderer::Pipeline
 		this->data.Update(newData);
 	}
 
-	void LightManager::DrawPointShadowMap(const Data::PointLight& light, const Data::PointShadow& shadow, const std::span<Data::Model> models, ShadowFramebuffer& fb, Data::Shader& pShadowMapShader)
+	void LightManager::DrawPointShadowMap(const Data::PointLight& light, const Data::PointShadow& shadow, const std::span<Data::Model> models, PointShadowFramebuffer& fb, Data::Shader& pShadowMapShader)
 	{
 		fb.ClearAndUse();
 		pShadowMapShader.Use();
@@ -63,8 +63,6 @@ namespace Nork::Renderer::Pipeline
 			pShadowMapShader.SetMat4("VP[" + std::to_string(i) + "]", VP[i]);
 		}
 
-		auto baseWidth = fb.Width() / 6;
-		pShadowMapShader.SetInt("baseWidth", baseWidth);
 		pShadowMapShader.SetFloat("far", shadow.far);
 		pShadowMapShader.SetVec3("ligthPos", pos);
 
@@ -80,7 +78,7 @@ namespace Nork::Renderer::Pipeline
 			};
 		}
 	}
-	void LightManager::DrawDirShadowMap(const Data::DirLight& light, const Data::DirShadow& shadow, const std::span<Data::Model> models, ShadowFramebuffer& fb, Data::Shader& dShadowMapShader)
+	void LightManager::DrawDirShadowMap(const Data::DirLight& light, const Data::DirShadow& shadow, const std::span<Data::Model> models, DirShadowFramebuffer& fb, Data::Shader& dShadowMapShader)
 	{
 		fb.ClearAndUse();
 		dShadowMapShader.Use();

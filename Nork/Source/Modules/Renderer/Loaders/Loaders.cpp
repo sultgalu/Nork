@@ -3,6 +3,21 @@
 
 namespace Nork::Renderer::Loaders
 {
+	Utils::Texture::Format GetFormat(int channels)
+	{
+		using enum Utils::Texture::Format;
+		switch (channels)
+		{
+		case 4: [[unlikely]]
+			return RGBA8;
+		case 3: [[likely]]
+			return RGB8;
+		case 1: [[ads]]
+			return R8;
+		default:
+			MetaLogger().Error("Unhandled number of channels");
+		}
+	}
     Data::TextureData LoadImage(std::string_view path)
     {
         Data::TextureData data{};
@@ -11,8 +26,42 @@ namespace Nork::Renderer::Loaders
         data.height = (int16_t)height;
         data.width = (int16_t)width;
         data.channels = (int8_t)channels;
+		data.format = GetFormat(channels);
         return data;
     }
+	std::array<Data::TextureData, 6> LoadCubemapImages(std::string dirPath, std::string extension)
+	{
+		static std::string suffixes[6]{
+			"right", "left","top","bottom","front","back",
+		};
+
+		if (dirPath.at(dirPath.size() - 1) != '/')
+			dirPath.append("/");
+
+		std::array<Data::TextureData, 6> datas;
+		int width, height, nrChannels;
+
+		for (int i = 0; i < 6; i++)
+		{
+			auto data = Utils::Texture::LoadImageData((dirPath + suffixes[i] + extension).c_str(), width, height, nrChannels);
+			
+			if (data.size() > 0)
+			{
+				Logger::Debug("Loading Cubemap face #", i);
+				datas[i].data = data;
+				datas[i].width = (uint16_t)width;
+				datas[i].height = (uint16_t)height;
+				datas[i].channels = (uint8_t)nrChannels;
+				datas[i].format = GetFormat(nrChannels);
+			}
+			else
+			{
+				std::cout << "ERR::FAILED TO LOAD TEXTURE" << std::endl;
+				std::abort();
+			}
+		}
+		return datas;
+	}
     Data::ShaderData LoadShader(std::string_view path)
     {
         std::ifstream stream(path.data());

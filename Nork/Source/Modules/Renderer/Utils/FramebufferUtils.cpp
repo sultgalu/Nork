@@ -10,13 +10,15 @@ namespace Nork::Renderer::Utils::Framebuffer
 	}
 	Builder& Builder::AddTexture(unsigned int handler, GLenum attachment)
 	{
-		glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, handler, 0);
+		glFramebufferTexture(GL_FRAMEBUFFER, attachment, handler, 0);
 		return *this;
 	}
 	Builder& Builder::AddTexture(unsigned int* handler, Texture::Format format, GLenum attachment)
 	{
-		*handler = Texture::Create2D(this->width, this->height, format);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, *handler, 0);
+		using namespace Texture;
+		auto texParams = TextureParams{ .wrap = Wrap::ClampToEdge, .filter = Filter::Linear, .magLinear = false, .genMipmap = false };
+		*handler = Texture::Create(this->width, this->height, format, nullptr, texParams);
+		glFramebufferTexture(GL_FRAMEBUFFER, attachment, *handler, 0);
 
 		return *this;
 	}

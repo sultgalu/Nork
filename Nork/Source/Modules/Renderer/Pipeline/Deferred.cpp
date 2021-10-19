@@ -70,15 +70,16 @@ namespace Nork::Renderer::Pipeline
 	}
 	static std::chrono::high_resolution_clock clock;
 
-	void Deferred::UseShadowMap(DirShadow shadow, ShadowFramebuffer& fb)
+	void Deferred::UseShadowMap(DirShadow shadow, DirShadowFramebuffer& fb)
 	{
-		GLuint depth = fb.GetDepthAttachment();
+		GLuint depth = fb.Texture();
 		Utils::Texture::Bind(depth, shadow.idx + Config::LightData::dirShadowBaseIndex);
 	}
-	void Deferred::UseShadowMap(PointShadow shadow, ShadowFramebuffer& fb)
+	void Deferred::UseShadowMap(PointShadow shadow, PointShadowFramebuffer& fb)
 	{
-		GLuint depth = fb.GetDepthAttachment();
-		Utils::Texture::Bind(depth, shadow.idx + Config::LightData::pointShadowBaseIndex);
+		using namespace Utils::Texture;
+		GLuint depth = fb.Texture();
+		Bind<TextureType::Cube>(depth, shadow.idx + Config::LightData::pointShadowBaseIndex);
 	}
 
 	void Deferred::DrawScene(std::span<Model> models, LightPassFramebuffer& lightFb, GeometryFramebuffer& gFb)

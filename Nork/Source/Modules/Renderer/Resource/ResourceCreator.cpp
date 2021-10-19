@@ -5,6 +5,7 @@
 namespace Nork::Renderer::Resource
 {
 	using namespace Data;
+
     MeshResource CreateMesh(MeshData& data)
     {
 		MeshResource resource{};
@@ -28,7 +29,6 @@ namespace Nork::Renderer::Resource
 
 		return resource;
     }
-
     void DeleteMesh(MeshResource& resource)
     {
 		GLuint bufs[] = { resource.vb, resource.ib };
@@ -42,12 +42,39 @@ namespace Nork::Renderer::Resource
 		}
 		glDeleteTextures((int)toDelTexs.size(), toDelTexs.data());
     }
+
 	ShaderResource CreateShader(ShaderData& data)
 	{ 
 		auto resource = ShaderResource{ .program = Utils::Shader::GetProgramFromSource(data.source) };
 		if (resource.program == 0)
 		{
 			Logger::Error("Failed to create shader.");
+		}
+		return resource;
+	}
+
+	TextureResource CreateCubemap(std::array<TextureData, 6>& datas, Utils::Texture::TextureParams params)
+	{
+		std::array<void*, 6> pointers;
+		for (size_t i = 0; i < 6; i++)
+		{
+			pointers[i] = datas[i].data.size() == 0 ? nullptr : datas[i].data.data();
+		}
+
+		using namespace Utils::Texture;
+		auto resource = TextureResource{ .id = Utils::Texture::Create<TextureType::Cube>(datas[0].width, datas[0].height, datas[0].format, pointers.data(), params)};
+		if (resource.id == 0)
+		{
+			MetaLogger().Error("Failed to create Cubemap Texture.");
+		}
+		return resource;
+	}
+	TextureResource CreateTexture(TextureData& data, Utils::Texture::TextureParams params)
+	{
+		auto resource = TextureResource{ .id = Utils::Texture::Create(data.width, data.height, data.format, data.data.size() == 0 ? nullptr : data.data.data(), params) };
+		if (resource.id == 0)
+		{
+			MetaLogger().Error("Failed to create Texture.");
 		}
 		return resource;
 	}

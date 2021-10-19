@@ -84,7 +84,7 @@ uniform sampler2D gNorm;
 uniform sampler2D gSpec;
 
 uniform sampler2D dirShadowMaps[5]; // doesn't work with anything other than 1 rn.
-uniform sampler2D pointShadowMaps[1/*MAX_NUM_OF_P_SHADOWS*/];
+uniform samplerCube pointShadowMaps[5/*MAX_NUM_OF_P_SHADOWS*/];
 
 vec3 dLight(DirLight light, Materials material, vec3 normal, vec3 viewDir);
 vec3 dLightShadow(DirLight light, Materials material, vec3 normal, vec3 viewDir, DirShadow shadow, vec3 worldPos);
@@ -217,8 +217,7 @@ float pShadow(PointShadow shadow, float bias, vec3 worldPos, vec3 lightPos, int 
 	bias *= shadow.far; // bias is given in [0;1] range, making it [0;far] 
 	for (int i = 0; i < int(shadow.blur); i++)
 	{
-		// TODO:: SOLVE FOR 2D::
-		float closestDepth = 0.0f; // texture(pointShadowMaps[samplerIdx], direction + offs[i] * shadow.radius).r;
+		float closestDepth = texture(pointShadowMaps[samplerIdx], direction + offs[i] * shadow.radius).r;
 		closestDepth *= shadow.far; // [0;1] -> [0;farPlane] (we divided it in shadowShader)
 		shad += closestDepth + bias < depth ? 0.0f : 1.0f;
 	}

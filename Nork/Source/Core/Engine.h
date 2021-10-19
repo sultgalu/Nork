@@ -10,13 +10,6 @@ namespace Nork
 	using namespace Renderer;
 	using namespace Pipeline;
 
-	struct Resources
-	{
-		std::unordered_map<std::string, std::vector<Renderer::Data::MeshResource>> models;
-		std::unordered_map<std::string, Renderer::Data::ShaderResource> shaders;
-		std::unordered_map<std::string, Renderer::Data::TextureResource> textures;
-	};
-
 	struct EngineConfig
 	{
 		EngineConfig() = default;
@@ -32,6 +25,7 @@ namespace Nork
 		~Engine();
 		void Launch();
 	private:
+		DeferredData CreatePipelineResources();
 		void SyncComponents();
 		void UpdateLights();
 		void ViewProjectionUpdate();
@@ -42,11 +36,10 @@ namespace Nork
 		Deferred pipeline;
 		LightManager lightMan;
 		Event::Dispatcher appEventMan;
-		Resources resources;
 		Scene::Scene scene;
 		
-		std::vector<Renderer::ShadowFramebuffer> dShadowFramebuffers;
-		std::vector<Renderer::ShadowFramebuffer> pShadowFramebuffers;
+		std::vector<Renderer::Pipeline::DirShadowFramebuffer> dShadowFramebuffers;
+		std::vector<Renderer::Pipeline::PointShadowFramebuffer> pShadowFramebuffers;
 		Renderer::Pipeline::GeometryFramebuffer geometryFb;
 		Renderer::Pipeline::LightPassFramebuffer lightFb;
 	};

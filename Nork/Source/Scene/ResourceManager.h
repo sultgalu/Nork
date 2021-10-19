@@ -43,7 +43,7 @@ namespace Nork::Scene
 			return resources.meshes[src];
 		}
 
-		const Renderer::Data::TextureResource& GetTexture(const std::string& src)
+		const Renderer::Data::TextureResource& GetTexture(const std::string& src, Renderer::Utils::Texture::TextureParams params = Renderer::Utils::Texture::TextureParams())
 		{
 			auto searchRes = resources.textures.find(src);
 			if (searchRes != resources.textures.end())
@@ -53,11 +53,33 @@ namespace Nork::Scene
 
 			rawDatas.textures[src] = Renderer::Loaders::LoadImage(src);
 			auto& textureRaw = rawDatas.textures[src];
-			resources.textures[src] = Renderer::Resource::CreateTexture(textureRaw);
+			resources.textures[src] = Renderer::Resource::CreateTexture(textureRaw, params);
 
 			references.textures[src]++; 
 			Logger::Info("Loaded Texture from ", src, "\n\t", std::format("{}:{} {} bit", textureRaw.width, textureRaw.height, textureRaw.channels));
 			return resources.textures[src];			
+		}
+
+		const Renderer::Data::TextureResource& GetCubemapTexture(const std::string& src, const std::string& extension = ".jpg", Renderer::Utils::Texture::TextureParams params = Renderer::Utils::Texture::TextureParams())
+		{
+			/*auto searchRes = resources.textures.find(src);
+			if (searchRes != resources.textures.end())
+			{
+				return searchRes._Ptr->_Myval.second;
+			}*/
+
+			auto raws = Renderer::Loaders::LoadCubemapImages(src, extension);
+			for (size_t i = 0; i < raws.size(); i++)
+			{
+				std::string faceStr = src;
+				rawDatas.textures[faceStr.append(std::to_string(i))] = raws[i];
+			}
+
+			resources.textures[src] = Renderer::Resource::CreateCubemap(raws, params);
+
+			references.textures[src]++;
+			Logger::Info("Loaded Cubemap Texture from ", src, "\n\t", std::format("{}:{} {} bit", raws[0].width, raws[0].height, raws[0].channels));
+			return resources.textures[src];
 		}
 
 		const Renderer::Data::ShaderResource& GetShader(const std::string& src)

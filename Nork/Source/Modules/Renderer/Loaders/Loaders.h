@@ -7,6 +7,7 @@
 namespace Nork::Renderer::Loaders
 {
 	 Data::TextureData LoadImage(std::string_view path);
+	 std::array<Data::TextureData, 6> LoadCubemapImages(std::string dirPath, std::string extension);
 	 Data::ShaderData LoadShader(std::string_view path);
 	 std::vector<Data::MeshData> LoadModel(std::string path);
 }

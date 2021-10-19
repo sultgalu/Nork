@@ -97,14 +97,14 @@ namespace Nork::Editor
 			{
 				if (ImGui::Selectable(("Dirlight ShadowMap #" + std::to_string(i)).c_str()))
 				{
-					image.texture = data.engine.dShadowFramebuffers[i].GetDepthAttachment();
+					image.texture = data.engine.dShadowFramebuffers[i].Texture();
 				}
 			}
 			for (size_t i = 0; i < data.engine.pShadowFramebuffers.size(); i++)
 			{
 				if (ImGui::Selectable(("Pointlight ShadowMap #" + std::to_string(i)).c_str()))
 				{
-					image.texture = data.engine.pShadowFramebuffers[i].GetDepthAttachment();
+					image.texture = data.engine.pShadowFramebuffers[i].Texture();
 				}
 			}
 			

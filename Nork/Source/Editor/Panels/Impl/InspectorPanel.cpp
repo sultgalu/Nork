@@ -201,9 +201,18 @@ namespace Nork::Editor
 	}
 	void InspectorPanel::PointShadowComp(PointShadow* comp, PointLight* light)
 	{
-		if (ImGui::TreeNodeEx("Directional shadow", ImGuiTreeNodeFlags_DefaultOpen))
+		if (ImGui::TreeNodeEx("Point shadow", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			if (ImGui::DragFloat2("Near, Far", &comp->GetMutableData().near))
+			static bool on = false;
+			if (ImGui::Checkbox("WildCard", &on))
+			{
+				static GLuint saved = data.engine.pipeline.data.skyboxTex;
+				if (on)
+					data.engine.pipeline.data.skyboxTex = data.engine.pShadowFramebuffers[0].Texture();
+				else
+					data.engine.pipeline.data.skyboxTex = saved;
+			}
+			if (ImGui::DragFloat2("Far, Near", &comp->GetMutableData().far))
 			{
 				//comp->RecalcVP(dl->GetView());
 			}
@@ -223,9 +232,9 @@ namespace Nork::Editor
 			{
 				comp->SetBlur(blur);
 			}
-			if (ImGui::SliderInt("Radian", &rad, 0, 9))
+			if (ImGui::SliderInt("Radius", &rad, 0, 9))
 			{
-				comp->SetBlur(rad);
+				comp->SetRadius(rad);
 			}
 			if (ImGui::SliderInt("IDX", &comp->GetMutableData().idx, 0, 4));
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
