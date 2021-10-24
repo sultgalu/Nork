@@ -201,6 +201,10 @@ namespace Nork
 		height = h;
 		glfwSetWindowSize(windowPtr, width, height);
 	}
+	glm::vec2 _Window<GLFWwindow>::Resolution()
+	{
+		return glm::vec2(width, height);
+	}
 	bool _Window<GLFWwindow>::IsRunning()
 	{
 		return isRunning;

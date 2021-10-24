@@ -85,6 +85,34 @@ namespace Nork::Renderer::Utils::Mesh
 
 		return vertices;
 	}
+	std::vector<float> GetCubeVertexPositions8()
+	{
+		std::vector<float> vertices;
+		vertices.reserve(6 * 4 * 3);
+
+		auto addPoint = [&](float x, float y, float z)
+		{
+			vertices.push_back(x);
+			vertices.push_back(y);
+			vertices.push_back(z);
+		};
+
+		float size = 1.0f;
+
+		// FACE #1 (FRONT)
+		addPoint(-size, -size, size);
+		addPoint(size, -size, size);
+		addPoint(size, size, size);
+		addPoint(-size, size, size);
+
+		// FACE #6 (BACK)
+		addPoint(size, -size, -size);
+		addPoint(-size, -size, -size);
+		addPoint(-size, size, -size);
+		addPoint(size, size, -size);
+
+		return vertices;
+	}
 	std::vector<float> GetCubeVertexTexCoords()
 	{
 		std::vector<float> texCoords;

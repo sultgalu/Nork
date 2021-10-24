@@ -16,6 +16,7 @@ namespace Nork
 		void Refresh();
 		void Close();
 		void SetSize(int width, int height);
+		glm::vec2 Resolution();
 
 		bool IsRunning();
 		inline Input::State& GetInputState() { return inputState; }

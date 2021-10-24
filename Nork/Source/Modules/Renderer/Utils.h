@@ -194,6 +194,7 @@ namespace Nork::Renderer::Utils
 	{
 		std::vector<unsigned int> GetCubeIndices();
 		std::vector<float> GetCubeVertexPositions();
+		std::vector<float> GetCubeVertexPositions8();
 		std::vector<float> GetCubeVertexTexCoords();
 		std::vector<float> GetCubeVertexNormals();
 		std::vector<float> GetCubeVertexTangents();

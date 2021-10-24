@@ -72,6 +72,26 @@ namespace Nork::Renderer::Data
 				else MetaLogger().Error("Trying to set invalid shader uniform: \"", name, "\" to \"", std::format("({},{},{},{})", value.x, value.y, value.z, value.w), "\"");
 			}
 		}
+		inline void SetVec2(std::string name, const glm::vec2& value)
+		{
+			auto loc = this->uniformLocations.find(name);
+			if (loc != this->uniformLocations.end())
+			{
+				if ((*loc).second != -1)
+					glUniform2f((*loc).second, value.x, value.y);
+			}
+			else
+			{
+				int newLoc = TryGetLocation(name.c_str());
+				this->uniformLocations[name] = newLoc;
+				if (newLoc != -1)
+				{
+					glUniform2f(newLoc, value.x, value.y);
+					MetaLogger().Warning("GetUniforms didn't find uniform \"", name, "\", but the shader cached it.");
+				}
+				else MetaLogger().Error("Trying to set invalid shader uniform: \"", name, "\" to \"", std::format("({},{})", value.x, value.y), "\"");
+			}
+		}
 		inline void SetVec3(std::string name, const glm::vec3& value)
 		{
 			auto loc = this->uniformLocations.find(name);

@@ -3,6 +3,8 @@
 #include "Modules/Renderer/Loaders/Loaders.h"
 #include "Modules/Renderer/Resource/DefaultResources.h"
 #include "Serialization/BinarySerializer.h"
+#include "Modules/Renderer/Pipeline/StreamRenderer.h"
+#include "Modules/Renderer/Pipeline/Capabilities.h"
 
 namespace Nork
 {
@@ -23,8 +25,14 @@ namespace Nork
 		return Data::Shader(resource);
 	}
 
+	static Renderer::Data::Shader shader;
+	static Renderer::Data::Shader pointShader;
+	static Renderer::Data::Shader lineShader;
 	DeferredData Engine::CreatePipelineResources()
 	{
+		shader = CreateShaderFromPath("Source/Shaders/position.shader");
+		pointShader = CreateShaderFromPath("Source/Shaders/point.shader");
+		lineShader = CreateShaderFromPath("Source/Shaders/line.shader");
 		return DeferredData (DeferredData::Shaders
 			{
 				.gPass = CreateShaderFromPath("Source/Shaders/gPass.shader"),
@@ -68,6 +76,7 @@ namespace Nork
 		auto& shad = reg.get<Components::DirShadow>(id);
 		dShadowIndices.push_back(shad.GetData().idx);
 	}
+
 
 	Engine::Engine(EngineConfig& config)
 		: window(config.width, config.height), scene(Scene::Scene()), pipeline(CreatePipelineResources()),
@@ -115,7 +124,8 @@ namespace Nork
 			ViewProjectionUpdate();
 			UpdateLights();
 			pipeline.DrawScene(models, lightFb, geometryFb);
-
+			DrawHitboxes();
+			FramebufferBase::UseDefault();
 			sender.Send(Event::Types::RenderUpdated());
 			window.Refresh();
 
@@ -230,12 +240,79 @@ namespace Nork
 		}
 
 	}
+	void Engine::DrawHitboxes()
+	{
+		static Renderer::Pipeline::StreamRenderer<glm::vec3, float> renderer;
+
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glPointSize(pointSize);
+
+		using namespace Renderer;
+		using namespace Capabilities;
+		using enum Capability;
+		
+		if (drawTriangles || drawLines || drawPoints)
+		{
+			renderer.UploadVertices(*(reinterpret_cast<std::vector<std::tuple<glm::vec3, float>>*>(&meshes.vertices)));
+			
+			Capabilities::With<Enable<FaceCulling, Depth>, Disable<Blend>, Set<BlendFunc<GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA>>>([&]()
+				{
+					Capabilities::With<Enable<Blend>, Disable<Depth, FaceCulling>>([&]()
+						{
+							if (drawTriangles)
+							{
+								shader.Use();
+								renderer.DrawAsCube(*(reinterpret_cast<std::vector<uint32_t>*>(&meshes.triangleIndices)));
+							}
+
+							if (drawLines || drawPoints)
+							{
+								Capabilities::With<Disable<Depth>>([&]()
+									{
+										if (drawLines)
+										{
+											lineShader.Use();
+											renderer.DrawAsLines(*(reinterpret_cast<std::vector<uint32_t>*>(&meshes.edgeIndices)));
+										}
+										if (drawPoints)
+										{
+											std::vector<uint32_t> seq(meshes.vertices.size());
+											for (size_t i = 0; i < meshes.vertices.size(); i++)
+												seq.push_back(i);
+											pointShader.Use();
+											renderer.DrawAsPoints(seq);
+										}
+									});
+							}
+						});
+				});
+		}
+		
+	}
 	void Engine::ViewProjectionUpdate()
 	{
 		auto optional = GetActiveCamera();
 		if (optional.has_value())
 		{
 			auto& camera = *optional.value();
+
+			shader.Use();
+			shader.SetMat4("VP", camera.viewProjection);
+			shader.SetVec4("colorDefault", triangleColor);
+			shader.SetVec4("colorSelected", glm::vec4(selectedColor, triAlpha));
+			
+			pointShader.Use();
+			pointShader.SetMat4("VP", camera.viewProjection);
+			pointShader.SetFloat("aa", pointAA);
+			pointShader.SetFloat("size", pointInternalSize);
+			pointShader.SetVec4("colorDefault", pointColor);
+			pointShader.SetVec4("colorSelected", glm::vec4(selectedColor, pointAlpha));
+
+			lineShader.Use();
+			lineShader.SetMat4("VP", camera.viewProjection);
+			lineShader.SetFloat("width", lineWidth);
+			lineShader.SetVec4("colorDefault", lineColor);
+			lineShader.SetVec4("colorSelected", glm::vec4(selectedColor, lineAlpha));
 
 			//lightMan.dShadowMapShader->SetMat4("VP", vp);
 			pipeline.data.shaders.gPass.Use();

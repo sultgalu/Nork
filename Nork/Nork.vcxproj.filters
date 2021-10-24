@@ -132,6 +132,15 @@
     <ClCompile Include="Source\Modules\Renderer\Pipeline\Framebuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\StreamRenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Panels\Impl\MeshEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\Capabilities.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\PCH\pch.h">
@@ -269,6 +278,21 @@
     <ClInclude Include="Source\Modules\Physics\Data\Collider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\StreamRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\VertexArray.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\MeshWorld.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Panels\MeshEditor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\Capabilities.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\OneDrive\Dokumentumok\GameEngine_0\GameEngineEditor\resources\shaders\lightPass.shader" />
@@ -277,5 +301,8 @@
     <None Include="Source\Shaders\skybox.shader" />
     <None Include="Source\Shaders\dirShadMap.shader" />
     <None Include="Source\Shaders\pointShadMap.shader" />
+    <None Include="Source\Shaders\position.shader" />
+    <None Include="Source\Shaders\point.shader" />
+    <None Include="Source\Shaders\line.shader" />
   </ItemGroup>
 </Project>

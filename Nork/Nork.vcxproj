@@ -164,6 +164,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Core\MeshWorld.h" />
+    <ClCompile Include="Source\Editor\Panels\Impl\MeshEditor.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\Capabilities.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\StreamRenderer.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Pipeline\Framebuffer.cpp" />
     <ClCompile Include="Source\Serialization\BinarySerializer.cpp" />
     <ClCompile Include="Source\Editor\Panels\Impl\HierarchyPanel.cpp" />
@@ -265,7 +269,11 @@
     <ClCompile Include="Source\Editor\Panels\Impl\ViewportPanel.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Editor\Panels\MeshEditor.h" />
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\Capabilities.h" />
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\StreamRenderer.h" />
     <ClInclude Include="Source\Modules\Physics\Data\Collider.h" />
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\VertexArray.h" />
     <ClInclude Include="Source\Serialization\BinarySerializer.h" />
     <ClInclude Include="Source\Editor\Panels\All.h" />
     <ClInclude Include="Source\Editor\Panels\HierarchyPanel.h" />
@@ -316,7 +324,10 @@
     <None Include="Source\Shaders\dirShadMap.shader" />
     <None Include="Source\Shaders\gPass.shader" />
     <None Include="Source\Shaders\lightPass.shader" />
+    <None Include="Source\Shaders\line.shader" />
+    <None Include="Source\Shaders\point.shader" />
     <None Include="Source\Shaders\pointShadMap.shader" />
+    <None Include="Source\Shaders\position.shader" />
     <None Include="Source\Shaders\skybox.shader" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

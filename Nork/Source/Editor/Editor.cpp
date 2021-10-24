@@ -119,7 +119,7 @@ namespace Nork::Editor
 	{
 		InitImGui(engine.window);
 		panels = std::vector<Panel*>{ new MainPanel(data), new AssetsPanel(data), new LogPanel(data),
-			new ViewportPanel(data), new InspectorPanel(data), new HierarchyPanel(data) };
+			new ViewportPanel(data), new InspectorPanel(data), new HierarchyPanel(data), new MeshEditorPanel(data)};
 	}
 
 	void Editor::Render()

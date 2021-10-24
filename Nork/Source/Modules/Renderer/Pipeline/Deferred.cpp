@@ -88,8 +88,7 @@ namespace Nork::Renderer::Pipeline
 		DrawGBuffers(models);
 		lightFb.ClearAndUse();
 		DrawLightPass(gFb);
-		DrawSkybox();
-		FramebufferBase::UseDefault();
+		//DrawSkybox();
 	}
 	void Deferred::DrawGBuffers(std::span<Model> models)
 	{

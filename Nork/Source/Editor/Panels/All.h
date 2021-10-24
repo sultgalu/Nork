@@ -6,3 +6,4 @@
 #include "MainPanel.h"
 #include "ViewportPanel.h"
 #include "HierarchyPanel.h"
+#include "MeshEditor.h"
