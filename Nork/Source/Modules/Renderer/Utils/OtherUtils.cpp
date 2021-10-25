@@ -9,6 +9,10 @@ namespace Nork::Renderer::Utils::Other
 		glReadPixels(x, y, 1, 1, Texture::GetFormat(format), Texture::GetType(format), buf);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
+	void ReadPixels(GLuint tex, int x, int y, Texture::Format format, void* buf)
+	{
+		glGetTextureSubImage(tex, 0, x, y, 0, 1, 1, 1, Texture::GetFormat(format), Texture::GetType(format), 4, buf);
+	}
 	unsigned int CreateUBO(int idx, int size, GLenum usage)
 	{
 		unsigned int ubo;

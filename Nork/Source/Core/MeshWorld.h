@@ -6,7 +6,7 @@ namespace Nork
 	struct MeshWorld
 	{
 		std::vector<Vertex> vertices;
-		std::vector<std::set<uint32_t>> neighbours;
+		std::vector<std::unordered_set<uint32_t>> neighbours;
 
 		std::vector<std::array<uint32_t, 3>> triangleIndices;
 		std::vector<std::array<uint32_t, 2>> edgeIndices;
@@ -17,14 +17,99 @@ namespace Nork
 			neighbours.push_back({});
 			return vertices.size() - 1;
 		}
-		inline void Connect(uint32_t first, uint32_t second)
+		inline void Remove(std::span<uint32_t> multiple)
 		{
-			if (first >= neighbours.size() || second >= neighbours.size())
+			std::sort(multiple.rbegin(), multiple.rend());
+			for (size_t i = 0; i < multiple.size(); i++)
 			{
-				Logger::Error("invalid vertex index: ", first, " or ", second, ". There are only ",
-					vertices.size(), " number of vertices, and ", neighbours.size(), " should equal this.");
+				Remove(multiple[i]);
+			}
+		}
+		inline void Remove(uint32_t idx)
+		{
+			for (auto nIdx : neighbours[idx])
+			{
+				neighbours[nIdx].erase(idx);
+			}
+
+			std::vector<size_t> triErase;
+			std::vector<size_t> edgeErase;
+			for (size_t i = 0; i < triangleIndices.size(); i++)
+			{
+				if (triangleIndices[i][0] == idx || triangleIndices[i][1] == idx || triangleIndices[i][2] == idx)
+					triErase.push_back(i);
+			}
+			for (size_t i = 0; i < edgeIndices.size(); i++)
+			{
+				if (edgeIndices[i][0] == idx || edgeIndices[i][1] == idx)
+					edgeErase.push_back(i);
+			}
+			for (int i = triErase.size() - 1; i >= 0; --i)
+				triangleIndices.erase(triangleIndices.begin() + triErase[i]);
+			for (int i = edgeErase.size() - 1; i >= 0; --i)
+				edgeIndices.erase(edgeIndices.begin() + edgeErase[i]);
+
+			vertices.erase(vertices.begin() + idx);
+			neighbours.erase(neighbours.begin() + idx);
+
+			// decreasing every idx reference that was in a higher position
+			for (size_t i = 0; i < neighbours.size(); i++)
+			{
+				std::vector<uint32_t> toDecrement;
+				for (auto n : neighbours[i])                    if (n > idx) toDecrement.push_back(n);
+				for (size_t j = 0; j < toDecrement.size(); j++)              neighbours[i].erase(toDecrement[j]);
+				for (size_t j = 0; j < toDecrement.size(); j++)              neighbours[i].insert(toDecrement[j] - 1);
+			}
+			for (size_t i = 0; i < triangleIndices.size(); i++)
+			{
+				if (triangleIndices[i][0] > idx) triangleIndices[i][0]--;
+				if (triangleIndices[i][1] > idx) triangleIndices[i][1]--;
+				if (triangleIndices[i][2] > idx) triangleIndices[i][2]--;
+			}
+			for (size_t i = 0; i < edgeIndices.size(); i++)
+			{
+				if (edgeIndices[i][0] > idx) edgeIndices[i][0]--;
+				if (edgeIndices[i][1] > idx) edgeIndices[i][1]--;
+			}
+		}
+		inline void Disconnect(uint32_t first, uint32_t second)
+		{
+			if (!neighbours[first].contains(second))
+			{
+				Logger::Error(first, " and ", second, " are not neighbours.");
 				return;
 			}
+
+			neighbours[first].erase(second);
+			neighbours[second].erase(first);
+
+			std::vector<size_t> triErase;
+			for (size_t i = 0; i < triangleIndices.size(); i++)
+			{
+				int count = 0;
+				for (size_t j = 0; j < triangleIndices[i].size(); j++)
+				{
+					if (triangleIndices[i][j] == first || triangleIndices[i][j] == second)
+						count++;
+				}
+				if (count == 2)
+					triErase.push_back(i);
+			}
+
+			std::vector<size_t> edgeErase;
+			for (size_t i = 0; i < edgeIndices.size(); i++)
+			{
+				if ((edgeIndices[i][0] == first && edgeIndices[i][1] == second) ||
+					(edgeIndices[i][0] == second && edgeIndices[i][1] == first))
+					edgeErase.push_back(i);
+			}
+			for (int i = triErase.size() - 1; i >= 0; --i)
+				triangleIndices.erase(triangleIndices.begin() + triErase[i]);
+			for (int i = edgeErase.size() - 1; i >= 0; --i)
+				edgeIndices.erase(edgeIndices.begin() + edgeErase[i]);
+		}
+		inline void Connect(uint32_t first, uint32_t second)
+		{
 			auto& n1 = neighbours[first];
 			auto& n2 = neighbours[second];
 			if (n1.contains(second))

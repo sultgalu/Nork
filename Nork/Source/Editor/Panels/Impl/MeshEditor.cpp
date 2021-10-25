@@ -79,6 +79,18 @@ namespace Nork::Editor
 			uint32_t idx = meshes.Add(Engine::Vertex({ 0, 0, 0 }, true));
 			selected.insert(idx);
 		}
+		if (ImGui::Button("Remove##Vertex"))
+		{
+			std::vector<uint32_t> toDel;
+			toDel.reserve(selected.size());
+			for (auto idx : selected)
+			{
+				toDel.push_back(idx);
+			}
+			meshes.Remove(toDel);
+			selected.clear();
+			current = 0;
+		}
 
 		if (ImGui::Button("Connect##Vertex"))
 		{
@@ -88,6 +100,17 @@ namespace Nork::Editor
 				for (auto second = std::next(first); second != selected.end(); ++second)
 				{
 					meshes.Connect(first._Ptr->_Myval, second._Ptr->_Myval);
+				}
+			}
+		}
+		if (ImGui::Button("Disconnect##Vertex"))
+		{
+			auto begin = selected.begin();
+			for (auto first = selected.begin(); first != selected.end(); ++first)
+			{
+				for (auto second = std::next(first); second != selected.end(); ++second)
+				{
+					meshes.Disconnect(first._Ptr->_Myval, second._Ptr->_Myval);
 				}
 			}
 		}

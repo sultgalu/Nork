@@ -206,6 +206,7 @@ namespace Nork::Renderer::Utils
 	namespace Other
 	{
 		void ReadPixels(unsigned int fbo, int colorAtt, int x, int y, Texture::Format format, void* buf);
+		void ReadPixels(GLuint tex, int x, int y, Texture::Format format, void* buf); // requires opengl 4.5
 		unsigned int CreateUBO(int idx, int size, GLenum usage);
 	}
 }
