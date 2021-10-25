@@ -4,21 +4,27 @@
 
 layout(location = 0) in vec3 vPos;
 layout(location = 1) in float isSelected;
+layout(location = 2) in uint vId;
 
 uniform mat4 VP;
 out float selected;
+flat out uint fId;
 
 void main()
 {
 	gl_Position = VP * vec4(vPos, 1.0f);
 	selected = isSelected;
+	fId = vId;
 }
 
 #type fragment
 #version 330 core
 
+layout(location = 0) out vec4 color; // 3 used
+layout(location = 1) out uint id;
+
 in float selected;
-out vec4 color;
+flat in uint fId;
 
 uniform float aa; // anti-aliasing
 uniform vec4 colorDefault;
@@ -43,4 +49,5 @@ void main()
 	{
 		color = vec4(0);
 	}
+	id = fId;
 }

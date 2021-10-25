@@ -8,7 +8,7 @@
 
 namespace Nork::Renderer::Pipeline
 {
-	using SFB = Framebuffer<Utils::Texture::Format::Depth16, Utils::Texture::Format::None>;
+	using SFB = Framebuffer<Utils::Texture::Format::Depth16>;
 	class DirShadowFramebuffer : private SFB
 	{
 	public:
@@ -21,12 +21,11 @@ namespace Nork::Renderer::Pipeline
 		}
 	};
 
-	using SFB = Framebuffer<Utils::Texture::Format::Depth16, Utils::Texture::Format::None>;
 	class PointShadowFramebuffer : private SFB
 	{
 	public:
 		PointShadowFramebuffer(uint32_t width, uint32_t height)
-			: Framebuffer(CreateTexture(width, height), width, height)
+			: Framebuffer(width, height, CreateTexture(width, height))
 		{
 		}
 		using SFB::ClearAndUse;
@@ -36,11 +35,11 @@ namespace Nork::Renderer::Pipeline
 			return depth;
 		}
 	private:
-		std::unordered_map<Utils::Texture::Format, GLuint> CreateTexture(uint32_t width, uint32_t height)
+		GLuint CreateTexture(uint32_t width, uint32_t height)
 		{
 			using namespace Utils::Texture;
 			auto tex = Create<TextureType::Cube>(width, height, Format::Depth16, nullptr, TextureParams::CubeMapParams());
-			return std::unordered_map<Format, GLuint> { { Format::Depth16, tex } };
+			return tex;
 		}
 	};
 

@@ -5,6 +5,14 @@
 
 namespace Nork::Renderer::Pipeline
 {
+	template<class T, class... Rest>
+	static consteval size_t SizeOf()
+	{
+		if constexpr (sizeof...(Rest) > 0)
+			return sizeof(T) + SizeOf<Rest...>();
+		else return sizeof(T);
+	}
+
 	template<VertexLayoutCompatible... T>
 	class StreamRenderer
 	{
@@ -13,9 +21,10 @@ namespace Nork::Renderer::Pipeline
 		{
 		}
 
-		void UploadVertices(std::span<std::tuple<T...>> vertices)
+		template<class S>
+		requires requires() { requires sizeof(S) == SizeOf<T...>(); }
+		void UploadVertices(std::span<S> vertices)
 		{
-
 			vao.SetVBData(vertices.size() * vao.VertexSize(), vertices.data(), GL_DYNAMIC_DRAW);
 		}
 		void DrawAsCube(std::span<uint32_t> indices)

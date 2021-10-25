@@ -120,6 +120,14 @@ namespace Nork
 			struct RenderUpdated : Of<AppEvent> {};
 			struct OnPhysicsUpdate : Of<AppEvent> {};
 			struct PhysicsUpdated : Of<AppEvent> {};
+
+			struct IdQueryResult : Of<AppEvent>
+			{
+				IdQueryResult(int x, int y, uint32_t result):
+					x(x), y(y), id(result){ }
+				int x, y;
+				uint32_t id;
+			};
 		}
 		
 		struct Function

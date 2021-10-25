@@ -25,6 +25,7 @@ namespace Nork
 		Engine(EngineConfig& config);
 		~Engine();
 		void Launch();
+		void ReadId(int x, int y);
 	private:
 		DeferredData CreatePipelineResources();
 		void SyncComponents();
@@ -44,10 +45,13 @@ namespace Nork
 		{
 			glm::vec3 pos;
 			float selected = 0;
+			uint32_t id;
+			inline static uint32_t idCounter = 0;
 			Vertex(glm::vec3 pos, bool selected = false)
 			{
 				this->pos = pos;
 				this->selected = selected;
+				this->id = ++idCounter;
 			}
 		};
 		MeshWorld<Vertex> meshes = MeshWorld<Vertex>::GetCube();
@@ -56,6 +60,7 @@ namespace Nork
 		std::vector<Renderer::Pipeline::PointShadowFramebuffer> pShadowFramebuffers;
 		Renderer::Pipeline::GeometryFramebuffer geometryFb;
 		Renderer::Pipeline::LightPassFramebuffer lightFb;
+		GLuint idMap;
 
 		int pointSize = 20;
 		float pointInternalSize = 0.5f, pointAA = 0.3f, lineWidth = 0.005f;
@@ -66,7 +71,7 @@ namespace Nork
 		glm::vec4 triangleColor = { 0,1,0, 0.4f};
 		glm::vec3 selectedColor = { 1,0,1 };
 
-		bool drawLines = true, drawPoints = true, drawTriangles = true;
+		bool drawLines = true, drawPoints = true, drawTriangles = true, drawSky = false;
 	};
 
 	extern std::optional<Components::Camera*> GetActiveCamera();

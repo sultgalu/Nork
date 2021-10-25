@@ -21,7 +21,7 @@ namespace Nork::Renderer::Utils
 		{
 			RGBA8 = GL_RGBA8, RGBA16F = GL_RGBA16F, RGBA32F = GL_RGBA32F, RGBA = RGBA8,
 			RGB8 = GL_RGB8, RGB16F = GL_RGB16F, RGB32F = GL_RGB32F, RGB = RGB8,
-			R32I = GL_R32I, R8 = GL_R8, R8I = GL_R8I, R32F = GL_R32F,
+			R32I = GL_R32I, R32UI = GL_R32UI, R32F = GL_R32F, R8 = GL_R8, R8I = GL_R8I,
 			Depth32F = GL_DEPTH_COMPONENT32F, Depth32 = GL_DEPTH_COMPONENT32, Depth24 = GL_DEPTH_COMPONENT24, Depth16 = GL_DEPTH_COMPONENT16,
 			Depth24Stencil8 = GL_DEPTH24_STENCIL8, Depth32FStencil8 = GL_DEPTH32F_STENCIL8,
 			None = GL_NONE
@@ -98,6 +98,7 @@ namespace Nork::Renderer::Utils
 		};
 
 		std::vector<unsigned char> LoadImageData(std::string_view path, int& width, int& height, int& channels);
+		
 		template<TextureType Type = TextureType::_2D, typename DataPtr = void**>
 		requires requires()
 		{
@@ -174,10 +175,11 @@ namespace Nork::Renderer::Utils
 		{
 		public:
 			Builder(int width, int height);
+			Builder(int width, int height, GLuint fbo);
 			Builder& AddTexture(unsigned int handler, GLenum attachment);
 			Builder& AddTexture(unsigned int* handler, Texture::Format format, GLenum attachment);
 			Builder& AddRenderbuffer(unsigned int* handler, Texture::Format format, GLenum attachment);
-			unsigned int GetFramebuffer(bool assertComplete = true);
+			unsigned int GetFramebuffer();
 		private:
 			int width, height;
 			unsigned int fbo = 0;

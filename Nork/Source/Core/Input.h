@@ -128,6 +128,11 @@ namespace Nork::Input
 		{
 			return mouseButtons[Types::ToInt(button)];
 		}
+		template<State::MouseButton State>
+		inline bool Is(Types::MouseButton button)
+		{
+			return (mouseButtons[ToInt(button)] & State) == State;
+		}
 		inline bool Is(Types::MouseButton button, MouseButton state)
 		{
 			return (mouseButtons[ToInt(button)] & state) == state;

@@ -28,8 +28,11 @@ namespace Nork
 	static Renderer::Data::Shader shader;
 	static Renderer::Data::Shader pointShader;
 	static Renderer::Data::Shader lineShader;
+
 	DeferredData Engine::CreatePipelineResources()
 	{
+		using namespace Renderer::Utils::Texture;
+
 		shader = CreateShaderFromPath("Source/Shaders/position.shader");
 		pointShader = CreateShaderFromPath("Source/Shaders/point.shader");
 		lineShader = CreateShaderFromPath("Source/Shaders/line.shader");
@@ -77,7 +80,6 @@ namespace Nork
 		dShadowIndices.push_back(shad.GetData().idx);
 	}
 
-
 	Engine::Engine(EngineConfig& config)
 		: window(config.width, config.height), scene(Scene::Scene()), pipeline(CreatePipelineResources()),
 		geometryFb(Renderer::Pipeline::GeometryFramebuffer(1920, 1080)),
@@ -108,6 +110,9 @@ namespace Nork
 		auto skyboxResource = scene.resMan.GetCubemapTexture("Resources/Textures/skybox", ".jpg",
 			TextureParams{ .wrap = Wrap::ClampToEdge, .filter = Filter::Linear, .magLinear = false, .genMipmap = false });
 		pipeline.data.skyboxTex = skyboxResource.id;
+
+		idMap = geometryFb.Extend<Format::R32UI>();
+		lightFb.Extend<Format::R32UI>(idMap);
 	}
 
 	void Engine::Launch()
@@ -124,12 +129,23 @@ namespace Nork
 			ViewProjectionUpdate();
 			UpdateLights();
 			pipeline.DrawScene(models, lightFb, geometryFb);
+			if (drawSky)
+				pipeline.DrawSkybox();
 			DrawHitboxes();
 			FramebufferBase::UseDefault();
 			sender.Send(Event::Types::RenderUpdated());
 			window.Refresh();
 
 			sender.Send(Event::Types::Updated());
+		}
+	}
+	void Engine::ReadId(int x, int y)
+	{
+		uint32_t res;
+		Renderer::Utils::Other::ReadPixels(lightFb.GetFBO(), lightFb.ColorAttForExtension(0), x, y, Utils::Texture::Format::R32UI, &res);
+		if (res != 0)
+		{
+			appEventMan.GetSender().Send(Event::Types::IdQueryResult(x, y, res));
 		}
 	}
 	Engine::~Engine()
@@ -242,7 +258,7 @@ namespace Nork
 	}
 	void Engine::DrawHitboxes()
 	{
-		static Renderer::Pipeline::StreamRenderer<glm::vec3, float> renderer;
+		static Renderer::Pipeline::StreamRenderer<glm::vec3, float, uint32_t> renderer;
 
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glPointSize(pointSize);
@@ -253,7 +269,7 @@ namespace Nork
 		
 		if (drawTriangles || drawLines || drawPoints)
 		{
-			renderer.UploadVertices(*(reinterpret_cast<std::vector<std::tuple<glm::vec3, float>>*>(&meshes.vertices)));
+			renderer.UploadVertices(std::span(meshes.vertices));
 			
 			Capabilities::With<Enable<FaceCulling, Depth>, Disable<Blend>, Set<BlendFunc<GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA>>>([&]()
 				{
@@ -287,7 +303,8 @@ namespace Nork
 						});
 				});
 		}
-		
+		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_CULL_FACE);
 	}
 	void Engine::ViewProjectionUpdate()
 	{

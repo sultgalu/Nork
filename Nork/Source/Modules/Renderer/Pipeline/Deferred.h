@@ -12,17 +12,10 @@ using namespace Nork::Renderer::Data;
 namespace Nork::Renderer::Pipeline
 {
 	using GFB = Framebuffer<TextureFormat::Depth16, TextureFormat::RGB16F, TextureFormat::RGB16F, TextureFormat::RGB16F, TextureFormat::RGBA16F>;
-	using LFB = Framebuffer<TextureFormat::Depth16, TextureFormat::RGBA16F>;
-
-	class GeometryFramebuffer : private GFB
+	class GeometryFramebuffer : public GFB
 	{
 	public:
 		using GFB::GFB;
-		using GFB::Use;
-		using GFB::Clear;
-		using GFB::ClearAndUse;
-		using GFB::Width;
-		using GFB::Height;
 
 		inline GLuint Depth()
 		{
@@ -45,17 +38,16 @@ namespace Nork::Renderer::Pipeline
 			return colors[3];
 		}
 	};
-	class LightPassFramebuffer : private LFB
+
+	using LFB = Framebuffer<TextureFormat::Depth16, TextureFormat::RGBA16F>;
+	class LightPassFramebuffer : public LFB
 	{
 	public:
 		LightPassFramebuffer(GLuint depth, uint32_t width, uint32_t height)
-			: LFB(std::unordered_map<TextureFormat, GLuint> { { TextureFormat::Depth16, depth } }, width, height)
+			: LFB(width, height, depth, 0)
 		{
 		}
 
-		using LFB::Use;
-		using LFB::Width;
-		using LFB::Height;
 		using LFB::Clear;
 		using LFB::ClearAndUse;
 
@@ -112,10 +104,10 @@ namespace Nork::Renderer::Pipeline
 		void DrawScene(std::span<Model> models, LightPassFramebuffer& lightFb, GeometryFramebuffer& gFb);
 		void UseShadowMap(DirShadow shadow, DirShadowFramebuffer& fb);
 		void UseShadowMap(PointShadow shadow, PointShadowFramebuffer& fb);
+		void DrawSkybox();
 	private:
 		void DrawGBuffers(std::span<Model> models);
 		void DrawLightPass(GeometryFramebuffer& gFb);
-		void DrawSkybox();
 	public:
 		DeferredData data;
 	};

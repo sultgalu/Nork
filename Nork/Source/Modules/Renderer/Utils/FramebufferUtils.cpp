@@ -8,6 +8,11 @@ namespace Nork::Renderer::Utils::Framebuffer
 		glGenFramebuffers(1, &this->fbo);
 		glBindFramebuffer(GL_FRAMEBUFFER, this->fbo);
 	}
+	Builder::Builder(int width, int height, GLuint fbo)
+		: width(width), height(height), fbo(fbo)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, this->fbo);
+	}
 	Builder& Builder::AddTexture(unsigned int handler, GLenum attachment)
 	{
 		glFramebufferTexture(GL_FRAMEBUFFER, attachment, handler, 0);
@@ -31,7 +36,7 @@ namespace Nork::Renderer::Utils::Framebuffer
 
 		return *this;
 	}
-	unsigned int Builder::GetFramebuffer(bool assertComplete)
+	unsigned int Builder::GetFramebuffer()
 	{
 		return this->fbo;
 	}

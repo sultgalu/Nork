@@ -4,7 +4,22 @@ namespace Nork::Editor
 {
 	static std::unordered_set<uint32_t> selected;
 	static uint32_t current = 0;
-
+	MeshEditorPanel::MeshEditorPanel(EditorData& d)
+		:Panel("Mesh Editor", d)
+	{
+		using namespace Event::Types;
+		data.engine.appEventMan.GetReceiver().Subscribe<IdQueryResult>([&](const IdQueryResult& e)
+			{
+				auto& verts = data.engine.meshes.vertices;
+				for (size_t i = 0; i < verts.size(); i++)
+				{
+					if (verts[i].id == e.id)
+					{
+						SelectVertex(i);
+					}
+				}
+			});
+	}
 	void MeshEditorPanel::SelectVertex(uint32_t i)
 	{
 		using namespace Input;
@@ -48,6 +63,9 @@ namespace Nork::Editor
 	{
 		glm::vec3 old = meshes.vertices[current].pos;
 		glm::vec3 _new = old;
+
+		data.idQueryMode.set(IdQueryMode::Click);
+
 		if (ImGui::DragFloat3("position##meshowrld", &_new.x, 0.01f))
 		{
 			for (uint32_t i : selected)
@@ -108,6 +126,7 @@ namespace Nork::Editor
 		ImGui::Checkbox("Draw Triangles", &data.engine.drawTriangles);
 		ImGui::Checkbox("Draw Lines", &data.engine.drawLines);
 		ImGui::Checkbox("Draw Points", &data.engine.drawPoints);
+		ImGui::Checkbox("Draw Sky", &data.engine.drawSky);
 
 		auto options = ImGuiColorEditFlags_DefaultOptions_ | ImGuiColorEditFlags_AlphaPreview | ImGuiColorEditFlags_AlphaBar;
 		ImGui::ColorEdit4("Point Color", &data.engine.pointColor.r, options);

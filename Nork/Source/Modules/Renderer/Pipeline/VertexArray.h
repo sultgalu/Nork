@@ -5,27 +5,88 @@
 namespace Nork::Renderer
 {
 	template<typename T>
-	concept VertexLayoutCompatible = false
-		|| std::same_as<T, float>
-		|| std::same_as<T, glm::vec2>
-		|| std::same_as<T, glm::vec3>
-		|| std::same_as<T, glm::vec4>;
-
-	static void SetVaoAttribs2(std::vector<int> attrLens)
+	concept VectorType = requires ()
 	{
-		int stride = 0;
-		for (int i = 0; i < attrLens.size(); i++)
-			stride += attrLens[i];
-		stride *= sizeof(float);
+		{ T::length() } -> std::same_as<glm::length_t>;
+		{ T::value_type };
+	};
 
-		int offset = 0;
-		for (int i = 0; i < attrLens.size(); i++)
+	template<class>
+	inline static constexpr bool isVectorType = false;
+	template<VectorType T>
+	inline static constexpr bool isVectorType<T> = true;
+	template<class T>
+	struct IsVectorType
+	{
+		static constexpr bool value = isVectorType<T>;
+	};//: std::bool_constant<isVectorType_v<T>> {};
+
+	template<typename T>
+	concept VertexLayoutCompatible = false
+		|| VectorType<T>
+		|| std::floating_point<T>
+		|| std::integral<T>;
+
+	template<class T>
+	requires requires() { requires sizeof (T) <= 4; }
+	static consteval GLenum GLTypeSingleComponent()
+	{
+		if constexpr (std::is_floating_point<T>::value)
 		{
-			glVertexAttribPointer(i, attrLens[i], GL_FLOAT, false, stride, (void*)(offset * sizeof(float)));
-			glEnableVertexAttribArray(i);
-			offset += attrLens[i];
+			if constexpr (std::is_same<T, float>::value)
+				return GL_FLOAT;
+			if constexpr (std::is_same<T, double>::value)
+				return GL_DOUBLE;
+		}
+		if constexpr (std::is_integral<T>::value)
+		{
+			if constexpr (std::is_signed<T>::value)
+			{
+				if constexpr (sizeof(T) == 4)
+					return GL_INT;
+				if constexpr (sizeof(T) == 2)
+					return GL_SHORT;
+				if constexpr (sizeof(T) == 1)
+					return GL_BYTE;
+			}
+			else
+			{
+				if constexpr (sizeof(T) == 4)
+					return GL_UNSIGNED_INT;
+				if constexpr (sizeof(T) == 2)
+					return GL_UNSIGNED_SHORT;
+				if constexpr (sizeof(T) == 1)
+					return GL_UNSIGNED_BYTE;
+			}
 		}
 	}
+
+	template<VertexLayoutCompatible T>
+	static consteval GLenum GLType()
+	{
+		if constexpr (IsVectorType<T>::value)
+		{
+			return GLTypeSingleComponent<T::value_type>();
+		}
+		else
+		{
+			return GLTypeSingleComponent<T>();
+		}
+	}
+
+	template<VertexLayoutCompatible T>
+	static consteval GLenum ComponentCount()
+	{
+		if constexpr (IsVectorType<T>::value)
+			return T::length();
+		else
+			return 1;
+	}
+
+	template<VertexLayoutCompatible T>
+	inline static constexpr GLenum glType;
+	template<>
+	inline static constexpr GLenum glType<float> = GL_FLOAT;
 
 	template<bool IB, VertexLayoutCompatible... Types>
 	class VertexArray
@@ -93,7 +154,13 @@ namespace Nork::Renderer
 		void AddAttrib(int i, int offs)
 		{
 			auto size = VertexSize<Types...>();
-			glVertexAttribPointer(i, sizeof(T) / sizeof(float), GL_FLOAT, false, VertexSize<Types...>(), (void*)offs);
+			auto type = GLType<T>();
+			auto count = ComponentCount<T>();
+			if constexpr (std::is_integral<T>::value)
+				glVertexAttribIPointer(i, count, type, size, (void*)offs);
+			else if constexpr (std::is_same<T, double>::value)
+				glVertexAttribLPointer(i, count, type, size, (void*)offs);
+			else glVertexAttribPointer(i, count, type, false, VertexSize<Types...>(), (void*)offs);
 			glEnableVertexAttribArray(i);
 			if constexpr (sizeof...(Rest) > 0)
 			{

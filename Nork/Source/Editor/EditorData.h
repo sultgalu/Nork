@@ -4,6 +4,15 @@
 
 namespace Nork::Editor
 {
+	namespace IdQueryMode
+	{
+		enum Enum
+		{
+			DoubleClick = 0, Click, MouseMoveClicked, MouseMoveReleased, 
+			COUNT
+		};
+	}
+
 	class EditorData
 	{
 	public:
@@ -11,5 +20,6 @@ namespace Nork::Editor
 	public:
 		Engine& engine;
 		entt::entity selectedEnt = entt::null;
+		std::bitset<IdQueryMode::COUNT> idQueryMode;
 	};
 }

@@ -16,6 +16,40 @@ namespace Nork::Editor
 		mouseState(MouseState{}), image(ImageConfig{}),
 		camContr(CameraController(events, data.engine.window.GetInputState(), cam))
 	{
+		static Timer timer;
+		using namespace Event::Types;
+		events.Subscribe<MouseDown>([&](const MouseDown& e)
+			{
+				if (e.button != Input::MouseButtonType::Left)
+					return;
+
+				if (data.idQueryMode.test(IdQueryMode::Click))
+				{
+					data.engine.ReadId(mouseState.mousePosX, mouseState.mousePosY);
+				}
+				else if (data.idQueryMode.test(IdQueryMode::DoubleClick))
+				{
+					if (timer.Elapsed() < 500)
+					{
+						data.engine.ReadId(mouseState.mousePosX, mouseState.mousePosY);
+					}
+				}
+				timer.Restart();
+			});
+		events.Subscribe<MouseMove>([&](const MouseMove& e)
+			{
+				using namespace Input;
+				if (data.idQueryMode.test(IdQueryMode::MouseMoveClicked) &&
+					data.engine.window.GetInputState().Is<MouseButtonState::Down>(MouseButtonType::Left))
+				{
+					data.engine.ReadId(mouseState.mousePosX, mouseState.mousePosY);
+				}
+				else if (data.idQueryMode.test(IdQueryMode::MouseMoveReleased) &&
+					data.engine.window.GetInputState().Is<MouseButtonState::Up>(MouseButtonType::Left))
+				{
+					data.engine.ReadId(mouseState.mousePosX, mouseState.mousePosY);
+				}
+			});
 	}
 
 	ViewportPanel::~ViewportPanel()
@@ -46,6 +80,8 @@ namespace Nork::Editor
 
 	void ViewportPanel::DrawContent()
 	{
+		data.idQueryMode.reset();
+
 		glm::vec2 texSize(image.resolution.x, image.resolution.y);
 		glm::vec2 displaySize = GetDisplaySize(texSize);
 
@@ -72,6 +108,10 @@ namespace Nork::Editor
 			if (ImGui::Selectable("Default"))
 			{
 				image.texture = data.engine.lightFb.Result();
+			}
+			if (ImGui::Selectable("Ids"))
+			{
+				image.texture = data.engine.idMap;
 			}
 			if (ImGui::Selectable("GBuffer: depth"))
 			{

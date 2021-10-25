@@ -36,7 +36,8 @@ namespace Nork::Renderer::Utils::Texture
 		
 		case R32I:
 			return GL_INT;
-
+		case R32UI:
+			return GL_UNSIGNED_INT;
 		case R8I:
 			return GL_BYTE;
 
@@ -86,13 +87,15 @@ namespace Nork::Renderer::Utils::Texture
 			return GL_RGB;
 
 		case R32I:
-			return GL_RED;
+			return GL_RED_INTEGER;
+		case R32UI:
+			return GL_RED_INTEGER;
 		case R8:
 			return GL_RED;
 		case R8I:
 			return GL_RED_INTEGER;
 		case R32F:
-			return GL_RED_INTEGER;
+			return GL_RED;
 
 		case Depth32F:
 			return GL_DEPTH_COMPONENT;
