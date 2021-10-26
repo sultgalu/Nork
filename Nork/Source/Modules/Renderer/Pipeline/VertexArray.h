@@ -113,10 +113,10 @@ namespace Nork::Renderer
 		{
 			glBindVertexArray(vao);
 		}
-		void Draw(size_t count, int first = 0)
+		void Draw(size_t count, int first = 0, GLenum mode = GL_TRIANGLES)
 		{
 			glBindVertexArray(vao);
-			glDrawArrays(GL_TRIANGLES, first, count);
+			glDrawArrays(mode, first, count);
 		}
 		void DrawElements(std::span<uint32_t> indices, GLenum mode = GL_TRIANGLES)
 		{

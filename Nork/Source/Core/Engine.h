@@ -54,7 +54,8 @@ namespace Nork
 				this->id = ++idCounter;
 			}
 		};
-		MeshWorld<Vertex> meshes = MeshWorld<Vertex>::GetCube();
+		//MeshWorld<Vertex> meshes = MeshWorld<Vertex>::GetCube();
+		std::vector<MeshWorld<Vertex>> colliders;
 		
 		std::vector<Renderer::Pipeline::DirShadowFramebuffer> dShadowFramebuffers;
 		std::vector<Renderer::Pipeline::PointShadowFramebuffer> pShadowFramebuffers;
@@ -72,6 +73,7 @@ namespace Nork
 		glm::vec3 selectedColor = { 1,0,1 };
 
 		bool drawLines = true, drawPoints = true, drawTriangles = true, drawSky = false;
+		bool faceQ = false;
 	};
 
 	extern std::optional<Components::Camera*> GetActiveCamera();

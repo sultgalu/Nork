@@ -27,7 +27,7 @@ namespace Nork::Renderer::Pipeline
 		{
 			vao.SetVBData(vertices.size() * vao.VertexSize(), vertices.data(), GL_DYNAMIC_DRAW);
 		}
-		void DrawAsCube(std::span<uint32_t> indices)
+		void DrawAsTriangle(std::span<uint32_t> indices)
 		{
 			vao.DrawElements(indices);
 		}
@@ -38,6 +38,18 @@ namespace Nork::Renderer::Pipeline
 		void DrawAsPoints(std::span<uint32_t> indices)
 		{
 			vao.DrawElements(indices, GL_POINTS);
+		}
+		void DrawAsTriangle(uint32_t count)
+		{
+			vao.Draw(count, 0);
+		}
+		void DrawAsLines(uint32_t count)
+		{
+			vao.Draw(count, 0, GL_LINES);
+		}
+		void DrawAsPoints(uint32_t count)
+		{
+			vao.Draw(count, 0, GL_POINTS);
 		}
 	private:
 		VertexArray<false, T...> vao = VertexArray<false, T...>();

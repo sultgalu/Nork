@@ -1,21 +1,27 @@
 #include "../MeshEditor.h"
+#include "Modules/Physics/Data/Collider.h"
 
 namespace Nork::Editor
 {
 	static std::unordered_set<uint32_t> selected;
 	static uint32_t current = 0;
+	static uint32_t activeMesh;
 	MeshEditorPanel::MeshEditorPanel(EditorData& d)
 		:Panel("Mesh Editor", d)
 	{
 		using namespace Event::Types;
 		data.engine.appEventMan.GetReceiver().Subscribe<IdQueryResult>([&](const IdQueryResult& e)
 			{
-				auto& verts = data.engine.meshes.vertices;
-				for (size_t i = 0; i < verts.size(); i++)
+				for (auto& mesh : data.engine.colliders)
 				{
-					if (verts[i].id == e.id)
+					auto& verts = mesh.vertices;
+					for (size_t i = 0; i < verts.size(); i++)
 					{
-						SelectVertex(i);
+						if (verts[i].id == e.id)
+						{
+							SelectVertex(i);
+							return;
+						}
 					}
 				}
 			});
@@ -30,7 +36,7 @@ namespace Nork::Editor
 			auto end = current > i ? current : i;
 			while (start <= end)
 			{
-				meshes.vertices[start].selected = 1;
+				colliders[activeMesh].vertices[start].selected = 1;
 				selected.insert(start++);
 			}
 		}
@@ -38,12 +44,12 @@ namespace Nork::Editor
 		{
 			if (selected.contains(i))
 			{
-				meshes.vertices[i].selected = 0;
+				colliders[activeMesh].vertices[i].selected = 0;
 				selected.erase(i);
 			}
 			else
 			{
-				meshes.vertices[i].selected = 1;
+				colliders[activeMesh].vertices[i].selected = 1;
 				selected.insert(i);
 			}
 		}
@@ -51,17 +57,29 @@ namespace Nork::Editor
 		{
 			for (uint32_t j : selected)
 			{
-				meshes.vertices[j].selected = 0;
+				colliders[activeMesh].vertices[j].selected = 0;
 			}
 			selected.clear();
-			meshes.vertices[i].selected = 1;
+			colliders[activeMesh].vertices[i].selected = 1;
 			selected.insert(i);
 		}
 		current = i;
 	}
 	void MeshEditorPanel::DrawContent()
 	{
-		glm::vec3 old = meshes.vertices[current].pos;
+		for (size_t i = 0; i < colliders.size(); i++)
+		{
+			if (ImGui::Selectable(std::string("coll#").append(std::to_string(i)).c_str(), i == activeMesh))
+			{
+				for (auto& vert : colliders[activeMesh].vertices)
+				{
+					vert.selected = false;
+				}
+				activeMesh = i;
+			}
+		}
+
+		glm::vec3 old = colliders[activeMesh].vertices[current].pos;
 		glm::vec3 _new = old;
 
 		data.idQueryMode.set(IdQueryMode::Click);
@@ -70,13 +88,13 @@ namespace Nork::Editor
 		{
 			for (uint32_t i : selected)
 			{
-				meshes.vertices[i].pos += _new - old;
+				colliders[activeMesh].vertices[i].pos += _new - old;
 			}
 		}
 
 		if (ImGui::Button("Add##Vertex"))
 		{
-			uint32_t idx = meshes.Add(Engine::Vertex({ 0, 0, 0 }, true));
+			uint32_t idx = colliders[activeMesh].Add(Engine::Vertex({ 0, 0, 0 }, true));
 			selected.insert(idx);
 		}
 		if (ImGui::Button("Remove##Vertex"))
@@ -87,7 +105,7 @@ namespace Nork::Editor
 			{
 				toDel.push_back(idx);
 			}
-			meshes.Remove(toDel);
+			colliders[activeMesh].Remove(toDel);
 			selected.clear();
 			current = 0;
 		}
@@ -99,7 +117,7 @@ namespace Nork::Editor
 			{
 				for (auto second = std::next(first); second != selected.end(); ++second)
 				{
-					meshes.Connect(first._Ptr->_Myval, second._Ptr->_Myval);
+					colliders[activeMesh].Connect(first._Ptr->_Myval, second._Ptr->_Myval);
 				}
 			}
 		}
@@ -110,9 +128,17 @@ namespace Nork::Editor
 			{
 				for (auto second = std::next(first); second != selected.end(); ++second)
 				{
-					meshes.Disconnect(first._Ptr->_Myval, second._Ptr->_Myval);
+					colliders[activeMesh].Disconnect(first._Ptr->_Myval, second._Ptr->_Myval);
 				}
 			}
+		}
+		auto a = colliders[0].AsCollider();
+		auto b = colliders[1].AsCollider();
+		auto res = Physics::GetSDs(a, b);
+		
+		for (size_t i = 0; i < res.size(); i++)
+		{
+			ImGui::Text(std::to_string(res[i]).c_str());
 		}
 
 		if (ImGui::BeginTable("Meshes", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_Hideable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Resizable))
@@ -126,7 +152,7 @@ namespace Nork::Editor
 			ImGui::TableSetColumnIndex(1);
 			ImGui::TableHeader("Neighbours");
 
-			for (size_t i = 0; i < meshes.vertices.size(); i++)
+			for (size_t i = 0; i < colliders[activeMesh].vertices.size(); i++)
 			{
 				auto rowName = std::to_string(i);
 				ImGui::TableNextRow();
@@ -134,7 +160,7 @@ namespace Nork::Editor
 				if (ImGui::Selectable(std::to_string(i).c_str(), selected.contains(i)))
 					SelectVertex(i);
 				ImGui::TableSetColumnIndex(1);
-				for (uint32_t n : meshes.neighbours[i])
+				for (uint32_t n : colliders[activeMesh].neighbours[i])
 				{
 					if (ImGui::SmallButton(std::to_string(n).append("##").append(rowName).c_str()))
 						SelectVertex(n);
@@ -146,6 +172,7 @@ namespace Nork::Editor
 			ImGui::EndTable();
 		}
 
+		ImGui::Checkbox("FaceQuery", &data.engine.faceQ);
 		ImGui::Checkbox("Draw Triangles", &data.engine.drawTriangles);
 		ImGui::Checkbox("Draw Lines", &data.engine.drawLines);
 		ImGui::Checkbox("Draw Points", &data.engine.drawPoints);

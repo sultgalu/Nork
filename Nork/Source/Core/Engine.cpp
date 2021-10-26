@@ -113,6 +113,9 @@ namespace Nork
 
 		idMap = geometryFb.Extend<Format::R32UI>();
 		lightFb.Extend<Format::R32UI>(idMap);
+
+		colliders.push_back(MeshWorld<Vertex>::GetCube({ 2, 2, 2 }));
+		colliders.push_back(MeshWorld<Vertex>::GetCube({ -1, -1, -1 }));
 	}
 
 	void Engine::Launch()
@@ -258,6 +261,62 @@ namespace Nork
 	}
 	void Engine::DrawHitboxes()
 	{
+		auto col1 = colliders[0].AsCollider();
+		auto col2 = colliders[1].AsCollider();
+
+		std::vector<Vertex> planeVerts;
+
+		if (faceQ)
+		{
+			auto fq = Physics::GetFQ(col1, col2);
+			auto fq2 = Physics::GetFQ(col2, col1);
+			float val = (fq.faceIdx == -1 || fq2.faceIdx == -1) ? 0 : 1;
+			for (auto& vert : colliders[0].vertices)
+			{
+				vert.selected = val;
+			}
+			for (auto& vert : colliders[1].vertices)
+			{
+				vert.selected = val;
+			}
+		}
+		else
+		{
+			auto fq = Physics::GetEQ(col1, col2);
+			//auto fq2 = Physics::GetEQ(col2, col1);
+			float val = (fq.distance > 0) ? 0 : 1;
+			for (auto& vert : colliders[0].vertices)
+			{
+				vert.selected = val;
+			}
+			for (auto& vert : colliders[1].vertices)
+			{
+				vert.selected = val;
+			}
+			auto middle = col1.points[fq.edge1[0]] + col1.points[fq.edge1[1]];
+			middle /= 2;
+			planeVerts.push_back(Vertex(middle));
+			planeVerts.push_back(Vertex(middle + fq.normal));
+		}
+		
+		std::vector<Vertex> normVerts;
+		std::vector<Vertex> centVerts = { Vertex(col1.center, true), Vertex(col2.center, true)};
+
+		for (auto& face : col1.faces)
+		{
+			auto center = (col1.points[face.idxs[0]] + col1.points[face.idxs[1]] + col1.points[face.idxs[2]]) / 3.0f;
+			auto p2 = center + face.normal;
+			normVerts.push_back(Vertex(center));
+			normVerts.push_back(Vertex(p2));
+		}
+		for (auto& face : col2.faces)
+		{
+			auto center = (col2.points[face.idxs[0]] + col2.points[face.idxs[1]] + col2.points[face.idxs[2]]) / 3.0f;
+			auto p2 = center + face.normal;
+			normVerts.push_back(Vertex(center));
+			normVerts.push_back(Vertex(p2));
+		}
+
 		static Renderer::Pipeline::StreamRenderer<glm::vec3, float, uint32_t> renderer;
 
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -269,40 +328,62 @@ namespace Nork
 		
 		if (drawTriangles || drawLines || drawPoints)
 		{
-			renderer.UploadVertices(std::span(meshes.vertices));
-			
-			Capabilities::With<Enable<FaceCulling, Depth>, Disable<Blend>, Set<BlendFunc<GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA>>>([&]()
-				{
-					Capabilities::With<Enable<Blend>, Disable<Depth, FaceCulling>>([&]()
-						{
-							if (drawTriangles)
-							{
-								shader.Use();
-								renderer.DrawAsCube(*(reinterpret_cast<std::vector<uint32_t>*>(&meshes.triangleIndices)));
-							}
+			for (auto& mesh : colliders)
+			{
+				renderer.UploadVertices(std::span(mesh.vertices));
 
-							if (drawLines || drawPoints)
+				Capabilities::With<Enable<FaceCulling, Depth>, Disable<Blend>, Set<BlendFunc<GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA>>>([&]()
+					{
+						Capabilities::With<Enable<Blend>, Disable<Depth, FaceCulling>>([&]()
 							{
-								Capabilities::With<Disable<Depth>>([&]()
-									{
-										if (drawLines)
+								if (drawTriangles)
+								{
+									shader.Use();
+									renderer.DrawAsTriangle(*(reinterpret_cast<std::vector<uint32_t>*>(&mesh.triangleIndices)));
+								}
+
+								if (drawLines || drawPoints)
+								{
+									Capabilities::With<Disable<Depth>>([&]()
 										{
-											lineShader.Use();
-											renderer.DrawAsLines(*(reinterpret_cast<std::vector<uint32_t>*>(&meshes.edgeIndices)));
-										}
-										if (drawPoints)
-										{
-											std::vector<uint32_t> seq(meshes.vertices.size());
-											for (size_t i = 0; i < meshes.vertices.size(); i++)
-												seq.push_back(i);
-											pointShader.Use();
-											renderer.DrawAsPoints(seq);
-										}
-									});
-							}
-						});
-				});
+											if (drawLines)
+											{
+												lineShader.Use();
+												renderer.DrawAsLines(*(reinterpret_cast<std::vector<uint32_t>*>(&mesh.edgeIndices)));
+											}
+											if (drawPoints)
+											{
+												std::vector<uint32_t> seq(mesh.vertices.size());
+												for (size_t i = 0; i < mesh.vertices.size(); i++)
+													seq.push_back(i);
+												pointShader.Use();
+												renderer.DrawAsPoints(seq);
+											}
+											if (drawLines)
+											{
+												lineShader.Use();
+												renderer.UploadVertices(std::span(normVerts));
+												renderer.DrawAsLines(normVerts.size());
+												lineShader.SetVec4("colorDefault", glm::vec4(1, 0, 0, 1));
+												renderer.UploadVertices(std::span(planeVerts));
+												renderer.DrawAsLines(planeVerts.size());
+												lineShader.SetVec4("colorDefault", lineColor);
+											}
+											if (drawLines)
+											{
+												glPointSize(pointSize * 5);
+												pointShader.Use();
+												renderer.UploadVertices(std::span(centVerts));
+												renderer.DrawAsPoints(centVerts.size());
+												glPointSize(pointSize);
+											}
+										});
+								}
+							});
+					});
+			}
 		}
+
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
 	}

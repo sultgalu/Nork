@@ -85,8 +85,154 @@ namespace Nork::Physics
 		return count == 3;
 	}
 
+	struct Face
+	{
+		std::vector<uint32_t> idxs;
+		glm::vec3 normal;
+	};
+
 	struct Collider
 	{
-		std::vector<float> edges;
+		std::vector<glm::vec3> points;
+		std::vector<Face> faces;
+		std::vector<std::array<uint32_t, 2>> edges;
+		glm::vec3 center;
 	};
+
+	static uint32_t SupportPoint(glm::vec3 dir, std::span<glm::vec3> points)
+	{
+		uint32_t result = 0;
+		float largest = -std::numeric_limits<float>::max();
+		for (uint32_t i = 0; i < points.size(); i++)
+		{
+			float dot = glm::dot(dir, points[i]);
+			if (dot > largest)
+			{
+				largest = dot;
+				result = i;
+			}
+		}
+
+		return result;
+	}
+
+	static float SignedDistance(glm::vec3& norm, glm::vec3& facePoint, glm::vec3& point)
+	{
+		auto vec = point - facePoint;
+		return glm::dot(norm, vec);
+	}
+	static std::vector<std::array<Face, 2>> TriangleIntersections(Collider& c1, Collider& c2)
+	{
+		std::vector<std::array<Face, 2>> res;
+		for (auto& face1 : c1.faces)
+		{
+			for (auto& face2 : c2.faces)
+			{
+				float sd0 = SignedDistance(face1.normal, c1.points[face1.idxs[0]], c2.points[face2.idxs[0]]);
+				float sd1 = SignedDistance(face1.normal, c1.points[face1.idxs[0]], c2.points[face2.idxs[1]]);
+				float sd2 = SignedDistance(face1.normal, c1.points[face1.idxs[0]], c2.points[face2.idxs[2]]);
+
+				if ((sd0 > 0 && sd1 > 0 && sd2 > 0) || (sd0 < 0 && sd1 < 0 && sd2 < 0))
+					continue; // no intersection
+
+				res.push_back({ face1, face2 });
+			}
+		}
+		return res;
+	}
+
+	struct FaceQuery
+	{
+		int faceIdx = -1;
+		float distance = std::numeric_limits<float>::max();
+		glm::vec3 normal;
+	};
+
+	struct EdgeQuery
+	{
+		float distance = std::numeric_limits<float>::max();
+		int edgeIdx1 = -1;
+		std::array<uint32_t, 2> edge1;
+		std::array<uint32_t, 2> edge2;
+		glm::vec3 normal;
+	};
+
+	static EdgeQuery GetEQ(Collider& c1, Collider& c2)
+	{
+		EdgeQuery result;
+		for (auto& edgePs1 : c1.edges)
+		{
+			for (auto& edgePs2 : c2.edges)
+			{
+				auto edge1 = c1.points[edgePs1[0]] - c1.points[edgePs1[1]];
+				auto edge2 = c2.points[edgePs2[0]] - c2.points[edgePs2[1]];
+
+				auto norm = normalize(glm::cross(edge1, edge2));
+				float dFromC = Physics::SignedDistance(norm, c1.points[edgePs1[0]], c1.center);
+				if (dFromC > 0)
+					norm = -norm;
+
+				auto support = SupportPoint(-norm, c2.points);
+				auto sd = SignedDistance(norm, c1.points[edgePs1[0]], c2.points[support]);
+				if (sd > 0)
+					return EdgeQuery{ .edge1 = edgePs1, .edge2 = edgePs2, .normal = norm };
+				if (sd < result.distance)
+				{
+					result.distance = sd;
+					result.edge1 = edgePs1;
+					result.edge2 = edgePs2;
+					result.normal = norm;
+					result.edgeIdx1 = 0;
+				}
+			}
+		}
+		if (result.distance > 0)
+			result.edgeIdx1 = -1;
+
+		return result;
+	}
+
+	static FaceQuery GetFQ(Collider& c1, Collider& c2)
+	{
+		FaceQuery res;
+		for (size_t i = 0; i < c1.faces.size(); i++)
+		{
+			auto face1 = c1.faces[i];
+
+			auto idx = SupportPoint(-face1.normal, c2.points);
+			float sDist = SignedDistance(face1.normal, c1.points[face1.idxs[0]], c2.points[idx]);
+			if (sDist > 0)
+			{
+				return FaceQuery();
+			}
+			if (sDist < res.distance)
+			{
+				res.distance = sDist;
+				res.faceIdx = i;
+				res.normal = face1.normal;
+			}
+		}
+
+		return res;
+	}
+
+	static std::vector<float> GetSDs(Collider& c1, Collider& c2)
+	{
+		std::vector<float> res;
+		for (size_t i = 0; i < c1.faces.size(); i++)
+		{
+			auto face1 = c1.faces[i];
+
+			auto idx = SupportPoint(-face1.normal, c2.points);
+			float sDist = SignedDistance(face1.normal, c1.points[face1.idxs[0]], c2.points[idx]);
+			res.push_back(sDist);
+		}
+
+		return res;
+	}
+
+	static void NarrowPhase(Collider& c1, Collider& c2)
+	{
+		FaceQuery faceQ = GetFQ(c1, c2);
+	}
 }

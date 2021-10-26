@@ -1,8 +1,14 @@
 #pragma once
 
+#include "Modules/Physics/Data/Collider.h"
+
 namespace Nork
 {
 	template<typename Vertex>
+	/*requires requires(Vertex v)
+	{
+		{ v.pos } -> std::same_as<glm::vec3>;
+	}*/
 	struct MeshWorld
 	{
 		std::vector<Vertex> vertices;
@@ -130,18 +136,57 @@ namespace Nork
 			n2.insert(first);
 			edgeIndices.push_back({ second, first });
 		}
-		static MeshWorld<Vertex> GetCube()
+
+		Physics::Collider AsCollider()
+		{
+			Physics::Collider result;
+			glm::vec3 sum = glm::vec3(0);
+			for (size_t i = 0; i < vertices.size(); i++)
+			{
+				sum += vertices[i].pos;
+			}
+			result.center = sum;
+			result.center /= vertices.size();
+			for (size_t i = 0; i < triangleIndices.size(); i++)
+			{
+				auto normal = glm::normalize(
+					glm::cross(
+						vertices[triangleIndices[i][0]].pos - vertices[triangleIndices[i][1]].pos,
+						vertices[triangleIndices[i][0]].pos - vertices[triangleIndices[i][2]].pos
+					));
+
+				float dFromC = Physics::SignedDistance(normal, vertices[triangleIndices[i][0]].pos, result.center);
+				if (dFromC > 0)
+					normal = -normal; // correct normal to face against the center of the poly.
+
+				result.faces.push_back(Physics::Face{ .idxs = std::vector{
+					triangleIndices[i][0],
+					triangleIndices[i][1],
+					triangleIndices[i][2],
+				}, .normal = normal });
+			}
+			result.points.reserve(vertices.size());
+			for (size_t i = 0; i < vertices.size(); i++)
+			{
+				result.points.push_back(vertices[i].pos);
+			}
+			result.edges = edgeIndices;
+
+			return result;
+		}
+
+		static MeshWorld<Vertex> GetCube(glm::vec3 pos = glm::vec3(0))
 		{
 			MeshWorld<Vertex> meshes;
-			meshes.Add(Vertex({ -1, -1, -1 }));
-			meshes.Add(Vertex({ 1, -1, -1 }));
-			meshes.Add(Vertex({ 1, 1, -1 }));
-			meshes.Add(Vertex({ -1, 1, -1 }));
+			meshes.Add(Vertex(pos + glm::vec3( -1, -1, -1)));
+			meshes.Add(Vertex(pos + glm::vec3( 1, -1, -1 )));
+			meshes.Add(Vertex(pos + glm::vec3( 1, 1, -1 )));
+			meshes.Add(Vertex(pos + glm::vec3( -1, 1, -1 )));
 
-			meshes.Add(Vertex({ -1, -1, 1 }));
-			meshes.Add(Vertex({ 1, -1, 1 }));
-			meshes.Add(Vertex({ 1, 1, 1 }));
-			meshes.Add(Vertex({ -1, 1, 1 }));
+			meshes.Add(Vertex(pos + glm::vec3( -1, -1, 1 )));
+			meshes.Add(Vertex(pos + glm::vec3( 1, -1, 1 )));
+			meshes.Add(Vertex(pos + glm::vec3( 1, 1, 1 )));
+			meshes.Add(Vertex(pos + glm::vec3( -1, 1, 1 )));
 
 			// Front
 			meshes.Connect(0, 1);
