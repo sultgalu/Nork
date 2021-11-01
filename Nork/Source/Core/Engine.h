@@ -73,7 +73,10 @@ namespace Nork
 		glm::vec3 selectedColor = { 1,0,1 };
 
 		bool drawLines = true, drawPoints = true, drawTriangles = true, drawSky = false;
-		bool faceQ = false;
+		bool satRes = false, gjkRes = false, clipRes = false, aabbRes = false;
+		bool sat = true, gjk = false, clip = true, aabb = true;
+		bool resolveCollision = true;
+		std::optional<std::pair<glm::vec3, std::pair<uint8_t, glm::vec3>>> collisionRes;
 	};
 
 	extern std::optional<Components::Camera*> GetActiveCamera();

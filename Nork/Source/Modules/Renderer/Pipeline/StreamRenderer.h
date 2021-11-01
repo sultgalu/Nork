@@ -39,17 +39,17 @@ namespace Nork::Renderer::Pipeline
 		{
 			vao.DrawElements(indices, GL_POINTS);
 		}
-		void DrawAsTriangle(uint32_t count)
+		void DrawAsTriangle(uint32_t count, uint32_t offset = 0)
 		{
-			vao.Draw(count, 0);
+			vao.Draw(count, offset);
 		}
-		void DrawAsLines(uint32_t count)
+		void DrawAsLines(uint32_t count, uint32_t offset = 0)
 		{
-			vao.Draw(count, 0, GL_LINES);
+			vao.Draw(count, offset, GL_LINES);
 		}
-		void DrawAsPoints(uint32_t count)
+		void DrawAsPoints(uint32_t count, uint32_t offset = 0)
 		{
-			vao.Draw(count, 0, GL_POINTS);
+			vao.Draw(count, offset, GL_POINTS);
 		}
 	private:
 		VertexArray<false, T...> vao = VertexArray<false, T...>();

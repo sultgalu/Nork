@@ -1,5 +1,4 @@
 #include "../MeshEditor.h"
-#include "Modules/Physics/Data/Collider.h"
 
 namespace Nork::Editor
 {
@@ -92,6 +91,29 @@ namespace Nork::Editor
 			}
 		}
 
+		if (ImGui::Button("SetupTetras##Vertex"))
+		{
+			for (size_t i = 0; i < 4; i++)
+			{
+				for (size_t j = 0; j < 4; j++)
+				{
+					colliders[0].Connect(i, j);
+					colliders[1].Connect(i, j);
+				}
+			}
+
+			for (size_t i = 7; i > 3; i--)
+			{
+				colliders[0].Remove(i);
+				colliders[1].Remove(i);
+			}
+
+			colliders[0].vertices[0].pos += glm::vec3(1, 1, 1);
+			colliders[1].vertices[0].pos += glm::vec3(1, 1, 1);
+
+			selected.clear();
+		}
+
 		if (ImGui::Button("Add##Vertex"))
 		{
 			uint32_t idx = colliders[activeMesh].Add(Engine::Vertex({ 0, 0, 0 }, true));
@@ -132,14 +154,43 @@ namespace Nork::Editor
 				}
 			}
 		}
-		auto a = colliders[0].AsCollider();
-		auto b = colliders[1].AsCollider();
-		auto res = Physics::GetSDs(a, b);
-		
-		for (size_t i = 0; i < res.size(); i++)
+		if (ImGui::Button("Select all##Vertex"))
 		{
-			ImGui::Text(std::to_string(res[i]).c_str());
+			for (size_t i = 0; i < colliders[activeMesh].vertices.size(); i++)
+			{
+				selected.insert(i);
+			}
 		}
+
+		ImGui::Text("AABB result:");
+		if (data.engine.aabbRes) ImGui::TextColored(ImVec4(0, 1, 0, 1), "  COLLISION!!");
+		else ImGui::TextColored(ImVec4(1, 0, 0, 1), "  no collision");
+		ImGui::Text("Clip result:");
+		if (data.engine.clipRes) ImGui::TextColored(ImVec4(0, 1, 0, 1), "  COLLISION!!");
+		else ImGui::TextColored(ImVec4(1, 0, 0, 1), "  no collision");
+		ImGui::Text("GJK result:");
+		if (data.engine.gjkRes) ImGui::TextColored(ImVec4(0, 1, 0, 1), "  COLLISION!!");
+		else ImGui::TextColored(ImVec4(1, 0, 0, 1), "  no collision");
+		ImGui::Text("SAT result:");
+		if (data.engine.satRes) ImGui::TextColored(ImVec4(0, 1, 0, 1), "  COLLISION!!");
+		else ImGui::TextColored(ImVec4(1, 0, 0, 1), "  no collision");
+
+		static bool setBack = false;
+		if (setBack)
+		{
+			data.engine.resolveCollision = false;
+			setBack = false;
+		}
+		if (data.engine.satRes)
+		{
+			if(ImGui::Button("Resolve Collisions"))
+			{
+				data.engine.resolveCollision = true;
+				setBack = true;
+			}
+		}
+
+		ImGui::Checkbox("Resolve Collisions##LongPeriod", &data.engine.resolveCollision);
 
 		if (ImGui::BeginTable("Meshes", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_Hideable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Resizable))
 		{
@@ -172,7 +223,24 @@ namespace Nork::Editor
 			ImGui::EndTable();
 		}
 
-		ImGui::Checkbox("FaceQuery", &data.engine.faceQ);
+		if (data.engine.collisionRes.has_value())
+		{
+			auto& translate = data.engine.collisionRes.value().first;
+			uint8_t target = data.engine.collisionRes.value().second.first;
+			if (ImGui::Button("Resolve collision"))
+			{
+				for (auto& point : data.engine.colliders[target].vertices)
+				{
+					point.pos += translate;
+				}
+			}
+				
+		}
+
+		ImGui::Checkbox("GJK", &data.engine.gjk);
+		ImGui::Checkbox("SAT", &data.engine.sat);
+		ImGui::Checkbox("AABB", &data.engine.aabb);
+		ImGui::Checkbox("Clip", &data.engine.clip);
 		ImGui::Checkbox("Draw Triangles", &data.engine.drawTriangles);
 		ImGui::Checkbox("Draw Lines", &data.engine.drawLines);
 		ImGui::Checkbox("Draw Points", &data.engine.drawPoints);

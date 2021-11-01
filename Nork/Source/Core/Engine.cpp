@@ -5,6 +5,11 @@
 #include "Serialization/BinarySerializer.h"
 #include "Modules/Renderer/Pipeline/StreamRenderer.h"
 #include "Modules/Renderer/Pipeline/Capabilities.h"
+#include "Modules/Physics/Data/Collider.h"
+#include "Modules/Physics/CollisionDetection/SAT.h"
+#include "Modules/Physics/CollisionDetection/GJK.h"
+#include "Modules/Physics/CollisionDetection/Clip.h"
+#include "Modules/Physics/CollisionDetection/AABB.h"
 
 namespace Nork
 {
@@ -229,93 +234,17 @@ namespace Nork
 	void Engine::PhysicsUpdate()
 	{
 		using namespace Physics;
-		auto& reg = scene.registry.GetUnderlyingMutable();
-
-		auto view = reg.view<Components::Transform, Components::Model>();
-
-		for (auto id1 : view)
-		{
-			auto tr1 = view.get(id1)._Myfirst._Val;
-			auto& model = view.get(id1)._Get_rest()._Myfirst._Val;
-			
-			model.meshes[0].colliding = false;
-
-			BoxCollider bc1 = BoxCollider{ .x = tr1.scale.x, .y = tr1.scale.y , .z = tr1.scale.z };
-
-			for (auto id2 : view)
-			{
-				if (id1 == id2)
-					continue;
-
-				auto tr2 = view.get(id2)._Myfirst._Val;
-				BoxCollider bc2 = BoxCollider{ .x = tr2.scale.x, .y = tr2.scale.y , .z = tr2.scale.z };
-
-				if (BroadTest(bc1, bc2, tr1.position, tr2.position, tr1.RotationMatrix(), tr2.RotationMatrix()))
-				{
-					model.meshes[0].colliding = true;
-					break;
-				}
-			}
-		}
-
 	}
 	void Engine::DrawHitboxes()
 	{
-		auto col1 = colliders[0].AsCollider();
-		auto col2 = colliders[1].AsCollider();
+		auto world1 = colliders[0].AsWorld();
+		auto world2 = colliders[1].AsWorld();
+		auto shape1 = world1.shapes[0];
+		auto shape2 = world2.shapes[0];
 
-		std::vector<Vertex> planeVerts;
-
-		if (faceQ)
-		{
-			auto fq = Physics::GetFQ(col1, col2);
-			auto fq2 = Physics::GetFQ(col2, col1);
-			float val = (fq.faceIdx == -1 || fq2.faceIdx == -1) ? 0 : 1;
-			for (auto& vert : colliders[0].vertices)
-			{
-				vert.selected = val;
-			}
-			for (auto& vert : colliders[1].vertices)
-			{
-				vert.selected = val;
-			}
-		}
-		else
-		{
-			auto fq = Physics::GetEQ(col1, col2);
-			//auto fq2 = Physics::GetEQ(col2, col1);
-			float val = (fq.distance > 0) ? 0 : 1;
-			for (auto& vert : colliders[0].vertices)
-			{
-				vert.selected = val;
-			}
-			for (auto& vert : colliders[1].vertices)
-			{
-				vert.selected = val;
-			}
-			auto middle = col1.points[fq.edge1[0]] + col1.points[fq.edge1[1]];
-			middle /= 2;
-			planeVerts.push_back(Vertex(middle));
-			planeVerts.push_back(Vertex(middle + fq.normal));
-		}
-		
-		std::vector<Vertex> normVerts;
-		std::vector<Vertex> centVerts = { Vertex(col1.center, true), Vertex(col2.center, true)};
-
-		for (auto& face : col1.faces)
-		{
-			auto center = (col1.points[face.idxs[0]] + col1.points[face.idxs[1]] + col1.points[face.idxs[2]]) / 3.0f;
-			auto p2 = center + face.normal;
-			normVerts.push_back(Vertex(center));
-			normVerts.push_back(Vertex(p2));
-		}
-		for (auto& face : col2.faces)
-		{
-			auto center = (col2.points[face.idxs[0]] + col2.points[face.idxs[1]] + col2.points[face.idxs[2]]) / 3.0f;
-			auto p2 = center + face.normal;
-			normVerts.push_back(Vertex(center));
-			normVerts.push_back(Vertex(p2));
-		}
+		if (gjk) gjkRes = Physics::GJK(shape1.verts, shape2.verts).GetResult(shape1.center, shape2.center);
+		if (clip) clipRes = Physics::Clip(shape1, shape2).GetResult();
+		if(aabb) aabbRes = Physics::AABBTest(shape1, shape2).GetResult();
 
 		static Renderer::Pipeline::StreamRenderer<glm::vec3, float, uint32_t> renderer;
 
@@ -328,14 +257,14 @@ namespace Nork
 		
 		if (drawTriangles || drawLines || drawPoints)
 		{
-			for (auto& mesh : colliders)
-			{
-				renderer.UploadVertices(std::span(mesh.vertices));
-
-				Capabilities::With<Enable<FaceCulling, Depth>, Disable<Blend>, Set<BlendFunc<GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA>>>([&]()
-					{
-						Capabilities::With<Enable<Blend>, Disable<Depth, FaceCulling>>([&]()
+			Capabilities::With<Enable<FaceCulling, Depth>, Disable<Blend>, Set<BlendFunc<GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA>>>([&]()
+				{
+					Capabilities::With<Enable<Blend>, Disable<Depth, FaceCulling>>([&]()
+						{
+							for (auto& mesh : colliders)
 							{
+								renderer.UploadVertices(std::span(mesh.vertices));
+
 								if (drawTriangles)
 								{
 									shader.Use();
@@ -344,44 +273,98 @@ namespace Nork
 
 								if (drawLines || drawPoints)
 								{
-									Capabilities::With<Disable<Depth>>([&]()
-										{
-											if (drawLines)
-											{
-												lineShader.Use();
-												renderer.DrawAsLines(*(reinterpret_cast<std::vector<uint32_t>*>(&mesh.edgeIndices)));
-											}
-											if (drawPoints)
-											{
-												std::vector<uint32_t> seq(mesh.vertices.size());
-												for (size_t i = 0; i < mesh.vertices.size(); i++)
-													seq.push_back(i);
-												pointShader.Use();
-												renderer.DrawAsPoints(seq);
-											}
-											if (drawLines)
-											{
-												lineShader.Use();
-												renderer.UploadVertices(std::span(normVerts));
-												renderer.DrawAsLines(normVerts.size());
-												lineShader.SetVec4("colorDefault", glm::vec4(1, 0, 0, 1));
-												renderer.UploadVertices(std::span(planeVerts));
-												renderer.DrawAsLines(planeVerts.size());
-												lineShader.SetVec4("colorDefault", lineColor);
-											}
-											if (drawLines)
-											{
-												glPointSize(pointSize * 5);
-												pointShader.Use();
-												renderer.UploadVertices(std::span(centVerts));
-												renderer.DrawAsPoints(centVerts.size());
-												glPointSize(pointSize);
-											}
-										});
+									if (drawLines)
+									{
+										lineShader.Use();
+										renderer.DrawAsLines(*(reinterpret_cast<std::vector<uint32_t>*>(&mesh.edgeIndices)));
+									}
+									if (drawPoints)
+									{
+										std::vector<uint32_t> seq(mesh.vertices.size());
+										for (size_t i = 0; i < mesh.vertices.size(); i++)
+											seq.push_back(i);
+										pointShader.Use();
+										renderer.DrawAsPoints(seq);
+									}
 								}
-							});
-					});
-			}
+							}
+
+							if (sat)
+							{
+								auto satRes = Physics::SAT(shape1, shape2).GetResult();
+								this->satRes = satRes.distance > 0;
+
+								if (resolveCollision && this->satRes)
+								{
+									glm::vec3 translate = satRes.direction * satRes.distance;
+									translate /= 2.0f;
+									for (size_t i = 0; i < colliders[0].vertices.size(); i++)
+									{
+										colliders[0].vertices[i].pos += translate;
+									}
+									for (size_t i = 0; i < colliders[1].vertices.size(); i++)
+									{
+										colliders[1].vertices[i].pos -= translate;
+									}
+								}
+
+								if (satRes.resType == satRes.EdgeAndEdge)
+								{
+									std::vector<Vertex> data;
+									data.push_back(shape1.FirstVertFromEdge(satRes.edgeAndEdge.first));
+									data.push_back(shape1.SecondVertFromEdge(satRes.edgeAndEdge.first));
+									data.push_back(shape2.FirstVertFromEdge(satRes.edgeAndEdge.second));
+									data.push_back(shape2.SecondVertFromEdge(satRes.edgeAndEdge.second));
+
+									data.push_back(shape1.EdgeMiddle(satRes.edgeAndEdge.first));
+									data.push_back(shape1.EdgeMiddle(satRes.edgeAndEdge.first) + satRes.direction * satRes.distance);
+
+									renderer.UploadVertices(std::span(data));
+									lineShader.Use();
+									lineShader.SetVec4("colorDefault", glm::vec4(1, 1, 0, 1));
+									renderer.DrawAsLines(data.size() - 2);
+									lineShader.SetVec4("colorDefault", glm::vec4(1, 0, 0, 1));
+									renderer.DrawAsLines(2, data.size() - 2);
+									lineShader.SetVec4("colorDefault", lineColor);
+								}
+								else
+								{
+									bool useFaceSecond = satRes.resType == satRes.VertAndFace;
+									std::vector<Vertex> data;
+									data.push_back(useFaceSecond ? satRes.vertAndFace.first : satRes.faceAndVert.second);
+									auto verts = useFaceSecond ? shape2.VerticesVector(satRes.vertAndFace.second)
+										: shape1.VerticesVector(satRes.faceAndVert.first);
+									for (size_t i = 0; i < verts.size(); i++)
+									{
+										data.push_back(verts[i].get());
+									}
+
+									auto faceCenter = useFaceSecond ? shape2.FaceCenter(satRes.vertAndFace.second)
+										: shape1.FaceCenter(satRes.faceAndVert.first);
+									data.push_back(faceCenter);
+									data.push_back(faceCenter + satRes.direction * satRes.distance);
+
+									renderer.UploadVertices(std::span(data));
+									pointShader.Use();
+									pointShader.SetVec4("colorDefault", glm::vec4(1, 1, 0, 1));
+									renderer.DrawAsPoints(1);
+									pointShader.SetVec4("colorDefault", pointColor);
+
+									shader.Use();
+									shader.SetVec4("colorDefault", glm::vec4(1, 1, 0, 1));
+									renderer.DrawAsTriangle(verts.size(), 1);
+									shader.SetVec4("colorDefault", pointColor);
+
+									lineShader.Use();
+									lineShader.SetVec4("colorDefault", glm::vec4(1, 0, 0, 1));
+									renderer.DrawAsLines(2, verts.size() + 1);
+									lineShader.SetVec4("colorDefault", lineColor);
+								}
+							}
+
+							
+						});
+				});
 		}
 
 		glEnable(GL_DEPTH_TEST);
