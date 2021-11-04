@@ -5,6 +5,11 @@ namespace Nork
 	class Timer
 	{
 	public:
+		Timer(float offsetMillis)
+		{
+			start = std::chrono::high_resolution_clock::now();
+			start += std::chrono::nanoseconds((uint64_t)(offsetMillis * 1000));
+		}
 		Timer()
 		{
 			start = std::chrono::high_resolution_clock::now();

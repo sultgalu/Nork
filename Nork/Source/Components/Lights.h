@@ -67,13 +67,13 @@ namespace Nork::Components
 	struct DirLight : Wrapper<Data::DirLight>
 	{
 		DirLight()
-			: Wrapper(Data::DirLight{ .direction = glm::normalize(glm::vec3(1.0f, 1.0f, 1.0f)), .color = {1,1,1,1} })
+			: Wrapper(Data::DirLight{ .direction = glm::normalize(glm::vec3(1.0f, -1.0f, 1.0f)), .color = {1,1,1,1} })
 		{
 		}
 
 		inline glm::mat4 GetView() const { return glm::lookAt(glm::vec3(0) - data.direction, glm::vec3(0), glm::vec3(0.0f, 1.0f, 0.0f)); }
-		inline void SetColor(glm::vec4& val) { data.color = glm::vec4(val); }
-		inline void SetDirection(glm::vec3& val) { data.direction = glm::vec3(val); }
+		inline void SetColor(glm::vec4&& val) { data.color = glm::vec4(val); }
+		inline void SetDirection(glm::vec3&& val) { data.direction = glm::vec3(val); }
 	};
 	struct DirShadow : Wrapper<Data::DirShadow>
 	{

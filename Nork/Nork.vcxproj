@@ -164,20 +164,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Source\Modules\Physics\Kinematics\Kinematics.h" />
     <ClInclude Include="Source\Modules\Physics\CollisionDetection\AABB.h" />
     <ClInclude Include="Source\Modules\Physics\CollisionDetection\Clip.h" />
     <ClInclude Include="Source\Modules\Physics\CollisionDetection\GJK.h" />
     <ClInclude Include="Source\Modules\Physics\CollisionDetection\SAT.h" />
     <ClInclude Include="Source\Core\MeshWorld.h" />
-    <ClCompile Include="Source\Modules\Physics\Kinematics\Kinematics.cpp" />
     <ClCompile Include="Source\Modules\Physics\CollisionDetection\AABB.cpp" />
     <ClCompile Include="Source\Modules\Physics\CollisionDetection\Clip.cpp" />
     <ClCompile Include="Source\Modules\Physics\CollisionDetection\GJK.cpp" />
     <ClCompile Include="Source\Modules\Physics\CollisionDetection\SAT.cpp" />
     <ClCompile Include="Source\Editor\Panels\Impl\MeshEditor.cpp" />
-    <ClCompile Include="Source\Modules\Physics\Data\Collider.cpp" />
     <ClCompile Include="Source\Modules\Physics\Data\World.cpp" />
+    <ClCompile Include="Source\Modules\Physics\Pipeline\PhyicsSystem.cpp" />
     <ClCompile Include="Source\Modules\Physics\Utils.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Pipeline\Capabilities.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Pipeline\StreamRenderer.cpp" />
@@ -284,10 +282,10 @@
   <ItemGroup>
     <ClInclude Include="Source\Editor\Panels\MeshEditor.h" />
     <ClInclude Include="Source\Modules\Physics\Data\World.h" />
+    <ClInclude Include="Source\Modules\Physics\Pipeline\PhysicsSystem.h" />
     <ClInclude Include="Source\Modules\Physics\Utils.h" />
     <ClInclude Include="Source\Modules\Renderer\Pipeline\Capabilities.h" />
     <ClInclude Include="Source\Modules\Renderer\Pipeline\StreamRenderer.h" />
-    <ClInclude Include="Source\Modules\Physics\Data\Collider.h" />
     <ClInclude Include="Source\Modules\Renderer\Pipeline\VertexArray.h" />
     <ClInclude Include="Source\Serialization\BinarySerializer.h" />
     <ClInclude Include="Source\Editor\Panels\All.h" />
@@ -336,6 +334,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\OneDrive\Dokumentumok\GameEngine_0\GameEngineEditor\resources\shaders\lightPass.shader" />
+    <None Include="Source\Shaders\collision.shader" />
     <None Include="Source\Shaders\dirShadMap.shader" />
     <None Include="Source\Shaders\gPass.shader" />
     <None Include="Source\Shaders\lightPass.shader" />

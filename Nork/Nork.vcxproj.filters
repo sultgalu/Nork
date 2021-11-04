@@ -141,9 +141,6 @@
     <ClCompile Include="Source\Modules\Renderer\Pipeline\Capabilities.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Physics\Data\Collider.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Modules\Physics\CollisionDetection\SAT.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -162,7 +159,7 @@
     <ClCompile Include="Source\Modules\Physics\CollisionDetection\AABB.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Physics\Kinematics\Kinematics.cpp">
+    <ClCompile Include="Source\Modules\Physics\Pipeline\PhyicsSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -299,9 +296,6 @@
     <ClInclude Include="Source\Serialization\BinarySerializer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Physics\Data\Collider.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Modules\Renderer\Pipeline\StreamRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -335,7 +329,7 @@
     <ClInclude Include="Source\Modules\Physics\CollisionDetection\AABB.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Physics\Kinematics\Kinematics.h">
+    <ClInclude Include="Source\Modules\Physics\Pipeline\PhysicsSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -349,5 +343,6 @@
     <None Include="Source\Shaders\position.shader" />
     <None Include="Source\Shaders\point.shader" />
     <None Include="Source\Shaders\line.shader" />
+    <None Include="Source\Shaders\collision.shader" />
   </ItemGroup>
 </Project>

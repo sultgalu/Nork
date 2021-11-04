@@ -5,7 +5,6 @@
 #include "Serialization/BinarySerializer.h"
 #include "Modules/Renderer/Pipeline/StreamRenderer.h"
 #include "Modules/Renderer/Pipeline/Capabilities.h"
-#include "Modules/Physics/Data/Collider.h"
 #include "Modules/Physics/CollisionDetection/SAT.h"
 #include "Modules/Physics/CollisionDetection/GJK.h"
 #include "Modules/Physics/CollisionDetection/Clip.h"
@@ -109,7 +108,6 @@ namespace Nork
 		auto& reg = scene.registry.GetUnderlyingMutable();
 		reg.on_construct<Components::DirShadow>().connect<&Engine::OnDShadowAdded>(this);
 		reg.on_destroy<Components::DirShadow>().connect<&Engine::OnDShadowRemoved>(this);
-		reg.on_update<Components::DirShadow>().connect<&Engine::OnDShadowRemoved>(this);
 
 		using namespace Renderer::Utils::Texture;
 		auto skyboxResource = scene.resMan.GetCubemapTexture("Resources/Textures/skybox", ".jpg",
@@ -118,9 +116,6 @@ namespace Nork
 
 		idMap = geometryFb.Extend<Format::R32UI>();
 		lightFb.Extend<Format::R32UI>(idMap);
-
-		colliders.push_back(MeshWorld<Vertex>::GetCube({ 2, 2, 2 }));
-		colliders.push_back(MeshWorld<Vertex>::GetCube({ -1, -1, -1 }));
 	}
 
 	void Engine::Launch()
@@ -155,6 +150,35 @@ namespace Nork
 		{
 			appEventMan.GetSender().Send(Event::Types::IdQueryResult(x, y, res));
 		}
+	}
+	void Engine::UpdatePoliesForPhysics()
+	{
+		using namespace Components;
+
+		auto& reg = scene.registry.GetUnderlyingMutable();
+		auto collOnlyView = reg.view<Components::Transform, Poly>(entt::exclude_t<Kinematic>());
+		auto collView = reg.view<Components::Transform, Kinematic, Poly>();
+
+		pWorld.edges.clear();
+		pWorld.faces.clear();
+		pWorld.verts.clear();
+		pWorld.fNorm.clear();
+		pWorld.shapes.clear();
+		//pWorld.ClearShapeData();
+
+		int i = 0;
+		// order!! -> start with kinems
+		Timer t2;
+		collView.each([&](entt::entity id, Transform& tr, Kinematic& kin, Poly& poly)
+			{
+				poly.AddToWorld(pWorld, tr.TranslationRotationMatrix());
+			});
+		targetDelta = t2.Elapsed();
+
+		collOnlyView.each([&](entt::entity id, Transform& tr, Poly& poly)
+			{
+				poly.AddToWorld(pWorld, tr.TranslationRotationMatrix());
+			});
 	}
 	Engine::~Engine()
 	{
@@ -233,20 +257,72 @@ namespace Nork
 	}
 	void Engine::PhysicsUpdate()
 	{
+		static Timer t(-20);
+		float delta = t.ElapsedSeconds();
+		t.Restart();
+		if (delta > 0.2f) 
+			return;
+
 		using namespace Physics;
+		using namespace Components;
+
+		if (!physicsUpdate) return;
+
+		auto& reg = scene.registry.GetUnderlyingMutable();
+		auto view = reg.view<Components::Transform, Kinematic>(entt::exclude_t<Poly>());
+		auto collOnlyView = reg.view<Components::Transform, Poly>(entt::exclude_t<Kinematic>());
+		auto collView = reg.view<Components::Transform, Kinematic, Poly>();
+
+		pWorld.kinems.clear();
+
+		collView.each([&](entt::entity id, Transform& tr, Kinematic& kin, Poly& poly)
+			{
+				pWorld.kinems.push_back(Physics::KinematicData{ .position = tr.position, .quaternion = tr.quaternion, 
+					.velocity = kin.velocity, .aVelUp = kin.aVelUp, .aVelSpeed = kin.aVelSpeed, .mass = kin.mass, .isStatic = false, .forces = kin.forces });
+			});
+
+		collOnlyView.each([&](entt::entity id, Transform& tr, Poly& poly)
+			{
+				pWorld.kinems.push_back(Physics::KinematicData{ .position = tr.position, .quaternion = tr.quaternion,
+					.velocity = glm::vec3(0), .aVelUp = glm::vec3(0), .aVelSpeed = 0, .mass = 1, .isStatic = true, .forces = glm::vec3(0)});
+			});
+
+		view.each([&](entt::entity id, Transform& tr, Kinematic& kin)
+			{
+				pWorld.kinems.push_back(Physics::KinematicData{ .position = tr.position, .quaternion = tr.quaternion, 
+					.velocity = kin.velocity,  .aVelUp = kin.aVelUp, .aVelSpeed = kin.aVelSpeed,.mass = kin.mass, .isStatic = false, .forces = kin.forces });
+			});
+
+		UpdatePoliesForPhysics();
+
+		pSystem.Update(pWorld, delta);
+
+		uint32_t i = 0;
+
+		auto kinView = reg.view<Transform, Kinematic>();
+		kinView.each([&](entt::entity id, Transform& tr, Kinematic& kin)
+			{
+				tr.position = pWorld.kinems[i].position;
+				kin.velocity = pWorld.kinems[i].velocity;
+				kin.aVelSpeed = pWorld.kinems[i].aVelSpeed;
+				kin.aVelUp = pWorld.kinems[i].aVelUp;
+				kin.forces = pWorld.kinems[i].forces;
+				tr.quaternion = pWorld.kinems[i++].quaternion;
+			});
 	}
 	void Engine::DrawHitboxes()
 	{
-		auto world1 = colliders[0].AsWorld();
+		/*auto world1 = colliders[0].AsWorld();
 		auto world2 = colliders[1].AsWorld();
 		auto shape1 = world1.shapes[0];
 		auto shape2 = world2.shapes[0];
 
 		if (gjk) gjkRes = Physics::GJK(shape1.verts, shape2.verts).GetResult(shape1.center, shape2.center);
 		if (clip) clipRes = Physics::Clip(shape1, shape2).GetResult();
-		if(aabb) aabbRes = Physics::AABBTest(shape1, shape2).GetResult();
+		if(aabb) aabbRes = Physics::AABBTest(shape1, shape2).GetResult();*/
 
 		static Renderer::Pipeline::StreamRenderer<glm::vec3, float, uint32_t> renderer;
+		static Renderer::Pipeline::StreamRenderer<glm::vec3> renderer2;
 
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glPointSize(pointSize);
@@ -254,63 +330,61 @@ namespace Nork
 		using namespace Renderer;
 		using namespace Capabilities;
 		using enum Capability;
+
+		auto view = scene.registry.GetUnderlyingMutable().view<Components::Transform, Poly>();
 		
-		if (drawTriangles || drawLines || drawPoints)
+		if (drawPolies || sat)
 		{
 			Capabilities::With<Enable<FaceCulling, Depth>, Disable<Blend>, Set<BlendFunc<GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA>>>([&]()
 				{
 					Capabilities::With<Enable<Blend>, Disable<Depth, FaceCulling>>([&]()
 						{
-							for (auto& mesh : colliders)
+							if (drawPolies)
 							{
-								renderer.UploadVertices(std::span(mesh.vertices));
-
-								if (drawTriangles)
-								{
-									shader.Use();
-									renderer.DrawAsTriangle(*(reinterpret_cast<std::vector<uint32_t>*>(&mesh.triangleIndices)));
-								}
-
-								if (drawLines || drawPoints)
-								{
-									if (drawLines)
+								view.each([&](entt::entity id, Components::Transform& tr, Poly& poly)
 									{
-										lineShader.Use();
-										renderer.DrawAsLines(*(reinterpret_cast<std::vector<uint32_t>*>(&mesh.edgeIndices)));
-									}
-									if (drawPoints)
-									{
-										std::vector<uint32_t> seq(mesh.vertices.size());
-										for (size_t i = 0; i < mesh.vertices.size(); i++)
-											seq.push_back(i);
-										pointShader.Use();
-										renderer.DrawAsPoints(seq);
-									}
-								}
+										renderer.UploadVertices(poly.vertices, tr.TranslationRotationMatrix());
+
+										if (drawTriangles)
+										{
+											shader.Use();
+											renderer.DrawAsTriangle(*(reinterpret_cast<std::vector<uint32_t>*>(&poly.triangleIndices)));
+
+										}
+										if (drawLines)
+										{
+											lineShader.Use();
+											renderer.DrawAsLines(*(reinterpret_cast<std::vector<uint32_t>*>(&poly.edgeIndices)));
+										}
+										if (drawPoints)
+										{
+											std::vector<uint32_t> seq(poly.vertices.size());
+											for (size_t i = 0; i < poly.vertices.size(); i++)
+												seq.push_back(i);
+											pointShader.Use();
+											renderer.DrawAsPoints(seq);
+										}
+										if (drawPoints)
+										{
+											renderer2.UploadVertices(std::span(pSystem.clipContactPoints));
+											pointShader.SetVec4("colorDefault", glm::vec4(1, 1, 1, 1));
+											renderer2.DrawAsPoints(pSystem.clipContactPoints.size());
+											pointShader.SetVec4("colorDefault", pointColor);
+										}
+									});
 							}
-
-							if (sat)
+							
+							/*if (!sat) return;
+							for (size_t i = 0; i < pSystem.detectionResults.size(); i++)
 							{
-								auto satRes = Physics::SAT(shape1, shape2).GetResult();
-								this->satRes = satRes.distance > 0;
-
-								if (resolveCollision && this->satRes)
-								{
-									glm::vec3 translate = satRes.direction * satRes.distance;
-									translate /= 2.0f;
-									for (size_t i = 0; i < colliders[0].vertices.size(); i++)
-									{
-										colliders[0].vertices[i].pos += translate;
-									}
-									for (size_t i = 0; i < colliders[1].vertices.size(); i++)
-									{
-										colliders[1].vertices[i].pos -= translate;
-									}
-								}
+								auto& satRes = pSystem.detectionResults[i].second;
+								auto& objs = pSystem.detectionResults[i].first;
+								auto shape1 = pWorld.shapes[objs.first];
+								auto shape2 = pWorld.shapes[objs.second];
 
 								if (satRes.resType == satRes.EdgeAndEdge)
 								{
-									std::vector<Vertex> data;
+									std::vector<Components::Vertex> data;
 									data.push_back(shape1.FirstVertFromEdge(satRes.edgeAndEdge.first));
 									data.push_back(shape1.SecondVertFromEdge(satRes.edgeAndEdge.first));
 									data.push_back(shape2.FirstVertFromEdge(satRes.edgeAndEdge.second));
@@ -330,7 +404,7 @@ namespace Nork
 								else
 								{
 									bool useFaceSecond = satRes.resType == satRes.VertAndFace;
-									std::vector<Vertex> data;
+									std::vector<Components::Vertex> data;
 									data.push_back(useFaceSecond ? satRes.vertAndFace.first : satRes.faceAndVert.second);
 									auto verts = useFaceSecond ? shape2.VerticesVector(satRes.vertAndFace.second)
 										: shape1.VerticesVector(satRes.faceAndVert.first);
@@ -360,7 +434,29 @@ namespace Nork
 									renderer.DrawAsLines(2, verts.size() + 1);
 									lineShader.SetVec4("colorDefault", lineColor);
 								}
-							}
+							}*/
+
+							/*if (sat)
+							{
+								auto satRes = Physics::SAT(shape1, shape2).GetResult();
+								this->satRes = satRes.distance > 0;
+
+								if (resolveCollision && this->satRes)
+								{
+									glm::vec3 translate = satRes.direction * satRes.distance;
+									translate /= 2.0f;
+									for (size_t i = 0; i < colliders[0].vertices.size(); i++)
+									{
+										colliders[0].vertices[i].pos += translate;
+									}
+									for (size_t i = 0; i < colliders[1].vertices.size(); i++)
+									{
+										colliders[1].vertices[i].pos -= translate;
+									}
+								}
+
+								
+							}*/
 
 							
 						});

@@ -1,18 +1,54 @@
 #pragma once
 
-#include "Modules/Physics/Data/Collider.h"
 #include "Modules/Physics/Data/World.h"
 #include "Modules/Physics/Utils.h"
 
 namespace Nork
 {
 	template<typename Vertex>
-	/*requires requires(Vertex v)
+	requires requires(Vertex v)
 	{
-		{ v.pos } -> std::same_as<glm::vec3>;
-	}*/
-	struct MeshWorld
+		{ v.pos } -> std::convertible_to<glm::vec3>;
+	}
+	struct Polygon
 	{
+		Polygon(float size = 1)
+		{
+			Add(Vertex(glm::vec3(-size, -size, -size)));
+			Add(Vertex(glm::vec3(size, -size, -size)));
+			Add(Vertex(glm::vec3(size, size, -size)));
+			Add(Vertex(glm::vec3(-size, size, -size)));
+			Add(Vertex(glm::vec3(-size, -size, size)));
+			Add(Vertex(glm::vec3(size, -size, size)));
+			Add(Vertex(glm::vec3(size, size, size)));
+			Add(Vertex(glm::vec3(-size, size, size)));
+
+			// Front
+			Connect(0, 1);
+			Connect(1, 2);
+			Connect(2, 3);
+			Connect(3, 0);
+			Connect(0, 2);
+			// Right
+			Connect(1, 5);
+			Connect(5, 6);
+			Connect(6, 2);
+			Connect(1, 6);
+			// Left
+			Connect(0, 4);
+			Connect(4, 7);
+			Connect(7, 3);
+			Connect(0, 7);
+			// Top
+			Connect(7, 6);
+			Connect(3, 6);
+			// Bottom
+			Connect(4, 5);
+			Connect(0, 5);
+			// Back
+			Connect(4, 6);
+		}
+
 		std::vector<Vertex> vertices;
 		std::vector<std::unordered_set<uint32_t>> neighbours;
 
@@ -138,7 +174,49 @@ namespace Nork
 			n2.insert(first);
 			edgeIndices.push_back({ second, first });
 		}
-		
+		inline void Scale(glm::vec3 scale)
+		{
+			for (size_t i = 0; i < vertices.size(); i++)
+			{
+				vertices[i].pos *= scale;
+			}
+		}
+
+		void AddToWorld(Physics::World& world, glm::mat4 model)
+		{
+			std::vector<Physics::Face> faces;
+			std::vector<glm::vec3> fNorms;
+			std::vector<glm::vec3> verts;
+
+			verts.reserve(vertices.size());
+			for (size_t i = 0; i < vertices.size(); i++)
+			{
+				verts.push_back(model * glm::vec4(vertices[i].pos, 1));
+			}
+
+			auto center = Physics::Center(verts);
+			for (size_t i = 0; i < triangleIndices.size(); i++)
+			{
+				auto normal = glm::normalize(
+					glm::cross(
+						verts[triangleIndices[i][0]] - verts[triangleIndices[i][1]],
+						verts[triangleIndices[i][0]] - verts[triangleIndices[i][2]]
+					));
+
+				float dFromC = Physics::SignedDistance(normal, verts[triangleIndices[i][0]], center);
+				if (dFromC > 0)
+					normal *= -1; // correct normal to face against the center of the poly.
+				fNorms.push_back(normal);
+
+				faces.push_back({ Physics::Face{
+					static_cast<Physics::index_t>(triangleIndices[i][0]),
+					static_cast<Physics::index_t>(triangleIndices[i][1]),
+					static_cast<Physics::index_t>(triangleIndices[i][2]),
+				} });
+			}
+			world.AddShape(verts, edgeIndices, faces, fNorms, center);
+		}
+
 		Physics::World AsWorld()
 		{
 			Physics::World result;
@@ -176,47 +254,10 @@ namespace Nork
 			result.AddShape(verts, edgeIndices, faces, fNorms);
 			return result;
 		}
-		//Physics::Collider AsCollider()
-		//{
-		//	Physics::Collider result;
-		//	glm::vec3 sum = glm::vec3(0);
-		//	for (size_t i = 0; i < vertices.size(); i++)
-		//	{
-		//		sum += vertices[i].pos;
-		//	}
-		//	result.center = sum;
-		//	result.center /= vertices.size();
-		//	for (size_t i = 0; i < triangleIndices.size(); i++)
-		//	{
-		//		auto normal = glm::normalize(
-		//			glm::cross(
-		//				vertices[triangleIndices[i][0]].pos - vertices[triangleIndices[i][1]].pos,
-		//				vertices[triangleIndices[i][0]].pos - vertices[triangleIndices[i][2]].pos
-		//			));
 
-		//		float dFromC = Physics::SignedDistance(normal, vertices[triangleIndices[i][0]].pos, result.center);
-		//		if (dFromC > 0)
-		//			normal = -normal; // correct normal to face against the center of the poly.
-
-		//		result.faces.push_back(Physics::Face{ .idxs = std::vector{
-		//			triangleIndices[i][0],
-		//			triangleIndices[i][1],
-		//			triangleIndices[i][2],
-		//		}, .normal = normal });
-		//	}
-		//	result.points.reserve(vertices.size());
-		//	for (size_t i = 0; i < vertices.size(); i++)
-		//	{
-		//		result.points.push_back(vertices[i].pos);
-		//	}
-		//	result.edges = edgeIndices;
-
-		//	return result;
-		//}
-
-		static MeshWorld<Vertex> GetCube(glm::vec3 pos = glm::vec3(0))
+		static Polygon<Vertex> GetCube(glm::vec3 pos = glm::vec3(0))
 		{
-			MeshWorld<Vertex> meshes;
+			Polygon<Vertex> meshes;
 			meshes.Add(Vertex(pos + glm::vec3( -1, -1, -1)));
 			meshes.Add(Vertex(pos + glm::vec3( 1, -1, -1 )));
 			meshes.Add(Vertex(pos + glm::vec3( 1, 1, -1 )));
@@ -253,15 +294,5 @@ namespace Nork
 			meshes.Connect(4, 6);
 			return meshes;
 		}
-	};
-
-	template<typename Vertex>
-	struct MeshSubWorld
-	{
-		MeshWorld<Vertex>& world;
-		uint32_t begin, end;
-
-		std::vector<std::array<uint32_t, 3>> triangleIndices;
-		std::vector<std::array<uint32_t, 2>> edgeIndices;
 	};
 }

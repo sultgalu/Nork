@@ -76,6 +76,20 @@ namespace Nork::Physics
 
 			return result;
 		}
+		std::vector<Edge> Edges(glm::vec3& vert) const
+		{
+			std::vector<Edge> result;
+
+			for (size_t i = 0; i < edges.size(); i++)
+			{
+				if (verts[edges[i][0]] == vert || verts[edges[i][1]] == vert)
+				{
+					result.push_back(std::ref(edges[i]));
+				}
+			}
+
+			return result;
+		}
 		std::pair<const Face&, const Face&> Faces(Edge& edge) const
 		{
 			std::array<const Face*, 2> result;
@@ -151,17 +165,50 @@ namespace Nork::Physics
 		}
 	};
 
+	struct KinematicData
+	{
+		glm::vec3 position;
+		glm::quat quaternion;
+		glm::vec3 velocity;
+		glm::vec3 aVelUp;
+		float aVelSpeed;
+		float mass;
+		bool isStatic = false;
+		glm::vec3 forces;
+	};
+
 	class World
 	{
 	public:
+		void ClearShapeData()
+		{
+			size_t vs = verts.size();
+			size_t es = edges.size();
+			size_t fs = faces.size();
+			size_t fns = fNorm.size();
+
+			verts.clear();
+			edges.clear();
+			faces.clear();
+			fNorm.clear();
+			shapes.clear();
+
+			verts.reserve(vs);
+			edges.reserve(es);
+			faces.reserve(fs);
+			fNorm.reserve(fns);
+		}
 		std::vector<glm::vec3> verts;
 		std::vector<Edge> edges;
 		std::vector<Face> faces;
 		std::vector<glm::vec3> fNorm;
 
 		std::vector<Shape> shapes;
+		std::vector<KinematicData> kinems;
 
-		Shape& AddShape(std::vector<glm::vec3>& verts, std::vector<Edge>& edges, std::vector<Face>& faces, std::vector<glm::vec3>& fNorm);
+		Shape& AddShape(std::vector<glm::vec3>& verts, std::vector<Edge>& edges, std::vector<Face>& faces, std::vector<glm::vec3>& fNorm, glm::vec3& center);
 		void Remove(Shape& shape);
 	};
+
+	
 }

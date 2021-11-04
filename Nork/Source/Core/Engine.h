@@ -5,6 +5,8 @@
 #include "Core/CameraController.h"
 #include "Scene/Scene.h"
 #include "MeshWorld.h"
+#include "Modules/Physics/Data/World.h"
+#include "Modules/Physics/Pipeline/PhysicsSystem.h"
 
 namespace Nork
 {
@@ -26,6 +28,7 @@ namespace Nork
 		~Engine();
 		void Launch();
 		void ReadId(int x, int y);
+		void UpdatePoliesForPhysics();
 	private:
 		DeferredData CreatePipelineResources();
 		void SyncComponents();
@@ -41,21 +44,8 @@ namespace Nork
 		LightManager lightMan;
 		Event::Dispatcher appEventMan;
 		Scene::Scene scene;
-		struct Vertex
-		{
-			glm::vec3 pos;
-			float selected = 0;
-			uint32_t id;
-			inline static uint32_t idCounter = 0;
-			Vertex(glm::vec3 pos, bool selected = false)
-			{
-				this->pos = pos;
-				this->selected = selected;
-				this->id = ++idCounter;
-			}
-		};
+		
 		//MeshWorld<Vertex> meshes = MeshWorld<Vertex>::GetCube();
-		std::vector<MeshWorld<Vertex>> colliders;
 		
 		std::vector<Renderer::Pipeline::DirShadowFramebuffer> dShadowFramebuffers;
 		std::vector<Renderer::Pipeline::PointShadowFramebuffer> pShadowFramebuffers;
@@ -72,11 +62,15 @@ namespace Nork
 		glm::vec4 triangleColor = { 0,1,0, 0.4f};
 		glm::vec3 selectedColor = { 1,0,1 };
 
-		bool drawLines = true, drawPoints = true, drawTriangles = true, drawSky = false;
+		bool drawPolies = false, drawLines = true, drawPoints = true, drawTriangles = true, drawSky = false;
 		bool satRes = false, gjkRes = false, clipRes = false, aabbRes = false;
-		bool sat = true, gjk = false, clip = true, aabb = true;
-		bool resolveCollision = true;
+		bool sat = false, gjk = false, clip = true, aabb = true;
+		bool physicsUpdate = false;
+		float targetDelta;
 		std::optional<std::pair<glm::vec3, std::pair<uint8_t, glm::vec3>>> collisionRes;
+
+		Physics::World pWorld;
+		Physics::System pSystem;
 	};
 
 	extern std::optional<Components::Camera*> GetActiveCamera();

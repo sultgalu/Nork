@@ -298,6 +298,31 @@ namespace Nork::Physics
 
 		return saved;
 	}
+	std::vector<glm::vec3> Clip::ClipFaceAgainstFaces(Shape& shape1, Face& face1, Shape& shape2, std::span<Face> faces2)
+	{
+		std::vector<glm::vec3> result;
+		for (auto& face2 : faces2)
+		{
+			auto faceClipRes = SutherlandHodgmanClipFaces(shape1.verts[face1[0]], shape1.FaceNormal(face1), IndexedVerts(face2, shape2.verts));
+
+			std::vector<glm::vec3>& resultPoints = faceClipRes.second;
+			// don't care about "saved points" (they are inside the plane, not in contact with it)
+			/*for (size_t i = 0; i < faceClipRes.first.size(); i++)
+			{
+				resultPoints.push_back(shape2.verts[faceClipRes.first[i]]);
+			}*/
+			if (resultPoints.size() == 0)
+				continue;
+
+			glm::vec3 faceCenter = shape1.FaceCenter(face1);
+			auto edgesForFace1 = shape1.Edges(face1);
+
+			auto edgeClipRes = SutherlandHodgmanClipEdges(faceCenter, shape1.FaceNormal(face1), Edges(edgesForFace1, shape1.verts), resultPoints);
+
+			result.insert(result.end(), edgeClipRes.begin(), edgeClipRes.end());
+		}
+		return result;
+	}
 	std::vector<glm::vec3> Clip::GetAllContactPointsBF()
 	{
 		std::vector<glm::vec3> result;
@@ -305,26 +330,8 @@ namespace Nork::Physics
 		// OPTIMIZE:: could filter faces that are the other side of the centerplane (plane facing the other obj's center)
 		for (auto& face1 : shape1.faces)
 		{
-			for (auto& face2 : shape2.faces)
-			{
-				auto faceClipRes = SutherlandHodgmanClipFaces(shape1.verts[face1[0]], shape1.FaceNormal(face1), IndexedVerts(face2, shape2.verts));
-
-				std::vector<glm::vec3>& resultPoints = faceClipRes.second;
-				// don't care about "saved points" (they are inside the plane, not in contact with it)
-				/*for (size_t i = 0; i < faceClipRes.first.size(); i++)
-				{
-					resultPoints.push_back(shape2.verts[faceClipRes.first[i]]);
-				}*/
-				if (resultPoints.size() == 0)
-					continue;
-
-				glm::vec3 faceCenter = shape1.FaceCenter(face1);
-				auto edgesForFace1 = shape1.Edges(face1);
-
-				auto edgeClipRes = SutherlandHodgmanClipEdges(faceCenter, shape1.FaceNormal(face1), Edges(edgesForFace1, shape1.verts), resultPoints);
-
-				result.insert(result.end(), edgeClipRes.begin(), edgeClipRes.end());
-			}
+			auto subRes = ClipFaceAgainstFaces(shape1, face1, shape2, shape2.faces);
+			result.insert(result.end(), subRes.begin(), subRes.end());
 		}
 
 		return result;

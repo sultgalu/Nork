@@ -12,7 +12,6 @@ namespace Nork::Editor
 		void SelectVertex(uint32_t i);
 	protected:
 		virtual void DrawContent() override;
-		std::vector<MeshWorld<Engine::Vertex>>& colliders = data.engine.colliders;
 		//MeshWorld<Engine::Vertex>& meshes = data.engine.meshes;
 	};
 }

@@ -2,20 +2,59 @@
 
 namespace Nork::Physics
 {
-	Shape& World::AddShape(std::vector<glm::vec3>& verts, std::vector<Edge>& edges, std::vector<Face>& faces, std::vector<glm::vec3>& fNorm)
+	Shape& World::AddShape(std::vector<glm::vec3>& verts, std::vector<Edge>& edges, std::vector<Face>& faces, std::vector<glm::vec3>& fNorm, glm::vec3& center)
 	{
-		this->verts.insert(this->verts.end(), verts.begin(), verts.end());
-		this->faces.insert(this->faces.end(), faces.begin(), faces.end());
-		this->edges.insert(this->edges.end(), edges.begin(), edges.end());
-		this->fNorm.insert(this->fNorm.end(), fNorm.begin(), fNorm.end());
+		bool expand = this->verts.size() + verts.size() > this->verts.capacity() ||
+			this->faces.size() + faces.size() > this->faces.capacity() ||
+			this->edges.size() + edges.size() > this->edges.capacity() ||
+			this->fNorm.size() + verts.size() > this->fNorm.capacity();
+		if (expand)
+		{
+			//Logger::Warning("No space for more Shapes, expanding");
 
-		return shapes.emplace_back(Shape{
-			.verts = std::span(this->verts.begin(), verts.size()),
-			.edges = std::span(this->edges.begin(), edges.size()),
-			.faces = std::span(this->faces.begin(), faces.size()),
-			.fNorm = std::span(this->fNorm.begin(), fNorm.size()),
-			.center = Center(std::span(this->verts.begin(), verts.size())),
-			});
+			std::vector<std::pair<uint32_t, uint32_t>> sverts;
+			std::vector<std::pair<uint32_t, uint32_t>> sedges;
+			std::vector<std::pair<uint32_t, uint32_t>> sfaces;
+			std::vector<std::pair<uint32_t, uint32_t>> sfNorm;
+
+			for (size_t i = 0; i < shapes.size(); i++)
+			{
+				sverts.push_back(std::pair(shapes[i].verts.data() - this->verts.data(), shapes[i].verts.size()));
+				sedges.push_back(std::pair(shapes[i].edges.data() - this->edges.data(), shapes[i].edges.size()));
+				sfaces.push_back(std::pair(shapes[i].faces.data() - this->faces.data(), shapes[i].faces.size()));
+				sfNorm.push_back(std::pair(shapes[i].fNorm.data() - this->fNorm.data(), shapes[i].fNorm.size()));
+			}
+
+			this->verts.insert(this->verts.end(), verts.begin(), verts.end());
+			this->faces.insert(this->faces.end(), faces.begin(), faces.end());
+			this->edges.insert(this->edges.end(), edges.begin(), edges.end());
+			this->fNorm.insert(this->fNorm.end(), fNorm.begin(), fNorm.end());
+
+			for (size_t i = 0; i < shapes.size(); i++)
+			{
+				shapes[i].verts = std::span(this->verts.data() + sverts[i].first, sverts[i].second);
+				shapes[i].edges = std::span(this->edges.data() + sedges[i].first, sedges[i].second);
+				shapes[i].faces = std::span(this->faces.data() + sfaces[i].first, sfaces[i].second);
+				shapes[i].fNorm = std::span(this->fNorm.data() + sfNorm[i].first, sfNorm[i].second);
+			}
+		}
+		else
+		{
+			this->verts.insert(this->verts.end(), verts.begin(), verts.end());
+			this->faces.insert(this->faces.end(), faces.begin(), faces.end());
+			this->edges.insert(this->edges.end(), edges.begin(), edges.end());
+			this->fNorm.insert(this->fNorm.end(), fNorm.begin(), fNorm.end());
+		}
+		
+		Shape newShape = Shape{
+			.verts = std::span(this->verts.end() - verts.size(), verts.size()),
+			.edges = std::span(this->edges.end() - edges.size(), edges.size()),
+			.faces = std::span(this->faces.end() - faces.size(), faces.size()),
+			.fNorm = std::span(this->fNorm.end() - fNorm.size(), fNorm.size()),
+			.center = center,
+		};
+
+		return shapes.emplace_back(newShape);
 	}
 
 	void World::Remove(Shape& shape)

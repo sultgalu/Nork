@@ -78,8 +78,24 @@ namespace Nork::Editor
 			if (ImGui::DragFloat3("Scale", &(tr->scale.x), 0.1f))
 			{
 			}
-			if (ImGui::DragFloat3("Rotation", &(tr->rotation.x), 0.1f))
+			glm::vec3 rotationAxis = glm::axis(tr->quaternion);
+			float angle = glm::angle(tr->quaternion);
+			float rotateAmount = 0;
+			if (ImGui::DragFloat("Rotate", &rotateAmount, 0.01f))
 			{
+				tr->Rotate(rotationAxis, rotateAmount);
+			}
+			if (ImGui::DragFloat("Set Rotation", &angle, 0.01f))
+			{
+				tr->quaternion = glm::angleAxis(angle, glm::normalize(rotationAxis));
+			}
+			if (ImGui::DragFloat3("Set Rotation Axis", &rotationAxis.x, 0.01f))
+			{
+				tr->quaternion = glm::angleAxis(angle, glm::normalize(rotationAxis));
+			}
+			if (ImGui::DragFloat4("Quaternion", &(tr->quaternion.w), 0.1f))
+			{
+				tr->quaternion = glm::normalize(tr->quaternion);
 			}
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 			if (ImGui::Button("Delete"))
@@ -87,7 +103,6 @@ namespace Nork::Editor
 				scene.RemoveComponent<Transform>(data.selectedEnt);
 			}
 			ImGui::PopStyleColor();
-
 			ImGui::TreePop();
 		}
 	}
@@ -167,27 +182,6 @@ namespace Nork::Editor
 			int pow = pL->GetPower();
 			if (ImGui::SliderInt("Distance", &(pow), 0, PointLight::maxPower))
 				pL->SetPower(pow);
-//#undef near
-//			if (ImGui::DragFloat2("bias/min", &pL->shadow.bias, 0.0001f, 0, 1, "%.6f")) {}
-//			if (ImGui::DragFloat2("near/far", &pL->shadow.near, 0.01f)) {}
-//			if (ImGui::DragFloat("radius", &pL->shadow.radius, 0.001f, 0, 1)) {}
-//			if (ImGui::SliderFloat("blur", &pL->shadow.blur, 0, 20, "%.0f")) {}
-//#define near
-//			bool hasShad = pL->glShad.fb != 0;
-//			if (ImGui::Checkbox("Has Shadow", &hasShad))
-//			{
-//				pL->SetHasShadow(hasShad);
-//			}
-//			static int imgSize = 100;
-//			if (pL->HasShadow() && ImGui::TreeNode("Shadow Map##Cube"))
-//			{
-//				ImGui::Image((ImTextureID)pL->glShad.texture, ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
-//					ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
-//				ImGui::TreePop();
-//			}
-//			ImGui::DragInt("Shadow Resolution##pl", &pL->glShad.size, 1, 10, 4000, "%d", ImGuiSliderFlags_Logarithmic);
-//			if (ImGui::Button("Apply##ShadowRes"))
-//				pL->glShad.Gen();
 
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 			if (ImGui::Button("Delete"))
@@ -212,7 +206,7 @@ namespace Nork::Editor
 				else
 					data.engine.pipeline.data.skyboxTex = saved;
 			}
-			if (ImGui::DragFloat2("Far, Near", &comp->GetMutableData().far))
+			if (ImGui::DragFloat2("Far, Near", &comp->GetMutableData().far, 0.001f, 0, 0, "%.3f", ImGuiSliderFlags_Logarithmic))
 			{
 				//comp->RecalcVP(dl->GetView());
 			}
@@ -258,27 +252,6 @@ namespace Nork::Editor
 				// dL->SetDirection(std::forward<glm::vec3&>(glm::normalize(dL->GetData().direction)));
 			}
 			if (ImGui::ColorEdit4("Color", &(dL->GetMutableData().color.r))) {}
-//#undef near
-//			if (ImGui::DragFloat4("View", &dL->left, 0.01f)) {}
-//			if (ImGui::DragFloat2("Depth", &dL->near, 0.01f)) {}
-//			if (ImGui::DragFloat2("Bias/min", &dL->shadow.bias, 0.000001f, 0, 1, "%.6f", ImGuiSliderFlags_Logarithmic)) {}
-//			if (ImGui::DragInt("PCF size", &dL->shadow.pcfSize, 0.01f)) {}
-//			bool hasShad = dL->HasShadow();
-//			if (ImGui::Checkbox("Has Shadow", &hasShad))
-//			{
-//				dL->SetHasShadow(hasShad);
-//			}
-//			static int imgSize = 100;
-//			if (dL->HasShadow() && ImGui::TreeNode("Shadow Map"))
-//			{
-//				ImGui::Image((ImTextureID)dL->glShad.texture, ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
-//					ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
-//				ImGui::TreePop();
-//			}
-//			ImGui::DragInt2("Shadow Resolution", &dL->glShad.width, 1, 100, 4000, "%d", ImGuiSliderFlags_Logarithmic);
-//			if (ImGui::Button("Apply##ShadowRes"))
-//				dL->glShad.Gen();
-//#define near
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 			if (ImGui::Button("Delete"))
 			{
@@ -325,6 +298,44 @@ namespace Nork::Editor
 			if (ImGui::Button("Delete"))
 			{
 				scene.RemoveComponent<DirShadow>(data.selectedEnt);
+			}
+			ImGui::PopStyleColor();
+
+			ImGui::TreePop();
+		}
+	}
+	void InspectorPanel::KinematicComp(Kinematic* comp)
+	{
+		if (ImGui::TreeNodeEx("Kinematic", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			ImGui::DragFloat("Mass (kg)", &comp->mass, 0.01f);
+			ImGui::DragFloat3("Velocity", &comp->velocity.x, 0.001f);
+			ImGui::DragFloat3("Angular Velocity Axis", &comp->aVelUp.x);
+			ImGui::DragFloat("Angular Velocity Speed", &comp->aVelSpeed, 0.001f);
+
+			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
+			if (ImGui::Button("Delete"))
+			{
+				scene.RemoveComponent<Kinematic>(data.selectedEnt);
+			}
+			ImGui::PopStyleColor();
+
+			ImGui::TreePop();
+		}
+	}
+	void InspectorPanel::PolyComp(Poly* poly)
+	{
+		if (ImGui::TreeNodeEx("Poly", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			if(ImGui::Button("Select"))
+			{
+				data.selectedPoly = poly;
+			}
+
+			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
+			if (ImGui::Button("Delete"))
+			{
+				scene.RemoveComponent<Tag>(data.selectedEnt);
 			}
 			ImGui::PopStyleColor();
 
@@ -394,6 +405,8 @@ namespace Nork::Editor
 			this->CompSelector<DirShadow>();
 			this->CompSelector<Camera>();
 			this->CompSelector<Model>();
+			this->CompSelector<Kinematic>();
+			this->CompSelector<Poly>();
 
 			ImGui::EndPopup();
 		}
@@ -417,10 +430,22 @@ namespace Nork::Editor
 			auto* name = reg.try_get<Tag>(selected);
 			auto* model = reg.try_get<Model>(selected);
 			auto* cam = reg.try_get<Camera>(selected);
+			auto* kin = reg.try_get<Kinematic>(selected);
+			auto* poly = reg.try_get<Poly>(selected);
 
 			if (tr != nullptr)
 			{
 				TransformComp(tr);
+				ImGui::Separator();
+			}
+			if (kin != nullptr)
+			{
+				KinematicComp(kin);
+				ImGui::Separator();
+			}
+			if (poly != nullptr)
+			{
+				PolyComp(poly);
 				ImGui::Separator();
 			}
 			if (pL != nullptr)

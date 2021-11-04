@@ -11,9 +11,9 @@ namespace Nork::Editor
 		using namespace Event::Types;
 		data.engine.appEventMan.GetReceiver().Subscribe<IdQueryResult>([&](const IdQueryResult& e)
 			{
-				for (auto& mesh : data.engine.colliders)
+				if (data.selectedPoly != nullptr)
 				{
-					auto& verts = mesh.vertices;
+					auto& verts = data.selectedPoly->vertices;
 					for (size_t i = 0; i < verts.size(); i++)
 					{
 						if (verts[i].id == e.id)
@@ -23,6 +23,7 @@ namespace Nork::Editor
 						}
 					}
 				}
+				
 			});
 	}
 	void MeshEditorPanel::SelectVertex(uint32_t i)
@@ -35,7 +36,7 @@ namespace Nork::Editor
 			auto end = current > i ? current : i;
 			while (start <= end)
 			{
-				colliders[activeMesh].vertices[start].selected = 1;
+				data.selectedPoly->vertices[start].selected = 1;
 				selected.insert(start++);
 			}
 		}
@@ -43,12 +44,12 @@ namespace Nork::Editor
 		{
 			if (selected.contains(i))
 			{
-				colliders[activeMesh].vertices[i].selected = 0;
+				data.selectedPoly->vertices[i].selected = 0;
 				selected.erase(i);
 			}
 			else
 			{
-				colliders[activeMesh].vertices[i].selected = 1;
+				data.selectedPoly->vertices[i].selected = 1;
 				selected.insert(i);
 			}
 		}
@@ -56,112 +57,151 @@ namespace Nork::Editor
 		{
 			for (uint32_t j : selected)
 			{
-				colliders[activeMesh].vertices[j].selected = 0;
+				data.selectedPoly->vertices[j].selected = 0;
 			}
 			selected.clear();
-			colliders[activeMesh].vertices[i].selected = 1;
+			data.selectedPoly->vertices[i].selected = 1;
 			selected.insert(i);
 		}
 		current = i;
 	}
 	void MeshEditorPanel::DrawContent()
 	{
-		for (size_t i = 0; i < colliders.size(); i++)
+		if (data.selectedPoly == nullptr)
 		{
-			if (ImGui::Selectable(std::string("coll#").append(std::to_string(i)).c_str(), i == activeMesh))
-			{
-				for (auto& vert : colliders[activeMesh].vertices)
-				{
-					vert.selected = false;
-				}
-				activeMesh = i;
-			}
+			ImGui::Text("Select a Poly from the inspector");
 		}
-
-		glm::vec3 old = colliders[activeMesh].vertices[current].pos;
-		glm::vec3 _new = old;
-
-		data.idQueryMode.set(IdQueryMode::Click);
-
-		if (ImGui::DragFloat3("position##meshowrld", &_new.x, 0.01f))
+		else
 		{
-			for (uint32_t i : selected)
-			{
-				colliders[activeMesh].vertices[i].pos += _new - old;
-			}
-		}
+			glm::vec3 old = data.selectedPoly->vertices[current].pos;
+			glm::vec3 _new = old;
+			
+			data.idQueryMode.set(IdQueryMode::Click);
 
-		if (ImGui::Button("SetupTetras##Vertex"))
-		{
-			for (size_t i = 0; i < 4; i++)
+			static float scaleSpeed = 0.01f;
+			ImGui::InputFloat("Scale Drag Speed By", &scaleSpeed);
+
+
+			glm::vec3 scale = glm::vec3(1);
+			if (ImGui::DragFloat3("Scale#ASDAD", &scale.x, scaleSpeed))
 			{
-				for (size_t j = 0; j < 4; j++)
+				for (size_t i = 0; i < data.selectedPoly->vertices.size(); i++)
 				{
-					colliders[0].Connect(i, j);
-					colliders[1].Connect(i, j);
+					data.selectedPoly->vertices[i].pos *= scale;
 				}
 			}
 
-			for (size_t i = 7; i > 3; i--)
+			if (ImGui::DragFloat3("position##meshowrld", &_new.x, 0.01f))
 			{
-				colliders[0].Remove(i);
-				colliders[1].Remove(i);
-			}
-
-			colliders[0].vertices[0].pos += glm::vec3(1, 1, 1);
-			colliders[1].vertices[0].pos += glm::vec3(1, 1, 1);
-
-			selected.clear();
-		}
-
-		if (ImGui::Button("Add##Vertex"))
-		{
-			uint32_t idx = colliders[activeMesh].Add(Engine::Vertex({ 0, 0, 0 }, true));
-			selected.insert(idx);
-		}
-		if (ImGui::Button("Remove##Vertex"))
-		{
-			std::vector<uint32_t> toDel;
-			toDel.reserve(selected.size());
-			for (auto idx : selected)
-			{
-				toDel.push_back(idx);
-			}
-			colliders[activeMesh].Remove(toDel);
-			selected.clear();
-			current = 0;
-		}
-
-		if (ImGui::Button("Connect##Vertex"))
-		{
-			auto begin = selected.begin();
-			for (auto first = selected.begin(); first != selected.end(); ++first)
-			{
-				for (auto second = std::next(first); second != selected.end(); ++second)
+				for (uint32_t i : selected)
 				{
-					colliders[activeMesh].Connect(first._Ptr->_Myval, second._Ptr->_Myval);
+					data.selectedPoly->vertices[i].pos += _new - old;
 				}
 			}
-		}
-		if (ImGui::Button("Disconnect##Vertex"))
-		{
-			auto begin = selected.begin();
-			for (auto first = selected.begin(); first != selected.end(); ++first)
+
+			if (ImGui::Button("SetupTetras##Vertex"))
 			{
-				for (auto second = std::next(first); second != selected.end(); ++second)
+				for (size_t i = 0; i < 4; i++)
 				{
-					colliders[activeMesh].Disconnect(first._Ptr->_Myval, second._Ptr->_Myval);
+					for (size_t j = 0; j < 4; j++)
+					{
+						data.selectedPoly->Connect(i, j);
+						data.selectedPoly->Connect(i, j);
+					}
+				}
+
+				for (size_t i = 7; i > 3; i--)
+				{
+					data.selectedPoly->Remove(i);
+					data.selectedPoly->Remove(i);
+				}
+
+				data.selectedPoly->vertices[0].pos += glm::vec3(1, 1, 1);
+				data.selectedPoly->vertices[0].pos += glm::vec3(1, 1, 1);
+
+				selected.clear();
+			}
+
+			if (ImGui::Button("Add##Vertex"))
+			{
+				uint32_t idx = data.selectedPoly->Add(Components::Vertex({ 0, 0, 0 }, true));
+				selected.insert(idx);
+			}
+			if (ImGui::Button("Remove##Vertex"))
+			{
+				std::vector<uint32_t> toDel;
+				toDel.reserve(selected.size());
+				for (auto idx : selected)
+				{
+					toDel.push_back(idx);
+				}
+				data.selectedPoly->Remove(toDel);
+				selected.clear();
+				current = 0;
+			}
+
+			if (ImGui::Button("Connect##Vertex"))
+			{
+				auto begin = selected.begin();
+				for (auto first = selected.begin(); first != selected.end(); ++first)
+				{
+					for (auto second = std::next(first); second != selected.end(); ++second)
+					{
+						data.selectedPoly->Connect(first._Ptr->_Myval, second._Ptr->_Myval);
+					}
 				}
 			}
-		}
-		if (ImGui::Button("Select all##Vertex"))
-		{
-			for (size_t i = 0; i < colliders[activeMesh].vertices.size(); i++)
+			if (ImGui::Button("Disconnect##Vertex"))
 			{
-				selected.insert(i);
+				auto begin = selected.begin();
+				for (auto first = selected.begin(); first != selected.end(); ++first)
+				{
+					for (auto second = std::next(first); second != selected.end(); ++second)
+					{
+						data.selectedPoly->Disconnect(first._Ptr->_Myval, second._Ptr->_Myval);
+					}
+				}
+			}
+			if (ImGui::Button("Select all##Vertex"))
+			{
+				for (size_t i = 0; i < data.selectedPoly->vertices.size(); i++)
+				{
+					selected.insert(i);
+				}
+			}
+
+			if (ImGui::BeginTable("Meshes", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_Hideable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Resizable))
+			{
+				ImGui::TableSetupColumn("Vertices");
+				ImGui::TableSetupColumn("Neighbours");
+
+				ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
+				ImGui::TableSetColumnIndex(0);
+				ImGui::TableHeader("Vertices");
+				ImGui::TableSetColumnIndex(1);
+				ImGui::TableHeader("Neighbours");
+
+				for (size_t i = 0; i < data.selectedPoly->vertices.size(); i++)
+				{
+					auto rowName = std::to_string(i);
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0);
+					if (ImGui::Selectable(std::to_string(i).c_str(), selected.contains(i)))
+						SelectVertex(i);
+					ImGui::TableSetColumnIndex(1);
+					for (uint32_t n : data.selectedPoly->neighbours[i])
+					{
+						if (ImGui::SmallButton(std::to_string(n).append("##").append(rowName).c_str()))
+							SelectVertex(n);
+						ImGui::SameLine();
+					}
+					ImGui::Text(""); // cause of sameline
+				}
+
+				ImGui::EndTable();
 			}
 		}
-
+		
 		ImGui::Text("AABB result:");
 		if (data.engine.aabbRes) ImGui::TextColored(ImVec4(0, 1, 0, 1), "  COLLISION!!");
 		else ImGui::TextColored(ImVec4(1, 0, 0, 1), "  no collision");
@@ -178,69 +218,46 @@ namespace Nork::Editor
 		static bool setBack = false;
 		if (setBack)
 		{
-			data.engine.resolveCollision = false;
+			data.engine.physicsUpdate = false;
 			setBack = false;
 		}
 		if (data.engine.satRes)
 		{
-			if(ImGui::Button("Resolve Collisions"))
+			if(ImGui::Button("Physics Update"))
 			{
-				data.engine.resolveCollision = true;
+				data.engine.physicsUpdate = true;
 				setBack = true;
 			}
 		}
 
-		ImGui::Checkbox("Resolve Collisions##LongPeriod", &data.engine.resolveCollision);
+		ImGui::Checkbox("Physics Update##LongPeriod", &data.engine.physicsUpdate);
 
-		if (ImGui::BeginTable("Meshes", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_Hideable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Resizable))
+		bool g = data.engine.pSystem.g != 0;
+		static float savedG = 0;
+		ImGui::DragFloat("Gravity", &data.engine.pSystem.g);
+		if (ImGui::Checkbox("Gravity##LongPeriod", &g))
 		{
-			ImGui::TableSetupColumn("Vertices");
-			ImGui::TableSetupColumn("Neighbours");
-
-			ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
-			ImGui::TableSetColumnIndex(0);
-			ImGui::TableHeader("Vertices");
-			ImGui::TableSetColumnIndex(1);
-			ImGui::TableHeader("Neighbours");
-
-			for (size_t i = 0; i < colliders[activeMesh].vertices.size(); i++)
+			if (g) data.engine.pSystem.g = savedG;
+			else
 			{
-				auto rowName = std::to_string(i);
-				ImGui::TableNextRow();
-				ImGui::TableSetColumnIndex(0);
-				if (ImGui::Selectable(std::to_string(i).c_str(), selected.contains(i)))
-					SelectVertex(i);
-				ImGui::TableSetColumnIndex(1);
-				for (uint32_t n : colliders[activeMesh].neighbours[i])
-				{
-					if (ImGui::SmallButton(std::to_string(n).append("##").append(rowName).c_str()))
-						SelectVertex(n);
-					ImGui::SameLine();
-				}
-				ImGui::Text(""); // cause of sameline
+				savedG = data.engine.pSystem.g;
+				data.engine.pSystem.g = 0;
 			}
-
-			ImGui::EndTable();
 		}
 
-		if (data.engine.collisionRes.has_value())
-		{
-			auto& translate = data.engine.collisionRes.value().first;
-			uint8_t target = data.engine.collisionRes.value().second.first;
-			if (ImGui::Button("Resolve collision"))
-			{
-				for (auto& point : data.engine.colliders[target].vertices)
-				{
-					point.pos += translate;
-				}
-			}
-				
-		}
-
-		ImGui::Checkbox("GJK", &data.engine.gjk);
+		ImGui::SliderFloat("Coefficient", &data.engine.pSystem.coefficient, 0, 1);
+		ImGui::Checkbox("Update Velocities", &data.engine.pSystem.updateVelocities);
+		ImGui::Checkbox("Detect Collisions", &data.engine.pSystem.detectCollisions);
+		ImGui::Checkbox("Resolve Collisions", &data.engine.pSystem.resolveCollisions);
+		ImGui::Checkbox("AABB", &data.engine.pSystem.aabb);
+		ImGui::Checkbox("GJK", &data.engine.pSystem.gjk);
+		if (data.engine.pSystem.gjkRes)
+			ImGui::TextColored(ImVec4(0, 1, 0, 1), "Coll");
+		else
+			ImGui::TextColored(ImVec4(1, 0, 0, 1), "no coll");
 		ImGui::Checkbox("SAT", &data.engine.sat);
-		ImGui::Checkbox("AABB", &data.engine.aabb);
 		ImGui::Checkbox("Clip", &data.engine.clip);
+		ImGui::Checkbox("Draw Polies", &data.engine.drawPolies);
 		ImGui::Checkbox("Draw Triangles", &data.engine.drawTriangles);
 		ImGui::Checkbox("Draw Lines", &data.engine.drawLines);
 		ImGui::Checkbox("Draw Points", &data.engine.drawPoints);

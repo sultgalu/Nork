@@ -34,22 +34,18 @@ namespace Nork::Physics
 			glm::vec3 direction;
 			if (resType == 0)
 			{
-				direction = -shape1.FaceNormal(*faceAndVert.first);
-
 				return ClosestFeatures{
 					.distance = -highest,
-					.direction = direction,
+					.direction = -shape1.FaceNormal(*faceAndVert.first),
 					.resType = FaceAndVert,
 					.faceAndVert = std::pair<Face&, glm::vec3&>(*faceAndVert.first, *faceAndVert.second)
 				};
 			}
 			else if (resType == 1)
 			{
-				direction = -shape2.FaceNormal(*vertAndFace.second);
-
 				return ClosestFeatures{
 					.distance = -highest,
-					.direction = -direction,
+					.direction = shape2.FaceNormal(*vertAndFace.second),
 					.resType = VertAndFace,
 					.vertAndFace = std::pair<glm::vec3&, Face&>(*vertAndFace.first, *vertAndFace.second)
 				};
@@ -90,7 +86,6 @@ namespace Nork::Physics
 			//{
 			//	continue;
 			//}
-
 			glm::vec3& farthestVertTowardsFace = Farthest(shape2.verts, -shape1.fNorm[i]);
 			float pointDistanceFromFaceOutwards = SignedDistance(shape1.fNorm[i], shape1.SomePointOnFace(shape1.faces[i]), farthestVertTowardsFace);
 			if (pointDistanceFromFaceOutwards > state.highest)

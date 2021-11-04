@@ -2,7 +2,23 @@
 
 namespace Nork::Physics
 {
-	using index_t = uint32_t;
+	index_t FarthestIdx(const std::span<const glm::vec3> verts, const glm::vec3&& dir)
+	{
+		index_t farthest = 0;
+		float largestDot = glm::dot(dir, verts[0]);
+
+		for (uint32_t i = 1; i < verts.size(); i++)
+		{
+			float dot = glm::dot(dir, verts[i]);
+			if (dot > largestDot)
+			{
+				largestDot = dot;
+				farthest = i;
+			}
+		}
+
+		return farthest;
+	}
 
 	glm::vec3& Farthest(const std::span<const glm::vec3> verts, const glm::vec3&& dir)
 	{

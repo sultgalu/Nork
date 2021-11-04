@@ -59,6 +59,7 @@
 
 #include <glad/glad.h>
 #include <glm/glm/gtc/matrix_transform.hpp>
+#include <glm/glm/gtc/quaternion.hpp>
 
 #include <glfw/glfw3.h>
 
