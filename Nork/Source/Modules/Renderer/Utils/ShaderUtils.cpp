@@ -23,7 +23,7 @@ namespace Nork::Renderer::Utils::Shader
 
 		std::unordered_map<GLenum, std::string> shaderSrcs;
 
-		size_t pos = 0;
+		size_t pos = s.find(label, 0);
 		GLenum shadType;
 		do
 		{ // the file must start with #type

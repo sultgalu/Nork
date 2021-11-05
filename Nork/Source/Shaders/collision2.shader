@@ -1,17 +1,19 @@
 #type compute
 
-#version 430 core
-#extension GL_ARB_compute_shader : require
+#version 330 core
+
 // group.x -> aabb1 (x)
 // group.y -> aabb2 (y)
 
-layout(local_size_x = 1) in;
+layout(local_size_x = 3​) in;
+
 struct AABB
 {
-	float[3] min;
-	float[3] max;
+	vec3 min;
+	vec3 max;
 };
-layout(std430, binding = 0) buffer inputAABBS
+
+layout(std430, binding = 0) buffer input
 {
 	AABB aabbs[];
 };
@@ -28,7 +30,7 @@ void main()
 	AABB aabb2 = aabbs[gl_WorkGroupID.y];
 
 	int count = 0;
-	for (uint i = 0; i < 3; i++)
+	for (size_t i = 0; i < 3; i++)
 	{
 		if (aabb1.min[i] < aabb2.min[i])
 		{
@@ -41,6 +43,6 @@ void main()
 				count++;
 		}
 	}
-	res[gl_WorkGroupID.x * gl_NumWorkGroups.x + gl_WorkGroupID.y] = count;
-	//res[gl_WorkGroupID.x * gl_NumWorkGroups.x + gl_WorkGroupID.y] = uint(aabb1.max[1]);
+
+	res[gl_WorkGroupID.x * gl_NumWorkGroups.x + gl_WorkGroupID.y] = count == 3 ? 1 : 0;
 }

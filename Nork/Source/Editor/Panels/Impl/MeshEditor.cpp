@@ -202,6 +202,7 @@ namespace Nork::Editor
 			}
 		}
 		
+		ImGui::Text(std::string("AABB DELTA: ").append(std::to_string(Physics::AABBTest::GetDelta())).append("ms").c_str());
 		ImGui::Text("AABB result:");
 		if (data.engine.aabbRes) ImGui::TextColored(ImVec4(0, 1, 0, 1), "  COLLISION!!");
 		else ImGui::TextColored(ImVec4(1, 0, 0, 1), "  no collision");

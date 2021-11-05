@@ -19,7 +19,7 @@ namespace Nork::Physics
 		bool genContactPoints = false;
 		bool gjk = false, gjkRes = false;
 		bool clip = false;
-		bool aabb = false;
+		bool aabb = true;
 		float g = 8;
 		float coefficient = 0.5f;
 		bool applyForces = true;

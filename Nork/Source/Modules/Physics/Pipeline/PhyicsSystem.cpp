@@ -32,16 +32,27 @@ namespace Nork::Physics
 	{
 		detectionResults.clear();
 		if (!detectCollisions) return;
-
-		for (size_t i = 0; i < world.shapes.size(); i++)
+		std::vector<uint32_t> aabbRes;
+		if (aabb)
 		{
-			for (size_t j = i + 1; j < world.shapes.size(); j++)
+			aabbRes = AABBTest::GetResult(world);
+		}
+		else
+		{
+			aabbRes = AABBTest::GetResult2(world);
+		}
+		for (size_t k = 0; k < aabbRes.size(); k++)
+		{
+			if (aabbRes[k] == 3)
 			{
-				if (aabb)
+				uint32_t i = k / world.shapes.size();
+				uint32_t j = k % world.shapes.size();
+				if (j == 0)
 				{
-					if (!AABBTest(world.shapes[i], world.shapes[j]).GetResult())
-						continue;
+					k += i; // (+ 1 by loop) skipping ones already checked (and identity)
+					continue;
 				}
+
 				if (gjk)
 				{
 					auto res = GJK(world.shapes[i].verts, world.shapes[j].verts).GetResult();
@@ -52,7 +63,7 @@ namespace Nork::Physics
 						detectionResults.push_back(std::pair(std::pair(i, j), DetectionResult{
 							.dir = res.value().second,
 							.depth = res.value().first,
-						}));
+							}));
 					}
 				}
 				else
@@ -61,8 +72,15 @@ namespace Nork::Physics
 					detectionResults.push_back(std::pair(std::pair(i, j), DetectionResult{
 						.dir = res.direction,
 						.depth = res.distance,
-					}));
+						}));
 				}
+			}
+		}
+		for (size_t i = 0; i < world.shapes.size(); i++)
+		{
+			for (size_t j = i + 1; j < world.shapes.size(); j++)
+			{
+				
 			}
 		}
 	}
@@ -290,6 +308,7 @@ namespace Nork::Physics
 						float deltaV1 = -(resulting / kinem1.mass);
 						float deltaV2 = (resulting / kinem2.mass);
 
+						// this would be heplful for islands
 						/*float deltaVDiff = deltaV2 - deltaV1;
 						float deltaV1Next = glm::dot(kinem1.forces * (delta * 1) / kinem1.mass, coll.dir);
 						float deltaV2Next = glm::dot(kinem2.forces * (delta * 1) / kinem2.mass, coll.dir);

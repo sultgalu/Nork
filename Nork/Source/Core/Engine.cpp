@@ -265,6 +265,7 @@ namespace Nork
 
 		using namespace Physics;
 		using namespace Components;
+		static auto compute = CreateShaderFromPath("Source/Shaders/collision.shader");
 
 		if (!physicsUpdate) return;
 
@@ -295,6 +296,7 @@ namespace Nork
 
 		UpdatePoliesForPhysics();
 
+		compute.Use();
 		pSystem.Update(pWorld, delta);
 
 		uint32_t i = 0;

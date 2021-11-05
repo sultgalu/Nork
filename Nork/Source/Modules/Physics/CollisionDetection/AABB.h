@@ -1,13 +1,14 @@
 #pragma once
 
 #include "../Data/World.h"
+#include "Modules/Renderer/Data/Shader.h"
 
 namespace Nork::Physics
 {
 	struct AABB
 	{
-		const glm::vec3 min;
-		const glm::vec3 max;
+		glm::vec3 min;
+		glm::vec3 max;
 	};
 
 	class AABBTest
@@ -16,6 +17,11 @@ namespace Nork::Physics
 		AABBTest(Shape& shape1, Shape& shape2)
 			: aabb1(CalcAABB(shape1)), aabb2(CalcAABB(shape2)) { }
 		bool GetResult();
+		static std::vector<uint32_t> GetResult(World&);
+		static std::vector<uint32_t> GetResult2(World&);
+		static AABB GetAABB(std::span<glm::vec3> verts);
+		static float GetDelta();
+		static uint32_t Intersecting(AABB& aabb1, AABB& aabb2);
 	private:
 		static AABB CalcAABB(Shape& shape);
 	private:
