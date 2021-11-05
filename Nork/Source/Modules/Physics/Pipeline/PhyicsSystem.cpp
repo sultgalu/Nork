@@ -43,16 +43,16 @@ namespace Nork::Physics
 		}
 		for (size_t k = 0; k < aabbRes.size(); k++)
 		{
+			uint32_t i = k / world.shapes.size();
+			uint32_t j = k % world.shapes.size();
+			if (j == 0)
+			{
+				k += i; // (+ 1 by loop) skipping ones already checked (and identity)
+				continue;
+			}
+
 			if (aabbRes[k] == 3)
 			{
-				uint32_t i = k / world.shapes.size();
-				uint32_t j = k % world.shapes.size();
-				if (j == 0)
-				{
-					k += i; // (+ 1 by loop) skipping ones already checked (and identity)
-					continue;
-				}
-
 				if (gjk)
 				{
 					auto res = GJK(world.shapes[i].verts, world.shapes[j].verts).GetResult();
@@ -74,13 +74,6 @@ namespace Nork::Physics
 						.depth = res.distance,
 						}));
 				}
-			}
-		}
-		for (size_t i = 0; i < world.shapes.size(); i++)
-		{
-			for (size_t j = i + 1; j < world.shapes.size(); j++)
-			{
-				
 			}
 		}
 	}
