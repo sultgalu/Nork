@@ -59,7 +59,7 @@ int main()
 	engine.scene.AddComponent<Components::Kinematic>(node);
 	engine.scene.AddComponent<Components::Kinematic>(model);*/
 
-	int dim = 2;
+	int dim = 1;
 	int sep = 3;
 	int start = -dim / 2;
 	int end = dim / 2 + dim % 2;

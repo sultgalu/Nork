@@ -50,7 +50,6 @@ namespace Nork::Physics
 				k += i; // (+ 1 by loop) skipping ones already checked (and identity)
 				continue;
 			}
-
 			if (aabbRes[k] == 3)
 			{
 				if (gjk)

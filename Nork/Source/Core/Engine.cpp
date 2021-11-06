@@ -156,8 +156,7 @@ namespace Nork
 		using namespace Components;
 
 		auto& reg = scene.registry.GetUnderlyingMutable();
-		auto collOnlyView = reg.view<Components::Transform, Poly>(entt::exclude_t<Kinematic>());
-		auto collView = reg.view<Components::Transform, Kinematic, Poly>();
+		auto collView = reg.view<Components::Transform, Poly>();
 
 		pWorld.edges.clear();
 		pWorld.faces.clear();
@@ -169,16 +168,11 @@ namespace Nork
 		int i = 0;
 		// order!! -> start with kinems
 		Timer t2;
-		collView.each([&](entt::entity id, Transform& tr, Kinematic& kin, Poly& poly)
+		collView.each([&](entt::entity id, Transform& tr, Poly& poly)
 			{
 				poly.AddToWorld(pWorld, tr.TranslationRotationMatrix());
 			});
 		targetDelta = t2.Elapsed();
-
-		collOnlyView.each([&](entt::entity id, Transform& tr, Poly& poly)
-			{
-				poly.AddToWorld(pWorld, tr.TranslationRotationMatrix());
-			});
 	}
 	Engine::~Engine()
 	{

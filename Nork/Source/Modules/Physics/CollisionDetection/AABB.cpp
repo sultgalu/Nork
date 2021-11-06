@@ -141,9 +141,9 @@ namespace Nork::Physics
 		}
 		for (size_t i = 0; i < world.shapes.size(); i++)
 		{
-			for (size_t j = 0; j < world.shapes.size(); j++)
+			for (size_t j = i + 1; j < world.shapes.size(); j++)
 			{
-				results[i * world.shapes.size()] = Intersecting(aabbs[i], aabbs[j]);
+				results[i * world.shapes.size() + j] = Intersecting(aabbs[i], aabbs[j]);
 			}
 		}
 		delta = t.Elapsed();
