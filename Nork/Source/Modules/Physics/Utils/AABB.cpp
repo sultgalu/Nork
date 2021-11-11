@@ -56,21 +56,22 @@ namespace Nork::Physics
 	}
 	uint32_t AABBTest::Intersecting(AABB& aabb1, AABB& aabb2)
 	{
-		int count = 0;
 		for (int i = 0; i < 3; i++)
 		{
 			if (aabb1.min[i] < aabb2.min[i])
 			{
 				if (aabb1.max[i] > aabb2.min[i])
-					count++;
+					continue;
 			}
 			else
 			{
 				if (aabb1.min[i] < aabb2.max[i])
-					count++;
+					continue;
 			}
+
+			return 0;
 		}
-		return count;
+		return 3;
 	}
 	static GLuint GetInputSSBO()
 	{
@@ -128,28 +129,26 @@ namespace Nork::Physics
 		return results;
 	}
 
-	std::vector<uint32_t> AABBTest::GetResult2(World& world)
+	std::vector<std::pair<uint32_t, uint32_t>> AABBTest::GetResult2(World& world)
 	{
 		Timer t;
 		std::vector<AABB> aabbs;
 		aabbs.reserve(world.shapes.size());
-		std::vector<uint32_t> results	(world.shapes.size() * world.shapes.size(), 69);
+		std::vector<std::pair<uint32_t, uint32_t>> results;
 
 		for (size_t i = 0; i < world.shapes.size(); i++)
 		{
 			aabbs.push_back(GetAABB(world.shapes[i].verts));
 		}
-		for (size_t i = 0; i < world.shapes.size(); i++)
+		for (size_t i = 0; i < aabbs.size(); i++)
 		{
-			for (size_t j = i + 1; j < world.shapes.size(); j++)
+			for (size_t j = i + 1; j < aabbs.size(); j++)
 			{
-				results[i * world.shapes.size() + j] = Intersecting(aabbs[i], aabbs[j]);
+				if (Intersecting(aabbs[i], aabbs[j]))
+					results.push_back(std::pair(i, j));
 			}
 		}
 		delta = t.Elapsed();
 		return results;
 	}
-
-	
-
 }

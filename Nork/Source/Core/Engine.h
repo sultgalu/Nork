@@ -28,12 +28,11 @@ namespace Nork
 		~Engine();
 		void Launch();
 		void ReadId(int x, int y);
-		void UpdatePoliesForPhysics();
 	private:
 		DeferredData CreatePipelineResources();
 		void SyncComponents();
 		void UpdateLights();
-		void PhysicsUpdate();
+		void PhysicsUpdate2();
 		void DrawHitboxes();
 		void ViewProjectionUpdate();
 		void OnDShadowAdded(entt::registry& reg, entt::entity ent);
@@ -62,15 +61,17 @@ namespace Nork
 		glm::vec4 triangleColor = { 0,1,0, 0.4f};
 		glm::vec3 selectedColor = { 1,0,1 };
 
-		bool drawPolies = false, drawLines = true, drawPoints = true, drawTriangles = true, drawSky = false;
+		bool drawPolies = true, drawLines = true, drawPoints = true, drawTriangles = true, drawSky = false;
 		bool satRes = false, gjkRes = false, clipRes = false, aabbRes = false;
 		bool sat = false, gjk = false, clip = true, aabb = true;
-		bool physicsUpdate = false;
-		float targetDelta;
+		bool physicsUpdate = true;
+		bool updatePoliesForPhysics = true;
 		std::optional<std::pair<glm::vec3, std::pair<uint8_t, glm::vec3>>> collisionRes;
 
-		Physics::World pWorld;
 		Physics::System pSystem;
+		Physics::World& pWorld = pSystem.world;
+
+		static std::vector<std::pair<std::string, float>> GetDeltas();
 	};
 
 	extern std::optional<Components::Camera*> GetActiveCamera();

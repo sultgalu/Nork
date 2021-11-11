@@ -5,10 +5,7 @@
 #include "Serialization/BinarySerializer.h"
 #include "Modules/Renderer/Pipeline/StreamRenderer.h"
 #include "Modules/Renderer/Pipeline/Capabilities.h"
-#include "Modules/Physics/CollisionDetection/SAT.h"
-#include "Modules/Physics/CollisionDetection/GJK.h"
-#include "Modules/Physics/CollisionDetection/Clip.h"
-#include "Modules/Physics/CollisionDetection/AABB.h"
+#include "Modules/Physics/Pipeline/CollisionDetectionGPU.h"
 
 namespace Nork
 {
@@ -46,6 +43,7 @@ namespace Nork
 				.lPass = CreateShaderFromPath("Source/Shaders/lightPass.shader"),
 				.skybox = CreateShaderFromPath("Source/Shaders/skybox.shader"),
 			}, 0);
+
 	} // TODO:: cannot do this well...
 
 	static std::vector<Data::Model> GetModels(ECS::Registry& r)
@@ -87,7 +85,8 @@ namespace Nork
 	Engine::Engine(EngineConfig& config)
 		: window(config.width, config.height), scene(Scene::Scene()), pipeline(CreatePipelineResources()),
 		geometryFb(Renderer::Pipeline::GeometryFramebuffer(1920, 1080)),
-		lightFb(Renderer::Pipeline::LightPassFramebuffer(geometryFb.Depth(), geometryFb.Width(), geometryFb.Height()))
+		lightFb(Renderer::Pipeline::LightPassFramebuffer(geometryFb.Depth(), geometryFb.Width(), geometryFb.Height())),
+		pSystem()
 	{
 		using namespace Renderer::Pipeline;
 		Renderer::Resource::DefaultResources::Init();
@@ -126,7 +125,7 @@ namespace Nork
 			sender.Send(Event::Types::OnUpdate());
 			sender.Send(Event::Types::OnRenderUpdate());
 			
-			PhysicsUpdate(); // NEW
+			PhysicsUpdate2(); // NEW
 			auto models = GetModels(this->scene.registry);
 			SyncComponents();
 			ViewProjectionUpdate();
@@ -150,29 +149,6 @@ namespace Nork
 		{
 			appEventMan.GetSender().Send(Event::Types::IdQueryResult(x, y, res));
 		}
-	}
-	void Engine::UpdatePoliesForPhysics()
-	{
-		using namespace Components;
-
-		auto& reg = scene.registry.GetUnderlyingMutable();
-		auto collView = reg.view<Components::Transform, Poly>();
-
-		pWorld.edges.clear();
-		pWorld.faces.clear();
-		pWorld.verts.clear();
-		pWorld.fNorm.clear();
-		pWorld.shapes.clear();
-		//pWorld.ClearShapeData();
-
-		int i = 0;
-		// order!! -> start with kinems
-		Timer t2;
-		collView.each([&](entt::entity id, Transform& tr, Poly& poly)
-			{
-				poly.AddToWorld(pWorld, tr.TranslationRotationMatrix());
-			});
-		targetDelta = t2.Elapsed();
 	}
 	Engine::~Engine()
 	{
@@ -249,74 +225,120 @@ namespace Nork
 		lightMan.Update(DS, PS, DL, PL);
 
 	}
-	void Engine::PhysicsUpdate()
+
+	static std::vector<std::pair<std::string, float>> deltas;
+	std::vector<std::pair<std::string, float>> Engine::GetDeltas()
 	{
-		static Timer t(-20);
-		float delta = t.ElapsedSeconds();
-		t.Restart();
-		if (delta > 0.2f) 
+		return deltas;
+	}
+	void Engine::PhysicsUpdate2()
+	{
+		static Timer deltaTimer(-20);
+		float delta = deltaTimer.ElapsedSeconds();
+		deltaTimer.Restart();
+		if (delta > 0.2f)
 			return;
 
 		using namespace Physics;
 		using namespace Components;
-		static auto compute = CreateShaderFromPath("Source/Shaders/collision.shader");
 
 		if (!physicsUpdate) return;
+		deltas.clear();
+		Timer t;
 
 		auto& reg = scene.registry.GetUnderlyingMutable();
 		auto view = reg.view<Components::Transform, Kinematic>(entt::exclude_t<Poly>());
 		auto collOnlyView = reg.view<Components::Transform, Poly>(entt::exclude_t<Kinematic>());
 		auto collView = reg.view<Components::Transform, Kinematic, Poly>();
+		deltas.push_back(std::pair("get entt views", t.Reset()));
 
 		pWorld.kinems.clear();
 
 		collView.each([&](entt::entity id, Transform& tr, Kinematic& kin, Poly& poly)
 			{
-				pWorld.kinems.push_back(Physics::KinematicData{ .position = tr.position, .quaternion = tr.quaternion, 
-					.velocity = kin.velocity, .aVelUp = kin.aVelUp, .aVelSpeed = kin.aVelSpeed, .mass = kin.mass, .isStatic = false, .forces = kin.forces });
+				pWorld.kinems.push_back(Physics::KinematicData{ 
+					.position = tr.position, .quaternion = tr.quaternion,
+					.velocity = kin.velocity, .w = kin.w, .mass = kin.mass, 
+					.isStatic = false, .forces = kin.forces });
 			});
 
 		collOnlyView.each([&](entt::entity id, Transform& tr, Poly& poly)
 			{
-				pWorld.kinems.push_back(Physics::KinematicData{ .position = tr.position, .quaternion = tr.quaternion,
-					.velocity = glm::vec3(0), .aVelUp = glm::vec3(0), .aVelSpeed = 0, .mass = 1, .isStatic = true, .forces = glm::vec3(0)});
+				pWorld.kinems.push_back(Physics::KinematicData{ 
+					.position = tr.position, .quaternion = tr.quaternion,
+					.velocity = glm::vec3(0),.w = glm::vec3(0), .mass = 1, 
+					.isStatic = true, .forces = glm::vec3(0),  });
 			});
 
 		view.each([&](entt::entity id, Transform& tr, Kinematic& kin)
 			{
-				pWorld.kinems.push_back(Physics::KinematicData{ .position = tr.position, .quaternion = tr.quaternion, 
-					.velocity = kin.velocity,  .aVelUp = kin.aVelUp, .aVelSpeed = kin.aVelSpeed,.mass = kin.mass, .isStatic = false, .forces = kin.forces });
+				pWorld.kinems.push_back(Physics::KinematicData{
+					.position = tr.position, .quaternion = tr.quaternion,
+					.velocity = kin.velocity, .w = kin.w, .mass = kin.mass, 
+					.isStatic = false, .forces = kin.forces });
+			});
+		deltas.push_back(std::pair("update kinems", t.Reset()));
+
+		static bool first = true;
+		if (updatePoliesForPhysics || first)
+		{
+			std::vector<Collider> colls;
+
+			collView.each([&](entt::entity id, Transform& tr, Kinematic& kin, Poly& poly)
+				{
+					colls.push_back(poly.AsCollider());
+				});
+
+			collOnlyView.each([&](entt::entity id, Transform& tr, Poly& poly)
+				{
+					colls.push_back(poly.AsCollider());
+				});
+
+			pSystem.SetColliders(colls);
+			first = false;
+		}
+		static std::vector<glm::vec3> translations;
+		static std::vector<glm::quat> quaternions;
+		translations.clear();
+		translations.reserve(reg.size<Transform>());
+		quaternions.clear();
+		quaternions.reserve(reg.size<Transform>());
+		deltas.push_back(std::pair("clear model bufs", t.Reset()));
+
+		collView.each([&](entt::entity id, Transform& tr, Kinematic& kin, Poly& poly)
+			{
+				translations.push_back(tr.position);
+				quaternions.push_back(tr.quaternion);
 			});
 
-		UpdatePoliesForPhysics();
+		collOnlyView.each([&](entt::entity id, Transform& tr, Poly& poly)
+			{
+				translations.push_back(tr.position);
+				quaternions.push_back(tr.quaternion);
+			});
+		deltas.push_back(std::pair("fill model buf", t.Reset()));
 
-		compute.Use();
-		pSystem.Update(pWorld, delta);
+		pSystem.SetModels(translations, quaternions);
+		deltas.push_back(std::pair("psystem.setmodels", t.Reset()));
+		pSystem.Update(delta);
+		deltas.push_back(std::pair("psystem.update", t.Reset()));
 
 		uint32_t i = 0;
 
 		auto kinView = reg.view<Transform, Kinematic>();
+		deltas.push_back(std::pair("getKinViwev", t.Reset()));
 		kinView.each([&](entt::entity id, Transform& tr, Kinematic& kin)
 			{
 				tr.position = pWorld.kinems[i].position;
 				kin.velocity = pWorld.kinems[i].velocity;
-				kin.aVelSpeed = pWorld.kinems[i].aVelSpeed;
-				kin.aVelUp = pWorld.kinems[i].aVelUp;
 				kin.forces = pWorld.kinems[i].forces;
-				tr.quaternion = pWorld.kinems[i++].quaternion;
+				tr.quaternion = pWorld.kinems[i].quaternion;
+				kin.w = pWorld.kinems[i++].w;
 			});
+		deltas.push_back(std::pair("read back psystem results", t.Reset()));
 	}
 	void Engine::DrawHitboxes()
 	{
-		/*auto world1 = colliders[0].AsWorld();
-		auto world2 = colliders[1].AsWorld();
-		auto shape1 = world1.shapes[0];
-		auto shape2 = world2.shapes[0];
-
-		if (gjk) gjkRes = Physics::GJK(shape1.verts, shape2.verts).GetResult(shape1.center, shape2.center);
-		if (clip) clipRes = Physics::Clip(shape1, shape2).GetResult();
-		if(aabb) aabbRes = Physics::AABBTest(shape1, shape2).GetResult();*/
-
 		static Renderer::Pipeline::StreamRenderer<glm::vec3, float, uint32_t> renderer;
 		static Renderer::Pipeline::StreamRenderer<glm::vec3> renderer2;
 
@@ -362,99 +384,25 @@ namespace Nork
 										}
 										if (drawPoints)
 										{
-											renderer2.UploadVertices(std::span(pSystem.clipContactPoints));
+											renderer2.UploadVertices(std::span(pSystem.contactPoints));
 											pointShader.SetVec4("colorDefault", glm::vec4(1, 1, 1, 1));
-											renderer2.DrawAsPoints(pSystem.clipContactPoints.size());
+											renderer2.DrawAsPoints(pSystem.contactPoints.size());
+
+											//auto md = Physics::MD::MinkowskiDifference(pWorld.shapes[0].verts, pWorld.shapes[1].verts);
+											//renderer2.UploadVertices(std::span(md));
+											//renderer2.DrawAsPoints(md.size());
+											
+											/*pointShader.SetVec4("colorDefault", glm::vec4(0, 1, 0, 1));
+											std::vector<glm::vec3> Center{ {0, 0, 0} };
+											renderer2.UploadVertices(std::span(Center));
+											renderer2.DrawAsPoints(1);*/
+
 											pointShader.SetVec4("colorDefault", pointColor);
 										}
+
+										
 									});
 							}
-							
-							/*if (!sat) return;
-							for (size_t i = 0; i < pSystem.detectionResults.size(); i++)
-							{
-								auto& satRes = pSystem.detectionResults[i].second;
-								auto& objs = pSystem.detectionResults[i].first;
-								auto shape1 = pWorld.shapes[objs.first];
-								auto shape2 = pWorld.shapes[objs.second];
-
-								if (satRes.resType == satRes.EdgeAndEdge)
-								{
-									std::vector<Components::Vertex> data;
-									data.push_back(shape1.FirstVertFromEdge(satRes.edgeAndEdge.first));
-									data.push_back(shape1.SecondVertFromEdge(satRes.edgeAndEdge.first));
-									data.push_back(shape2.FirstVertFromEdge(satRes.edgeAndEdge.second));
-									data.push_back(shape2.SecondVertFromEdge(satRes.edgeAndEdge.second));
-
-									data.push_back(shape1.EdgeMiddle(satRes.edgeAndEdge.first));
-									data.push_back(shape1.EdgeMiddle(satRes.edgeAndEdge.first) + satRes.direction * satRes.distance);
-
-									renderer.UploadVertices(std::span(data));
-									lineShader.Use();
-									lineShader.SetVec4("colorDefault", glm::vec4(1, 1, 0, 1));
-									renderer.DrawAsLines(data.size() - 2);
-									lineShader.SetVec4("colorDefault", glm::vec4(1, 0, 0, 1));
-									renderer.DrawAsLines(2, data.size() - 2);
-									lineShader.SetVec4("colorDefault", lineColor);
-								}
-								else
-								{
-									bool useFaceSecond = satRes.resType == satRes.VertAndFace;
-									std::vector<Components::Vertex> data;
-									data.push_back(useFaceSecond ? satRes.vertAndFace.first : satRes.faceAndVert.second);
-									auto verts = useFaceSecond ? shape2.VerticesVector(satRes.vertAndFace.second)
-										: shape1.VerticesVector(satRes.faceAndVert.first);
-									for (size_t i = 0; i < verts.size(); i++)
-									{
-										data.push_back(verts[i].get());
-									}
-
-									auto faceCenter = useFaceSecond ? shape2.FaceCenter(satRes.vertAndFace.second)
-										: shape1.FaceCenter(satRes.faceAndVert.first);
-									data.push_back(faceCenter);
-									data.push_back(faceCenter + satRes.direction * satRes.distance);
-
-									renderer.UploadVertices(std::span(data));
-									pointShader.Use();
-									pointShader.SetVec4("colorDefault", glm::vec4(1, 1, 0, 1));
-									renderer.DrawAsPoints(1);
-									pointShader.SetVec4("colorDefault", pointColor);
-
-									shader.Use();
-									shader.SetVec4("colorDefault", glm::vec4(1, 1, 0, 1));
-									renderer.DrawAsTriangle(verts.size(), 1);
-									shader.SetVec4("colorDefault", pointColor);
-
-									lineShader.Use();
-									lineShader.SetVec4("colorDefault", glm::vec4(1, 0, 0, 1));
-									renderer.DrawAsLines(2, verts.size() + 1);
-									lineShader.SetVec4("colorDefault", lineColor);
-								}
-							}*/
-
-							/*if (sat)
-							{
-								auto satRes = Physics::SAT(shape1, shape2).GetResult();
-								this->satRes = satRes.distance > 0;
-
-								if (resolveCollision && this->satRes)
-								{
-									glm::vec3 translate = satRes.direction * satRes.distance;
-									translate /= 2.0f;
-									for (size_t i = 0; i < colliders[0].vertices.size(); i++)
-									{
-										colliders[0].vertices[i].pos += translate;
-									}
-									for (size_t i = 0; i < colliders[1].vertices.size(); i++)
-									{
-										colliders[1].vertices[i].pos -= translate;
-									}
-								}
-
-								
-							}*/
-
-							
 						});
 				});
 		}
@@ -499,5 +447,19 @@ namespace Nork
 			pipeline.data.shaders.skybox.SetMat4("VP", vp);
 		}
 		
+	}
+
+	static Renderer::Data::Shader setupShaderRes, aabbShaderRes, satShaderRes;
+	std::array<GLuint, 3> Physics::CollisionDetectionGPU::Get_Setup_AABB_SAT_Shaders()
+	{
+		setupShaderRes = CreateShaderFromPath("Source/Shaders/colliderTransform.shader");
+		aabbShaderRes = CreateShaderFromPath("Source/Shaders/aabb.shader");
+		satShaderRes = CreateShaderFromPath("Source/Shaders/sat.shader");
+
+		return { setupShaderRes.GetProgram() , aabbShaderRes.GetProgram() , satShaderRes.GetProgram() };
+	}
+	void Physics::CollisionDetectionGPU::FreeShaders()
+	{
+
 	}
 }

@@ -1,6 +1,6 @@
 #type compute
 
-#version 430 core
+#version 330 core
 #extension GL_ARB_compute_shader : require
 // group.x -> aabb1 (x)
 // group.y -> aabb2 (y)

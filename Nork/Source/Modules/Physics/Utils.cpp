@@ -52,4 +52,12 @@ namespace Nork::Physics
 		sum /= points.size();
 		return sum;
 	}
+	glm::vec4 Center(const std::span<const glm::vec4> points)
+	{
+		glm::vec4 sum = glm::vec4(0);
+		for (size_t i = 0; i < points.size(); i++)
+			sum += points[i];
+		sum /= points.size();
+		return sum;
+	}
 }

@@ -78,10 +78,9 @@ namespace Nork::Components
 
 	struct Kinematic
 	{
-		float mass = 0.001f;
+		float mass = 1;
 		glm::vec3 velocity;
-		glm::vec3 aVelUp = glm::vec3(0, 1, 0);
 		glm::vec3 forces;
-		float aVelSpeed;
+		glm::vec3 w;
 	};
 }

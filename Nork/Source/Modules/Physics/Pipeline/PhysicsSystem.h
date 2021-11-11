@@ -1,47 +1,44 @@
 #pragma once
 
 #include "../Data/World.h"
-#include "../CollisionDetection/AABB.h"
-#include "../CollisionDetection/Clip.h"
-#include "../CollisionDetection/GJK.h"
-#include "../CollisionDetection/SAT.h"
+#include "../Utils/AABB.h"
+#include "../Utils/GJK.h"
+#include "../Utils/SAT.h"
+#include "../Utils/SAP.h"
+#include "GPUPipeline.h"
+#include "CollisionDetection.h"
 
 namespace Nork::Physics
 {
 	class System
 	{
+
 	public:
-		//bool satRes = false, gjkRes = false, clipRes = false, aabbRes = false;
-		//bool sat = true, gjk = false, clip = true, aabb = true;
+		System();
+
+		CollisionDetection* collisionDetector;
+
 		bool updateVelocities = true, updateRotation = true;
-		bool detectCollisions = true, resolveCollisions = true;
-		bool resolvePositions = true, resolveMomentum = true, resolveAngularMomentum = false;
-		bool genContactPoints = false;
-		bool gjk = false, gjkRes = false;
-		bool clip = false;
-		bool aabb = true;
-		float g = 8;
-		float coefficient = 0.5f;
-		bool applyForces = true;
-		bool applyCounterForces = true;
+		bool detectCollisions = true, handleCollisions = true;
+		bool genContactPoints = true;
 
-		struct DetectionResult
-		{
-			glm::vec3 dir;
-			float depth;
-		};
+		float g = 0;
+		float coefficient = 1.0f;
 
-		std::vector<std::pair<std::pair<uint32_t, uint32_t>, DetectionResult>> detectionResults;
+		std::vector<std::pair<std::string, float>> deltas;
 		std::vector<glm::vec3> contactPoints;
-		std::vector<glm::vec3> clipContactPoints;
 
-		void Update(World& world, float delta);
-		void GenClipContactPoints(World& world);
-		void DetectCollisions(World& world);
-		void GenContactPoints(World& world);
-		void ResolveCollisions(World& world, float delta);
-		void ResolveCollisions2(World& world);
-		void VelocityUpdate(World& world, float delta);
-		void RotationUpdate(World& world, float delta);
+		void Update(float delta);
+
+		void GenContactPoints();
+		void ResolveCollisions2(float delta);
+		void ResolveCollisions(float delta);
+		void VelocityUpdate(float delta);
+		void RotationUpdate(float delta);
+
+		void SetColliders(std::span<Collider> colls);
+		void SetModels(std::span<glm::vec3> translate, std::span<glm::quat> quaternions);
+
+		World world;
 	};
 }

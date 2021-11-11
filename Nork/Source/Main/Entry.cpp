@@ -46,19 +46,6 @@ int main()
 		using enum Input::KeyType;
 	}
 
-	/*auto node = engine.scene.CreateNode();
-	engine.scene.AddModel(node, "Resources/Models/lamp/untitled.obj");
-	engine.scene.AddComponent<Components::Transform>(node);
-	auto& pl = engine.scene.AddComponent<Components::PointLight>(node);
-	engine.scene.AddComponent<Components::PointShadow>(node);
-	auto model = engine.scene.CreateNode();
-	engine.scene.AddComponent<Components::Transform>(model).position.x = 2.5f;
-	engine.scene.AddModel(model);
-	engine.scene.AddComponent<Poly>(node, 0.2f);
-	engine.scene.AddComponent<Poly>(model);
-	engine.scene.AddComponent<Components::Kinematic>(node);
-	engine.scene.AddComponent<Components::Kinematic>(model);*/
-
 	int dim = 1;
 	int sep = 3;
 	int start = -dim / 2;
@@ -73,11 +60,16 @@ int main()
 				auto node = engine.scene.CreateNode();
 				engine.scene.AddModel(node);
 				engine.scene.AddComponent<Components::Transform>(node).position = glm::vec3(i * sep, j * sep, k * sep);
-				engine.scene.AddComponent<Components::Kinematic>(node);
+				engine.scene.AddComponent<Components::Kinematic>(node).mass = 0.1f;
 				engine.scene.AddComponent<Poly>(node);
 				engine.scene.AddComponent<Components::Tag>(node).tag = std::to_string(i).append("-").append(std::to_string(j)).append("-").append(std::to_string(k));
 			}
 		}
+	}
+
+	if (dim > 5)
+	{
+		engine.drawPolies = false;
 	}
 
 	glm::vec3 scale = glm::vec3(100, 1, 100);
@@ -89,19 +81,30 @@ int main()
 	engine.scene.AddComponent<Poly>(ground).Scale(scale);
 	engine.scene.AddComponent<Components::Tag>(ground).tag = "GROUND";
 
+	/*auto node1 = engine.scene.CreateNode();
+	engine.scene.AddModel(node1);
+	engine.scene.AddComponent<Components::Transform>(node1).position = glm::vec3(0, 0, 1);
+	engine.scene.AddComponent<Components::Kinematic>(node1);
+	engine.scene.AddComponent<Poly>(node1);
+	engine.scene.AddComponent<Components::Tag>(node1).tag = "NODE 1";
+
+	auto node2 = engine.scene.CreateNode();
+	engine.scene.AddModel(node2);
+	engine.scene.AddComponent<Components::Transform>(node2).position = glm::vec3(0, 0, -1);
+	engine.scene.AddComponent<Components::Kinematic>(node2);
+	engine.scene.AddComponent<Poly>(node2);
+	engine.scene.AddComponent<Components::Tag>(node2).tag = "NODE 2";*/
+
 	auto sun = engine.scene.CreateNode();
 	engine.scene.AddComponent<Components::DirLight>(sun).SetColor(glm::vec4(1.0f, 0.8f, 0.5, 1));
 	engine.scene.AddComponent<Components::DirShadow>(sun);
 	engine.scene.AddComponent<Components::Tag>(sun).tag = "SUN";
-
-	engine.UpdatePoliesForPhysics();
 	//test5();
 
 	/*engine.window.GetInputEvents().Subscribe<Event::Types::InputEvent>([](const Event::Types::InputEvent& ev)
 		{
 			Logger::Debug("Input Event: ", ev.GetName(), " From: ", ev.from.file_name(), ":", ev.from.line());
 		});*/
-
 	engine.appEventMan.GetReceiver().Subscribe<Event::Types::OnUpdate>([&](const Event::Types::OnUpdate& e)
 		{
 			using namespace Input;

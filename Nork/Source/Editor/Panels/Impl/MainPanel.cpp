@@ -46,8 +46,6 @@ namespace Nork::Editor
 			ImGui::Text("fps");
 			ImGui::Text(std::to_string(ms).c_str());
 			ImGui::Text("ms");
-			ImGui::Text(std::to_string(data.engine.targetDelta).c_str());
-			ImGui::Text("ms");
 			ImGui::EndMainMenuBar();
 		}
 	}

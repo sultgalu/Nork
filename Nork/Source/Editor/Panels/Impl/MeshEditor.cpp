@@ -1,4 +1,6 @@
 #include "../MeshEditor.h"
+#include "Modules/Physics/Pipeline/CollisionDetectionGPU.h"
+#include "Modules/Physics/Pipeline/CollisionDetectionCPU.h"
 
 namespace Nork::Editor
 {
@@ -23,7 +25,6 @@ namespace Nork::Editor
 						}
 					}
 				}
-				
 			});
 	}
 	void MeshEditorPanel::SelectVertex(uint32_t i)
@@ -245,19 +246,43 @@ namespace Nork::Editor
 				data.engine.pSystem.g = 0;
 			}
 		}
-
 		ImGui::SliderFloat("Coefficient", &data.engine.pSystem.coefficient, 0, 1);
+
+		ImGui::Separator();
+		auto Enginedeltas = Engine::GetDeltas();
+		for (size_t i = 0; i < Enginedeltas.size(); i++)
+		{
+			auto pair = Enginedeltas[i];
+			ImGui::Text(pair.first.append(": ").append(std::to_string(pair.second)).c_str());
+		}
+		ImGui::Separator();
+		auto SAPdeltas = Physics::SAP::GetDeltas();
+		for (size_t i = 0; i < SAPdeltas.size(); i++)
+		{
+			auto pair = SAPdeltas[i];
+			ImGui::Text(pair.first.append(": ").append(std::to_string(pair.second)).c_str());
+		}
+		ImGui::Separator();
+		auto GPUdeltas = Physics::CollisionDetectionGPU::GetDeltas();
+		for (size_t i = 0; i < GPUdeltas.size(); i++)
+		{
+			auto pair = GPUdeltas[i];
+			ImGui::Text(pair.first.append(": ").append(std::to_string(pair.second)).c_str());
+		}
+		ImGui::Separator();
+		auto pDeltas = data.engine.pSystem.deltas;
+		for (size_t i = 0; i < pDeltas.size(); i++)
+		{
+			auto pair = pDeltas[i];
+			ImGui::Text(pair.first.append(": ").append(std::to_string(pair.second)).c_str());
+		}
+
+		ImGui::Checkbox("Update polies", &data.engine.updatePoliesForPhysics);
+		ImGui::Checkbox("Gen Contact Points", &data.engine.pSystem.genContactPoints);
 		ImGui::Checkbox("Update Velocities", &data.engine.pSystem.updateVelocities);
+		ImGui::Checkbox("Update Rotation", &data.engine.pSystem.updateRotation);
 		ImGui::Checkbox("Detect Collisions", &data.engine.pSystem.detectCollisions);
-		ImGui::Checkbox("Resolve Collisions", &data.engine.pSystem.resolveCollisions);
-		ImGui::Checkbox("AABB", &data.engine.pSystem.aabb);
-		ImGui::Checkbox("GJK", &data.engine.pSystem.gjk);
-		if (data.engine.pSystem.gjkRes)
-			ImGui::TextColored(ImVec4(0, 1, 0, 1), "Coll");
-		else
-			ImGui::TextColored(ImVec4(1, 0, 0, 1), "no coll");
-		ImGui::Checkbox("SAT", &data.engine.sat);
-		ImGui::Checkbox("Clip", &data.engine.clip);
+		ImGui::Checkbox("Handle Collisions", &data.engine.pSystem.handleCollisions);
 		ImGui::Checkbox("Draw Polies", &data.engine.drawPolies);
 		ImGui::Checkbox("Draw Triangles", &data.engine.drawTriangles);
 		ImGui::Checkbox("Draw Lines", &data.engine.drawLines);

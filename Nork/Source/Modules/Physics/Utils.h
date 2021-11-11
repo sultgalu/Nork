@@ -4,6 +4,7 @@ namespace Nork::Physics
 {
 	using index_t = uint32_t;
 	glm::vec3 Center(const std::span<const glm::vec3> points);
+	glm::vec4 Center(const std::span<const glm::vec4> points);
 	index_t FarthestIdx(const std::span<const glm::vec3> verts, const glm::vec3&& dir);
 	glm::vec3& Farthest(const std::span<const glm::vec3> verts, const glm::vec3&& dir);
 	float SignedDistance(const glm::vec3& dir, const glm::vec3& from, const glm::vec3& to);

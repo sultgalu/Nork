@@ -164,17 +164,29 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Source\Modules\Physics\CollisionDetection\AABB.h" />
-    <ClInclude Include="Source\Modules\Physics\CollisionDetection\Clip.h" />
-    <ClInclude Include="Source\Modules\Physics\CollisionDetection\GJK.h" />
-    <ClInclude Include="Source\Modules\Physics\CollisionDetection\SAT.h" />
+    <ClInclude Include="Source\Modules\Physics\Config.h" />
+    <ClInclude Include="Source\Modules\Physics\Pipeline\CollisionDetection.h" />
+    <ClInclude Include="Source\Modules\Physics\Pipeline\CollisionDetectionCPU.h" />
+    <ClInclude Include="Source\Modules\Physics\Data\Common.h" />
+    <ClInclude Include="Source\Modules\Physics\Data\GPU.h" />
+    <ClInclude Include="Source\Modules\Physics\Data\SSBO.h" />
+    <ClInclude Include="Source\Modules\Physics\Pipeline\CollisionDetectionGPU.h" />
+    <ClInclude Include="Source\Modules\Physics\Utils\MD.h" />
+    <ClInclude Include="Source\Modules\Physics\Utils\AABB.h" />
+    <ClInclude Include="Source\Modules\Physics\Utils\GJK.h" />
+    <ClInclude Include="Source\Modules\Physics\Utils\SAP.h" />
+    <ClInclude Include="Source\Modules\Physics\Utils\SAT.h" />
     <ClInclude Include="Source\Core\MeshWorld.h" />
-    <ClCompile Include="Source\Modules\Physics\CollisionDetection\AABB.cpp" />
-    <ClCompile Include="Source\Modules\Physics\CollisionDetection\Clip.cpp" />
-    <ClCompile Include="Source\Modules\Physics\CollisionDetection\GJK.cpp" />
-    <ClCompile Include="Source\Modules\Physics\CollisionDetection\SAT.cpp" />
+    <ClCompile Include="Source\Modules\Physics\Pipeline\CollisionDetectionCPU.cpp" />
+    <ClCompile Include="Source\Modules\Physics\Pipeline\CollisionDetectionGPU.cpp" />
+    <ClCompile Include="Source\Modules\Physics\Utils\MD.cpp" />
+    <ClCompile Include="Source\Modules\Physics\Utils\AABB.cpp" />
+    <ClCompile Include="Source\Modules\Physics\Utils\GJK.cpp" />
+    <ClCompile Include="Source\Modules\Physics\Utils\SAP.cpp" />
+    <ClCompile Include="Source\Modules\Physics\Utils\SAT.cpp" />
     <ClCompile Include="Source\Editor\Panels\Impl\MeshEditor.cpp" />
     <ClCompile Include="Source\Modules\Physics\Data\World.cpp" />
+    <ClCompile Include="Source\Modules\Physics\Pipeline\GPUPipeline.cpp" />
     <ClCompile Include="Source\Modules\Physics\Pipeline\PhyicsSystem.cpp" />
     <ClCompile Include="Source\Modules\Physics\Utils.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Pipeline\Capabilities.cpp" />
@@ -282,6 +294,7 @@
   <ItemGroup>
     <ClInclude Include="Source\Editor\Panels\MeshEditor.h" />
     <ClInclude Include="Source\Modules\Physics\Data\World.h" />
+    <ClInclude Include="Source\Modules\Physics\Pipeline\GPUPipeline.h" />
     <ClInclude Include="Source\Modules\Physics\Pipeline\PhysicsSystem.h" />
     <ClInclude Include="Source\Modules\Physics\Utils.h" />
     <ClInclude Include="Source\Modules\Renderer\Pipeline\Capabilities.h" />
@@ -334,6 +347,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\OneDrive\Dokumentumok\GameEngine_0\GameEngineEditor\resources\shaders\lightPass.shader" />
+    <None Include="Source\Shaders\aabb.shader" />
+    <None Include="Source\Shaders\colliderTransform.shader" />
     <None Include="Source\Shaders\collision.shader" />
     <None Include="Source\Shaders\dirShadMap.shader" />
     <None Include="Source\Shaders\gPass.shader" />
@@ -342,6 +357,9 @@
     <None Include="Source\Shaders\point.shader" />
     <None Include="Source\Shaders\pointShadMap.shader" />
     <None Include="Source\Shaders\position.shader" />
+    <None Include="Source\Shaders\collisionRes.shader" />
+    <None Include="Source\Shaders\sat.shader" />
+    <None Include="Source\Shaders\sat_shared.shader" />
     <None Include="Source\Shaders\skybox.shader" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

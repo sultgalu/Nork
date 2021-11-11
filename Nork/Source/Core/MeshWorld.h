@@ -2,6 +2,7 @@
 
 #include "Modules/Physics/Data/World.h"
 #include "Modules/Physics/Utils.h"
+#include "Modules/Physics/Pipeline/GPUPipeline.h"
 
 namespace Nork
 {
@@ -182,77 +183,37 @@ namespace Nork
 			}
 		}
 
-		void AddToWorld(Physics::World& world, glm::mat4 model)
+		Physics::Collider AsCollider()
 		{
-			std::vector<Physics::Face> faces;
-			std::vector<glm::vec3> fNorms;
-			std::vector<glm::vec3> verts;
+			Physics::Collider res;
 
-			verts.reserve(vertices.size());
+			res.verts.reserve(vertices.size());
 			for (size_t i = 0; i < vertices.size(); i++)
 			{
-				verts.push_back(model * glm::vec4(vertices[i].pos, 1));
+				res.verts.push_back(glm::vec4(vertices[i].pos, 1));
 			}
 
-			auto center = Physics::Center(verts);
+			auto center = Physics::Center(res.verts);
+			res.faces.reserve(triangleIndices.size());
 			for (size_t i = 0; i < triangleIndices.size(); i++)
 			{
-				auto normal = glm::normalize(
-					glm::cross(
-						verts[triangleIndices[i][0]] - verts[triangleIndices[i][1]],
-						verts[triangleIndices[i][0]] - verts[triangleIndices[i][2]]
-					));
-
-				float dFromC = Physics::SignedDistance(normal, verts[triangleIndices[i][0]], center);
-				if (dFromC > 0)
-					normal *= -1; // correct normal to face against the center of the poly.
-				fNorms.push_back(normal);
-
-				faces.push_back({ Physics::Face{
-					static_cast<Physics::index_t>(triangleIndices[i][0]),
-					static_cast<Physics::index_t>(triangleIndices[i][1]),
-					static_cast<Physics::index_t>(triangleIndices[i][2]),
-				} });
-			}
-			world.AddShape(verts, edgeIndices, faces, fNorms, center);
-		}
-
-		Physics::World AsWorld()
-		{
-			Physics::World result;
-			
-			std::vector<Physics::Face> faces;
-			std::vector<glm::vec3> fNorms;
-			std::vector<glm::vec3> verts;
-
-			verts.reserve(vertices.size());
-			for (size_t i = 0; i < vertices.size(); i++)
-			{
-				verts.push_back(vertices[i].pos);
-			}
-
-			for (size_t i = 0; i < triangleIndices.size(); i++)
-			{
-				auto normal = glm::normalize(
-					glm::cross(
-						vertices[triangleIndices[i][0]].pos - vertices[triangleIndices[i][1]].pos,
-						vertices[triangleIndices[i][0]].pos - vertices[triangleIndices[i][2]].pos
-					));
-
-				auto center = Physics::Center(verts);
+				auto normal = glm::cross(
+					vertices[triangleIndices[i][0]].pos - vertices[triangleIndices[i][1]].pos,
+					vertices[triangleIndices[i][0]].pos - vertices[triangleIndices[i][2]].pos
+				); 
 				float dFromC = Physics::SignedDistance(normal, vertices[triangleIndices[i][0]].pos, center);
 				if (dFromC > 0)
 					normal *= -1; // correct normal to face against the center of the poly.
-				fNorms.push_back(normal);
-
-				faces.push_back({ Physics::Face{
-					static_cast<Physics::index_t>(triangleIndices[i][0]),
-					static_cast<Physics::index_t>(triangleIndices[i][1]),
-					static_cast<Physics::index_t>(triangleIndices[i][2]),
-				} });
+				res.faces.push_back(Physics::Face{
+					.norm = normal,
+					.vertIdx = triangleIndices[i][0]
+					});
 			}
-			result.AddShape(verts, edgeIndices, faces, fNorms);
-			return result;
+
+			res.edges.resize(edgeIndices.size());
+			std::memcpy(res.edges.data(), edgeIndices.data(), edgeIndices.size() * sizeof(Physics::Edge));
+
+			return res;
 		}
 
 		static Polygon<Vertex> GetCube(glm::vec3 pos = glm::vec3(0))
