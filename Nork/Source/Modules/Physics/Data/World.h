@@ -12,9 +12,47 @@ namespace Nork::Physics
 		std::span<glm::vec3> verts;
 		std::span<Edge> edges;
 		std::span<Face> faces;
+		std::span<std::vector<index_t>> faceVerts;
 		glm::vec3 center;
 		glm::vec3 colliderCenter;
 
+		std::vector<uint32_t> SideFacesOfVert(uint32_t vertIdx)
+		{
+			std::vector<uint32_t> res;
+			for (size_t i = 0; i < faceVerts.size(); i++)
+			{
+				for (size_t j = 0; j < faceVerts[i].size(); j++)
+				{
+					if (faceVerts[i][j] == vertIdx)
+					{
+						res.push_back(i);
+						break;
+					}
+				}
+			}
+			return res;
+		}
+		std::vector<uint32_t> EdgesOnFace(uint32_t faceIdx)
+		{
+			std::vector<uint32_t> res;
+			for (size_t i = 0; i < edges.size(); i++)
+			{
+				int count = 0;
+				for (size_t j = 0; j < faceVerts[faceIdx].size(); j++)
+				{
+					if (faceVerts[faceIdx][j] == edges[i].first ||
+						faceVerts[faceIdx][j] == edges[i].second)
+					{
+						if (++count == 2)
+						{
+							res.push_back(i);
+							break;
+						}
+					}
+				}
+			}
+			return res;
+		}
 		std::vector<Edge> Edges(glm::vec3& vert) const
 		{
 			std::vector<Edge> result;
@@ -67,6 +105,7 @@ namespace Nork::Physics
 		std::vector<glm::vec3> verts;
 		std::vector<Edge> edges;
 		std::vector<Face> faces;
+		std::vector<std::vector<index_t>> faceVerts;
 
 		std::vector<KinematicData> kinems;
 		std::vector<Shape> shapes;

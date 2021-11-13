@@ -32,6 +32,7 @@ namespace Nork::Physics
 	{
 		std::vector<glm::vec4> verts;
 		std::vector<Face> faces;
+		std::vector<std::vector<index_t>> faceVerts;
 		std::vector<Edge> edges;
 	};
 

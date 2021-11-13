@@ -83,6 +83,137 @@ namespace Nork::Physics
 		}
 		return res;
 	}
+	static glm::vec3 Interpolate(float sdStart, float sdEnd, glm::vec3& start, glm::vec3& end)
+	{
+		float normalDistance = sdStart - sdEnd;
+		float startToFacePortion = sdStart / normalDistance;
+		glm::vec3 startToEnd = end - start;
+		glm::vec3 startToFace = startToEnd * startToFacePortion;
+		glm::vec3 pointOnFace = start + startToFace;
+		return pointOnFace;
+	}
+	std::vector<glm::vec3> ClipVertsOnEdge(glm::vec3 edgeNorm, glm::vec3 edgeVert, std::span<glm::vec3> pointsToClip)
+	{
+		std::vector<glm::vec3> points;
+
+		uint32_t startIdx = pointsToClip.size() - 1;
+		uint32_t endIdx = 0;
+		float sdStart = SignedDistance(edgeNorm, edgeVert, pointsToClip[startIdx]);
+
+		while (endIdx < pointsToClip.size())
+		{
+			float sdEnd = SignedDistance(edgeNorm, edgeVert, pointsToClip[endIdx]);
+
+			if (sdStart > 0)
+			{
+				if (sdEnd <= 0)
+				{
+					points.push_back(Interpolate(sdStart, sdEnd, pointsToClip[startIdx], pointsToClip[endIdx]));
+					points.push_back(pointsToClip[endIdx]);
+				}
+			}
+			else
+			{
+				if (sdEnd > 0)
+					points.push_back(Interpolate(sdEnd, sdStart, pointsToClip[endIdx], pointsToClip[startIdx]));
+				else
+					points.push_back(pointsToClip[endIdx]);
+			}
+
+			startIdx = endIdx++;
+			sdStart = sdEnd;
+		}
+
+		return points;
+	}
+	std::vector<glm::vec3> ClipFaceOnPlane(glm::vec3& planeNorm, glm::vec3& planeVert, std::span<uint32_t> faceVerts, std::span<glm::vec3> verts)
+	{
+		std::vector<glm::vec3> points;
+
+		uint32_t startIdx = faceVerts.size() - 1;
+		uint32_t endIdx = 0;
+		float sdStart = SignedDistance(planeNorm, planeVert, verts[faceVerts[startIdx]]);
+
+		while (endIdx < faceVerts.size())
+		{
+			float sdEnd = SignedDistance(planeNorm, planeVert, verts[faceVerts[endIdx]]);
+
+			if (sdStart > 0)
+			{
+				if (sdEnd <= 0)
+				{
+					points.push_back(Interpolate(sdStart, sdEnd, verts[faceVerts[startIdx]], verts[faceVerts[endIdx]]));
+					points.push_back(verts[faceVerts[endIdx]] - planeNorm * sdEnd);
+				}
+			}
+			else
+			{
+				if (sdEnd > 0)
+					points.push_back(Interpolate(sdEnd, sdStart, verts[faceVerts[endIdx]], verts[faceVerts[startIdx]]));
+				else
+					points.push_back(verts[faceVerts[endIdx]] - planeNorm * sdEnd);
+			}
+
+			startIdx = endIdx++;
+			sdStart = sdEnd;
+		}
+
+		return points;
+	}
+	std::vector<glm::vec3> FaceContactPoints(Shape& faceShape, Shape& vertShape, uint32_t faceIdx, uint32_t vertIdx)
+	{
+		std::vector<glm::vec3> result;
+
+		glm::vec3& faceNorm = faceShape.faces[faceIdx].norm;
+		auto sideFaces = vertShape.SideFacesOfVert(vertIdx);
+		auto faceEdgeIdxs = faceShape.EdgesOnFace(faceIdx);
+		for (size_t i = 0; i < sideFaces.size(); i++)
+		{
+			auto contactPointsForFace = ClipFaceOnPlane(faceNorm,
+				faceShape.verts[faceShape.faces[faceIdx].vertIdx],
+				vertShape.faceVerts[sideFaces[i]], vertShape.verts);
+
+			for (size_t j = 0; j < faceEdgeIdxs.size(); j++)
+			{
+				if (contactPointsForFace.size() == 0)
+					break;
+
+				Edge& edge = faceShape.edges[faceEdgeIdxs[j]];
+				glm::vec3 edgeNormal = glm::cross(faceNorm, faceShape.verts[edge.first] - faceShape.verts[edge.second]);
+
+				{ // making sure the edgeNormal is pointing outwards
+					glm::vec3 thirdVertOnFace;
+					for (size_t k = 0; k < 3; k++)
+					{
+						uint32_t vertIdx = faceShape.faceVerts[faceIdx][k];
+						if (vertIdx != edge.first &&
+							vertIdx != edge.second)
+						{
+							thirdVertOnFace = faceShape.verts[vertIdx];
+							break;
+						}
+					}
+					if (glm::dot(edgeNormal, faceShape.verts[edge.first] - thirdVertOnFace) < 0)
+						edgeNormal *= -1;
+				}
+
+				contactPointsForFace = ClipVertsOnEdge(edgeNormal, faceShape.verts[edge.first], contactPointsForFace);
+			}
+			for (size_t j = 0; j < contactPointsForFace.size(); j++)
+			{
+				for (size_t k = 0; k < result.size(); k++)
+				{
+					if (contactPointsForFace[j] == result[k])
+						goto AlreadyIn;
+				}
+				result.push_back(contactPointsForFace[j]);
+			AlreadyIn:;
+			}
+			//result.insert(result.end(), contactPointsForFace.begin(), contactPointsForFace.end());
+		}
+	
+		return result;
+	}
 
 	void System::GenContactPoints()
 	{
@@ -97,24 +228,26 @@ namespace Nork::Physics
 
 			if (res.type == CollisionType::FaceVert)
 			{
-				auto& face1 = shape1.faces[res.featureIdx1];
-				auto& vert2 = shape2.verts[res.featureIdx2];
-				
-				glm::vec3 contactPoint = vert2 + -res.dir * res.depth; // *0.5f;
+				//auto& face1 = shape1.faces[res.featureIdx1];
+				//auto& vert2 = shape2.verts[res.featureIdx2];
+				//glm::vec3 contactPoint = vert2 + -res.dir * res.depth; // *0.5f;
+				auto cps = FaceContactPoints(shape1, shape2, res.featureIdx1, res.featureIdx2);
+				glm::vec3 contactPoint = Center(cps);
 				contactPoints.push_back(contactPoint);
 			}
 			else if (res.type == CollisionType::VertFace)
 			{
 				auto& vert1 = shape1.verts[res.featureIdx2];
 				auto& face2 = shape2.faces[res.featureIdx1];
+				//glm::vec3 contactPoint = vert1 + res.dir * res.depth; //* 0.5f;
 
-				glm::vec3 contactPoint = vert1 + res.dir * res.depth; //* 0.5f;
+				glm::vec3 contactPoint = Center(FaceContactPoints(shape2, shape1, res.featureIdx1, res.featureIdx2));
 				contactPoints.push_back(contactPoint);
 			}
 			else if (res.type == CollisionType::EdgeEdge)
 			{
-				auto& edge1 = shape1.edges[res.featureIdx2];
-				auto& edge2 = shape2.edges[res.featureIdx1];
+				auto& edge1 = shape1.edges[res.featureIdx1];
+				auto& edge2 = shape2.edges[res.featureIdx2];
 
 				glm::vec3 edge1Dir = shape1.EdgeDirection(edge1);
 				glm::vec3 edge2Dir = shape2.EdgeDirection(edge2);

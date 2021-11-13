@@ -16,6 +16,7 @@ namespace Nork::Physics
 			this->colliderVerts.size() + collider.verts.size() > this->verts.capacity() ||
 			this->colliderFaces.size() + collider.faces.size() > this->faces.capacity() ||
 			this->faces.size() + collider.faces.size() > this->faces.capacity() ||
+			this->faceVerts.size() + collider.faceVerts.size() > this->faceVerts.capacity() ||
 			this->edges.size() + collider.edges.size() > this->edges.capacity();
 
 		if (expand)
@@ -25,17 +26,20 @@ namespace Nork::Physics
 			std::vector<std::pair<uint32_t, uint32_t>> sverts;
 			std::vector<std::pair<uint32_t, uint32_t>> sedges;
 			std::vector<std::pair<uint32_t, uint32_t>> sfaces;
+			std::vector<std::pair<uint32_t, uint32_t>> sfVerts;
 
 			for (size_t i = 0; i < shapes.size(); i++)
 			{
 				sverts.push_back(std::pair(shapes[i].verts.data() - this->verts.data(), shapes[i].verts.size()));
 				sedges.push_back(std::pair(shapes[i].edges.data() - this->edges.data(), shapes[i].edges.size()));
 				sfaces.push_back(std::pair(shapes[i].faces.data() - this->faces.data(), shapes[i].faces.size()));
+				sfVerts.push_back(std::pair(shapes[i].faceVerts.data() - this->faceVerts.data(), shapes[i].faceVerts.size()));
 			}
 
 			this->verts.insert(this->verts.end(), collider.verts.begin(), collider.verts.end());
 			this->colliderVerts.insert(this->colliderVerts.end(), collider.verts.begin(), collider.verts.end());
 			this->faces.insert(this->faces.end(), collider.faces.begin(), collider.faces.end());
+			this->faceVerts.insert(this->faceVerts.end(), collider.faceVerts.begin(), collider.faceVerts.end());
 			this->colliderFaces.insert(this->colliderFaces.end(), collider.faces.begin(), collider.faces.end());
 			this->edges.insert(this->edges.end(), collider.edges.begin(), collider.edges.end());
 
@@ -46,12 +50,14 @@ namespace Nork::Physics
 				shapes[i].colliderFaces = std::span(this->colliderFaces.data() + sfaces[i].first, sfaces[i].second);
 				shapes[i].edges = std::span(this->edges.data() + sedges[i].first, sedges[i].second);
 				shapes[i].faces = std::span(this->faces.data() + sfaces[i].first, sfaces[i].second);
+				shapes[i].faceVerts = std::span(this->faceVerts.data() + sfVerts[i].first, sfVerts[i].second);
 			}
 		}
 		else
 		{
 			this->colliderVerts.insert(this->colliderVerts.end(), collider.verts.begin(), collider.verts.end());
 			this->colliderFaces.insert(this->colliderFaces.end(), collider.faces.begin(), collider.faces.end());
+			this->faceVerts.insert(this->faceVerts.end(), collider.faceVerts.begin(), collider.faceVerts.end());
 			this->verts.insert(this->verts.end(), collider.verts.begin(), collider.verts.end());
 			this->faces.insert(this->faces.end(), collider.faces.begin(), collider.faces.end());
 			this->edges.insert(this->edges.end(), collider.edges.begin(), collider.edges.end());
@@ -65,6 +71,7 @@ namespace Nork::Physics
 			.verts = std::span(this->verts.end() - collider.verts.size(), collider.verts.size()),
 			.edges = std::span(this->edges.end() - collider.edges.size(), collider.edges.size()),
 			.faces = std::span(this->faces.end() - collider.faces.size(), collider.faces.size()),
+			.faceVerts = std::span(this->faceVerts.end() - collider.faceVerts.size(), collider.faceVerts.size()),
 			.center = center,
 			.colliderCenter = center
 		};

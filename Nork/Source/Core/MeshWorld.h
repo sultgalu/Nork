@@ -204,10 +204,31 @@ namespace Nork
 				float dFromC = Physics::SignedDistance(normal, vertices[triangleIndices[i][0]].pos, center);
 				if (dFromC > 0)
 					normal *= -1; // correct normal to face against the center of the poly.
+				
+				for (size_t j = 0; j < res.faces.size(); j++)
+				{
+					if (res.faces[j].norm == normal)
+					{
+						for (size_t l = 0; l < triangleIndices[i].size(); l++)
+						{
+							for (size_t k = 0; k < res.faceVerts[j].size(); k++)
+							{
+								if (triangleIndices[i][l] == res.faceVerts[j][k])
+									goto SkipVert;
+							}
+							res.faceVerts[j].push_back(triangleIndices[i][l]);
+						SkipVert:;
+						}
+						goto EndFace;
+					}
+				}
 				res.faces.push_back(Physics::Face{
 					.norm = normal,
 					.vertIdx = triangleIndices[i][0]
 					});
+
+				res.faceVerts.push_back({ triangleIndices[i][0], triangleIndices[i][1], triangleIndices[i][2] });
+			EndFace:;
 			}
 
 			res.edges.resize(edgeIndices.size());
