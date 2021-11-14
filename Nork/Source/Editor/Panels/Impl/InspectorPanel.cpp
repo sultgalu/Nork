@@ -325,7 +325,7 @@ namespace Nork::Editor
 			ImGui::TreePop();
 		}
 	}
-	void InspectorPanel::PolyComp(Poly* poly)
+	void InspectorPanel::PolyComp(Polygon* poly)
 	{
 		if (ImGui::TreeNodeEx("Poly", ImGuiTreeNodeFlags_DefaultOpen))
 		{
@@ -408,7 +408,7 @@ namespace Nork::Editor
 			this->CompSelector<Camera>();
 			this->CompSelector<Model>();
 			this->CompSelector<Kinematic>();
-			this->CompSelector<Poly>();
+			this->CompSelector<Polygon>();
 
 			ImGui::EndPopup();
 		}
@@ -433,7 +433,7 @@ namespace Nork::Editor
 			auto* model = reg.try_get<Model>(selected);
 			auto* cam = reg.try_get<Camera>(selected);
 			auto* kin = reg.try_get<Kinematic>(selected);
-			auto* poly = reg.try_get<Poly>(selected);
+			auto* poly = reg.try_get<Polygon>(selected);
 
 			if (tr != nullptr)
 			{

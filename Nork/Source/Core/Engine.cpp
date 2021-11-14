@@ -247,14 +247,14 @@ namespace Nork
 		Timer t;
 
 		auto& reg = scene.registry.GetUnderlyingMutable();
-		auto view = reg.view<Components::Transform, Kinematic>(entt::exclude_t<Poly>());
-		auto collOnlyView = reg.view<Components::Transform, Poly>(entt::exclude_t<Kinematic>());
-		auto collView = reg.view<Components::Transform, Kinematic, Poly>();
+		auto view = reg.view<Components::Transform, Kinematic>(entt::exclude_t<Polygon>());
+		auto collOnlyView = reg.view<Components::Transform, Polygon>(entt::exclude_t<Kinematic>());
+		auto collView = reg.view<Components::Transform, Kinematic, Polygon>();
 		deltas.push_back(std::pair("get entt views", t.Reset()));
 
 		pWorld.kinems.clear();
 
-		collView.each([&](entt::entity id, Transform& tr, Kinematic& kin, Poly& poly)
+		collView.each([&](entt::entity id, Transform& tr, Kinematic& kin, Polygon& poly)
 			{
 				pWorld.kinems.push_back(Physics::KinematicData{ 
 					.position = tr.position, .quaternion = tr.quaternion,
@@ -262,7 +262,7 @@ namespace Nork
 					.isStatic = false, .forces = kin.forces });
 			});
 
-		collOnlyView.each([&](entt::entity id, Transform& tr, Poly& poly)
+		collOnlyView.each([&](entt::entity id, Transform& tr, Polygon& poly)
 			{
 				pWorld.kinems.push_back(Physics::KinematicData{ 
 					.position = tr.position, .quaternion = tr.quaternion,
@@ -284,12 +284,12 @@ namespace Nork
 		{
 			std::vector<Collider> colls;
 
-			collView.each([&](entt::entity id, Transform& tr, Kinematic& kin, Poly& poly)
+			collView.each([&](entt::entity id, Transform& tr, Kinematic& kin, Polygon& poly)
 				{
 					colls.push_back(poly.AsCollider());
 				});
 
-			collOnlyView.each([&](entt::entity id, Transform& tr, Poly& poly)
+			collOnlyView.each([&](entt::entity id, Transform& tr, Polygon& poly)
 				{
 					colls.push_back(poly.AsCollider());
 				});
@@ -305,13 +305,13 @@ namespace Nork
 		quaternions.reserve(reg.size<Transform>());
 		deltas.push_back(std::pair("clear model bufs", t.Reset()));
 
-		collView.each([&](entt::entity id, Transform& tr, Kinematic& kin, Poly& poly)
+		collView.each([&](entt::entity id, Transform& tr, Kinematic& kin, Polygon& poly)
 			{
 				translations.push_back(tr.position);
 				quaternions.push_back(tr.quaternion);
 			});
 
-		collOnlyView.each([&](entt::entity id, Transform& tr, Poly& poly)
+		collOnlyView.each([&](entt::entity id, Transform& tr, Polygon& poly)
 			{
 				translations.push_back(tr.position);
 				quaternions.push_back(tr.quaternion);
@@ -326,7 +326,7 @@ namespace Nork
 		uint32_t i = 0;
 
 		auto kinView = reg.view<Transform, Kinematic>();
-		deltas.push_back(std::pair("getKinViwev", t.Reset()));
+		deltas.push_back(std::pair("getKinView", t.Reset()));
 		kinView.each([&](entt::entity id, Transform& tr, Kinematic& kin)
 			{
 				tr.position = pWorld.kinems[i].position;
@@ -349,8 +349,19 @@ namespace Nork
 		using namespace Capabilities;
 		using enum Capability;
 
-		auto view = scene.registry.GetUnderlyingMutable().view<Components::Transform, Poly>();
+		auto view = scene.registry.GetUnderlyingMutable().view<Components::Transform, Polygon>();
 		
+		auto asVertices = [](std::span<glm::vec3> verts, glm::mat4 model)
+		{
+			std::vector<Components::Vertex> res;
+			res.reserve(verts.size());
+			for (size_t i = 0; i < verts.size(); i++)
+			{
+				res.push_back(Components::Vertex(glm::vec3(model * glm::vec4(verts[i], 1))));
+			}
+			return res;
+		};
+
 		if (drawPolies || sat)
 		{
 			Capabilities::With<Enable<FaceCulling, Depth>, Disable<Blend>, Set<BlendFunc<GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA>>>([&]()
@@ -359,20 +370,22 @@ namespace Nork
 						{
 							if (drawPolies)
 							{
-								view.each([&](entt::entity id, Components::Transform& tr, Poly& poly)
+								view.each([&](entt::entity id, Components::Transform& tr, Polygon& poly)
 									{
-										renderer.UploadVertices(poly.vertices, tr.TranslationRotationMatrix());
+										std::vector<Components::Vertex> verts = asVertices(poly.vertices, tr.TranslationRotationMatrix());
+										renderer.UploadVertices(std::span(verts));
 
 										if (drawTriangles)
 										{
 											shader.Use();
-											renderer.DrawAsTriangle(*(reinterpret_cast<std::vector<uint32_t>*>(&poly.triangleIndices)));
-
+											renderer.DrawAsTriangle(*(reinterpret_cast<std::vector<uint32_t>*>(&poly.tris)));
 										}
 										if (drawLines)
 										{
+											auto faces = poly.GetFaces();
+											auto edges = poly.GetEdges(faces);
 											lineShader.Use();
-											renderer.DrawAsLines(*(reinterpret_cast<std::vector<uint32_t>*>(&poly.edgeIndices)));
+											renderer.DrawAsLines(std::span((uint32_t*)(edges.data()), edges.size() * 2));
 										}
 										if (drawPoints)
 										{

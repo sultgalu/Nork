@@ -4,7 +4,7 @@
 #include "Modules/Renderer/Pipeline/LightManager.h"
 #include "Core/CameraController.h"
 #include "Scene/Scene.h"
-#include "MeshWorld.h"
+#include "PolygonMesh.h"
 #include "Modules/Physics/Data/World.h"
 #include "Modules/Physics/Pipeline/PhysicsSystem.h"
 

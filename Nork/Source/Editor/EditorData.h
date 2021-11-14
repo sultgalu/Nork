@@ -21,6 +21,6 @@ namespace Nork::Editor
 		Engine& engine;
 		entt::entity selectedEnt = entt::null;
 		std::bitset<IdQueryMode::COUNT> idQueryMode;
-		Poly* selectedPoly = nullptr;
+		Polygon* selectedPoly = nullptr;
 	};
 }

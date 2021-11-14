@@ -395,8 +395,8 @@ namespace Nork::Physics
 				float resulting = (1 + coefficient) * glm::dot(kinem1.velocity - kinem2.velocity, coll.dir) / (1 / kinem1.mass + 1 / kinem2.mass /* + angularPart*/);
 				float resultingA = (1 + coefficient) * glm::dot(kinem1.velocity - kinem2.velocity, coll.dir) / (1 / kinem1.mass + 1 / kinem2.mass + angularPart);
 
-				float deltaV1 = -(resultingA / kinem1.mass);
-				float deltaV2 = (resultingA / kinem2.mass);
+				float deltaV1 = -(resulting / kinem1.mass);
+				float deltaV2 = (resulting / kinem2.mass);
 				if (kinem1.isStatic)
 				{
 					deltaV2 -= deltaV1;
@@ -494,7 +494,6 @@ namespace Nork::Physics
 
 			float angle = glm::length(world.kinems[i].w);
 			glm::vec3 up = world.kinems[i].w * (1 / angle);
-			//glm::vec3 up = glm::normalize(world.kinems[i].w);
 			world.kinems[i].quaternion = glm::rotate(world.kinems[i].quaternion, angle * delta, up);
 		}
 	}
