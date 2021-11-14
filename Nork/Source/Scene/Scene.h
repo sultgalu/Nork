@@ -70,6 +70,25 @@ namespace Nork::Scene
 			FreeResources();
 			registry.Wipe();
 		}
+		inline Components::Camera& GetMainCamera()
+		{
+			if (MainCameraNode == ECS::invalidId)
+			{
+				auto view = registry.GetUnderlyingMutable().view<Components::Camera>();
+				if (view.size() > 0)
+				{
+					MainCameraNode = view.front();
+				}
+				else
+				{
+					MainCameraNode = CreateNode();
+					AddComponent<Components::Camera>(MainCameraNode);
+				}
+
+			}
+			auto& cam = registry.GetComponent<Components::Camera>(MainCameraNode);
+			return cam;
+		}
 	private:
 		Components::Model GetModelByResource(std::vector<Renderer::Data::MeshResource> resource);
 		void FreeResources()
@@ -87,6 +106,7 @@ namespace Nork::Scene
 		}
 		uuid GenUniqueId();
 	public:
+		ECS::Id MainCameraNode;
 		ECS::Registry registry;
 		ResourceManager resMan;
 

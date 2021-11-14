@@ -9,7 +9,7 @@ namespace Nork::Scene
 	using namespace Components;
 	using namespace Serialization;
 	using Serializer = BinarySerializer
-		::WithTrivial<Transform,	DirLight, PointLight, DirShadow, PointShadow, Kinematic>
+		::WithTrivial<Transform, DirLight, PointLight, DirShadow, PointShadow, Kinematic>
 		::WithCustome<Tag, Model, Polygon>;
 
 	void Scene::Save(std::string path)

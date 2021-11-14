@@ -43,7 +43,7 @@ namespace Nork
 		LightManager lightMan;
 		Event::Dispatcher appEventMan;
 		Scene::Scene scene;
-		
+
 		//MeshWorld<Vertex> meshes = MeshWorld<Vertex>::GetCube();
 		
 		std::vector<Renderer::Pipeline::DirShadowFramebuffer> dShadowFramebuffers;

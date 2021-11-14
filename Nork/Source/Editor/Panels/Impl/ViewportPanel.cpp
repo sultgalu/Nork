@@ -1,12 +1,6 @@
 #include "pch.h"
 #include "../ViewportPanel.h"
 
-static Nork::Components::Camera cam;
-extern std::optional<Nork::Components::Camera*> Nork::GetActiveCamera()
-{
-	return &cam;
-}
-
 namespace Nork::Editor
 {
 	static int viewportCounter = 0;
@@ -14,7 +8,8 @@ namespace Nork::Editor
 	ViewportPanel::ViewportPanel(EditorData& d)
 		: Nork::Editor::Panel(std::format("Viewport#{}", viewportCounter++), d),
 		mouseState(MouseState{}), image(ImageConfig{}),
-		camContr(CameraController(events, data.engine.window.GetInputState(), cam))
+		camContr(CameraController(events, data.engine.window.GetInputState(), 
+			data.engine.scene.GetMainCamera()))
 	{
 		static Timer timer;
 		using namespace Event::Types;

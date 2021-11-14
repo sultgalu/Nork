@@ -3,6 +3,7 @@
 namespace Nork::ECS
 {
 	typedef entt::entity Id;
+	static constexpr Id invalidId = entt::null;
 
 	template<typename... T>
 	struct TypeList
@@ -64,9 +65,14 @@ namespace Nork::ECS
 			return LazyQuery<T...>(reg);
 		}
 		template<typename T>
-		inline auto GetComponent(ECS::Id id) const
+		inline auto& GetComponent(ECS::Id id)
 		{
 			return reg.get<T>(id);
+		}
+		template<typename T>
+		inline auto TryGetComp(ECS::Id id) const
+		{
+			return reg.try_get<T>(id);
 		}
 		template<typename... T>
 		inline auto HasAny(ECS::Id id) const

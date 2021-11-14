@@ -282,7 +282,7 @@ namespace Nork
 		deltas.push_back(std::pair("update kinems", t.Reset()));
 
 		static bool first = true;
-		if (updatePoliesForPhysics || first)
+		if (updatePoliesForPhysics)
 		{
 			std::vector<Collider> colls;
 
@@ -297,7 +297,7 @@ namespace Nork
 				});
 
 			pSystem.SetColliders(colls);
-			first = false;
+			updatePoliesForPhysics = false;
 		}
 		static std::vector<glm::vec3> translations;
 		static std::vector<glm::quat> quaternions;
@@ -427,41 +427,36 @@ namespace Nork
 	}
 	void Engine::ViewProjectionUpdate()
 	{
-		auto optional = GetActiveCamera();
-		if (optional.has_value())
-		{
-			auto& camera = *optional.value();
+		auto& camera = scene.GetMainCamera();
 
-			shader.Use();
-			shader.SetMat4("VP", camera.viewProjection);
-			shader.SetVec4("colorDefault", triangleColor);
-			shader.SetVec4("colorSelected", glm::vec4(selectedColor, triAlpha));
-			
-			pointShader.Use();
-			pointShader.SetMat4("VP", camera.viewProjection);
-			pointShader.SetFloat("aa", pointAA);
-			pointShader.SetFloat("size", pointInternalSize);
-			pointShader.SetVec4("colorDefault", pointColor);
-			pointShader.SetVec4("colorSelected", glm::vec4(selectedColor, pointAlpha));
+		shader.Use();
+		shader.SetMat4("VP", camera.viewProjection);
+		shader.SetVec4("colorDefault", triangleColor);
+		shader.SetVec4("colorSelected", glm::vec4(selectedColor, triAlpha));
 
-			lineShader.Use();
-			lineShader.SetMat4("VP", camera.viewProjection);
-			lineShader.SetFloat("width", lineWidth);
-			lineShader.SetVec4("colorDefault", lineColor);
-			lineShader.SetVec4("colorSelected", glm::vec4(selectedColor, lineAlpha));
+		pointShader.Use();
+		pointShader.SetMat4("VP", camera.viewProjection);
+		pointShader.SetFloat("aa", pointAA);
+		pointShader.SetFloat("size", pointInternalSize);
+		pointShader.SetVec4("colorDefault", pointColor);
+		pointShader.SetVec4("colorSelected", glm::vec4(selectedColor, pointAlpha));
 
-			//lightMan.dShadowMapShader->SetMat4("VP", vp);
-			pipeline.data.shaders.gPass.Use();
-			pipeline.data.shaders.gPass.SetMat4("VP", camera.viewProjection);
+		lineShader.Use();
+		lineShader.SetMat4("VP", camera.viewProjection);
+		lineShader.SetFloat("width", lineWidth);
+		lineShader.SetVec4("colorDefault", lineColor);
+		lineShader.SetVec4("colorSelected", glm::vec4(selectedColor, lineAlpha));
 
-			pipeline.data.shaders.lPass.Use();
-			pipeline.data.shaders.lPass.SetVec3("viewPos", camera.position);
+		//lightMan.dShadowMapShader->SetMat4("VP", vp);
+		pipeline.data.shaders.gPass.Use();
+		pipeline.data.shaders.gPass.SetMat4("VP", camera.viewProjection);
 
-			pipeline.data.shaders.skybox.Use();
-			auto vp = camera.projection * glm::mat4(glm::mat3(camera.view));
-			pipeline.data.shaders.skybox.SetMat4("VP", vp);
-		}
-		
+		pipeline.data.shaders.lPass.Use();
+		pipeline.data.shaders.lPass.SetVec3("viewPos", camera.position);
+
+		pipeline.data.shaders.skybox.Use();
+		auto vp = camera.projection * glm::mat4(glm::mat3(camera.view));
+		pipeline.data.shaders.skybox.SetMat4("VP", vp);
 	}
 
 	static Renderer::Data::Shader setupShaderRes, aabbShaderRes, satShaderRes;

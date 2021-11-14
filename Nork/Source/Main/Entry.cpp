@@ -32,6 +32,8 @@ int main()
 
 	auto conf = EngineConfig().SetResolution(1280, 720);
 	Engine engine(conf);
+	auto cameraNode = engine.scene.CreateNode();
+	auto& cam = engine.scene.AddComponent<Components::Camera>(cameraNode);
 	enginePtr = &engine;
 	Editor::Editor editor(engine);
 
