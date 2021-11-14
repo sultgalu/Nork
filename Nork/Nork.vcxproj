@@ -176,7 +176,8 @@
     <ClInclude Include="Source\Modules\Physics\Utils\GJK.h" />
     <ClInclude Include="Source\Modules\Physics\Utils\SAP.h" />
     <ClInclude Include="Source\Modules\Physics\Utils\SAT.h" />
-    <ClInclude Include="Source\Core\MeshWorld.h" />
+    <ClInclude Include="Source\Core\PolygonMesh.h" />
+    <ClCompile Include="Source\Core\PolygonMesh.cpp" />
     <ClCompile Include="Source\Modules\Physics\Pipeline\CollisionDetectionCPU.cpp" />
     <ClCompile Include="Source\Modules\Physics\Pipeline\CollisionDetectionGPU.cpp" />
     <ClCompile Include="Source\Modules\Physics\Utils\MD.cpp" />

@@ -61,7 +61,7 @@ int main()
 				engine.scene.AddModel(node);
 				engine.scene.AddComponent<Components::Transform>(node).position = glm::vec3(i * sep, j * sep, k * sep);
 				engine.scene.AddComponent<Components::Kinematic>(node).mass = 0.1f;
-				engine.scene.AddComponent<Poly>(node);
+				engine.scene.AddComponent<Polygon>(node);
 				engine.scene.AddComponent<Components::Tag>(node).tag = std::to_string(i).append("-").append(std::to_string(j)).append("-").append(std::to_string(k));
 			}
 		}
@@ -78,7 +78,7 @@ int main()
 	auto& tr = engine.scene.AddComponent<Components::Transform>(ground);
 	tr.position = glm::vec3(0, -10, 0);
 	tr.scale = scale;
-	engine.scene.AddComponent<Poly>(ground).Scale(scale);
+	engine.scene.AddComponent<Polygon>(ground).Scale(scale);
 	engine.scene.AddComponent<Components::Tag>(ground).tag = "GROUND";
 
 	/*auto node1 = engine.scene.CreateNode();

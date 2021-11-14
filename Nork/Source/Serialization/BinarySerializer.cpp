@@ -67,7 +67,7 @@ namespace Nork::Serialization
 	}
 
 	template<>
-	void CustomSerializer<Poly>::Serialize(std::vector<char>& buf, Poly& poly, Scene::Scene& scene, ECS::Id id)
+	void CustomSerializer<Polygon>::Serialize(std::vector<char>& buf, Polygon& poly, Scene::Scene& scene, ECS::Id id)
 	{
 		auto startBufSize = buf.size();
 		std::vector<uint32_t> neighsData; // size:data,data,data,size:data...
@@ -83,8 +83,8 @@ namespace Nork::Serialization
 		size_t sizes[4] = {
 			poly.vertices.size() * sizeof(poly.vertices[0]),
 			neighsData.size() * sizeof(neighsData[0]),
-			poly.triangleIndices.size() * sizeof(poly.triangleIndices[0]),
-			poly.edgeIndices.size() * sizeof(poly.edgeIndices[0])
+			poly.tris.size() * sizeof(poly.tris[0]),
+			poly.edges.size() * sizeof(poly.edges[0])
 		}; 
 		buf.resize(startBufSize + sizeof(sizes) + sizes[0] + sizes[1] + sizes[2] + sizes[3]);
 
@@ -93,12 +93,12 @@ namespace Nork::Serialization
 		std::memcpy(buf.data() + startBufSize + sizeof(sizes) 
 			+ sizes[0], neighsData.data(), sizes[1]);
 		std::memcpy(buf.data() + startBufSize + sizeof(sizes)
-			+ sizes[0] + sizes[1], poly.triangleIndices.data(), sizes[2]);
+			+ sizes[0] + sizes[1], poly.tris.data(), sizes[2]);
 		std::memcpy(buf.data() + startBufSize + sizeof(sizes)
-			+ sizes[0] + sizes[1] + sizes[2], poly.edgeIndices.data(), sizes[3]);
+			+ sizes[0] + sizes[1] + sizes[2], poly.edges.data(), sizes[3]);
 	}
 	template<>
-	size_t CustomSerializer<Poly>::Deserialize(const char* data, Scene::Scene& scene, ECS::Id id)
+	size_t CustomSerializer<Polygon>::Deserialize(const char* data, Scene::Scene& scene, ECS::Id id)
 	{
 		size_t* sizes = ((size_t*)data);
 		const char* verts = data + sizeof(size_t) * 4;
@@ -107,17 +107,17 @@ namespace Nork::Serialization
 		const char* tris = neighs + sizes[1];
 		const char* edges = tris + sizes[2];
 
-		Poly& poly = scene.AddComponent<Poly>(id);
+		Polygon& poly = scene.AddComponent<Polygon>(id);
 
 		poly.vertices.resize(sizes[0] / sizeof(poly.vertices[0]));
 		poly.neighbours.resize(sizes[0] / sizeof(poly.vertices[0]));
-		poly.triangleIndices.resize(sizes[2] / sizeof(poly.triangleIndices[0]));
-		poly.edgeIndices.resize(sizes[3] / sizeof(poly.edgeIndices[0]));
+		poly.tris.resize(sizes[2] / sizeof(poly.tris[0]));
+		poly.edges.resize(sizes[3] / sizeof(poly.edges[0]));
 
 		std::memcpy(poly.vertices.data(), verts, sizes[0]);
 		//std::memcpy(poly.neighbours.data(), neighs, sizes[1]);
-		std::memcpy(poly.triangleIndices.data(), tris, sizes[2]);
-		std::memcpy(poly.edgeIndices.data(), edges, sizes[3]);
+		std::memcpy(poly.tris.data(), tris, sizes[2]);
+		std::memcpy(poly.edges.data(), edges, sizes[3]);
 
 		for (size_t i = 0; i < neighsData.size(); i++)
 		{

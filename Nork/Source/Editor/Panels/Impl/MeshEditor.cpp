@@ -18,11 +18,11 @@ namespace Nork::Editor
 					auto& verts = data.selectedPoly->vertices;
 					for (size_t i = 0; i < verts.size(); i++)
 					{
-						if (verts[i].id == e.id)
+						/*if (verts[i].id == e.id)
 						{
 							SelectVertex(i);
 							return;
-						}
+						}*/
 					}
 				}
 			});
@@ -31,7 +31,7 @@ namespace Nork::Editor
 	{
 		using namespace Input;
 		auto& input = data.engine.window.GetInputState();
-		if (input.Is(KeyType::Shift, KeyState::Down))
+		/*if (input.Is(KeyType::Shift, KeyState::Down))
 		{
 			auto start = current > i ? i : current;
 			auto end = current > i ? current : i;
@@ -63,7 +63,7 @@ namespace Nork::Editor
 			selected.clear();
 			data.selectedPoly->vertices[i].selected = 1;
 			selected.insert(i);
-		}
+		}*/
 		current = i;
 	}
 	void MeshEditorPanel::DrawContent()
@@ -74,7 +74,7 @@ namespace Nork::Editor
 		}
 		else
 		{
-			glm::vec3 old = data.selectedPoly->vertices[current].pos;
+			glm::vec3 old = data.selectedPoly->vertices[current];
 			glm::vec3 _new = old;
 			
 			data.idQueryMode.set(IdQueryMode::Click);
@@ -88,7 +88,7 @@ namespace Nork::Editor
 			{
 				for (size_t i = 0; i < data.selectedPoly->vertices.size(); i++)
 				{
-					data.selectedPoly->vertices[i].pos *= scale;
+					data.selectedPoly->vertices[i] *= scale;
 				}
 			}
 
@@ -96,7 +96,7 @@ namespace Nork::Editor
 			{
 				for (uint32_t i : selected)
 				{
-					data.selectedPoly->vertices[i].pos += _new - old;
+					data.selectedPoly->vertices[i] += _new - old;
 				}
 			}
 
@@ -117,15 +117,15 @@ namespace Nork::Editor
 					data.selectedPoly->Remove(i);
 				}
 
-				data.selectedPoly->vertices[0].pos += glm::vec3(1, 1, 1);
-				data.selectedPoly->vertices[0].pos += glm::vec3(1, 1, 1);
+				data.selectedPoly->vertices[0] += glm::vec3(1, 1, 1);
+				data.selectedPoly->vertices[0] += glm::vec3(1, 1, 1);
 
 				selected.clear();
 			}
 
 			if (ImGui::Button("Add##Vertex"))
 			{
-				uint32_t idx = data.selectedPoly->Add(Components::Vertex({ 0, 0, 0 }, true));
+				uint32_t idx = data.selectedPoly->Add({ 0, 0, 0 });
 				selected.insert(idx);
 			}
 			if (ImGui::Button("Remove##Vertex"))

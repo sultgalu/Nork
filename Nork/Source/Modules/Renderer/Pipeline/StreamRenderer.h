@@ -27,19 +27,19 @@ namespace Nork::Renderer::Pipeline
 		{
 			vao.SetVBData(vertices.size() * vao.VertexSize(), vertices.data(), GL_DYNAMIC_DRAW);
 		}
-		template<class S>
-		requires requires(S s)
-		{
-			sizeof(S) == SizeOf<T...>(); 
-		}
-		void UploadVertices(std::vector<S> vertices, glm::mat4 model) // vertices is a copy
-		{
-			for (size_t i = 0; i < vertices.size(); i++)
-			{
-				vertices[i].pos = model * glm::vec4(vertices[i].pos, 1);
-			}
-			vao.SetVBData(vertices.size() * vao.VertexSize(), vertices.data(), GL_DYNAMIC_DRAW);
-		}
+		//template<class S>
+		//requires requires(S s)
+		//{
+		//	sizeof(S) == SizeOf<T...>(); 
+		//}
+		//void UploadVertices(std::vector<S> vertices, glm::mat4 model) // vertices is a copy
+		//{
+		//	for (size_t i = 0; i < vertices.size(); i++)
+		//	{
+		//		vertices[i] = model * glm::vec4	(vertices[i], 1);
+		//	}
+		//	vao.SetVBData(vertices.size() * vao.VertexSize(), vertices.data(), GL_DYNAMIC_DRAW);
+		//}
 		void DrawAsTriangle(std::span<uint32_t> indices)
 		{
 			vao.DrawElements(indices);

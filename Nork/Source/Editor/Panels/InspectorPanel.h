@@ -26,7 +26,7 @@ namespace Nork::Editor
 		void DirLightComp(DirLight*, DirShadow*);
 		void DirShadowComp(DirShadow*, DirLight*);
 		void KinematicComp(Kinematic*);
-		void PolyComp(Poly*);
+		void PolyComp(Polygon*);
 		//void asd(Polygon*);
 		void NameComp(Tag*);
 	private:
