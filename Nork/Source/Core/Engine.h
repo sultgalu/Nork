@@ -32,7 +32,7 @@ namespace Nork
 		DeferredData CreatePipelineResources();
 		void SyncComponents();
 		void UpdateLights();
-		void PhysicsUpdate2();
+		void PhysicsUpdate();
 		void DrawHitboxes();
 		void ViewProjectionUpdate();
 		void OnDShadowAdded(entt::registry& reg, entt::entity ent);
@@ -64,9 +64,10 @@ namespace Nork
 		bool drawPolies = true, drawLines = true, drawPoints = true, drawTriangles = true, drawSky = false;
 		bool satRes = false, gjkRes = false, clipRes = false, aabbRes = false;
 		bool sat = false, gjk = false, clip = true, aabb = true;
-		bool physicsUpdate = true;
+		bool physicsUpdate = false;
 		bool updatePoliesForPhysics = true;
 		std::optional<std::pair<glm::vec3, std::pair<uint8_t, glm::vec3>>> collisionRes;
+		float physicsSpeed = 1.0f;
 
 		Physics::System pSystem;
 		Physics::World& pWorld = pSystem.world;

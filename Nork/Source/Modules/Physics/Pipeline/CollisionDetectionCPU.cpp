@@ -5,6 +5,10 @@
 
 namespace Nork::Physics
 {
+	void CollisionDetectionCPU::UpdateTransforms(std::span<glm::vec3> translate, std::span<glm::quat> quaternions)
+	{
+		world.UpdateTransforms(translate, quaternions);
+	}
 	void CollisionDetectionCPU::BroadPhase()
 	{
 		broadResults = SAP(world).Get();

@@ -312,8 +312,15 @@ namespace Nork::Editor
 			ImGui::DragFloat3("Velocity", &comp->velocity.x, 0.001f);
 			auto axis = glm::normalize(comp->w);
 			auto angle = glm::length(comp->w);
-			ImGui::DragFloat3("Angular Velocity Axis", &axis.x);
-			ImGui::DragFloat("Angular Velocity Speed", &angle, 0.001f);
+			if(ImGui::DragFloat3("Angular Velocity Axis", &axis.x))
+			{
+				comp->w = axis * angle;
+			}
+			
+			if (ImGui::DragFloat("Angular Velocity Speed", &angle, 0.001f))
+			{
+				comp->w = axis * angle;
+			}
 
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 			if (ImGui::Button("Delete"))

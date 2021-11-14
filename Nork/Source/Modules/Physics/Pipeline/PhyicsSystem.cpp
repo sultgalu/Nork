@@ -228,9 +228,6 @@ namespace Nork::Physics
 
 			if (res.type == CollisionType::FaceVert)
 			{
-				//auto& face1 = shape1.faces[res.featureIdx1];
-				//auto& vert2 = shape2.verts[res.featureIdx2];
-				//glm::vec3 contactPoint = vert2 + -res.dir * res.depth; // *0.5f;
 				auto cps = FaceContactPoints(shape1, shape2, res.featureIdx1, res.featureIdx2);
 				glm::vec3 contactPoint = Center(cps);
 				contactPoints.push_back(contactPoint);
@@ -239,7 +236,6 @@ namespace Nork::Physics
 			{
 				auto& vert1 = shape1.verts[res.featureIdx2];
 				auto& face2 = shape2.faces[res.featureIdx1];
-				//glm::vec3 contactPoint = vert1 + res.dir * res.depth; //* 0.5f;
 
 				glm::vec3 contactPoint = Center(FaceContactPoints(shape2, shape1, res.featureIdx1, res.featureIdx2));
 				contactPoints.push_back(contactPoint);
@@ -265,104 +261,6 @@ namespace Nork::Physics
 			}
 		}
 	}
-	void System::ResolveCollisions2(float delta)
-	{
-		auto& colls = collisionDetector->GetResults();
-		for (size_t i = 0; i < colls.size(); i++)
-		{
-			auto& coll = colls[i];
-			if (coll.depth < -0.0001f)
-				continue;
-			auto& objs = colls[i].pair;
-			auto& kinem1 = world.kinems[objs.x];
-			auto& kinem2 = world.kinems[objs.y];
-
-			if (coll.depth > 0)
-			{
-				if (glm::dot(coll.dir, kinem1.velocity - kinem2.velocity) > 0)
-				{
-					// they are already moving away from eachother. Was handled some frame earlier
-				}
-				else
-				{
-					glm::vec3 acceleration = kinem1.forces / kinem1.mass;
-					auto ds1 = glm::dot(kinem1.velocity * delta + acceleration * delta * (delta / 2), coll.dir); // delta s
-					auto errPct = ds1 == 0 ? 0 : coll.depth / ds1;
-					auto dv1 = (kinem1.forces / kinem1.mass) * delta;
- 					kinem1.velocity -= dv1 * glm::abs(errPct) + dv1;
-
-					if (kinem1.isStatic)
-					{
-						glm::vec3 changeInVel = -(1 + coefficient) * glm::dot(kinem2.velocity, coll.dir) * -coll.dir;
-						kinem2.velocity = kinem2.velocity + changeInVel;
-
-						float vNextFrame = glm::dot(kinem2.forces * (delta * 1) / kinem2.mass, coll.dir);
-						float vNow = glm::dot(changeInVel, coll.dir);
-						if (glm::dot(vNextFrame, vNow) < 0 && glm::abs(vNextFrame) > glm::abs(vNow))
-							kinem2.velocity -= glm::dot(kinem2.velocity, coll.dir) * coll.dir;
-					}
-					if (kinem2.isStatic)
-					{
-						glm::vec3 changeInVel = -(1 + coefficient) * glm::dot(kinem1.velocity, coll.dir) * coll.dir;
-						kinem1.velocity = kinem1.velocity + changeInVel;
-
-						float vNextFrame = glm::dot(kinem1.forces * (delta * 1) / kinem1.mass, coll.dir);
-						float vNow = glm::dot(changeInVel, coll.dir);
-						if (glm::dot(vNextFrame, vNow) < 0 && glm::abs(vNextFrame) > glm::abs(vNow))
-							kinem1.velocity -= glm::dot(kinem1.velocity, coll.dir) * coll.dir;
-					}
-					else
-					{
-						float resulting = (1 + coefficient) * glm::dot(kinem1.velocity - kinem2.velocity, coll.dir) / (1 / kinem1.mass + 1 / kinem2.mass);
-						float deltaV1 = -(resulting / kinem1.mass);
-						float deltaV2 = (resulting / kinem2.mass);
-
-						// this would be heplful for islands
-						/*float deltaVDiff = deltaV2 - deltaV1;
-						float deltaV1Next = glm::dot(kinem1.forces * (delta * 1) / kinem1.mass, coll.dir);
-						float deltaV2Next = glm::dot(kinem2.forces * (delta * 1) / kinem2.mass, coll.dir);
-						float deltaVDiffNext = deltaV2Next - deltaV1Next;
-
-						if (deltaVDiff * deltaVDiffNext < 0 && glm::abs(deltaVDiff) < glm::abs(deltaVDiffNext))
-						{
-							float resulting = glm::dot(kinem1.velocity - kinem2.velocity, coll.dir) / (1 / kinem1.mass + 1 / kinem2.mass);
-							deltaV1 = -(resulting / kinem1.mass);
-							deltaV2 = (resulting / kinem2.mass);
-						}*/
-
-						kinem1.velocity = kinem1.velocity + deltaV1 * coll.dir;
-						kinem2.velocity = kinem2.velocity + deltaV2 * coll.dir;
-					}
-				}
-			}
-			if (coll.depth > 0)
-			{
-				if (!kinem1.isStatic && kinem2.isStatic)
-				{
-					glm::vec3 translate = coll.dir * coll.depth;
-					kinem1.position += translate;
-				}
-				else if (kinem1.isStatic && !kinem2.isStatic)
-				{
-					glm::vec3 translate = -coll.dir * coll.depth;
-					kinem2.position += translate;
-				}
-				else if (!kinem1.isStatic && !kinem2.isStatic)
-				{
-					glm::vec3 translate = coll.dir * (coll.depth / 2);
-					kinem1.position += translate;
-					kinem2.position -= translate;
-				}
-			}
-			if (coll.depth >= 0)
-			{
-				glm::vec3 cf1 = coll.dir * kinem1.forces;
-				glm::vec3 cf2 = -coll.dir * kinem2.forces;
-				kinem1.forces -= cf1;
-				kinem2.forces -= cf2;
-			}
-		}
-	}
 	void System::ResolveCollisions(float delta)
 	{
 		auto& colls = collisionDetector->GetResults();
@@ -375,25 +273,43 @@ namespace Nork::Physics
 			auto& kinem1 = world.kinems[objs.x];
 			auto& kinem2 = world.kinems[objs.y];
 
-			if (coll.depth >= 0)
+			auto wDiff = glm::abs(glm::dot(kinem1.w - kinem2.w, kinem1.w - kinem2.w));
+			auto vDiff = glm::abs(glm::dot(kinem1.velocity - kinem2.velocity, kinem1.velocity - kinem2.velocity));
+
+			if (coll.depth > 0)
 			{
-				glm::vec3 acceleration = kinem1.forces / kinem1.mass;
-				auto ds1 = glm::dot(kinem1.velocity * delta + acceleration * delta * (delta / 2), coll.dir); // delta s
-				auto errPct = ds1 == 0 ? 0 : coll.depth / ds1;
-				auto dv1 = (kinem1.forces / kinem1.mass) * delta;
-				kinem1.velocity -= dv1 * glm::abs(errPct) + dv1;
-
-				const glm::vec3& contactPoint = contactPoints[i];
-				glm::vec3 r1 = contactPoint - world.shapes[objs.x].center;
-				glm::vec3 r2 = contactPoint - world.shapes[objs.y].center;
-				float momentOfInertia1 = kinem1.mass * glm::pow(2, 2); // first 2 -> radius
-				float momentOfInertia2 = kinem2.mass * glm::pow(2, 2);
-				auto angularPart1 = glm::cross((1 / momentOfInertia1) * (glm::cross(r1, coll.dir)), r1);
-				auto angularPart2 = glm::cross((1 / momentOfInertia2) * (glm::cross(r2, coll.dir)), r2);
-				float angularPart = glm::dot(angularPart1 + angularPart2, coll.dir);
-
 				float resulting = (1 + coefficient) * glm::dot(kinem1.velocity - kinem2.velocity, coll.dir) / (1 / kinem1.mass + 1 / kinem2.mass /* + angularPart*/);
-				float resultingA = (1 + coefficient) * glm::dot(kinem1.velocity - kinem2.velocity, coll.dir) / (1 / kinem1.mass + 1 / kinem2.mass + angularPart);
+
+				if (genContactPoints /*&& vDiff > 3.0f*//* && (wDiff > 10.0f || vDiff > 1.0f)*/)
+				{
+					const glm::vec3& contactPoint = contactPoints[i];
+					glm::vec3 r1 = contactPoint - world.shapes[objs.x].center;
+					glm::vec3 r2 = contactPoint - world.shapes[objs.y].center;
+					float momentOfInertia1 = kinem1.mass * glm::pow(2, 2); // first 2 -> radius
+					float momentOfInertia2 = kinem2.mass * glm::pow(2, 2);
+					auto angularPart1 = glm::cross((1 / momentOfInertia1) * (glm::cross(r1, coll.dir)), r1);
+					auto angularPart2 = glm::cross((1 / momentOfInertia2) * (glm::cross(r2, coll.dir)), r2);
+					float angularPart = glm::dot(angularPart1 + angularPart2, coll.dir);
+
+					auto wp1 = glm::dot(kinem1.w, r1);
+					auto wp2 = glm::dot(kinem2.w, r2);
+					float resultingA = (1 + coefficient) * glm::dot(kinem1.velocity - kinem2.velocity + wp1 - wp2, coll.dir) / (1 / kinem1.mass + 1 / kinem2.mass + angularPart);
+					resulting = resultingA;
+					glm::vec3 deltaW1 = -(1 / momentOfInertia1) * glm::cross(r1, resultingA * coll.dir);
+					glm::vec3 deltaW2 = (1 / momentOfInertia2) * glm::cross(r2, resultingA * coll.dir);
+					if (kinem1.isStatic)
+					{
+						deltaW2 -= deltaW1;
+						deltaW1 = glm::vec3(0);
+					}
+					if (kinem2.isStatic)
+					{
+						deltaW1 -= deltaW2;
+						deltaW2 = glm::vec3(0);
+					}
+					kinem1.w += deltaW1;
+					kinem2.w += deltaW2;
+				}
 
 				float deltaV1 = -(resulting / kinem1.mass);
 				float deltaV2 = (resulting / kinem2.mass);
@@ -407,11 +323,6 @@ namespace Nork::Physics
 					deltaV1 -= deltaV2;
 					deltaV2 = 0;
 				}
-
-				glm::vec3 deltaW1 = -(1 / momentOfInertia1) * glm::cross(r1, resultingA * coll.dir);
-				glm::vec3 deltaW2 = (1 / momentOfInertia2) * glm::cross(r2, resultingA * coll.dir);
-				kinem1.w += deltaW1;
-				kinem2.w += deltaW2;
 				if (coll.depth > 0 && glm::dot(coll.dir, kinem1.velocity - kinem2.velocity) <= 0)
 				{
 					kinem1.velocity = kinem1.velocity + deltaV1 * coll.dir;
@@ -516,15 +427,7 @@ namespace Nork::Physics
 
 	void System::SetModels(std::span<glm::vec3> translate, std::span<glm::quat> quaternions)
 	{
-		if constexpr (Config::CollisionDetectionGPU)
-		{
-			MetaLogger().Warning("Not implemented");
-			//((CollisionDetectionGPU*)collisionDetector)->SetupPhase(models);
-		}
-		else
-		{
-			world.UpdateTransforms(translate, quaternions);
-		}
+		collisionDetector->UpdateTransforms(translate, quaternions);
 	}
 
 	void System::VelocityUpdate(float delta)

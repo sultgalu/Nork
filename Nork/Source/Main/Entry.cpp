@@ -46,7 +46,7 @@ int main()
 		using enum Input::KeyType;
 	}
 
-	int dim = 1;
+	int dim = 10;
 	int sep = 3;
 	int start = -dim / 2;
 	int end = dim / 2 + dim % 2;

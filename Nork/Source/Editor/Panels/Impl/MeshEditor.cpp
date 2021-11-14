@@ -277,6 +277,7 @@ namespace Nork::Editor
 			ImGui::Text(pair.first.append(": ").append(std::to_string(pair.second)).c_str());
 		}
 
+		ImGui::DragFloat("Physics speed", &data.engine.physicsSpeed, 0.001f, 0, 10, "%.3f", ImGuiSliderFlags_Logarithmic);
 		ImGui::Checkbox("Update polies", &data.engine.updatePoliesForPhysics);
 		ImGui::Checkbox("Gen Contact Points", &data.engine.pSystem.genContactPoints);
 		ImGui::Checkbox("Update Velocities", &data.engine.pSystem.updateVelocities);

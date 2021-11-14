@@ -6,7 +6,9 @@ namespace Nork::Physics
 	{
 		verts.clear();
 		colliderVerts.clear();
+		colliderFaces.clear();
 		faces.clear();
+		faceVerts.clear();
 		edges.clear();
 		shapes.clear();
 	}

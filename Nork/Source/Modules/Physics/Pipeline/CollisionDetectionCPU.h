@@ -8,6 +8,7 @@ namespace Nork::Physics
 	{
 	public:
 		CollisionDetectionCPU(World& world) : world(world) {}
+		void UpdateTransforms(std::span<glm::vec3> translate, std::span<glm::quat> quaternions) override;
 		void BroadPhase() override;
 		void NarrowPhase() override;
 	public:

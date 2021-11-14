@@ -12,6 +12,7 @@ namespace Nork::Physics
 		CollisionDetectionGPU();
 
 		void SetColliders(std::span<Collider> colliders);
+		void UpdateTransforms(std::span<glm::vec3> translate, std::span<glm::quat> quaternions) override;
 		void SetupPhase(std::span<glm::mat4> models);
 		void BroadPhase() override;
 		void NarrowPhase() override;
@@ -45,6 +46,8 @@ namespace Nork::Physics
 
 		GLuint setupShader, aabbShader, satShader;
 		uint32_t shapeCount;
+
+		std::vector<glm::mat4> modelCache;
 	};
 
 }

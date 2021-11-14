@@ -20,9 +20,9 @@ namespace Nork::Physics
 
 		bool updateVelocities = true, updateRotation = true;
 		bool detectCollisions = true, handleCollisions = true;
-		bool genContactPoints = true;
+		bool genContactPoints = false;
 
-		float g = 0;
+		float g = 10;
 		float coefficient = 1.0f;
 
 		std::vector<std::pair<std::string, float>> deltas;
@@ -31,7 +31,6 @@ namespace Nork::Physics
 		void Update(float delta);
 
 		void GenContactPoints();
-		void ResolveCollisions2(float delta);
 		void ResolveCollisions(float delta);
 		void VelocityUpdate(float delta);
 		void RotationUpdate(float delta);

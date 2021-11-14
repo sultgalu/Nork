@@ -96,6 +96,15 @@ namespace Nork::Physics
 
         shapeCount = colliders.size();
     }
+    void CollisionDetectionGPU::UpdateTransforms(std::span<glm::vec3> translate, std::span<glm::quat> quaternions)
+    {
+        modelCache.resize(translate.size());
+        for (size_t i = 0; i < modelCache.size(); i++)
+        {
+            modelCache[i] = glm::translate(glm::identity<glm::mat4>(), translate[i]) * glm::mat4_cast(quaternions[i]);
+        }
+        SetupPhase(modelCache);
+    }
     void CollisionDetectionGPU::SetupPhase(std::span<glm::mat4> models)
     {
         this->models.Data(models);

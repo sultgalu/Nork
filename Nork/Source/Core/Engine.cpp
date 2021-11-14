@@ -125,7 +125,7 @@ namespace Nork
 			sender.Send(Event::Types::OnUpdate());
 			sender.Send(Event::Types::OnRenderUpdate());
 			
-			PhysicsUpdate2(); // NEW
+			PhysicsUpdate(); // NEW
 			auto models = GetModels(this->scene.registry);
 			SyncComponents();
 			ViewProjectionUpdate();
@@ -231,7 +231,7 @@ namespace Nork
 	{
 		return deltas;
 	}
-	void Engine::PhysicsUpdate2()
+	void Engine::PhysicsUpdate()
 	{
 		static Timer deltaTimer(-20);
 		float delta = deltaTimer.ElapsedSeconds();
@@ -243,6 +243,8 @@ namespace Nork
 		using namespace Components;
 
 		if (!physicsUpdate) return;
+		//delta = 0.001f;
+		delta *= physicsSpeed;
 		deltas.clear();
 		Timer t;
 

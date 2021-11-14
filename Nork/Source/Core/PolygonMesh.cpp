@@ -297,6 +297,7 @@ namespace Nork
 
 		auto center = glm::vec3(Physics::Center(res.verts));
 		auto faces = GetFaces();
+		res.faceVerts = faces;
 		res.faces.reserve(faces.size());
 		for (size_t i = 0; i < faces.size(); i++)
 		{
