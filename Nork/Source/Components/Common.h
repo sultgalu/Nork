@@ -9,6 +9,11 @@ namespace Nork::Components
 		glm::quat quaternion = glm::identity<glm::quat>();
 		mutable glm::mat4 modelMatrix = GetModelMatrix();
 		bool changed = true;
+		void Translate(glm::vec3 translation)
+		{
+			position += translation;
+			changed = true;
+		}
 		glm::mat4 GetModelMatrix() const
 		{
 			if (changed)

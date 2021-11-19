@@ -3,8 +3,31 @@
 
 namespace Nork::Editor
 {
+	void DrawProfileNode(Profiler::Node& node)
+	{
+		if (ImGui::TreeNodeEx(node.scope.data(), ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			if (node.entry != nullptr)
+			{
+				ImGui::Text(std::to_string(node.entry->actual).append("ms").c_str());
+			}
+			if (node.childs.size() > 0)
+			{
+				for (size_t i = 0; i < node.childs.size(); i++)
+				{
+					DrawProfileNode(*node.childs[i]);
+				}
+			}
+			ImGui::TreePop();
+		}
+	}
+
 	void AssetsPanel::DrawContent()
 	{
+		Profiler::GenerateTree();
+		auto& root = Profiler::GetTree();
+		DrawProfileNode(root);
+
 		static char name[100];
 		if (ImGui::InputTextWithHint("file", "<filename>", name, 100, ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_EnterReturnsTrue))
 		{

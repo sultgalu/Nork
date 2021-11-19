@@ -125,6 +125,7 @@ namespace Nork::Renderer::Utils::Shader
 			int size = 0; // for arrays (that are not of structures)
 			GLenum type;
 			glGetActiveUniform(program, i, sizeof(buf), &nameLen, &size, &type, buf);
+			if (std::string(buf).contains("[")) continue;
 			int loc = glGetUniformLocation(program, buf);
 
 			if (loc == -1)

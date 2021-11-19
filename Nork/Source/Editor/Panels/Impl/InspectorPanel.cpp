@@ -75,7 +75,7 @@ namespace Nork::Editor
 			if (ImGui::DragFloat3("Position", &(tr->position.x), 0.1f))
 			{
 			}
-			if (ImGui::DragFloat3("Scale", &(tr->scale.x), 0.1f))
+			if (ImGui::DragFloat3("Scale", &(tr->scale.x), 0.001f, 0.001f, 1000.0f, "%.3f", ImGuiSliderFlags_Logarithmic))
 			{
 			}
 			glm::vec3 rotationAxis = glm::axis(tr->quaternion);
@@ -180,8 +180,8 @@ namespace Nork::Editor
 		{
 			if (ImGui::ColorEdit4("Color##PlIght", (float*)&(pL->GetMutableData().color.r))) {}
 			int pow = pL->GetPower();
-			if (ImGui::SliderInt("Distance", &(pow), 0, PointLight::maxPower))
-				pL->SetPower(pow);
+			if (ImGui::DragInt("Intensity", &(pow), 1, 0, PointLight::maxPower))
+				pL->SetIntensity(pow);
 
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 			if (ImGui::Button("Delete"))

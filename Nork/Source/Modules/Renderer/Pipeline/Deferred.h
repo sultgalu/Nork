@@ -76,6 +76,7 @@ namespace Nork::Renderer::Pipeline
 			Shader gPass;
 			Shader lPass;
 			Shader skybox;
+			Shader extra; // for debug and stuff
 		};
 
 		DeferredData(Shaders shaders, GLuint skyboxTex)
@@ -84,9 +85,8 @@ namespace Nork::Renderer::Pipeline
 			SetLPassShader(shaders.lPass);
 			this->shaders.skybox = shaders.skybox;
 			this->skyboxTex = skyboxTex;
+			this->shaders.extra = shaders.extra;
 		}
-
-		int mainResX, mainResY;
 
 		void SetGPassShader(Shader shader);
 		void SetLPassShader(Shader shader);

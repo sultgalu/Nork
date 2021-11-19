@@ -57,15 +57,21 @@
 
 #include <filesystem>
 
+////-----------------OPENGL-----------------------
+
 #include <glad/glad.h>
 #include <glm/glm/gtc/matrix_transform.hpp>
 #include <glm/glm/gtc/quaternion.hpp>
 
 #include <glfw/glfw3.h>
 
+////-----------------EDITOR-----------------------
+
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include <imgui/backends/imgui_impl_glfw.h>
+
+////-----------------OTHERS-----------------------
 
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -78,13 +84,4 @@
 #include "Utils/Logger.h"
 #include "Utils/Timer.h"
 #include "Utils/Template.h"
-//
-////-----------------EDITOR-----------------------
-//
-//#include "../../GameEngineEditor/vendor/imgui/include/imgui/imgui.h"
-//#include "../../GameEngineEditor/vendor/imgui/include/imgui/imgui_impl_glfw.h"
-//#include "../../GameEngineEditor/vendor/imgui/include/imgui/imgui_impl_opengl3.h"
-//
-////---------------ENGINE-----------------------
-//
-//#include "Core/Logger.h"
+#include "Utils/Profiler.h"

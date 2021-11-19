@@ -3,39 +3,10 @@
 #include "../Utils.h"
 #include "../Config.h"
 
+#include "../Resource/ResourceCreator.h"
+
 namespace Nork::Renderer::Pipeline
 {
-	/*void DeferredData::SetMainRes(int x, int y)
-	{
-		mainResX = x; mainResY = y;
-
-		unsigned int texs[]{ gBuffer.pos, gBuffer.diff, gBuffer.norm, gBuffer.depth, lightPass.tex };
-		unsigned int fbs[]{ gBuffer.fb, lightPass.fb };
-		glDeleteTextures(sizeof(texs) / sizeof(unsigned int), texs);
-		glDeleteFramebuffers(sizeof(fbs) / sizeof(unsigned int), fbs);
-
-		using enum Utils::Texture::Format;
-
-		gBuffer.fb = Utils::Framebuffer::Builder(x, y)
-			.AddTexture(&gBuffer.pos, RGBA16F, GL_COLOR_ATTACHMENT0)
-			.AddTexture(&gBuffer.diff, RGBA16F, GL_COLOR_ATTACHMENT1)
-			.AddTexture(&gBuffer.norm, RGBA16F, GL_COLOR_ATTACHMENT2)
-			.AddTexture(&gBuffer.depth, Depth16, GL_DEPTH_ATTACHMENT) // DEBUG
-			//.AddRenderbuffer(&gBuffer.depth, TextureFormat::Depth32, GL_DEPTH_ATTACHMENT)
-			.GetFramebuffer();
-
-		GLenum bufs[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
-		glDrawBuffers(sizeof(bufs) / sizeof(GLenum), bufs);
-
-		lightPass.fb = Utils::Framebuffer::Builder(x, y)
-			.AddTexture(&lightPass.tex, RGBA16F, GL_COLOR_ATTACHMENT0)
-			.AddTexture(gBuffer.depth, GL_DEPTH_ATTACHMENT)
-			.GetFramebuffer();
-
-		GLenum bufs2[] = { GL_COLOR_ATTACHMENT0 };
-		glDrawBuffers(sizeof(bufs2) / sizeof(GLenum), bufs2);
-	}*/
-
 	void DeferredData::SetLPassShader(Shader shader)
 	{
 		shaders.lPass = shader;
@@ -65,7 +36,6 @@ namespace Nork::Renderer::Pipeline
 	Deferred::Deferred(DeferredData data)
 		: data(data)
 	{
-		//this->data.SetMainRes(1080, 1920);
 		Logger::Info("Deferred pipeline initialized");
 	}
 	static std::chrono::high_resolution_clock clock;
@@ -138,4 +108,49 @@ namespace Nork::Renderer::Pipeline
 		Utils::Draw::Cubemap();
 		glDepthFunc(GL_LESS);
 	}
+
+	template<class T>
+	struct SSBO
+	{
+		SSBO(uint32_t idx, size_t size = 0, void* data = nullptr)
+		{
+			glGenBuffers(1, &id);
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, id);
+			glBufferData(GL_SHADER_STORAGE_BUFFER, size, data, GL_DYNAMIC_DRAW); //sizeof(data) only works for statically sized C/C++ arrays.
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, idx, id);
+		}
+		void Data(std::span<T> data)
+		{
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, id);
+			glBufferData(GL_SHADER_STORAGE_BUFFER, data.size_bytes(), data.data(), GL_DYNAMIC_DRAW);
+			this->size = data.size_bytes();
+		}
+
+		void Data(std::vector<T>& data)
+		{
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, id);
+			glBufferData(GL_SHADER_STORAGE_BUFFER, data.size() * sizeof(T), data.data(), GL_DYNAMIC_DRAW);
+			this->size = data.size() * sizeof(T);
+		}
+
+		void SetSize(size_t size)
+		{
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, id);
+			glBufferData(GL_SHADER_STORAGE_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
+			this->size = size;
+		}
+		void GetData(std::span<T> dest)
+		{
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, id);
+			glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, dest.size_bytes(), dest.data());
+		}
+		void GetData(void* dest, uint32_t size)
+		{
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, id);
+			glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, size, dest);
+		}
+
+		GLuint id;
+		size_t size;
+	};
 }

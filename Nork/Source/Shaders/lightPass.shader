@@ -49,22 +49,48 @@ struct PointShadow
 	int idx;
 };
 
-#define MAX_NUM_OF_DIR_LIGHTS 10
-#define MAX_NUM_OF_DIR_SHADOWS 5
-#define MAX_NUM_OF_P_LIGHTS 10
-#define MAX_NUM_OF_P_SHADOWS 5
-
-layout(std140) uniform dLightsUni
+struct CullConfig
 {
-	float dLightCount, dShadowCount;
-	float pLightCount, pShadowCount;
-	DirShadow dLSs[MAX_NUM_OF_DIR_SHADOWS];
-	PointShadow pLSs[MAX_NUM_OF_P_SHADOWS];
-
-	DirLight dLs[MAX_NUM_OF_DIR_LIGHTS];
-	PointLight pLs[MAX_NUM_OF_P_LIGHTS];
+	mat4 V;
+	mat4 iP;
+	uint lightCount;
+	uint atomicCounter;
+	uvec2 cullRes;
 };
 
+layout(std140, binding = 0) uniform asd0
+{
+	uint dLightCount, dShadowCount;
+	uint pLightCount, pShadowCount;
+};
+layout(std140, binding = 1) uniform asd1
+{
+	DirLight dLs[10];
+};
+layout(std140, binding = 2) uniform asd2
+{
+	DirShadow dLSs[10];
+};
+layout(std140, binding = 3) uniform asd3
+{
+	PointLight pLs[1024];
+};
+layout(std140, binding = 4) uniform asd4
+{
+	PointShadow pLSs[10];
+};
+layout(std430, binding = 20) buffer Buf0
+{
+	uint pLightIndicies[];
+};
+layout(std430, binding = 21) buffer Buf
+{
+	uvec2 ranges[];
+};
+layout(std430, binding = 22) buffer BUF3
+{
+	CullConfig cullConfig;
+};
 // --------- GLOBAL ----------
 
 struct Materials
@@ -83,8 +109,8 @@ uniform sampler2D gDiff;
 uniform sampler2D gNorm;
 uniform sampler2D gSpec;
 
-uniform sampler2D dirShadowMaps[5]; // doesn't work with anything other than 1 rn.
-uniform samplerCube pointShadowMaps[5/*MAX_NUM_OF_P_SHADOWS*/];
+uniform sampler2D dirShadowMaps[5];
+uniform samplerCube pointShadowMaps[5];
 
 vec3 dLight(DirLight light, Materials material, vec3 normal, vec3 viewDir);
 vec3 dLightShadow(DirLight light, Materials material, vec3 normal, vec3 viewDir, DirShadow shadow, vec3 worldPos);
@@ -94,6 +120,15 @@ vec3 pLightShadow(PointLight light, Materials material, vec3 normal, vec3 viewDi
 
 void main()
 {
+	float x = gl_FragCoord.x / 1920.0f;
+	float y = gl_FragCoord.y / 1080.0f;
+
+	int i = int(x * cullConfig.cullRes.x);
+	int j = int(y * cullConfig.cullRes.y);
+
+	uvec2 range = ranges[j * cullConfig.cullRes.x + i];
+	//if (range.y == 0) discard;
+	//----------------------------NEW-----------------------------
 	vec3 worldPos = texture(gPos, texCoord).rgb;
 	vec3 diff = texture(gDiff, texCoord).rgb;
 	vec3 normal = texture(gNorm, texCoord).rgb;
@@ -107,22 +142,34 @@ void main()
 	material.specular = material.diffuse * spec;
 	
 	vec3 result = vec3(0.0f);
-	for (int i = 0; i < int(dShadowCount); i++)
+	for (uint i = 0; i < dShadowCount; i++)
 	{
 		result += dLightShadow(dLs[i], material, normal, viewDir, dLSs[i], worldPos);
 	}
-	for (int i = int(dShadowCount); i < int(dLightCount); i++)
+	for (uint i = dShadowCount; i < dLightCount; i++)
 	{
 		result += dLight(dLs[i], material, normal, viewDir);
 	}
-	for (int i = 0; i < int(pShadowCount); i++)
+	for (uint i = range.x; i < range.x + range.y; i++)
+	{
+		uint idx = pLightIndicies[i];
+		if (idx < pShadowCount) // plight has shadow
+		{
+			result += pLightShadow(pLs[idx], material, normal, viewDir, pLSs[idx], worldPos);
+		}
+		else
+		{
+			result += pLight(pLs[idx], material, worldPos, normal, viewDir);
+		}
+	}
+	/*for (int i = 0; i < int(pShadowCount); i++)
 	{
 		result += pLightShadow(pLs[i], material, normal, viewDir, pLSs[i], worldPos);
 	}
 	for (int i = int(pShadowCount); i < int(pLightCount); i++)
 	{
 		result += pLight(pLs[i], material, worldPos, normal, viewDir);
-	}
+	}*/
 	fColor = vec4(result, 1.0f);
 	//fColor = vec4(texture(dirShadowMaps[0], texCoord).rgb, 1.0f);
 	//fColor = vec4(0);
@@ -181,6 +228,7 @@ float CalcLuminosity(vec3 fromPos, vec3 toPos, float linear, float quadratic)
 {
 	float distance = length(toPos - fromPos);
 	float attenuation = 1.0f / (1.0f + linear * distance + quadratic * distance * distance);
+	if (attenuation <= 0.001f) attenuation = 0.0f;
 	return attenuation;
 }
 

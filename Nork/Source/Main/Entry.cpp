@@ -48,12 +48,12 @@ int main()
 		using enum Input::KeyType;
 	}
 
-	int dim = 10;
+	int dim = 2;
 	int sep = 3;
 	int start = -dim / 2;
 	int end = dim / 2 + dim % 2;
 
-	for (int i = start; i < end; i++)
+	/*for (int i = start; i < end; i++)
 	{
 		for (int j = 0; j < dim; j++)
 		{
@@ -72,7 +72,7 @@ int main()
 	if (dim > 5)
 	{
 		engine.drawPolies = false;
-	}
+	}*/
 
 	glm::vec3 scale = glm::vec3(100, 1, 100);
 	auto ground = engine.scene.CreateNode();
@@ -97,38 +97,40 @@ int main()
 	engine.scene.AddComponent<Poly>(node2);
 	engine.scene.AddComponent<Components::Tag>(node2).tag = "NODE 2";*/
 
-	auto sun = engine.scene.CreateNode();
+	/*auto sun = engine.scene.CreateNode();
 	engine.scene.AddComponent<Components::DirLight>(sun).SetColor(glm::vec4(1.0f, 0.8f, 0.5, 1));
 	engine.scene.AddComponent<Components::DirShadow>(sun);
-	engine.scene.AddComponent<Components::Tag>(sun).tag = "SUN";
-	//test5();
+	engine.scene.AddComponent<Components::Tag>(sun).tag = "SUN";*/
+	
+	int offsX = 10;
+	int dimP = 5;
+	int sepP = 3;
+	int startP = -dimP / 2;
+	int endP = dimP / 2 + dimP % 2;
 
-	/*engine.window.GetInputEvents().Subscribe<Event::Types::InputEvent>([](const Event::Types::InputEvent& ev)
+	for (int i = startP; i < endP; i++)
+	{
+		for (int j = 0; j < dimP; j++)
 		{
-			Logger::Debug("Input Event: ", ev.GetName(), " From: ", ev.from.file_name(), ":", ev.from.line());
-		});*/
-	engine.appEventMan.GetReceiver().Subscribe<Event::Types::OnUpdate>([&](const Event::Types::OnUpdate& e)
+			for (int k = startP; k < endP; k++)
+			{
+				auto node = engine.scene.CreateNode();
+				engine.scene.AddComponent<Components::PointLight>(node);
+				engine.scene.AddModel(node);
+				engine.scene.AddComponent<Components::Transform>(node).position = glm::vec3(i * sepP + offsX, j * sepP, k * sepP);
+				//engine.scene.AddComponent<Components::Kinematic>(node).mass = 0.1f;
+				//engine.scene.AddComponent<Polygon>(node);
+				//engine.scene.AddComponent<Components::Tag>(node).tag = std::to_string(i).append("-").append(std::to_string(j)).append("-").append(std::to_string(k));
+			}
+		}
+	}
+
+	/*engine.appEventMan.GetReceiver().Subscribe<Event::Types::OnUpdate>([&](const Event::Types::OnUpdate& e)
 		{
+			using namespace Components;
 			using namespace Input;
-			
-			/*static constinit float  speed = 0.005;
-			if (engine.window.GetInputState().Is(KeyType::Up, KeyState::Down))
-			{
-				pl.GetMutableData().position.y += speed;
-			}
-			if (engine.window.GetInputState().Is(KeyType::Down, KeyState::Down))
-			{
-				pl.GetMutableData().position.y -= speed;
-			}
-			if (engine.window.GetInputState().Is(KeyType::Right, KeyState::Down))
-			{
-				pl.GetMutableData().position.x += speed;
-			}
-			if (engine.window.GetInputState().Is(KeyType::Left, KeyState::Down))
-			{
-				pl.GetMutableData().position.x -= speed;
-			}*/
-		});
+
+		});*/
 
 	engine.Launch();
 }

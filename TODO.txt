@@ -21,3 +21,9 @@ Polygons: use faces with unique normals + edges only around the faces
 			-> contact point generation should be improved.
 				-> with new system, clipping should give stable results
 				-> probably check the book first
+
+REFACTOR NOTES:
+	-no namespace deeper than 2 (Nork::Renderer->end it here) -> makes modular style more visible
+	- Viewport: owns camera. Runtime choose camController.
+	- Make PanelData for every Panel (MainPanelData), so it can be serialized pl.
+	- SceneRenderer: Gets Scene& and draws it. Get result from its data. Every Instance has unique framebuffers (could share some)

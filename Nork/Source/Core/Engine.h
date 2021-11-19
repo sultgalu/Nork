@@ -61,7 +61,7 @@ namespace Nork
 		glm::vec4 triangleColor = { 0,1,0, 0.4f};
 		glm::vec3 selectedColor = { 1,0,1 };
 
-		bool drawPolies = true, drawLines = true, drawPoints = true, drawTriangles = true, drawSky = false;
+		bool drawPolies = false, drawLines = true, drawPoints = true, drawTriangles = true, drawSky = false;
 		bool satRes = false, gjkRes = false, clipRes = false, aabbRes = false;
 		bool sat = false, gjk = false, clip = true, aabb = true;
 		bool physicsUpdate = false;
@@ -77,5 +77,4 @@ namespace Nork
 
 	extern std::optional<Components::Camera*> GetActiveCamera();
 	extern Engine& GetEngine();
-
 }

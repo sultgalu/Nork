@@ -100,6 +100,10 @@ namespace Nork::Editor
 
 		if (ImGui::BeginPopup("texturesToDisplay"))
 		{
+			if (ImGui::Selectable("DEBUG"))
+			{
+				image.texture = data.engine.lightMan.GetDebug();
+			}
 			if (ImGui::Selectable("Default"))
 			{
 				image.texture = data.engine.lightFb.Result();

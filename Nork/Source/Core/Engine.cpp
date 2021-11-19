@@ -11,8 +11,8 @@ namespace Nork
 {
 	static std::vector<uint8_t> dShadowIndices;
 	static std::vector<uint8_t> pShadowIndices;
-	static constexpr auto dShadIdxSize = Renderer::Config::LightData::dirShadowsLimit;
-	static constexpr auto pShadIdxSize = Renderer::Config::LightData::pointShadowsLimit;
+	static constexpr auto dShadIdxSize = 10;
+	static constexpr auto pShadIdxSize = 10;
 
 	static Data::Shader CreateShaderFromPath(std::string_view path)
 	{
@@ -37,11 +37,13 @@ namespace Nork
 		shader = CreateShaderFromPath("Source/Shaders/position.shader");
 		pointShader = CreateShaderFromPath("Source/Shaders/point.shader");
 		lineShader = CreateShaderFromPath("Source/Shaders/line.shader");
+		lightMan.SetDebug(CreateShaderFromPath("Source/Shaders/debug.shader"));
 		return DeferredData (DeferredData::Shaders
 			{
 				.gPass = CreateShaderFromPath("Source/Shaders/gPass.shader"),
 				.lPass = CreateShaderFromPath("Source/Shaders/lightPass.shader"),
 				.skybox = CreateShaderFromPath("Source/Shaders/skybox.shader"),
+				//.extra = CreateShaderFromPath("Source/Shaders/debug.shader"),
 			}, 0);
 
 	} // TODO:: cannot do this well...
@@ -86,7 +88,7 @@ namespace Nork
 		: window(config.width, config.height), scene(Scene::Scene()), pipeline(CreatePipelineResources()),
 		geometryFb(Renderer::Pipeline::GeometryFramebuffer(1920, 1080)),
 		lightFb(Renderer::Pipeline::LightPassFramebuffer(geometryFb.Depth(), geometryFb.Width(), geometryFb.Height())),
-		pSystem()
+		pSystem(), lightMan(CreateShaderFromPath("Source/Shaders/lightCull.shader"))
 	{
 		using namespace Renderer::Pipeline;
 		Renderer::Resource::DefaultResources::Init();
@@ -121,7 +123,7 @@ namespace Nork
 	{
 		auto& sender = appEventMan.GetSender();
 		while (window.IsRunning())
-		{
+		{	
 			sender.Send(Event::Types::OnUpdate());
 			sender.Send(Event::Types::OnRenderUpdate());
 			
@@ -135,7 +137,9 @@ namespace Nork
 				pipeline.DrawSkybox();
 			DrawHitboxes();
 			FramebufferBase::UseDefault();
+
 			sender.Send(Event::Types::RenderUpdated());
+			Profiler::Clear();
 			window.Refresh();
 
 			sender.Send(Event::Types::Updated());
@@ -185,8 +189,8 @@ namespace Nork
 		}
 		// ---------------------------
 	
-		std::vector<std::pair<Data::DirLight, Data::DirShadow>> DS;
-		std::vector<std::pair<Data::PointLight, Data::PointShadow>> PS;
+		std::vector<Data::DirShadow> DS;
+		std::vector<Data::PointShadow> PS;
 		std::vector<Data::DirLight> DL;
 		std::vector<Data::PointLight> PL;
 		DS.reserve(dLightsWS.size_hint());
@@ -198,8 +202,8 @@ namespace Nork
 		{
 			const auto& light = dLightsWS.get(id)._Myfirst._Val.GetData();
 			const auto& shadow = dLightsWS.get(id)._Get_rest()._Myfirst._Val.GetData();
-			auto pair = std::pair<Data::DirLight, Data::DirShadow>(light, shadow);
-			DS.push_back(pair);
+			DL.push_back(light);
+			DS.push_back(shadow);
 
 			lightMan.DrawDirShadowMap(light, shadow, models, dShadowFramebuffers[shadow.idx], dShadowMapShader);
 			pipeline.UseShadowMap(shadow, dShadowFramebuffers[shadow.idx]);
@@ -208,7 +212,9 @@ namespace Nork
 		{
 			auto& light = pLightsWS.get(id)._Myfirst._Val.GetData();
 			auto& shadow = pLightsWS.get(id)._Get_rest()._Myfirst._Val.GetData();
-			PS.push_back(std::pair<Data::PointLight, Data::PointShadow>(light, shadow));
+
+			PL.push_back(light);
+			PS.push_back(shadow);
 
 			lightMan.DrawPointShadowMap(light, shadow, models, pShadowFramebuffers[shadow.idx], pShadowMapShader);
 			pipeline.UseShadowMap(shadow, pShadowFramebuffers[shadow.idx]);
@@ -221,9 +227,11 @@ namespace Nork
 		{
 			PL.push_back(pLights.get(id)._Myfirst._Val.GetData());
 		}
-
-		lightMan.Update(DS, PS, DL, PL);
-
+		auto& cam = scene.GetMainCamera();
+		lightMan.SetDirLightData(DL, DS);
+		//lightMan.SetPointLightData(PL, PS);
+		lightMan.SetPointLightData(PL, PS, cam.view, cam.projection);
+		lightMan.Update();
 	}
 
 	static std::vector<std::pair<std::string, float>> deltas;

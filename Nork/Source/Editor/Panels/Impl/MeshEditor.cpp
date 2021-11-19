@@ -68,6 +68,12 @@ namespace Nork::Editor
 	}
 	void MeshEditorPanel::DrawContent()
 	{
+		int val = data.engine.lightMan.cullQ;
+		if (ImGui::DragInt("Point Anti-Aliasing", &val, 1, 1, 32))
+		{
+			data.engine.lightMan.cullQ = val;
+		}
+		
 		if (data.selectedPoly == nullptr)
 		{
 			ImGui::Text("Select a Poly from the inspector");
