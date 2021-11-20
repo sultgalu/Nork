@@ -72,7 +72,7 @@ namespace Nork::Scene
 		}
 		inline Components::Camera& GetMainCamera()
 		{
-			if (MainCameraNode == ECS::invalidId)
+			if (MainCameraNode == ECS::invalidId || !registry.HasAny<Components::Camera>(MainCameraNode))
 			{
 				auto view = registry.GetUnderlyingMutable().view<Components::Camera>();
 				if (view.size() > 0)
@@ -84,7 +84,6 @@ namespace Nork::Scene
 					MainCameraNode = CreateNode();
 					AddComponent<Components::Camera>(MainCameraNode);
 				}
-
 			}
 			auto& cam = registry.GetComponent<Components::Camera>(MainCameraNode);
 			return cam;

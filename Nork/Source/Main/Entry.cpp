@@ -102,28 +102,28 @@ int main()
 	engine.scene.AddComponent<Components::DirShadow>(sun);
 	engine.scene.AddComponent<Components::Tag>(sun).tag = "SUN";*/
 	
-	int offsX = 10;
-	int dimP = 5;
-	int sepP = 3;
-	int startP = -dimP / 2;
-	int endP = dimP / 2 + dimP % 2;
+	//int offsX = 10;
+	//int dimP = 5;
+	//int sepP = 3;
+	//int startP = -dimP / 2;
+	//int endP = dimP / 2 + dimP % 2;
 
-	for (int i = startP; i < endP; i++)
-	{
-		for (int j = 0; j < dimP; j++)
-		{
-			for (int k = startP; k < endP; k++)
-			{
-				auto node = engine.scene.CreateNode();
-				engine.scene.AddComponent<Components::PointLight>(node);
-				engine.scene.AddModel(node);
-				engine.scene.AddComponent<Components::Transform>(node).position = glm::vec3(i * sepP + offsX, j * sepP, k * sepP);
-				//engine.scene.AddComponent<Components::Kinematic>(node).mass = 0.1f;
-				//engine.scene.AddComponent<Polygon>(node);
-				//engine.scene.AddComponent<Components::Tag>(node).tag = std::to_string(i).append("-").append(std::to_string(j)).append("-").append(std::to_string(k));
-			}
-		}
-	}
+	//for (int i = startP; i < endP; i++)
+	//{
+	//	for (int j = 0; j < dimP; j++)
+	//	{
+	//		for (int k = startP; k < endP; k++)
+	//		{
+	//			auto node = engine.scene.CreateNode();
+	//			engine.scene.AddComponent<Components::PointLight>(node);
+	//			engine.scene.AddModel(node);
+	//			engine.scene.AddComponent<Components::Transform>(node).position = glm::vec3(i * sepP + offsX, j * sepP, k * sepP);
+	//			//engine.scene.AddComponent<Components::Kinematic>(node).mass = 0.1f;
+	//			//engine.scene.AddComponent<Polygon>(node);
+	//			//engine.scene.AddComponent<Components::Tag>(node).tag = std::to_string(i).append("-").append(std::to_string(j)).append("-").append(std::to_string(k));
+	//		}
+	//	}
+	//}
 
 	/*engine.appEventMan.GetReceiver().Subscribe<Event::Types::OnUpdate>([&](const Event::Types::OnUpdate& e)
 		{

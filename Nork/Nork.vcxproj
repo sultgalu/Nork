@@ -164,7 +164,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Serialization\BinaryComponentSerializer.h" />
+    <ClInclude Include="Source\Serialization\BinaryReader.h">
+      <FileType>CppCode</FileType>
+    </ClInclude>
     <ClCompile Include="Source\Utils\Profiler.cpp" />
+    <ClInclude Include="Source\Serialization\BinaryWriter.h" />
     <ClInclude Include="Source\Modules\Physics\Config.h" />
     <ClInclude Include="Source\Modules\Physics\Pipeline\CollisionDetection.h" />
     <ClInclude Include="Source\Modules\Physics\Pipeline\CollisionDetectionCPU.h" />
@@ -194,7 +199,6 @@
     <ClCompile Include="Source\Modules\Renderer\Pipeline\Capabilities.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Pipeline\StreamRenderer.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Pipeline\Framebuffer.cpp" />
-    <ClCompile Include="Source\Serialization\BinarySerializer.cpp" />
     <ClCompile Include="Source\Editor\Panels\Impl\HierarchyPanel.cpp" />
     <ClCompile Include="Source\Platform\Windows\FileDialog.cpp" />
     <ClCompile Include="Source\Editor\Panels\Impl\InspectorPanel.cpp" />
@@ -341,6 +345,7 @@
     <ClInclude Include="Source\Editor\Editor.h" />
     <ClInclude Include="Source\Core\Event.h" />
     <ClInclude Include="Source\Platform\Window.h" />
+    <ClInclude Include="Source\Serialization\SpecializedBinaryComponentSerializers.h" />
     <ClInclude Include="Source\Utils\Logger.h" />
     <ClInclude Include="Source\Utils\Profiler.h" />
     <ClInclude Include="Source\Utils\Template.h" />

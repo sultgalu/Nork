@@ -22,6 +22,11 @@ Polygons: use faces with unique normals + edges only around the faces
 				-> with new system, clipping should give stable results
 				-> probably check the book first
 
+FRUSTUM CULLING:
+	- generate frustums once (on frustumCount change
+	- move stuff to shared 
+	- use early depth pass (gPass) for z-culling
+
 REFACTOR NOTES:
 	-no namespace deeper than 2 (Nork::Renderer->end it here) -> makes modular style more visible
 	- Viewport: owns camera. Runtime choose camController.

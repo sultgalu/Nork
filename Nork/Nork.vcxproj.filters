@@ -126,9 +126,6 @@
     <ClCompile Include="Source\Editor\Panels\Impl\HierarchyPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Serialization\BinarySerializer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Modules\Renderer\Pipeline\Framebuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -381,6 +378,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Utils\Profiler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Serialization\BinaryWriter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Serialization\BinaryReader.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Serialization\BinaryComponentSerializer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Serialization\SpecializedBinaryComponentSerializers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
