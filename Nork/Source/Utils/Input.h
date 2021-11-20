@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Nork::Input::Types
+namespace Nork
 {
 	enum class Key
 	{
@@ -51,10 +51,4 @@ namespace Nork::Input::Types
 
 	static_assert(ToInt(Key::Max) < 1024);
 	static_assert(ToInt(MouseButton::Max) < 16);
-}
-
-namespace Nork::Input
-{
-	using KeyType = Types::Key;
-	using MouseButtonType = Types::MouseButton;
 }

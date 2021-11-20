@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "../ViewportPanel.h"
+#include "App/Application.h"
 
 namespace Nork::Editor
 {
@@ -8,14 +9,14 @@ namespace Nork::Editor
 	ViewportPanel::ViewportPanel(EditorData& d)
 		: Nork::Editor::Panel(std::format("Viewport#{}", viewportCounter++), d),
 		mouseState(MouseState{}), image(ImageConfig{}),
-		camContr(CameraController(events, data.engine.window.GetInputState(), 
+		camContr(CameraController(events, 
 			data.engine.scene.GetMainCamera()))
 	{
 		static Timer timer;
 		using namespace Event::Types;
 		events.Subscribe<MouseDown>([&](const MouseDown& e)
 			{
-				if (e.button != Input::MouseButtonType::Left)
+				if (e.button != MouseButton::Left)
 					return;
 
 				if (data.idQueryMode.test(IdQueryMode::Click))
@@ -33,14 +34,14 @@ namespace Nork::Editor
 			});
 		events.Subscribe<MouseMove>([&](const MouseMove& e)
 			{
-				using namespace Input;
+				
 				if (data.idQueryMode.test(IdQueryMode::MouseMoveClicked) &&
-					data.engine.window.GetInputState().Is<MouseButtonState::Down>(MouseButtonType::Left))
+					Application::Get().inputState.Is<MouseButtonState::Down>(MouseButton::Left))
 				{
 					data.engine.ReadId(mouseState.mousePosX, mouseState.mousePosY);
 				}
 				else if (data.idQueryMode.test(IdQueryMode::MouseMoveReleased) &&
-					data.engine.window.GetInputState().Is<MouseButtonState::Up>(MouseButtonType::Left))
+					Application::Get().inputState.Is<MouseButtonState::Up>(MouseButton::Left))
 				{
 					data.engine.ReadId(mouseState.mousePosX, mouseState.mousePosY);
 				}

@@ -6,7 +6,7 @@
 #include "Modules/ECS/Storage.h"
 #include "Components/Common.h"
 #include "Editor/Editor.h"
-#include "Platform/Window.h"
+#include "Core/NorkWindow.h"
 #include "Modules/Renderer/Data/Shader.h"
 #include "Modules/Renderer/Data/Mesh.h"
 #include "Modules/Renderer/Data/Texture.h"
@@ -16,9 +16,8 @@
 #include "Modules/Renderer/Loaders/Loaders.h"
 #include "Modules/Renderer/Pipeline/Deferred.h"
 #include "Core/Engine.h"
-
+#include "App/Application.h"
 using namespace Nork;
-using namespace Input;
 
 static Engine* enginePtr;
 Engine& GetEngine()
@@ -30,8 +29,8 @@ int main()
 {
 	Logger::PushStream(std::cout);
 
-	auto conf = EngineConfig().SetResolution(1280, 720);
-	Engine engine(conf);
+	auto& engine = Application::Get().engine;
+
 	auto cameraNode = engine.scene.CreateNode();
 	auto& cam = engine.scene.AddComponent<Components::Camera>(cameraNode);
 	enginePtr = &engine;
@@ -43,17 +42,12 @@ int main()
 			editor.Render();
 		});
 
-	{
-		using namespace Event::Types;
-		using enum Input::KeyType;
-	}
-
 	int dim = 2;
 	int sep = 3;
 	int start = -dim / 2;
 	int end = dim / 2 + dim % 2;
 
-	/*for (int i = start; i < end; i++)
+	for (int i = start; i < end; i++)
 	{
 		for (int j = 0; j < dim; j++)
 		{
@@ -72,7 +66,7 @@ int main()
 	if (dim > 5)
 	{
 		engine.drawPolies = false;
-	}*/
+	}
 
 	glm::vec3 scale = glm::vec3(100, 1, 100);
 	auto ground = engine.scene.CreateNode();
@@ -97,10 +91,10 @@ int main()
 	engine.scene.AddComponent<Poly>(node2);
 	engine.scene.AddComponent<Components::Tag>(node2).tag = "NODE 2";*/
 
-	/*auto sun = engine.scene.CreateNode();
+	auto sun = engine.scene.CreateNode();
 	engine.scene.AddComponent<Components::DirLight>(sun).SetColor(glm::vec4(1.0f, 0.8f, 0.5, 1));
 	engine.scene.AddComponent<Components::DirShadow>(sun);
-	engine.scene.AddComponent<Components::Tag>(sun).tag = "SUN";*/
+	engine.scene.AddComponent<Components::Tag>(sun).tag = "SUN";
 	
 	//int offsX = 10;
 	//int dimP = 5;
@@ -132,5 +126,7 @@ int main()
 
 		});*/
 
+	Application::Get().window.SetupCallbacks();
+	//Application::Get().window.Resize(1280, 720);
 	engine.Launch();
 }

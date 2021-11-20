@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Platform/Input.h"
+#include "Utils/Input.h"
 
 namespace Nork
 {
@@ -42,19 +42,19 @@ namespace Nork
 
 			struct KeyEvent : Of<InputEvent>
 			{
-				KeyEvent(Input::KeyType key) : key(key) {}
-				inline auto AsInt() const { return Input::Types::ToInt(key); }
-				const Input::KeyType key;
+				KeyEvent(Key key) : key(key) {}
+				inline auto AsInt() const { return ToInt(key); }
+				const Key key;
 			};
 
 			struct KeyDown : Of<KeyEvent>
 			{
-				KeyDown(Input::KeyType key) : Of<KeyEvent>(key) {}
+				KeyDown(Key key) : Of<KeyEvent>(key) {}
 			};
 
 			struct KeyUp : Of<KeyEvent>
 			{
-				KeyUp(Input::KeyType key) : Of<KeyEvent>(key) {}
+				KeyUp(Key key) : Of<KeyEvent>(key) {}
 			};
 
 			struct Type : Of<InputEvent>
@@ -72,19 +72,19 @@ namespace Nork
 			struct MouseEvent : Of<InputEvent> {};
 			struct MouseButtonEvent : Of<MouseEvent>
 			{
-				MouseButtonEvent(Input::MouseButtonType button) : button(button) {}
-				inline auto AsInt() const { return Input::Types::ToInt(button); }
-				Input::MouseButtonType button;
+				MouseButtonEvent(MouseButton button) : button(button) {}
+				inline auto AsInt() const { return ToInt(button); }
+				MouseButton button;
 			};
 
 			struct MouseDown : Of<MouseButtonEvent>
 			{
-				MouseDown(Input::MouseButtonType button) : Of<MouseButtonEvent>(button) {}
+				MouseDown(MouseButton button) : Of<MouseButtonEvent>(button) {}
 			};
 
 			struct MouseUp : Of<MouseButtonEvent>
 			{
-				MouseUp(Input::MouseButtonType button) : Of<MouseButtonEvent>(button) {}
+				MouseUp(MouseButton button) : Of<MouseButtonEvent>(button) {}
 			};
 
 			struct MouseMove : Of<MouseEvent>

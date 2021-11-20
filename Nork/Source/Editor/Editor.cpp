@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Editor.h"
 #include "Panels/All.h"
+#include "App/Application.h"
 
 namespace Nork::Editor
 {
@@ -29,7 +30,7 @@ namespace Nork::Editor
 		disp.Subscribe<Event::Types::KeyUp>([&imIO](const Event::Types::KeyUp& ev)
 			{
 				imIO.KeysDown[ev.AsInt()] = false;
-				using enum Input::KeyType;
+				using enum Key;
 				switch (ev.key)
 				{
 				case Shift:
@@ -49,7 +50,7 @@ namespace Nork::Editor
 		disp.Subscribe<Event::Types::KeyDown>([&imIO](const Event::Types::KeyDown& ev)
 			{
 				imIO.KeysDown[ev.AsInt()] = false;
-				using enum Input::KeyType;
+				using enum Key;
 				switch (ev.key)
 				{
 				case Shift:
@@ -87,7 +88,7 @@ namespace Nork::Editor
 		//bd->PrevUserCallbackMonitor = glfwSetMonitorCallback(ImGui_ImplGlfw_MonitorCallback);
 	}
 
-	void InitImGui(Window& win)
+	void InitImGui()
 	{
 		ImGui::CreateContext();
 		ImGui::StyleColorsClassic();
@@ -110,14 +111,14 @@ namespace Nork::Editor
 		}
 
 		ImGui_ImplOpenGL3_Init();
-		ImGui_ImplGlfw_InitForOpenGL(&win.GetData(), false);
-		SetCallbacks(win.GetInputEvents());
+		ImGui_ImplGlfw_InitForOpenGL(Application::Get().window.Underlying().GetContext().glfwWinPtr, false);
+		SetCallbacks(Application::Get().dispatcher.GetReceiver());
 	}
 
 	Editor::Editor(Engine& engine)
 		: data(engine)
 	{
-		InitImGui(engine.window);
+		InitImGui();
 		panels = std::vector<Panel*>{ new MainPanel(data), new AssetsPanel(data), new LogPanel(data),
 			new ViewportPanel(data), new InspectorPanel(data), new HierarchyPanel(data), new MeshEditorPanel(data)};
 	}

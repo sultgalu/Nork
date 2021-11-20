@@ -32,3 +32,11 @@ REFACTOR NOTES:
 	- Viewport: owns camera. Runtime choose camController.
 	- Make PanelData for every Panel (MainPanelData), so it can be serialized pl.
 	- SceneRenderer: Gets Scene& and draws it. Get result from its data. Every Instance has unique framebuffers (could share some)
+
+Scene Folder:
+	-Entt
+	-serialization
+	-Scene class -> scene graph
+
+Renderer Context -> window, static stuff (capability, bound buffers etc..)
+

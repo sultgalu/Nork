@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "../MainPanel.h"
 #include "Platform/FileDialog.h"
+#include "App/Application.h"
 
 namespace Nork::Editor
 {
@@ -8,12 +9,11 @@ namespace Nork::Editor
 	{
 		this->events.Subscribe<Event::Types::KeyDown>([&](const Event::Types::KeyDown& ev)
 			{
-				using namespace Input;
-				if (ev.key == Input::KeyType::S && data.engine.window.GetInputState().Is<KeyState::Down>(KeyType::Ctrl))
+				if (ev.key == Key::S && Application::Get().inputState.Is<KeyState::Down>(Key::Ctrl))
 				{
 					SaveScene();
 				}
-				else if (ev.key == Input::KeyType::Q && data.engine.window.GetInputState().Is<KeyState::Down>(KeyType::Ctrl))
+				else if (ev.key == Key::Q && Application::Get().inputState.Is<KeyState::Down>(Key::Ctrl))
 				{
 					LoadScene();
 				}

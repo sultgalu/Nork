@@ -29,8 +29,7 @@ namespace Nork::Editor
 	}
 	void MeshEditorPanel::SelectVertex(uint32_t i)
 	{
-		using namespace Input;
-		auto& input = data.engine.window.GetInputState();
+		//auto& input = data.engine.window.GetInputState();
 		/*if (input.Is(KeyType::Shift, KeyState::Down))
 		{
 			auto start = current > i ? i : current;

@@ -1,35 +1,36 @@
 #include "pch.h"
 #include "CameraController.h"
+#include "App/Application.h"
 
 namespace Nork
 {
 	void CameraController::Update(float delta)
 	{
-		using namespace Input;
-
 		using enum Components::Camera::Direction;
 
-		if (input.Is(KeyType::W, KeyState::Down))
+		auto& input = Application::Get().inputState;
+
+		if (input.Is(Key::W, KeyState::Down))
 		{
-			auto dir = input.Is(KeyType::Shift, KeyState::Down) ? Up : Forward;
+			auto dir = input.Is(Key::Shift, KeyState::Down) ? Up : Forward;
 			camera.Move(dir, delta);
 		}
-		if (input.Is(KeyType::S, KeyState::Down))
+		if (input.Is(Key::S, KeyState::Down))
 		{
-			auto dir = input.Is(KeyType::Shift, KeyState::Down) ? Down : Backward;
+			auto dir = input.Is(Key::Shift, KeyState::Down) ? Down : Backward;
 			camera.Move(dir, delta);
 		}
-		if (input.Is(KeyType::A, KeyState::Down))
+		if (input.Is(Key::A, KeyState::Down))
 		{
 			camera.Move(Left, delta);
 		}
-		if (input.Is(KeyType::D, KeyState::Down))
+		if (input.Is(Key::D, KeyState::Down))
 		{
 			camera.Move(Rigth, delta);
 		}
 
 		static float baseSpeed = camera.moveSpeed;
-		camera.moveSpeed = input.Is(KeyType::Space, KeyState::Down) ? baseSpeed * 10.0f : baseSpeed;
+		camera.moveSpeed = input.Is(Key::Space, KeyState::Down) ? baseSpeed * 10.0f : baseSpeed;
 	}
 	void CameraController::SetupInputHandling(Event::Receiver& receiver)
 	{
@@ -42,15 +43,14 @@ namespace Nork
 	}
 	void CameraController::HandleMouseMove(const Event::Types::MouseMove& event)
 	{
-		using namespace Input;
-		
 		static double x = 0;
 		static double y = 0;
 
 		double offsX = x - event.offsetX;
 		double offsY = y - event.offsetY;
 
-		if (input.Is(MouseButtonType::Left, MouseButtonState::Down))
+		auto& input = Application::Get().inputState;
+		if (input.Is(MouseButton::Left, MouseButtonState::Down))
 		{
 			camera.Rotate(-offsY, offsX);
 		}

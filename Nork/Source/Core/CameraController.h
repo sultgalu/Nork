@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Input.h"
+#include "Core/InputState.h"
 #include "Components/Camera.h"
 
 namespace Nork
@@ -8,8 +8,8 @@ namespace Nork
 	class CameraController
 	{
 	public:
-		CameraController(Event::Receiver& receiver, Input::State& input, Components::Camera& cam)
-			: camera(cam), input(input)
+		CameraController(Event::Receiver& receiver, Components::Camera& cam)
+			: camera(cam)
 		{
 			SetupInputHandling(receiver);
 		}
@@ -20,7 +20,5 @@ namespace Nork
 		void HandleMouseMove(const Event::Types::MouseMove& event);
 	public:
 		Components::Camera& camera;
-	private:
-		Input::State& input;
 	};
 }

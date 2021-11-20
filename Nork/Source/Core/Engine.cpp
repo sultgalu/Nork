@@ -6,6 +6,8 @@
 #include "Modules/Renderer/Pipeline/StreamRenderer.h"
 #include "Modules/Renderer/Pipeline/Capabilities.h"
 #include "Modules/Physics/Pipeline/CollisionDetectionGPU.h"
+#include "Core/InputState.h"
+#include "App/Application.h"
 
 namespace Nork
 {
@@ -84,8 +86,8 @@ namespace Nork
 		dShadowIndices.push_back(shad.GetData().idx);
 	}
 
-	Engine::Engine(EngineConfig& config)
-		: window(config.width, config.height), scene(Scene::Scene()), pipeline(CreatePipelineResources()),
+	Engine::Engine(EngineConfig config)
+		: scene(Scene::Scene()), pipeline(CreatePipelineResources()),
 		geometryFb(Renderer::Pipeline::GeometryFramebuffer(1920, 1080)),
 		lightFb(Renderer::Pipeline::LightPassFramebuffer(geometryFb.Depth(), geometryFb.Width(), geometryFb.Height())),
 		pSystem(), lightMan(CreateShaderFromPath("Source/Shaders/lightCull.shader"))
@@ -121,8 +123,10 @@ namespace Nork
 
 	void Engine::Launch()
 	{
+		Nork::Window& win = Application::Get().window;
+
 		auto& sender = appEventMan.GetSender();
-		while (window.IsRunning())
+		while (win.IsRunning())
 		{	
 			sender.Send(Event::Types::OnUpdate());
 			sender.Send(Event::Types::OnRenderUpdate());
@@ -140,7 +144,7 @@ namespace Nork
 
 			sender.Send(Event::Types::RenderUpdated());
 			Profiler::Clear();
-			window.Refresh();
+			win.Refresh();
 
 			sender.Send(Event::Types::Updated());
 		}

@@ -1,11 +1,12 @@
 #include "pch.h"
 #include "Panel.h"
+#include "App/Application.h"
 
 namespace Nork::Editor
 {
 	Panel::Panel(std::string name, EditorData& data)
 		: data(data), name(name),
-		events(data.engine.window.GetInputEvents().Map<Event::Types::Base>([&]() { return this->state.isHovered; }))
+		events(Application::Get().dispatcher.GetReceiver().Map<Event::Types::Base>([&]() { return this->state.isHovered; }))
 	{
 	}
 	void Panel::Draw()

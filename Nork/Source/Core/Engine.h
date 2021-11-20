@@ -1,5 +1,5 @@
 #pragma once
-#include "Platform/Window.h"
+#include "NorkWindow.h"
 #include "Modules/Renderer/Pipeline/Deferred.h"
 #include "Modules/Renderer/Pipeline/LightManager.h"
 #include "Core/CameraController.h"
@@ -10,8 +10,7 @@
 
 namespace Nork
 {
-	using namespace Renderer;
-	using namespace Pipeline;
+	using namespace Renderer::Pipeline;
 
 	struct EngineConfig
 	{
@@ -21,10 +20,10 @@ namespace Nork
 		inline EngineConfig& SetResolution(uint32_t w, uint32_t h) { width = w; height = h; return *this; }
 	};
 
-	class Engine
+	class Engine: Template::Types::OnlyConstruct
 	{
 	public:
-		Engine(EngineConfig& config);
+		Engine(EngineConfig config);
 		~Engine();
 		void Launch();
 		void ReadId(int x, int y);
@@ -38,7 +37,6 @@ namespace Nork
 		void OnDShadowAdded(entt::registry& reg, entt::entity ent);
 		void OnDShadowRemoved(entt::registry& reg, entt::entity ent);
 	public:
-		Window window;
 		Deferred pipeline;
 		LightManager lightMan;
 		Event::Dispatcher appEventMan;
@@ -71,6 +69,8 @@ namespace Nork
 
 		Physics::System pSystem;
 		Physics::World& pWorld = pSystem.world;
+
+		Event::Dispatcher dispatcher;
 
 		static std::vector<std::pair<std::string, float>> GetDeltas();
 	};

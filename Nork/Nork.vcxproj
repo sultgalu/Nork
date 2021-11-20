@@ -164,6 +164,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\App\Application.cpp" />
+    <ClCompile Include="Source\Core\NorkWindow.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Window\Window.cpp" />
+    <ClInclude Include="Source\App\Application.h" />
+    <ClInclude Include="Source\Core\NorkWindow.h" />
     <ClInclude Include="Source\Serialization\BinaryComponentSerializer.h" />
     <ClInclude Include="Source\Serialization\BinaryReader.h">
       <FileType>CppCode</FileType>
@@ -294,8 +299,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Source\Main\Entry.cpp" />
-    <ClCompile Include="Source\Platform\Windows\Window.cpp" />
     <ClCompile Include="Source\Editor\Panels\Impl\ViewportPanel.cpp" />
+    <ClInclude Include="Source\Modules\Renderer\Window\Window.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\Panels\MeshEditor.h" />
@@ -321,9 +326,9 @@
     <ClInclude Include="Source\Components\Model.h" />
     <ClInclude Include="Source\Core\Engine.h" />
     <ClInclude Include="Source\Core\CameraController.h" />
-    <ClInclude Include="Source\Core\Input.h" />
+    <ClInclude Include="Source\Core\InputState.h" />
     <ClInclude Include="Source\Modules\Renderer\Helpers\Helpers.h" />
-    <ClInclude Include="Source\Platform\Input.h" />
+    <ClInclude Include="Source\Utils\Input.h" />
     <ClInclude Include="Source\Modules\Renderer\Pipeline\LightManager.h" />
     <ClInclude Include="Source\Components\Camera.h" />
     <ClInclude Include="Source\Components\Common.h" />
@@ -344,7 +349,6 @@
     <ClInclude Include="Source\Editor\Panels\Base\Panel.h" />
     <ClInclude Include="Source\Editor\Editor.h" />
     <ClInclude Include="Source\Core\Event.h" />
-    <ClInclude Include="Source\Platform\Window.h" />
     <ClInclude Include="Source\Serialization\SpecializedBinaryComponentSerializers.h" />
     <ClInclude Include="Source\Utils\Logger.h" />
     <ClInclude Include="Source\Utils\Profiler.h" />
