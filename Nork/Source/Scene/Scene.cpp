@@ -37,7 +37,7 @@ namespace Nork::Scene
 	{
 		std::ofstream stream(path, std::ios::binary);
 		
-		auto vec = Serializer(registry.GetUnderlyingMutable(), *this).Serialize();
+		auto vec = Serializer(registry, *this).Serialize();
 		stream.write(vec.data(), vec.size());
 		stream.close();
 	}
@@ -45,25 +45,25 @@ namespace Nork::Scene
 	void Scene::Load(std::string path)
 	{
 		FreeResources();
-		registry.Wipe();
+		registry = entt::registry();
 		std::ifstream stream(path, std::ios::binary | std::ios::ate);
 		
 		size_t size = stream.tellg();
 		stream.seekg(0, std::ios_base::beg);
 		std::vector<char> buf(size, '\0');
 		stream.read(buf.data(), size);
-		Deserializer(registry.GetUnderlyingMutable(), *this, std::span(buf)).Deserialize();
+		Deserializer(registry, *this, std::span(buf)).Deserialize();
 		
 		stream.close();
 	}
 
-	Components::Model Nork::Scene::Scene::GetModelByResource(std::vector<Renderer::Data::MeshResource> resource)
+	Components::Model Nork::Scene::Scene::GetModelByResource(std::vector<Renderer::MeshResource> resource)
 	{
 		Components::Model model;
 		model.meshes.reserve(resource.size());
 		for (size_t i = 0; i < resource.size(); i++)
 		{
-			model.meshes.push_back(Renderer::Data::Mesh(resource[i]));
+			model.meshes.push_back(Renderer::Mesh(resource[i]));
 		}
 		return model;
 	}

@@ -1,6 +1,7 @@
 #include "../MeshEditor.h"
 #include "Modules/Physics/Pipeline/CollisionDetectionGPU.h"
 #include "Modules/Physics/Pipeline/CollisionDetectionCPU.h"
+#include "App/Application.h"
 
 namespace Nork::Editor
 {
@@ -10,8 +11,7 @@ namespace Nork::Editor
 	MeshEditorPanel::MeshEditorPanel(EditorData& d)
 		:Panel("Mesh Editor", d)
 	{
-		using namespace Event::Types;
-		data.engine.appEventMan.GetReceiver().Subscribe<IdQueryResult>([&](const IdQueryResult& e)
+		Application::Get().dispatcher.GetReceiver().Subscribe<IdQueryResultEvent>([&](const IdQueryResultEvent& e)
 			{
 				if (data.selectedPoly != nullptr)
 				{

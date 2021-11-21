@@ -18,9 +18,9 @@ namespace Nork::Renderer::Loaders
 			MetaLogger().Error("Unhandled number of channels");
 		}
 	}
-    Data::TextureData LoadImage(std::string_view path)
+    TextureData LoadImage(std::string_view path)
     {
-        Data::TextureData data{};
+        TextureData data{};
         int width = 0, height = 0, channels = 0;
         data.data = Utils::Texture::LoadImageData(path, width, height, channels);
         data.height = (int16_t)height;
@@ -29,7 +29,7 @@ namespace Nork::Renderer::Loaders
 		data.format = GetFormat(channels);
         return data;
     }
-	std::array<Data::TextureData, 6> LoadCubemapImages(std::string dirPath, std::string extension)
+	std::array<TextureData, 6> LoadCubemapImages(std::string dirPath, std::string extension)
 	{
 		static std::string suffixes[6]{
 			"right", "left","top","bottom","front","back",
@@ -38,7 +38,7 @@ namespace Nork::Renderer::Loaders
 		if (dirPath.at(dirPath.size() - 1) != '/')
 			dirPath.append("/");
 
-		std::array<Data::TextureData, 6> datas;
+		std::array<TextureData, 6> datas;
 		int width, height, nrChannels;
 
 		for (int i = 0; i < 6; i++)
@@ -62,20 +62,20 @@ namespace Nork::Renderer::Loaders
 		}
 		return datas;
 	}
-    Data::ShaderData LoadShader(std::string_view path)
+    ShaderData LoadShader(std::string_view path)
     {
         std::ifstream stream(path.data());
         std::stringstream buf;
         buf << stream.rdbuf();
 
-        auto data = Data::ShaderData{ .source = std::string(buf.str()) };
+        auto data = ShaderData{ .source = std::string(buf.str()) };
         stream.close();
         return data;
     }
 
 	std::string relativePath;
 
-	void LoadMaterialTextures(aiMaterial* mat, aiTextureType type, Data::TextureUse texType, std::vector<std::pair<Data::TextureUse, Data::TextureData>>& texs)
+	void LoadMaterialTextures(aiMaterial* mat, aiTextureType type, TextureUse texType, std::vector<std::pair<TextureUse, TextureData>>& texs)
 	{
 		for (unsigned int i = 0; i < mat->GetTextureCount(type); i++)
 		{
@@ -90,13 +90,13 @@ namespace Nork::Renderer::Loaders
 			texs.push_back(std::pair(texType, LoadImage(texPath)));
 		}
 	}
-	Data::MeshData ProcessMesh(aiMesh* mesh, const aiScene* scene)
+	MeshData ProcessMesh(aiMesh* mesh, const aiScene* scene)
 	{
-		Data::MeshData data;
+		MeshData data;
 
 		for (unsigned int i = 0; i < mesh->mNumVertices; i++)
 		{
-			Data::Vertex vertex;
+			Vertex vertex;
 			vertex.Position.x = mesh->mVertices[i].x; vertex.Position.y = mesh->mVertices[i].y; vertex.Position.z = mesh->mVertices[i].z;
 			vertex.Normal.x = mesh->mNormals[i].x; vertex.Normal.y = mesh->mNormals[i].y; vertex.Normal.z = mesh->mNormals[i].z;
 			if (mesh->mTextureCoords[0]) // can store up to 8, but not every vertex may have texCoords.
@@ -129,15 +129,15 @@ namespace Nork::Renderer::Loaders
 		{
 			aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
-			LoadMaterialTextures(material, aiTextureType_DIFFUSE, Data::TextureUse::Diffuse, data.textures);
-			LoadMaterialTextures(material, aiTextureType_HEIGHT, Data::TextureUse::Normal, data.textures); // map_Bump
-			LoadMaterialTextures(material, aiTextureType_SHININESS, Data::TextureUse::Roughness, data.textures);
-			LoadMaterialTextures(material, aiTextureType_AMBIENT, Data::TextureUse::Reflection, data.textures); // You have to change the ".mtl" file. "refl" -> "map_Ka"
+			LoadMaterialTextures(material, aiTextureType_DIFFUSE, TextureUse::Diffuse, data.textures);
+			LoadMaterialTextures(material, aiTextureType_HEIGHT, TextureUse::Normal, data.textures); // map_Bump
+			LoadMaterialTextures(material, aiTextureType_SHININESS, TextureUse::Roughness, data.textures);
+			LoadMaterialTextures(material, aiTextureType_AMBIENT, TextureUse::Reflection, data.textures); // You have to change the ".mtl" file. "refl" -> "map_Ka"
 		}
 
 		return data;
 	}
-	void ProcessNode(aiNode* node, const aiScene* scene, std::vector<Data::MeshData>& meshes)
+	void ProcessNode(aiNode* node, const aiScene* scene, std::vector<MeshData>& meshes)
 	{
 		for (unsigned int i = 0; i < node->mNumMeshes; i++)
 		{
@@ -149,7 +149,7 @@ namespace Nork::Renderer::Loaders
 			ProcessNode(node->mChildren[i], scene, meshes);
 		}
 	}
-    std::vector<Data::MeshData> LoadModel(std::string path)
+    std::vector<MeshData> LoadModel(std::string path)
     {
 		relativePath = path;
 		Assimp::Importer importer;
@@ -159,7 +159,7 @@ namespace Nork::Renderer::Loaders
 			| aiProcess_FlipUVs
 			| aiProcess_CalcTangentSpace);
 
-		std::vector<Data::MeshData> result;
+		std::vector<MeshData> result;
 
 		if (!scene || scene->mFlags && AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 		{

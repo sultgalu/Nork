@@ -169,12 +169,12 @@
     <ClCompile Include="Source\Modules\Renderer\Window\Window.cpp" />
     <ClInclude Include="Source\App\Application.h" />
     <ClInclude Include="Source\Core\NorkWindow.h" />
-    <ClInclude Include="Source\Serialization\BinaryComponentSerializer.h" />
-    <ClInclude Include="Source\Serialization\BinaryReader.h">
+    <ClInclude Include="Source\Scene\Serialization\BinaryComponentSerializer.h" />
+    <ClInclude Include="Source\Scene\Serialization\BinaryReader.h">
       <FileType>CppCode</FileType>
     </ClInclude>
     <ClCompile Include="Source\Utils\Profiler.cpp" />
-    <ClInclude Include="Source\Serialization\BinaryWriter.h" />
+    <ClInclude Include="Source\Scene\Serialization\BinaryWriter.h" />
     <ClInclude Include="Source\Modules\Physics\Config.h" />
     <ClInclude Include="Source\Modules\Physics\Pipeline\CollisionDetection.h" />
     <ClInclude Include="Source\Modules\Physics\Pipeline\CollisionDetectionCPU.h" />
@@ -312,14 +312,13 @@
     <ClInclude Include="Source\Modules\Renderer\Pipeline\Capabilities.h" />
     <ClInclude Include="Source\Modules\Renderer\Pipeline\StreamRenderer.h" />
     <ClInclude Include="Source\Modules\Renderer\Pipeline\VertexArray.h" />
-    <ClInclude Include="Source\Serialization\BinarySerializer.h" />
+    <ClInclude Include="Source\Scene\Serialization\BinarySerializer.h" />
     <ClInclude Include="Source\Editor\Panels\All.h" />
     <ClInclude Include="Source\Editor\Panels\HierarchyPanel.h" />
     <ClInclude Include="Source\Modules\Renderer\Pipeline\Framebuffer.h" />
     <ClInclude Include="Source\Platform\FileDialog.h" />
     <ClInclude Include="Source\Editor\EditorData.h" />
     <ClInclude Include="Source\Editor\Panels\InspectorPanel.h" />
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\SharedData.h" />
     <ClInclude Include="Source\Scene\Scene.h" />
     <ClInclude Include="Source\Scene\ResourceManager.h" />
     <ClInclude Include="Source\Components\All.h" />
@@ -349,13 +348,12 @@
     <ClInclude Include="Source\Editor\Panels\Base\Panel.h" />
     <ClInclude Include="Source\Editor\Editor.h" />
     <ClInclude Include="Source\Core\Event.h" />
-    <ClInclude Include="Source\Serialization\SpecializedBinaryComponentSerializers.h" />
+    <ClInclude Include="Source\Scene\Serialization\SpecializedBinaryComponentSerializers.h" />
     <ClInclude Include="Source\Utils\Logger.h" />
     <ClInclude Include="Source\Utils\Profiler.h" />
     <ClInclude Include="Source\Utils\Template.h" />
     <ClInclude Include="Source\Utils\Timer.h" />
     <ClInclude Include="Source\PCH\pch.h" />
-    <ClInclude Include="Source\Modules\ECS\Storage.h" />
     <ClInclude Include="Source\Editor\Panels\ViewportPanel.h" />
   </ItemGroup>
   <ItemGroup>

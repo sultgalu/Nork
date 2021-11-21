@@ -2,7 +2,7 @@
 
 #include "Texture.h"
 
-namespace Nork::Renderer::Data
+namespace Nork::Renderer
 {
 	enum class TextureUse : uint8_t
 	{

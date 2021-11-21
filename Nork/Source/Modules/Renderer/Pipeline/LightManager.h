@@ -3,11 +3,10 @@
 #include "../Data/Ligths.h"
 #include "../Data/Mesh.h"
 #include "../Data/Shader.h"
-#include "SharedData.h"
 #include "Framebuffer.h"
 #include "Buffers.h"
 
-namespace Nork::Renderer::Pipeline
+namespace Nork::Renderer
 {
 	using SFB = Framebuffer<Utils::Texture::Format::Depth16>;
 	class DirShadowFramebuffer : private SFB
@@ -64,22 +63,22 @@ namespace Nork::Renderer::Pipeline
 	public:
 		uint32_t cullQ = 5;
 	public:
-		LightManager(Data::Shader);
+		LightManager(Shader);
 		void Update();
-		void DrawPointShadowMap(const Data::PointLight& light, const Data::PointShadow& shadow, const std::span<Data::Model> models, PointShadowFramebuffer& fb, Data::Shader& pShadowMapShader);
-		void DrawDirShadowMap(const Data::DirLight& light, const Data::DirShadow& shadow, const std::span<Data::Model> models, DirShadowFramebuffer& fb, Data::Shader& dShadowMapShader);
+		void DrawPointShadowMap(const PointLight& light, const PointShadow& shadow, const std::span<Model> models, PointShadowFramebuffer& fb, Shader& pShadowMapShader);
+		void DrawDirShadowMap(const DirLight& light, const DirShadow& shadow, const std::span<Model> models, DirShadowFramebuffer& fb, Shader& dShadowMapShader);
 		
-		void SetPointLightData(std::span<Data::PointLight> pls, std::span<Data::PointShadow> pss);
-		void SetPointLightData(std::span<Data::PointLight> pls, std::span<Data::PointShadow> pss, glm::mat4 view, glm::mat4 proj);
-		void SetDirLightData(std::span<Data::DirLight> dls, std::span<Data::DirShadow> dss);
+		void SetPointLightData(std::span<PointLight> pls, std::span<PointShadow> pss);
+		void SetPointLightData(std::span<PointLight> pls, std::span<PointShadow> pss, glm::mat4 view, glm::mat4 proj);
+		void SetDirLightData(std::span<DirLight> dls, std::span<DirShadow> dss);
 		GLuint GetDebug();
-		void SetDebug(Data::Shader shader);
-		void PointLightCulling(std::span<Data::PointLight> lights, glm::mat4 view, glm::mat4 proj);
+		void SetDebug(Shader shader);
+		void PointLightCulling(std::span<PointLight> lights, glm::mat4 view, glm::mat4 proj);
 	private:
-		UBO<Data::PointLight> pointLightUBO;
-		UBO<Data::PointShadow> pointShadowUBO;
-		UBO<Data::DirLight> dirLightUBO; 
-		UBO<Data::DirShadow> dirShadowUBO;
+		UBO<PointLight> pointLightUBO;
+		UBO<PointShadow> pointShadowUBO;
+		UBO<DirLight> dirLightUBO; 
+		UBO<DirShadow> dirShadowUBO;
 		UBO<UBOLightData> commonUBO;
 		UBOLightData commonData = UBOLightData();
 
@@ -87,7 +86,7 @@ namespace Nork::Renderer::Pipeline
 		SSBO<uint32_t> pLightIndicesSSBO;
 		SSBO<LightCullConfig> configSSBO;
 
-		Data::Shader lightCullShader;
+		Shader lightCullShader;
 	};
 }
 

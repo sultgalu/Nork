@@ -2,7 +2,7 @@
 
 #include "../Utils.h"
 
-namespace Nork::Renderer::Data
+namespace Nork::Renderer
 {
 	struct ShaderData
 	{

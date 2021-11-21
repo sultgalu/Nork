@@ -7,7 +7,7 @@ namespace Nork::Editor
 {
 	MainPanel::MainPanel(EditorData& d) : Panel("MainPanel", d)
 	{
-		this->events.Subscribe<Event::Types::KeyDown>([&](const Event::Types::KeyDown& ev)
+		this->events.Subscribe<KeyDownEvent>([&](const KeyDownEvent& ev)
 			{
 				if (ev.key == Key::S && Application::Get().inputState.Is<KeyState::Down>(Key::Ctrl))
 				{
@@ -58,7 +58,7 @@ namespace Nork::Editor
 		{
 			data.engine.scene.Load(fileName);
 			data.selectedPoly = nullptr;
-			data.selectedEnt = data.engine.scene.registry.GetUnderlyingMutable().data()[0];
+			data.selectedEnt = data.engine.scene.registry.data()[0];
 		}
 	}
 

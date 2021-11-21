@@ -7,7 +7,7 @@ namespace Nork::Editor
 {
 	std::vector<Panel*> panels;
 
-	void SetCallbacks(Event::Receiver& disp)
+	void SetCallbacks(Receiver& disp)
 	{
 		auto& imIO = ImGui::GetIO();
 		auto ptr = &imIO;
@@ -15,9 +15,9 @@ namespace Nork::Editor
 			{
 				auto& e = ev.As<Events::MouseMove>();
 			});*/
-		disp.Subscribe<Event::Types::MouseScroll>([&imIO](const Event::Types::Base& ev)
+		disp.Subscribe<MouseScrollEvent>([&imIO](const BaseEvent& ev)
 			{
-				imIO.MouseWheel += (float)ev.As<Event::Types::MouseScroll>().offset;
+				imIO.MouseWheel += (float)ev.As<MouseScrollEvent>().offset;
 			});
 		//evMan.Subscribe<Events::MouseDown>([&imIO](const Event& ev)
 		//	{
@@ -27,7 +27,7 @@ namespace Nork::Editor
 		//	{
 		//		imIO.MouseDown[Events::ToInt(ev.As<Events::MouseUp>().button)] = false; // left, right, middle for imgui
 		//	});
-		disp.Subscribe<Event::Types::KeyUp>([&imIO](const Event::Types::KeyUp& ev)
+		disp.Subscribe<KeyUpEvent>([&imIO](const KeyUpEvent& ev)
 			{
 				imIO.KeysDown[ev.AsInt()] = false;
 				using enum Key;
@@ -47,7 +47,7 @@ namespace Nork::Editor
 					break;
 				}
 			});
-		disp.Subscribe<Event::Types::KeyDown>([&imIO](const Event::Types::KeyDown& ev)
+		disp.Subscribe<KeyDownEvent>([&imIO](const KeyDownEvent& ev)
 			{
 				imIO.KeysDown[ev.AsInt()] = false;
 				using enum Key;
@@ -67,15 +67,15 @@ namespace Nork::Editor
 					break;
 				}
 			}); 
-		disp.Subscribe<Event::Types::Type>([&imIO](const Event::Types::Type& ev)
+		disp.Subscribe<TypeEvent>([&imIO](const TypeEvent& ev)
 			{
-				imIO.AddInputCharacter(ev.As<Event::Types::Type>().character);
+				imIO.AddInputCharacter(ev.character);
 			});
-		disp.Subscribe<Event::Types::WindowInFocus>([&imIO](const Event::Types::WindowInFocus& ev)
+		disp.Subscribe<WindowInFocusEvent>([&imIO](const WindowInFocusEvent& ev)
 			{
 				imIO.AddFocusEvent(true);
 			});
-		disp.Subscribe<Event::Types::WindowOutOfFocus>([&imIO](const Event::Types::WindowOutOfFocus& ev)
+		disp.Subscribe<WindowOutOfFocusEvent>([&imIO](const WindowOutOfFocusEvent& ev)
 			{
 				imIO.AddFocusEvent(false);
 			});

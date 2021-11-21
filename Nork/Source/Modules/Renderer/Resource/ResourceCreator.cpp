@@ -2,10 +2,8 @@
 #include "ResourceCreator.h"
 #include "DefaultResources.h"
 
-namespace Nork::Renderer::Resource
+namespace Nork::Renderer
 {
-	using namespace Data;
-
     MeshResource CreateMesh(MeshData& data)
     {
 		MeshResource resource{};

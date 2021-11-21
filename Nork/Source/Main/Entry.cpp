@@ -3,7 +3,6 @@
 #include "Core/CameraController.h"
 #include "Utils/Logger.h"
 #include "Utils/Timer.h"
-#include "Modules/ECS/Storage.h"
 #include "Components/Common.h"
 #include "Editor/Editor.h"
 #include "Core/NorkWindow.h"
@@ -30,6 +29,7 @@ int main()
 	Logger::PushStream(std::cout);
 
 	auto& engine = Application::Get().engine;
+	auto& dispatcher = Application::Get().dispatcher;
 
 	auto cameraNode = engine.scene.CreateNode();
 	auto& cam = engine.scene.AddComponent<Components::Camera>(cameraNode);
@@ -37,7 +37,7 @@ int main()
 	Editor::Editor editor(engine);
 
 	editor.SetDisplayTexture(engine.lightFb.Result());
-	engine.appEventMan.GetReceiver().Subscribe<Event::Types::RenderUpdated>([&](const Event::Types::RenderUpdated& ev)
+	dispatcher.GetReceiver().Subscribe<RenderUpdatedEvent>([&](const RenderUpdatedEvent& ev)
 		{
 			editor.Render();
 		});

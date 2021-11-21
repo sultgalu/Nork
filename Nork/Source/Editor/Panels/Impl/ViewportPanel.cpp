@@ -13,8 +13,7 @@ namespace Nork::Editor
 			data.engine.scene.GetMainCamera()))
 	{
 		static Timer timer;
-		using namespace Event::Types;
-		events.Subscribe<MouseDown>([&](const MouseDown& e)
+		events.Subscribe<MouseDownEvent>([&](const MouseDownEvent& e)
 			{
 				if (e.button != MouseButton::Left)
 					return;
@@ -32,7 +31,7 @@ namespace Nork::Editor
 				}
 				timer.Restart();
 			});
-		events.Subscribe<MouseMove>([&](const MouseMove& e)
+		events.Subscribe<MouseMoveEvent>([&](const MouseMoveEvent& e)
 			{
 				
 				if (data.idQueryMode.test(IdQueryMode::MouseMoveClicked) &&

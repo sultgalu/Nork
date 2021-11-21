@@ -54,28 +54,28 @@ namespace Nork
 	class InputState: Template::Types::OnlyConstruct
 	{
 	public:
-		InputState(Event::Receiver& receiver)
+		InputState(Receiver& receiver)
 		{
 			SetupByGLFW();
 
 			MetaLogger().Debug("Should write this completely");
 
-			receiver.Subscribe(std::function([&](const Event::Types::KeyDown& e)
+			receiver.Subscribe(std::function([&](const KeyDownEvent& e)
 				{
 					keys[e.AsInt()] |= KeyState::Down;
 					keys[e.AsInt()] &= ~KeyState::Up;
 				}));
-			receiver.Subscribe(std::function([&](const Event::Types::KeyUp& e)
+			receiver.Subscribe(std::function([&](const KeyUpEvent& e)
 				{
 					keys[e.AsInt()] |= KeyState::Up;
 					keys[e.AsInt()] &= ~KeyState::Down;
 				}));
-			receiver.Subscribe(std::function([&](const Event::Types::MouseDown& e)
+			receiver.Subscribe(std::function([&](const MouseDownEvent& e)
 				{
 					mouseButtons[e.AsInt()] |= MouseButtonState::Down;
 					mouseButtons[e.AsInt()] &= ~MouseButtonState::Up;
 				}));
-			receiver.Subscribe(std::function([&](const Event::Types::MouseUp& e)
+			receiver.Subscribe(std::function([&](const MouseUpEvent& e)
 				{
 					mouseButtons[e.AsInt()] |= MouseButtonState::Up;
 					mouseButtons[e.AsInt()] &= ~MouseButtonState::Down;

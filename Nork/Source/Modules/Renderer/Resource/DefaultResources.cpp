@@ -3,7 +3,7 @@
 #include "ResourceCreator.h"
 #include "../Utils.h"
 
-namespace Nork::Renderer::Resource
+namespace Nork::Renderer
 {
 	static void InitDefaultTextures()
 	{
@@ -12,10 +12,10 @@ namespace Nork::Renderer::Resource
 		float norm[]{ 0.5f, 0.5f, 1.0f };
 		float refl[]{ 0.5f };
 		float rough[]{ 0.5f };
-		DefaultResources::textures[static_cast<uint8_t>(Data::TextureUse::Diffuse)] = Data::TextureResource{ .id = Create(1, 1, Format::RGBA32F, diff) };
-		DefaultResources::textures[static_cast<uint8_t>(Data::TextureUse::Normal)] = Data::TextureResource{ .id = Create(1, 1, Format::RGB32F, norm) };
-		DefaultResources::textures[static_cast<uint8_t>(Data::TextureUse::Reflection)] = Data::TextureResource{ .id = Create(1, 1, Format::R32F, refl) };
-		DefaultResources::textures[static_cast<uint8_t>(Data::TextureUse::Roughness)] = Data::TextureResource{ .id = Create(1, 1, Format::R32F, rough) };
+		DefaultResources::textures[static_cast<uint8_t>(TextureUse::Diffuse)] = TextureResource{ .id = Create(1, 1, Format::RGBA32F, diff) };
+		DefaultResources::textures[static_cast<uint8_t>(TextureUse::Normal)] = TextureResource{ .id = Create(1, 1, Format::RGB32F, norm) };
+		DefaultResources::textures[static_cast<uint8_t>(TextureUse::Reflection)] = TextureResource{ .id = Create(1, 1, Format::R32F, refl) };
+		DefaultResources::textures[static_cast<uint8_t>(TextureUse::Roughness)] = TextureResource{ .id = Create(1, 1, Format::R32F, rough) };
 	}
 
 	static void InitCube()
@@ -26,10 +26,10 @@ namespace Nork::Renderer::Resource
 		auto tangents = Utils::Mesh::GetCubeVertexTangents();
 		auto bitangents = Utils::Mesh::GetCubeVertexBitangents();
 
-		Data::MeshData meshData;
+		MeshData meshData;
 		for (int i = 0; i < positions.size() / 3; i++)
 		{
-			Data::Vertex vertex;
+			Vertex vertex;
 			vertex.Position = glm::vec3(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]);
 			vertex.Normal = glm::vec3(normals[i * 3], normals[i * 3 + 1], normals[i * 3 + 2]);
 			vertex.tangent = glm::vec3(tangents[i * 3], tangents[i * 3 + 1], tangents[i * 3 + 2]);
@@ -41,7 +41,7 @@ namespace Nork::Renderer::Resource
 		meshData.indices = Utils::Mesh::GetCubeIndices();
 		// leaving textures empty, resourceMan sets the default ones.
 
-		DefaultResources::cube = Renderer::Resource::CreateMesh(meshData);
+		DefaultResources::cube = Renderer::CreateMesh(meshData);
 	}
 
 	void DefaultResources::Init()

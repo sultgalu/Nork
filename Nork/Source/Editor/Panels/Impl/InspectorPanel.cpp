@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "../InspectorPanel.h"
-#include "Modules/ECS/Storage.h"
 #include "Platform/FileDialog.h"
 
 namespace Nork::Editor
@@ -122,25 +121,25 @@ namespace Nork::Editor
 				{
 					if (ImGui::BeginTabItem("Diffuse"))
 					{
-						ImGui::Image((ImTextureID)model->meshes[meshIdx].textures[(int)TextureUse::Diffuse], ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
+						ImGui::Image((ImTextureID)model->meshes[meshIdx].textures[(int)Renderer::TextureUse::Diffuse], ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
 							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
 						ImGui::EndTabItem();
 					}
 					if (ImGui::BeginTabItem("Normal"))
 					{
-						ImGui::Image((ImTextureID)model->meshes[meshIdx].textures[(int)TextureUse::Normal], ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
+						ImGui::Image((ImTextureID)model->meshes[meshIdx].textures[(int)Renderer::TextureUse::Normal], ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
 							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
 						ImGui::EndTabItem();
 					}
 					if (ImGui::BeginTabItem("Roughness"))
 					{
-						ImGui::Image((ImTextureID)model->meshes[meshIdx].textures[(int)TextureUse::Roughness], ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
+						ImGui::Image((ImTextureID)model->meshes[meshIdx].textures[(int)Renderer::TextureUse::Roughness], ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
 							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
 						ImGui::EndTabItem();
 					}
 					if (ImGui::BeginTabItem("Metalness"))
 					{
-						ImGui::Image((ImTextureID)model->meshes[meshIdx].textures[(int)TextureUse::Reflection], ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
+						ImGui::Image((ImTextureID)model->meshes[meshIdx].textures[(int)Renderer::TextureUse::Reflection], ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
 							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
 						ImGui::EndTabItem();
 					}
@@ -383,7 +382,7 @@ namespace Nork::Editor
 	template<>
 	inline void InspectorPanel::CompSelector<Model>()
 	{
-		if (ImGui::Selectable("Model", false, scene.registry.HasAny<Model>(data.selectedEnt) ? ImGuiSelectableFlags_Disabled : 0))
+		if (ImGui::Selectable("Model", false, scene.registry.any_of<Model>(data.selectedEnt) ? ImGuiSelectableFlags_Disabled : 0))
 		{
 			scene.AddModel(data.selectedEnt);
 			ImGui::CloseCurrentPopup();
@@ -392,7 +391,7 @@ namespace Nork::Editor
 	template<typename T>
 	void InspectorPanel::CompSelector()
 	{
-		if (ImGui::Selectable(GetCompName<T>().c_str(), false, scene.registry.HasAny<T>(data.selectedEnt) ? ImGuiSelectableFlags_Disabled : 0))
+		if (ImGui::Selectable(GetCompName<T>().c_str(), false, scene.registry.any_of<T>(data.selectedEnt) ? ImGuiSelectableFlags_Disabled : 0))
 		{
 			scene.AddComponent<T>(data.selectedEnt);
 			ImGui::CloseCurrentPopup();
@@ -422,7 +421,7 @@ namespace Nork::Editor
 	}
 	void InspectorPanel::DrawContent()
 	{
-		entt::registry& reg = scene.registry.GetUnderlyingMutable();
+		entt::registry& reg = scene.registry;
 
 		auto& selected = data.selectedEnt;
 

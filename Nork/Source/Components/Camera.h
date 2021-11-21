@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Modules/ECS/Storage.h"
-
 namespace Nork::Components
 {
 	struct Camera

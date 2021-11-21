@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Nork::Renderer::Data
+namespace Nork::Renderer
 {
 	struct PointLight
 	{

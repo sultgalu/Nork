@@ -15,7 +15,7 @@ namespace Nork
 
 	Application::Application():	
 		window(),
-		dispatcher(Event::Dispatcher()),
+		dispatcher(Dispatcher()),
 		inputState(dispatcher.GetReceiver()),
 		engine(Engine(GetEngineConfig()))
 	{

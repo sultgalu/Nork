@@ -8,7 +8,7 @@ namespace Nork::Editor
 	{
 	public:
 		HierarchyPanel (EditorData& d)
-			: Panel("Hierarchy", d), reg(data.engine.scene.registry.GetUnderlyingMutable()) { }
+			: Panel("Hierarchy", d), reg(data.engine.scene.registry) { }
 	protected:
 		void DrawContent() override;
 	private:

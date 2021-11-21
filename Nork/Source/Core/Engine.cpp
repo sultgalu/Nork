@@ -2,7 +2,6 @@
 
 #include "Modules/Renderer/Loaders/Loaders.h"
 #include "Modules/Renderer/Resource/DefaultResources.h"
-#include "Serialization/BinarySerializer.h"
 #include "Modules/Renderer/Pipeline/StreamRenderer.h"
 #include "Modules/Renderer/Pipeline/Capabilities.h"
 #include "Modules/Physics/Pipeline/CollisionDetectionGPU.h"
@@ -16,23 +15,23 @@ namespace Nork
 	static constexpr auto dShadIdxSize = 10;
 	static constexpr auto pShadIdxSize = 10;
 
-	static Data::Shader CreateShaderFromPath(std::string_view path)
+	static Renderer::Shader CreateShaderFromPath(std::string_view path)
 	{
 		std::ifstream stream(path.data());
 		std::stringstream buf;
 		buf << stream.rdbuf();
 
-		auto data = Data::ShaderData{ .source = buf.str() };
-		auto resource = Resource::CreateShader(data);
+		auto data = Renderer::ShaderData{ .source = buf.str() };
+		auto resource = Renderer::CreateShader(data);
 		stream.close();
-		return Data::Shader(resource);
+		return Renderer::Shader(resource);
 	}
 
-	static Renderer::Data::Shader shader;
-	static Renderer::Data::Shader pointShader;
-	static Renderer::Data::Shader lineShader;
+	static Renderer::Shader shader;
+	static Renderer::Shader pointShader;
+	static Renderer::Shader lineShader;
 
-	DeferredData Engine::CreatePipelineResources()
+	Renderer::DeferredData Engine::CreatePipelineResources()
 	{
 		using namespace Renderer::Utils::Texture;
 
@@ -40,7 +39,7 @@ namespace Nork
 		pointShader = CreateShaderFromPath("Source/Shaders/point.shader");
 		lineShader = CreateShaderFromPath("Source/Shaders/line.shader");
 		lightMan.SetDebug(CreateShaderFromPath("Source/Shaders/debug.shader"));
-		return DeferredData (DeferredData::Shaders
+		return Renderer::DeferredData (Renderer::DeferredData::Shaders
 			{
 				.gPass = CreateShaderFromPath("Source/Shaders/gPass.shader"),
 				.lPass = CreateShaderFromPath("Source/Shaders/lightPass.shader"),
@@ -50,10 +49,9 @@ namespace Nork
 
 	} // TODO:: cannot do this well...
 
-	static std::vector<Data::Model> GetModels(ECS::Registry& r)
+	static std::vector<Renderer::Model> GetModels(entt::registry& reg)
 	{
-		std::vector<std::pair<std::vector<Data::Mesh>, glm::mat4>> result;
-		auto& reg = r.GetUnderlying();
+		std::vector<std::pair<std::vector<Renderer::Mesh>, glm::mat4>> result;
 
 		auto view = reg.view<Components::Model, Components::Transform>();
 		result.reserve(view.size_hint());
@@ -88,27 +86,27 @@ namespace Nork
 
 	Engine::Engine(EngineConfig config)
 		: scene(Scene::Scene()), pipeline(CreatePipelineResources()),
-		geometryFb(Renderer::Pipeline::GeometryFramebuffer(1920, 1080)),
-		lightFb(Renderer::Pipeline::LightPassFramebuffer(geometryFb.Depth(), geometryFb.Width(), geometryFb.Height())),
+		geometryFb(Renderer::GeometryFramebuffer(1920, 1080)),
+		lightFb(Renderer::LightPassFramebuffer(geometryFb.Depth(), geometryFb.Width(), geometryFb.Height())),
 		pSystem(), lightMan(CreateShaderFromPath("Source/Shaders/lightCull.shader"))
 	{
 		using namespace Renderer::Pipeline;
-		Renderer::Resource::DefaultResources::Init();
+		Renderer::DefaultResources::Init();
 
 		dShadowFramebuffers.reserve(dShadIdxSize);
 		pShadowFramebuffers.reserve(pShadIdxSize);
 		for (int i = dShadIdxSize - 1; i > -1; i--)
 		{
 			dShadowIndices.push_back(i);
-			dShadowFramebuffers.push_back(DirShadowFramebuffer(4000, 4000));
+			dShadowFramebuffers.push_back(Renderer::DirShadowFramebuffer(4000, 4000));
 		}
 		for (int i = pShadIdxSize - 1; i > -1; i--)
 		{
 			pShadowIndices.push_back(i);
-			pShadowFramebuffers.push_back(PointShadowFramebuffer(1000, 1000));
+			pShadowFramebuffers.push_back(Renderer::PointShadowFramebuffer(1000, 1000));
 		}
 
-		auto& reg = scene.registry.GetUnderlyingMutable();
+		auto& reg = scene.registry;
 		reg.on_construct<Components::DirShadow>().connect<&Engine::OnDShadowAdded>(this);
 		reg.on_destroy<Components::DirShadow>().connect<&Engine::OnDShadowRemoved>(this);
 
@@ -125,11 +123,11 @@ namespace Nork
 	{
 		Nork::Window& win = Application::Get().window;
 
-		auto& sender = appEventMan.GetSender();
+		auto& sender = Application::Get().dispatcher.GetSender();
 		while (win.IsRunning())
 		{	
-			sender.Send(Event::Types::OnUpdate());
-			sender.Send(Event::Types::OnRenderUpdate());
+			sender.Send(UpdateEvent());
+			sender.Send(RenderUpdateEvent());
 			
 			PhysicsUpdate(); // NEW
 			auto models = GetModels(this->scene.registry);
@@ -140,22 +138,22 @@ namespace Nork
 			if (drawSky)
 				pipeline.DrawSkybox();
 			DrawHitboxes();
-			FramebufferBase::UseDefault();
+			Renderer::FramebufferBase::UseDefault();
 
-			sender.Send(Event::Types::RenderUpdated());
+			sender.Send(RenderUpdatedEvent());
 			Profiler::Clear();
 			win.Refresh();
 
-			sender.Send(Event::Types::Updated());
+			sender.Send(UpdatedEvent());
 		}
 	}
 	void Engine::ReadId(int x, int y)
 	{
 		uint32_t res;
-		Renderer::Utils::Other::ReadPixels(lightFb.GetFBO(), lightFb.ColorAttForExtension(0), x, y, Utils::Texture::Format::R32UI, &res);
+		Renderer::Utils::Other::ReadPixels(lightFb.GetFBO(), lightFb.ColorAttForExtension(0), x, y, Renderer::Utils::Texture::Format::R32UI, &res);
 		if (res != 0)
 		{
-			appEventMan.GetSender().Send(Event::Types::IdQueryResult(x, y, res));
+			Application::Get().dispatcher.GetSender().Send(IdQueryResultEvent(x, y, res));
 		}
 	}
 	Engine::~Engine()
@@ -163,7 +161,7 @@ namespace Nork
 	}
 	void Engine::SyncComponents()
 	{
-		auto& reg = scene.registry.GetUnderlyingMutable();
+		auto& reg = scene.registry;
 		auto pls = reg.view<Components::Transform, Components::PointLight>();
 
 		for (auto& id : pls)
@@ -176,7 +174,7 @@ namespace Nork
 	}
 	void Engine::UpdateLights()
 	{
-		auto& reg = scene.registry.GetUnderlying();
+		auto& reg = scene.registry;
 		auto dLightsWS = reg.view<Components::DirLight, Components::DirShadow>();
 		auto pLightsWS = reg.view<Components::PointLight, Components::PointShadow>();
 		auto dLights = reg.view<Components::DirLight>(entt::exclude<Components::DirShadow>);
@@ -186,17 +184,17 @@ namespace Nork
 		static auto dShadowMapShader = CreateShaderFromPath("Source/Shaders/dirShadMap.shader");
 
 		auto modelView = reg.view<Components::Model, Components::Transform>();
-		std::vector<std::pair<std::vector<Data::Mesh>, glm::mat4>> models;
+		std::vector<std::pair<std::vector<Renderer::Mesh>, glm::mat4>> models;
 		for (auto& id : modelView)
 		{
 			models.push_back(std::pair(modelView.get(id)._Myfirst._Val.meshes, modelView.get(id)._Get_rest()._Myfirst._Val.GetModelMatrix()));
 		}
 		// ---------------------------
 	
-		std::vector<Data::DirShadow> DS;
-		std::vector<Data::PointShadow> PS;
-		std::vector<Data::DirLight> DL;
-		std::vector<Data::PointLight> PL;
+		std::vector<Renderer::DirShadow> DS;
+		std::vector<Renderer::PointShadow> PS;
+		std::vector<Renderer::DirLight> DL;
+		std::vector<Renderer::PointLight> PL;
 		DS.reserve(dLightsWS.size_hint());
 		PS.reserve(pLightsWS.size_hint());
 		DL.reserve(dLights.size_hint());
@@ -260,7 +258,7 @@ namespace Nork
 		deltas.clear();
 		Timer t;
 
-		auto& reg = scene.registry.GetUnderlyingMutable();
+		auto& reg = scene.registry;
 		auto view = reg.view<Components::Transform, Kinematic>(entt::exclude_t<Polygon>());
 		auto collOnlyView = reg.view<Components::Transform, Polygon>(entt::exclude_t<Kinematic>());
 		auto collView = reg.view<Components::Transform, Kinematic, Polygon>();
@@ -363,7 +361,7 @@ namespace Nork
 		using namespace Capabilities;
 		using enum Capability;
 
-		auto view = scene.registry.GetUnderlyingMutable().view<Components::Transform, Polygon>();
+		auto view = scene.registry.view<Components::Transform, Polygon>();
 		
 		auto asVertices = [](std::span<glm::vec3> verts, glm::mat4 model)
 		{
@@ -471,7 +469,7 @@ namespace Nork
 		pipeline.data.shaders.skybox.SetMat4("VP", vp);
 	}
 
-	static Renderer::Data::Shader setupShaderRes, aabbShaderRes, satShaderRes;
+	static Renderer::Shader setupShaderRes, aabbShaderRes, satShaderRes;
 	std::array<GLuint, 3> Physics::CollisionDetectionGPU::Get_Setup_AABB_SAT_Shaders()
 	{
 		setupShaderRes = CreateShaderFromPath("Source/Shaders/colliderTransform.shader");

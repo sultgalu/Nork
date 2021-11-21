@@ -13,12 +13,12 @@ namespace Nork::Scene
 	class ResourceManager
 	{
 	public:
-		const std::vector<Renderer::Data::MeshResource> GetCube()
+		const std::vector<Renderer::MeshResource> GetCube()
 		{
-			return { Renderer::Resource::DefaultResources::cube };
+			return { Renderer::DefaultResources::cube };
 		}
 
-		const std::vector<Renderer::Data::MeshResource>& GetMeshes(const std::string& src)
+		const std::vector<Renderer::MeshResource>& GetMeshes(const std::string& src)
 		{
 			auto searchRes = resources.meshes.find(src);
 			if (searchRes != resources.meshes.end())
@@ -30,7 +30,7 @@ namespace Nork::Scene
 			auto& meshesRaw = rawDatas.meshes[src];
 			for (size_t i = 0; i < meshesRaw.size(); i++)
 			{
-				resources.meshes[src].push_back(Renderer::Resource::CreateMesh(meshesRaw[i]));
+				resources.meshes[src].push_back(Renderer::CreateMesh(meshesRaw[i]));
 			}
 
 			references.meshGroups[src]++;
@@ -43,7 +43,7 @@ namespace Nork::Scene
 			return resources.meshes[src];
 		}
 
-		const Renderer::Data::TextureResource& GetTexture(const std::string& src, Renderer::Utils::Texture::TextureParams params = Renderer::Utils::Texture::TextureParams())
+		const Renderer::TextureResource& GetTexture(const std::string& src, Renderer::Utils::Texture::TextureParams params = Renderer::Utils::Texture::TextureParams())
 		{
 			auto searchRes = resources.textures.find(src);
 			if (searchRes != resources.textures.end())
@@ -53,14 +53,14 @@ namespace Nork::Scene
 
 			rawDatas.textures[src] = Renderer::Loaders::LoadImage(src);
 			auto& textureRaw = rawDatas.textures[src];
-			resources.textures[src] = Renderer::Resource::CreateTexture(textureRaw, params);
+			resources.textures[src] = Renderer::CreateTexture(textureRaw, params);
 
 			references.textures[src]++; 
 			Logger::Info("Loaded Texture from ", src, "\n\t", std::format("{}:{} {} bit", textureRaw.width, textureRaw.height, textureRaw.channels));
 			return resources.textures[src];			
 		}
 
-		const Renderer::Data::TextureResource& GetCubemapTexture(const std::string& src, const std::string& extension = ".jpg", Renderer::Utils::Texture::TextureParams params = Renderer::Utils::Texture::TextureParams())
+		const Renderer::TextureResource& GetCubemapTexture(const std::string& src, const std::string& extension = ".jpg", Renderer::Utils::Texture::TextureParams params = Renderer::Utils::Texture::TextureParams())
 		{
 			/*auto searchRes = resources.textures.find(src);
 			if (searchRes != resources.textures.end())
@@ -75,14 +75,14 @@ namespace Nork::Scene
 				rawDatas.textures[faceStr.append(std::to_string(i))] = raws[i];
 			}
 
-			resources.textures[src] = Renderer::Resource::CreateCubemap(raws, params);
+			resources.textures[src] = Renderer::CreateCubemap(raws, params);
 
 			references.textures[src]++;
 			Logger::Info("Loaded Cubemap Texture from ", src, "\n\t", std::format("{}:{} {} bit", raws[0].width, raws[0].height, raws[0].channels));
 			return resources.textures[src];
 		}
 
-		const Renderer::Data::ShaderResource& GetShader(const std::string& src)
+		const Renderer::ShaderResource& GetShader(const std::string& src)
 		{
 			auto searchRes = resources.shaders.find(src);
 			if (searchRes != resources.shaders.end())
@@ -92,7 +92,7 @@ namespace Nork::Scene
 
 			rawDatas.shaders[src] = Renderer::Loaders::LoadShader(src);
 			auto& shaderRaw = rawDatas.shaders[src];
-			resources.shaders[src] = Renderer::Resource::CreateShader(shaderRaw);
+			resources.shaders[src] = Renderer::CreateShader(shaderRaw);
 
 			references.shaders[src]++;
 			Logger::Info("Loaded Shader from ", src);
@@ -106,7 +106,7 @@ namespace Nork::Scene
 				auto& meshes = resources.meshes[src];
 				for (size_t i = 0; i < meshes.size(); i++)
 				{
-					Renderer::Resource::DeleteMesh(meshes[i]);
+					Renderer::DeleteMesh(meshes[i]);
 				}
 				resources.meshes.erase(src);
 				rawDatas.meshes.erase(src);
@@ -116,7 +116,7 @@ namespace Nork::Scene
 		{
 			if (DecreaseRefCount(references.textures, src))
 			{
-				Renderer::Resource::DeleteTexture(resources.textures[src]);
+				Renderer::DeleteTexture(resources.textures[src]);
 				resources.textures.erase(src);
 				rawDatas.textures.erase(src);
 			}
@@ -125,7 +125,7 @@ namespace Nork::Scene
 		{
 			if (DecreaseRefCount(references.shaders, src))
 			{
-				Renderer::Resource::DeleteShader(resources.shaders[src]);
+				Renderer::DeleteShader(resources.shaders[src]);
 				resources.shaders.erase(src);
 				rawDatas.shaders.erase(src);
 			}
@@ -157,15 +157,15 @@ namespace Nork::Scene
 	private:
 		struct RawDatas
 		{
-			Map<std::vector<Renderer::Data::MeshData>> meshes;
-			Map<Renderer::Data::ShaderData> shaders;
-			Map<Renderer::Data::TextureData> textures;
+			Map<std::vector<Renderer::MeshData>> meshes;
+			Map<Renderer::ShaderData> shaders;
+			Map<Renderer::TextureData> textures;
 		};
 		struct Resources
 		{
-			Map<std::vector<Renderer::Data::MeshResource>> meshes;
-			Map<Renderer::Data::ShaderResource> shaders;
-			Map<Renderer::Data::TextureResource> textures;
+			Map<std::vector<Renderer::MeshResource>> meshes;
+			Map<Renderer::ShaderResource> shaders;
+			Map<Renderer::TextureResource> textures;
 		};
 		struct References
 		{

@@ -5,10 +5,8 @@
 #include "../Data/Shader.h"
 #include "../Utils.h"
 
-namespace Nork::Renderer::Resource
+namespace Nork::Renderer
 {
-	using namespace Data;
-
 	extern MeshResource CreateMesh(MeshData& data);
 	extern void DeleteMesh(MeshResource& resource);
 

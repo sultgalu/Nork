@@ -7,9 +7,7 @@
 #include "Framebuffer.h"
 #include "LightManager.h"
 
-using namespace Nork::Renderer::Data;
-
-namespace Nork::Renderer::Pipeline
+namespace Nork::Renderer
 {
 	using GFB = Framebuffer<TextureFormat::Depth16, TextureFormat::RGB16F, TextureFormat::RGB16F, TextureFormat::RGB16F, TextureFormat::RGBA16F>;
 	class GeometryFramebuffer : public GFB

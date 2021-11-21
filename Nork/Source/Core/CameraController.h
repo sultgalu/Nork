@@ -8,16 +8,16 @@ namespace Nork
 	class CameraController
 	{
 	public:
-		CameraController(Event::Receiver& receiver, Components::Camera& cam)
+		CameraController(Receiver& receiver, Components::Camera& cam)
 			: camera(cam)
 		{
 			SetupInputHandling(receiver);
 		}
 		void Update(float delta);
 	private:
-		void SetupInputHandling(Event::Receiver& receiver);
-		void HandleScroll(const Event::Types::MouseScroll& event);
-		void HandleMouseMove(const Event::Types::MouseMove& event);
+		void SetupInputHandling(Receiver& receiver);
+		void HandleScroll(const MouseScrollEvent& event);
+		void HandleMouseMove(const MouseMoveEvent& event);
 	public:
 		Components::Camera& camera;
 	};

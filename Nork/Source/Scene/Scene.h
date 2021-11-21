@@ -17,48 +17,48 @@ namespace Nork::Scene
 	class Scene
 	{
 	public:
-		inline ECS::Id CreateNode()
+		inline entt::entity CreateNode()
 		{
-			return registry.CreateEntity();
+			return registry.create();
 		}
-		inline void DeleteNode(ECS::Id id)
+		inline void DeleteNode(entt::entity id)
 		{
-			if (registry.HasAny<Components::Model>(id))
+			if (registry.any_of<Components::Model>(id))
 			{
 				RemoveComponent<Components::Model>(id);
 			}
-			registry.DeleteEntity(id);
+			registry.destroy(id);
 		}
 		template<DefaultEmplaceable T, typename... A>
-		inline T& AddComponent(ECS::Id id, A... args)
+		inline T& AddComponent(entt::entity id, A... args)
 		{
-			return registry.Emplace<T>(id, args...);
+			return registry.emplace<T>(id, args...);
 		}
-		Components::Model& AddModel(ECS::Id id, std::string src = "")
+		Components::Model& AddModel(entt::entity id, std::string src = "")
 		{
 			ownedModels[id] = src;
-			return registry.Emplace<Components::Model>(id, GetModelByResource(
+			return registry.emplace<Components::Model>(id, GetModelByResource(
 				src._Equal("") ? resMan.GetCube() : resMan.GetMeshes(src)));
 		}
 		template<DefaultRemovable T>
-		inline bool RemoveComponent(ECS::Id id)
+		inline bool RemoveComponent(entt::entity id)
 		{
-			return registry.Remove<T>(id) == 1;
+			return registry.remove<T>(id) == 1;
 		}
 		template<std::same_as<Components::Model> T>
-		inline bool RemoveComponent(ECS::Id id)
+		inline bool RemoveComponent(entt::entity id)
 		{
 			if (ownedModels.contains(id))
 			{
 				if (ownedModels[id]._Equal(""))
 				{
 					ownedModels.erase(id);
-					return registry.Remove<Components::Model>(id) == 1;
+					return registry.remove<Components::Model>(id) == 1;
 				}
 
 				resMan.DroppedMeshResource(ownedModels[id]);
 				ownedModels.erase(id);
-				return registry.Remove<Components::Model>(id) == 1;
+				return registry.remove<Components::Model>(id) == 1;
 			}
 			MetaLogger().Error(static_cast<size_t>(id), " is not owning any models.");
 			return false;
@@ -68,13 +68,13 @@ namespace Nork::Scene
 		inline void Reset()
 		{
 			FreeResources();
-			registry.Wipe();
+			registry = entt::registry();
 		}
 		inline Components::Camera& GetMainCamera()
 		{
-			if (MainCameraNode == ECS::invalidId || !registry.HasAny<Components::Camera>(MainCameraNode))
+			if (MainCameraNode == entt::null || !registry.any_of<Components::Camera>(MainCameraNode))
 			{
-				auto view = registry.GetUnderlyingMutable().view<Components::Camera>();
+				auto view = registry.view<Components::Camera>();
 				if (view.size() > 0)
 				{
 					MainCameraNode = view.front();
@@ -85,14 +85,14 @@ namespace Nork::Scene
 					AddComponent<Components::Camera>(MainCameraNode);
 				}
 			}
-			auto& cam = registry.GetComponent<Components::Camera>(MainCameraNode);
+			auto& cam = registry.get<Components::Camera>(MainCameraNode);
 			return cam;
 		}
 	private:
-		Components::Model GetModelByResource(std::vector<Renderer::Data::MeshResource> resource);
+		Components::Model GetModelByResource(std::vector<Renderer::MeshResource> resource);
 		void FreeResources()
 		{
-			auto view = registry.GetUnderlyingMutable().view<Components::Model>();
+			auto view = registry.view<Components::Model>();
 			for (auto& res : ownedModels)
 			{
 				if (res.second._Equal(""))
@@ -105,10 +105,10 @@ namespace Nork::Scene
 		}
 		uuid GenUniqueId();
 	public:
-		ECS::Id MainCameraNode;
-		ECS::Registry registry;
+		entt::entity MainCameraNode;
+		entt::registry registry;
 		ResourceManager resMan;
 
-		std::unordered_map<ECS::Id, std::string> ownedModels;
+		std::unordered_map<entt::entity, std::string> ownedModels;
 	};
 }

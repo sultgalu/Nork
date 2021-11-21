@@ -197,9 +197,6 @@
     <ClInclude Include="Source\Utils\Timer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\ECS\Storage.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Editor\Editor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -287,9 +284,6 @@
     <ClInclude Include="Source\Scene\Scene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\SharedData.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Editor\Panels\InspectorPanel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -311,7 +305,7 @@
     <ClInclude Include="Source\Modules\Renderer\Pipeline\Framebuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Serialization\BinarySerializer.h">
+    <ClInclude Include="Source\Scene\Serialization\BinarySerializer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Modules\Renderer\Pipeline\StreamRenderer.h">
@@ -383,16 +377,16 @@
     <ClInclude Include="Source\Utils\Profiler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Serialization\BinaryWriter.h">
+    <ClInclude Include="Source\Scene\Serialization\BinaryWriter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Serialization\BinaryReader.h">
+    <ClInclude Include="Source\Scene\Serialization\BinaryReader.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Serialization\BinaryComponentSerializer.h">
+    <ClInclude Include="Source\Scene\Serialization\BinaryComponentSerializer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Serialization\SpecializedBinaryComponentSerializers.h">
+    <ClInclude Include="Source\Scene\Serialization\SpecializedBinaryComponentSerializers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Modules\Renderer\Window\Window.h">

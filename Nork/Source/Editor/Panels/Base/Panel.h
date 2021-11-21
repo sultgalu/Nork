@@ -27,7 +27,7 @@ namespace Nork::Editor
 		PanelState state;
 		EditorData& data;
 		std::string name;
-		Event::Receiver events; // = reg.GetReceiver();
+		Receiver events; // = reg.GetReceiver();
 	};
 }
 

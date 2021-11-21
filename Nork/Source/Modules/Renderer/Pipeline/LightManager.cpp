@@ -2,11 +2,9 @@
 #include "LightManager.h"
 #include "../Utils.h"
 
-namespace Nork::Renderer::Pipeline
+namespace Nork::Renderer
 {
-	using namespace Data;
-
-	LightManager::LightManager(Data::Shader shader)
+	LightManager::LightManager(Shader shader)
 		: commonUBO(0), dirLightUBO(1), dirShadowUBO(2), 
 		pointLightUBO(3), pointShadowUBO(4), pLightIndicesSSBO(20), 
 		pLightRangesSSBO(21), configSSBO(22), lightCullShader(shader)
@@ -19,7 +17,7 @@ namespace Nork::Renderer::Pipeline
 		commonUBO.SetData(&commonData, 1, 0);
 	}
 
-	void LightManager::DrawPointShadowMap(const Data::PointLight& light, const Data::PointShadow& shadow, const std::span<Data::Model> models, PointShadowFramebuffer& fb, Data::Shader& pShadowMapShader)
+	void LightManager::DrawPointShadowMap(const PointLight& light, const PointShadow& shadow, const std::span<Model> models, PointShadowFramebuffer& fb, Shader& pShadowMapShader)
 	{
 		fb.ClearAndUse();
 		pShadowMapShader.Use();
@@ -57,7 +55,7 @@ namespace Nork::Renderer::Pipeline
 			};
 		}
 	}
-	void LightManager::DrawDirShadowMap(const Data::DirLight& light, const Data::DirShadow& shadow, const std::span<Data::Model> models, DirShadowFramebuffer& fb, Data::Shader& dShadowMapShader)
+	void LightManager::DrawDirShadowMap(const DirLight& light, const DirShadow& shadow, const std::span<Model> models, DirShadowFramebuffer& fb, Shader& dShadowMapShader)
 	{
 		fb.ClearAndUse();
 		dShadowMapShader.Use();
@@ -75,7 +73,7 @@ namespace Nork::Renderer::Pipeline
 			};
 		}
 	}
-	void LightManager::SetPointLightData(std::span<Data::PointLight> pls, std::span<Data::PointShadow> pss)
+	void LightManager::SetPointLightData(std::span<PointLight> pls, std::span<PointShadow> pss)
 	{
 		pointLightUBO.Bind();
 		pointLightUBO.SetData(pls);
@@ -85,12 +83,12 @@ namespace Nork::Renderer::Pipeline
 		commonData.pLightCount = pls.size();
 		commonData.pShadowCount = pss.size();
 	}
-	void LightManager::SetPointLightData(std::span<Data::PointLight> pls, std::span<Data::PointShadow> pss, glm::mat4 view, glm::mat4 proj)
+	void LightManager::SetPointLightData(std::span<PointLight> pls, std::span<PointShadow> pss, glm::mat4 view, glm::mat4 proj)
 	{
 		SetPointLightData(pls, pss);
 		PointLightCulling(pls, view, proj);
 	}
-	void LightManager::SetDirLightData(std::span<Data::DirLight> dls, std::span<Data::DirShadow> dss)
+	void LightManager::SetDirLightData(std::span<DirLight> dls, std::span<DirShadow> dss)
 	{
 		dirLightUBO.Bind();
 		dirLightUBO.SetData(dls);
@@ -115,9 +113,9 @@ namespace Nork::Renderer::Pipeline
 		return tex;
 	}
 
-	static Data::Shader cullDisplayShader;
+	static Shader cullDisplayShader;
 
-	void LightManager::SetDebug(Data::Shader shader)
+	void LightManager::SetDebug(Shader shader)
 	{
 		cullDisplayShader = shader;
 	}

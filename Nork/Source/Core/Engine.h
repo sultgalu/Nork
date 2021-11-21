@@ -10,8 +10,6 @@
 
 namespace Nork
 {
-	using namespace Renderer::Pipeline;
-
 	struct EngineConfig
 	{
 		EngineConfig() = default;
@@ -28,7 +26,7 @@ namespace Nork
 		void Launch();
 		void ReadId(int x, int y);
 	private:
-		DeferredData CreatePipelineResources();
+		Renderer::DeferredData CreatePipelineResources();
 		void SyncComponents();
 		void UpdateLights();
 		void PhysicsUpdate();
@@ -37,17 +35,16 @@ namespace Nork
 		void OnDShadowAdded(entt::registry& reg, entt::entity ent);
 		void OnDShadowRemoved(entt::registry& reg, entt::entity ent);
 	public:
-		Deferred pipeline;
-		LightManager lightMan;
-		Event::Dispatcher appEventMan;
+		Renderer::Deferred pipeline;
+		Renderer::LightManager lightMan;
 		Scene::Scene scene;
 
 		//MeshWorld<Vertex> meshes = MeshWorld<Vertex>::GetCube();
 		
-		std::vector<Renderer::Pipeline::DirShadowFramebuffer> dShadowFramebuffers;
-		std::vector<Renderer::Pipeline::PointShadowFramebuffer> pShadowFramebuffers;
-		Renderer::Pipeline::GeometryFramebuffer geometryFb;
-		Renderer::Pipeline::LightPassFramebuffer lightFb;
+		std::vector<Renderer::DirShadowFramebuffer> dShadowFramebuffers;
+		std::vector<Renderer::PointShadowFramebuffer> pShadowFramebuffers;
+		Renderer::GeometryFramebuffer geometryFb;
+		Renderer::LightPassFramebuffer lightFb;
 		GLuint idMap;
 
 		int pointSize = 20;
@@ -69,8 +66,6 @@ namespace Nork
 
 		Physics::System pSystem;
 		Physics::World& pWorld = pSystem.world;
-
-		Event::Dispatcher dispatcher;
 
 		static std::vector<std::pair<std::string, float>> GetDeltas();
 	};

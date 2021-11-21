@@ -9,7 +9,7 @@ namespace Nork
 	public:
 		static Application& Get();
 		Nork::Window window;
-		Event::Dispatcher dispatcher;
+		Dispatcher dispatcher;
 		InputState inputState;
 		Engine engine;
 	private:
