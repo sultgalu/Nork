@@ -267,7 +267,7 @@ namespace Nork::Editor
 			auto pair = SAPdeltas[i];
 			ImGui::Text(pair.first.append(": ").append(std::to_string(pair.second)).c_str());
 		}
-		ImGui::Separator();
+		ImGui::Separator();	
 		auto GPUdeltas = Physics::CollisionDetectionGPU::GetDeltas();
 		for (size_t i = 0; i < GPUdeltas.size(); i++)
 		{
@@ -283,6 +283,8 @@ namespace Nork::Editor
 		}
 
 		ImGui::DragFloat("Physics speed", &data.engine.physicsSpeed, 0.001f, 0, 10, "%.3f", ImGuiSliderFlags_Logarithmic);
+		bool GPUDetection = data.engine.pSystem.IsGPUDetection();
+		if (ImGui::Checkbox("GPU Detection", &GPUDetection)) data.engine.pSystem.SetIsGPUDetection(GPUDetection);
 		ImGui::Checkbox("Update polies", &data.engine.updatePoliesForPhysics);
 		ImGui::Checkbox("Gen Contact Points", &data.engine.pSystem.genContactPoints);
 		ImGui::Checkbox("Update Velocities", &data.engine.pSystem.updateVelocities);

@@ -42,7 +42,7 @@ int main()
 			editor.Render();
 		});
 
-	int dim = 2;
+	int dim = 4;
 	int sep = 3;
 	int start = -dim / 2;
 	int end = dim / 2 + dim % 2;

@@ -18,19 +18,14 @@ namespace Nork::Physics
 	}
 	void System::Update(float delta)
 	{
-		deltas.clear();
 		Timer summaT;
 		Timer t;
 		if (detectCollisions)
 		{
-			if constexpr (Config::CollisionDetectionGPU)
-				((CollisionDetectionGPU*)collisionDetector)->BroadPhase();
-			else ((CollisionDetectionCPU*)collisionDetector)->BroadPhase();
+			collisionDetector->BroadPhase();
 			deltas.push_back(std::pair("broad phase", t.Reset()));
 
-			if constexpr (Config::CollisionDetectionGPU)
-				((CollisionDetectionGPU*)collisionDetector)->NarrowPhase();
-			else ((CollisionDetectionCPU*)collisionDetector)->NarrowPhase();
+			collisionDetector->NarrowPhase();
 			deltas.push_back(std::pair("narrow phase", t.Reset()));
 		}
 		if (genContactPoints)
@@ -409,9 +404,31 @@ namespace Nork::Physics
 		}
 	}
 
+	void System::SetIsGPUDetection(bool val)
+	{
+		if (val)
+		{
+			if (dynamic_cast<CollisionDetectionCPU*>(collisionDetector))
+			{
+				delete collisionDetector;
+				collisionDetector = new CollisionDetectionGPU();
+			}
+		}
+		else
+		{
+			if (dynamic_cast<CollisionDetectionGPU*>(collisionDetector))
+			{
+				delete collisionDetector;
+				collisionDetector = new CollisionDetectionCPU(this->world);
+			}
+		}
+
+		SetColliders(this->colls);
+	}
+
 	void System::SetColliders(std::span<Collider> colls)
 	{
-		if constexpr (Config::CollisionDetectionGPU)
+		if (IsGPUDetection())
 		{
 			((CollisionDetectionGPU*)collisionDetector)->SetColliders(colls);
 		}
@@ -423,11 +440,16 @@ namespace Nork::Physics
 				world.AddCollider(colls[i]);
 			}
 		}
+
+		this->colls = std::vector<Collider>(colls.begin(), colls.end());
 	}
 
 	void System::SetModels(std::span<glm::vec3> translate, std::span<glm::quat> quaternions)
 	{
+		deltas.clear();
+		Timer t;
 		collisionDetector->UpdateTransforms(translate, quaternions);
+		deltas.push_back(std::pair("Update Transformss", t.Elapsed()));
 	}
 
 	void System::VelocityUpdate(float delta)

@@ -107,12 +107,15 @@ namespace Nork::Physics
     }
     void CollisionDetectionGPU::SetupPhase(std::span<glm::mat4> models)
     {
-        this->models.Data(models);
-        Timer t;
         deltas.clear();
-
+        Timer t;
         glFinishIfEnabled();
         deltas.push_back(std::pair("GLFinish initial", t.Reset()));
+
+        this->models.Data(models);
+
+        glFinishIfEnabled();
+        deltas.push_back(std::pair("Upload Data", t.Reset()));
         
         ZeroAtomicCounter();
         glFinishIfEnabled();

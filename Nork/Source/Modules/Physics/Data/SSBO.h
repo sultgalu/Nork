@@ -12,6 +12,10 @@ namespace Nork::Physics
 			glBufferData(GL_SHADER_STORAGE_BUFFER, size, data, GL_DYNAMIC_DRAW); //sizeof(data) only works for statically sized C/C++ arrays.
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, idx, id);
 		}
+		~ShaderStorageBuffer()
+		{
+			glDeleteBuffers(1, &id);
+		}
 		void Data(std::span<T> data)
 		{
 			glBindBuffer(GL_SHADER_STORAGE_BUFFER, id);
