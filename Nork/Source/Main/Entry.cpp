@@ -92,8 +92,11 @@ int main()
 	engine.scene.AddComponent<Components::Tag>(node2).tag = "NODE 2";*/
 
 	auto sun = engine.scene.CreateNode();
-	engine.scene.AddComponent<Components::DirLight>(sun).SetColor(glm::vec4(1.0f, 0.8f, 0.5, 1));
-	engine.scene.AddComponent<Components::DirShadow>(sun);
+	auto& l = engine.scene.AddComponent<Components::DirLight>(sun);
+	l.SetColor(glm::vec4(0.1f, 0.08f, 0.05, 1));
+	auto& shad = engine.scene.AddComponent<Components::DirShadow>(sun);
+	shad.far = 100; shad.near = -100; shad.left = -100; shad.right = 100; shad.bottom = -100; shad.top = 100;
+	shad.RecalcVP(l.GetView());
 	engine.scene.AddComponent<Components::Tag>(sun).tag = "SUN";
 	
 	//int offsX = 10;

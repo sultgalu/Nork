@@ -6,8 +6,8 @@ namespace Nork::Renderer
 {
 	LightManager::LightManager(Shader shader)
 		: commonUBO(0), dirLightUBO(1), dirShadowUBO(2), 
-		pointLightUBO(3), pointShadowUBO(4), pLightIndicesSSBO(20), 
-		pLightRangesSSBO(21), configSSBO(22), lightCullShader(shader)
+		pointLightUBO(3), pointShadowUBO(4), pLightIndicesSSBO(10), 
+		pLightRangesSSBO(11), configSSBO(12), lightCullShader(shader)
 	{
 	}
 

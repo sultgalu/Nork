@@ -286,7 +286,6 @@ namespace Nork::Editor
 		bool GPUDetection = data.engine.pSystem.IsGPUDetection();
 		if (ImGui::Checkbox("GPU Detection", &GPUDetection)) data.engine.pSystem.SetIsGPUDetection(GPUDetection);
 		ImGui::Checkbox("Update polies", &data.engine.updatePoliesForPhysics);
-		ImGui::Checkbox("Gen Contact Points", &data.engine.pSystem.genContactPoints);
 		ImGui::Checkbox("Update Velocities", &data.engine.pSystem.updateVelocities);
 		ImGui::Checkbox("Update Rotation", &data.engine.pSystem.updateRotation);
 		ImGui::Checkbox("Detect Collisions", &data.engine.pSystem.detectCollisions);

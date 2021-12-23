@@ -13,10 +13,6 @@ void main()
 #type fragment
 #version 430 core
 
-layout(std430, binding = 21) buffer BUF2
-{
-	uvec2 ranges[];
-};
 
 out vec4 fColor;
 
@@ -29,7 +25,11 @@ struct Config
 	uvec2 cullRes;
 };
 
-layout(std430, binding = 22) buffer BUF3
+layout(std430, binding = 11) buffer BUF2
+{
+	uvec2 ranges[];
+};
+layout(std430, binding = 12) buffer BUF3
 {
 	Config config;
 };

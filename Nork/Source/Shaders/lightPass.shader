@@ -15,7 +15,7 @@ void main()
 
 #type fragment
 
-#version 330 core
+#version 430 core
 
 layout(location = 0) out vec4 fColor;
 
@@ -79,15 +79,15 @@ layout(std140, binding = 4) uniform asd4
 {
 	PointShadow pLSs[10];
 };
-layout(std430, binding = 20) buffer Buf0
+layout(std430, binding = 10) buffer Buf0
 {
 	uint pLightIndicies[];
 };
-layout(std430, binding = 21) buffer Buf
+layout(std430, binding = 11) buffer Buf
 {
 	uvec2 ranges[];
 };
-layout(std430, binding = 22) buffer BUF3
+layout(std430, binding = 12) buffer BUF3
 {
 	CullConfig cullConfig;
 };
@@ -126,7 +126,7 @@ void main()
 	int i = int(x * cullConfig.cullRes.x);
 	int j = int(y * cullConfig.cullRes.y);
 
-	uvec2 range = ranges[j * cullConfig.cullRes.x + i];
+	uvec2 range = ranges[j * int(cullConfig.cullRes.x) + i];
 	//if (range.y == 0) discard;
 	//----------------------------NEW-----------------------------
 	vec3 worldPos = texture(gPos, texCoord).rgb;
@@ -142,7 +142,7 @@ void main()
 	material.specular = material.diffuse * spec;
 	
 	vec3 result = vec3(0.0f);
-	for (uint i = 0; i < dShadowCount; i++)
+	for (uint i = uint(0); i < dShadowCount; i++)
 	{
 		result += dLightShadow(dLs[i], material, normal, viewDir, dLSs[i], worldPos);
 	}

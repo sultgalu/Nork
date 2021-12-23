@@ -23,15 +23,15 @@ struct Config
 	uvec2 cullRes;
 };
 
-layout(std430, binding = 20) buffer BUF1
+layout(std430, binding = 10) buffer BUF1
 {
 	uint lightIndicies[];
 };
-layout(std430, binding = 21) buffer BUF2
+layout(std430, binding = 11) buffer BUF2
 {
 	uvec2 ranges[];
 };
-layout(std430, binding = 22) buffer BUF3
+layout(std430, binding = 12) buffer BUF3
 {
 	Config config;
 };

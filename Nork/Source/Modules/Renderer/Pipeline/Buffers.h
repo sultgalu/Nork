@@ -24,7 +24,7 @@ namespace Nork::Renderer
 		}
 		inline GLuint Get() { return handle; }
 	private:
-		GLuint handle;
+		GLuint handle = 0;
 	};
 
 	template<ObjectType Type>
@@ -71,12 +71,13 @@ namespace Nork::Renderer
 		Buffer(size_t size = 0, BufferUsage usage = BufferUsage::StaticDraw)
 			: usage(static_cast<GLenum>(usage))
 		{
-			if (size > 0)
-				Allocate(size);
+			Bind();
+			Allocate(size);
 		}
 		Buffer(std::span<T> data, BufferUsage usage = BufferUsage::StaticDraw)
 			: usage(usage)
 		{
+			Bind();
 			Allocate(data);
 		}
 		inline void Bind()

@@ -205,7 +205,7 @@ namespace Nork::Editor
 				else
 					data.engine.pipeline.data.skyboxTex = saved;
 			}
-			if (ImGui::DragFloat2("Far, Near", &comp->GetMutableData().far, 0.001f, 0, 0, "%.3f", ImGuiSliderFlags_Logarithmic))
+			if (ImGui::DragFloat2("Far, Near", &comp->GetMutableData().far, 0.001f, 0, 0, "%.3f"))
 			{
 				//comp->RecalcVP(dl->GetView());
 			}
@@ -269,7 +269,7 @@ namespace Nork::Editor
 			{
 				comp->RecalcVP(dl->GetView());
 			}
-			if (ImGui::DragFloat2("Borrom, Top", &comp->bottom))
+			if (ImGui::DragFloat2("Bottom, Top", &comp->bottom))
 			{
 				comp->RecalcVP(dl->GetView());
 			}
