@@ -2,6 +2,7 @@
 #include "Deferred.h"
 #include "../Utils.h"
 #include "../Config.h"
+#include "Capabilities.h"
 
 #include "../Resource/ResourceCreator.h"
 
@@ -78,10 +79,10 @@ namespace Nork::Renderer
 
 			data.shaders.gPass.SetMat4("model", mat);
 			data.shaders.gPass.SetInt("colliding", meshes[0].colliding ? 1 : 0);
-			for (int i = 0; i < meshes.size(); i++)
+			for (int j = 0; j < meshes.size(); j++)
 			{
-				meshes[i].BindTextures();
-				meshes[i].Draw();
+				meshes[j].BindTextures();
+				meshes[j].Draw();
 			};
 		}
 	}

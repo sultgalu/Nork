@@ -28,9 +28,6 @@ namespace Nork::Renderer
 	};
 
 	template<ObjectType Type>
-	using ObjectHandleRef2 = std::unique_ptr<ObjectHandle<Type>>;
-
-	template<ObjectType Type>
 	class ObjectHandleRef
 	{
 	public:
