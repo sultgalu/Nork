@@ -6,8 +6,6 @@ namespace Nork::Components
 {
 	struct Model
 	{
-		using Mesh = Nork::Renderer::Mesh;
-		
-		std::vector<Mesh> meshes;
+		std::vector<Nork::Renderer2::Mesh> meshes;
 	};
 }

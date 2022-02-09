@@ -176,6 +176,7 @@
     <ClCompile Include="Source\Modules\Renderer2\Objects\Texture\Texture2.cpp" />
     <ClCompile Include="Source\Modules\Renderer2\Objects\VertexArray\VertexArray.cpp" />
     <ClInclude Include="Source\Core\RenderingSystem.h" />
+    <ClInclude Include="Source\Modules\Renderer2\Config.h" />
     <ClInclude Include="Source\Modules\Renderer2\Model\Lights.h" />
     <ClInclude Include="Source\Modules\Renderer2\Model\Mesh.h" />
     <ClInclude Include="Source\Modules\Renderer2\Model\Model.h" />
@@ -191,6 +192,7 @@
     <ClInclude Include="Source\Modules\Renderer2\Objects\Texture\TextureFormat.h" />
     <ClInclude Include="Source\Modules\Renderer2\Objects\Texture\TextureParams.h" />
     <ClInclude Include="Source\Modules\Renderer2\Pipeline\LightStateSynchronizer.h" />
+    <ClInclude Include="Source\Modules\Renderer2\Pipeline\PostProcess\SkyRenderer.h" />
     <ClInclude Include="Source\Modules\Renderer2\Pipeline\ShadowMapRenderer.h" />
     <ClInclude Include="Source\Modules\Renderer2\State\Capabilities.h" />
     <ClInclude Include="Source\Scene\Serialization\BinaryComponentSerializer.h" />

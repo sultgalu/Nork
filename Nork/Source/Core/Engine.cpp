@@ -7,6 +7,7 @@
 #include "Modules/Physics/Pipeline/CollisionDetectionGPU.h"
 #include "Core/InputState.h"
 #include "App/Application.h"
+#include "RenderingSystem.h"
 
 namespace Nork
 {
@@ -49,9 +50,9 @@ namespace Nork
 
 	} // TODO:: cannot do this well...
 
-	static std::vector<Renderer::Model> GetModels(entt::registry& reg)
+	static std::vector<Renderer2::Model> GetModels(entt::registry& reg)
 	{
-		std::vector<std::pair<std::vector<Renderer::Mesh>, glm::mat4>> result;
+		std::vector<Renderer2::Model> result;
 
 		auto view = reg.view<Components::Model, Components::Transform>();
 		result.reserve(view.size_hint());
@@ -61,7 +62,7 @@ namespace Nork
 			auto& model = view.get(id)._Myfirst._Val;
 			auto& tr = view.get(id)._Get_rest()._Myfirst._Val;
 
-			result.push_back(std::pair(model.meshes, tr.GetModelMatrix()));
+			result.push_back(Renderer2::Model {.meshes = model.meshes, .modelMatrix = tr.GetModelMatrix()});
 		}
 
 		return result;
@@ -131,13 +132,22 @@ namespace Nork
 			
 			PhysicsUpdate(); // NEW
 			auto models = GetModels(this->scene.registry);
-			SyncComponents();
+
+			static auto renderingSystem = RenderingSystem().Init();
+			renderingSystem.SyncComponents(scene.registry);
+			auto cam = GetActiveCamera();
+			renderingSystem.ViewProjectionUpdate(*cam.value());
+			renderingSystem.UpdateLights(scene.registry);
+			renderingSystem.RenderScene(models);
+			/*SyncComponents();
 			ViewProjectionUpdate();
 			UpdateLights();
-			pipeline.DrawScene(models, lightFb, geometryFb);
+			pipeline.DrawScene(*((std::vector<Renderer::Model>*)&models), lightFb, geometryFb);
 			if (drawSky)
 				pipeline.DrawSkybox();
-			DrawHitboxes();
+			DrawHitboxes();*/
+
+
 			Renderer::FramebufferBase::UseDefault();
 
 			sender.Send(RenderUpdatedEvent());
@@ -174,66 +184,67 @@ namespace Nork
 	}
 	void Engine::UpdateLights()
 	{
-		auto& reg = scene.registry;
-		auto dLightsWS = reg.view<Components::DirLight, Components::DirShadow>();
-		auto pLightsWS = reg.view<Components::PointLight, Components::PointShadow>();
-		auto dLights = reg.view<Components::DirLight>(entt::exclude<Components::DirShadow>);
-		auto pLights = reg.view<Components::PointLight>(entt::exclude<Components::PointShadow>);
-		// for shadow map drawing only
-		static auto pShadowMapShader = CreateShaderFromPath("Source/Shaders/pointShadMap.shader");
-		static auto dShadowMapShader = CreateShaderFromPath("Source/Shaders/dirShadMap.shader");
+		MetaLogger().Error("this does nothing");
+		//auto& reg = scene.registry;
+		//auto dLightsWS = reg.view<Components::DirLight, Components::DirShadow>();
+		//auto pLightsWS = reg.view<Components::PointLight, Components::PointShadow>();
+		//auto dLights = reg.view<Components::DirLight>(entt::exclude<Components::DirShadow>);
+		//auto pLights = reg.view<Components::PointLight>(entt::exclude<Components::PointShadow>);
+		//// for shadow map drawing only
+		//static auto pShadowMapShader = CreateShaderFromPath("Source/Shaders/pointShadMap.shader");
+		//static auto dShadowMapShader = CreateShaderFromPath("Source/Shaders/dirShadMap.shader");
 
-		auto modelView = reg.view<Components::Model, Components::Transform>();
-		std::vector<std::pair<std::vector<Renderer::Mesh>, glm::mat4>> models;
-		for (auto& id : modelView)
-		{
-			models.push_back(std::pair(modelView.get(id)._Myfirst._Val.meshes, modelView.get(id)._Get_rest()._Myfirst._Val.GetModelMatrix()));
-		}
-		// ---------------------------
+		//auto modelView = reg.view<Components::Model, Components::Transform>();
+		//std::vector<std::pair<std::vector<Renderer::Mesh>, glm::mat4>> models;
+		//for (auto& id : modelView)
+		//{
+		//	models.push_back(std::pair(modelView.get(id)._Myfirst._Val.meshes, modelView.get(id)._Get_rest()._Myfirst._Val.GetModelMatrix()));
+		//}
+		//// ---------------------------
 	
-		std::vector<Renderer::DirShadow> DS;
-		std::vector<Renderer::PointShadow> PS;
-		std::vector<Renderer::DirLight> DL;
-		std::vector<Renderer::PointLight> PL;
-		DS.reserve(dLightsWS.size_hint());
-		PS.reserve(pLightsWS.size_hint());
-		DL.reserve(dLights.size_hint());
-		PL.reserve(pLights.size_hint());
+		//std::vector<Renderer::DirShadow> DS;
+		//std::vector<Renderer::PointShadow> PS;
+		//std::vector<Renderer::DirLight> DL;
+		//std::vector<Renderer::PointLight> PL;
+		//DS.reserve(dLightsWS.size_hint());
+		//PS.reserve(pLightsWS.size_hint());
+		//DL.reserve(dLights.size_hint());
+		//PL.reserve(pLights.size_hint());
 
-		for (auto& id : dLightsWS)
-		{
-			const auto& light = dLightsWS.get(id)._Myfirst._Val.GetData();
-			const auto& shadow = dLightsWS.get(id)._Get_rest()._Myfirst._Val.GetData();
-			DL.push_back(light);
-			DS.push_back(shadow);
+		//for (auto& id : dLightsWS)
+		//{
+		//	const auto& light = dLightsWS.get(id)._Myfirst._Val.GetData();
+		//	const auto& shadow = dLightsWS.get(id)._Get_rest()._Myfirst._Val.GetData();
+		//	DL.push_back(light);
+		//	DS.push_back(shadow);
 
-			lightMan.DrawDirShadowMap(light, shadow, models, dShadowFramebuffers[shadow.idx], dShadowMapShader);
-			pipeline.UseShadowMap(shadow, dShadowFramebuffers[shadow.idx]);
-		}
-		for (auto& id : pLightsWS)
-		{
-			auto& light = pLightsWS.get(id)._Myfirst._Val.GetData();
-			auto& shadow = pLightsWS.get(id)._Get_rest()._Myfirst._Val.GetData();
+		//	lightMan.DrawDirShadowMap(light, shadow, models, dShadowFramebuffers[shadow.idx], dShadowMapShader);
+		//	pipeline.UseShadowMap(shadow, dShadowFramebuffers[shadow.idx]);
+		//}
+		//for (auto& id : pLightsWS)
+		//{
+		//	auto& light = pLightsWS.get(id)._Myfirst._Val.GetData();
+		//	auto& shadow = pLightsWS.get(id)._Get_rest()._Myfirst._Val.GetData();
 
-			PL.push_back(light);
-			PS.push_back(shadow);
+		//	PL.push_back(light);
+		//	PS.push_back(shadow);
 
-			lightMan.DrawPointShadowMap(light, shadow, models, pShadowFramebuffers[shadow.idx], pShadowMapShader);
-			pipeline.UseShadowMap(shadow, pShadowFramebuffers[shadow.idx]);
-		}
-		for (auto& id : dLights)
-		{
-			DL.push_back(dLights.get(id)._Myfirst._Val.GetData());
-		}
-		for (auto& id : pLights)
-		{
-			PL.push_back(pLights.get(id)._Myfirst._Val.GetData());
-		}
-		auto& cam = scene.GetMainCamera();
-		lightMan.SetDirLightData(DL, DS);
-		//lightMan.SetPointLightData(PL, PS);
-		lightMan.SetPointLightData(PL, PS, cam.view, cam.projection);
-		lightMan.Update();
+		//	lightMan.DrawPointShadowMap(light, shadow, models, pShadowFramebuffers[shadow.idx], pShadowMapShader);
+		//	pipeline.UseShadowMap(shadow, pShadowFramebuffers[shadow.idx]);
+		//}
+		//for (auto& id : dLights)
+		//{
+		//	DL.push_back(dLights.get(id)._Myfirst._Val.GetData());
+		//}
+		//for (auto& id : pLights)
+		//{
+		//	PL.push_back(pLights.get(id)._Myfirst._Val.GetData());
+		//}
+		//auto& cam = scene.GetMainCamera();
+		//lightMan.SetDirLightData(DL, DS);
+		////lightMan.SetPointLightData(PL, PS);
+		//lightMan.SetPointLightData(PL, PS, cam.view, cam.projection);
+		//lightMan.Update();
 	}
 
 	static std::vector<std::pair<std::string, float>> deltas;

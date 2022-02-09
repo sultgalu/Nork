@@ -7,7 +7,7 @@ namespace Nork::Renderer2 {
 	class LightStateSynchronizer
 	{
 	public:
-		LightStateSynchronizer(LightState state) : lightState(state)
+		LightStateSynchronizer(LightState state = LightState()) : lightState(state)
 		{
 		}
 		void Initialize()

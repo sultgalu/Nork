@@ -5,6 +5,7 @@
 #include "../../Objects/Buffer/Buffer.h"
 #include "../../Objects/Shader/Shader.h"
 #include "../../Model/Model.h"
+#include "../../DrawUtils.h"
 
 namespace Nork::Renderer2 {
 	class GeometryFramebuffer: public Framebuffer
@@ -26,23 +27,23 @@ namespace Nork::Renderer2 {
 		}
 		Texture2D& Position()
 		{
-			return attachments.colors[0].first;
+			return (Texture2D&)attachments.colors[0].first;
 		}
 		Texture2D& Diffuse()
 		{
-			return attachments.colors[1].first;
+			return (Texture2D&)attachments.colors[1].first;
 		}
 		Texture2D& Normal()
 		{
-			return attachments.colors[2].first;
+			return (Texture2D&)attachments.colors[2].first;
 		}
 		Texture2D& Specular()
 		{
-			return attachments.colors[3].first;
+			return (Texture2D&)attachments.colors[3].first;
 		}
 		Texture2D& Depth()
 		{
-			return attachments.depth.value();
+			return (Texture2D&)attachments.depth.value();
 		}
 	};
 
@@ -69,11 +70,11 @@ namespace Nork::Renderer2 {
 		}
 		Texture2D& Color()
 		{
-			return attachments.colors[0].first;
+			return (Texture2D&)attachments.colors[0].first;
 		}
 		Texture2D& Depth()
 		{
-			return attachments.depth.value();
+			return (Texture2D&)attachments.depth.value();
 		}
 	};
 
@@ -88,7 +89,7 @@ namespace Nork::Renderer2 {
 			Capabilities::CullFace().SetFace(CullFaceCap::Face::Back);
 			Capabilities::Blend().Disable();
 
-			geometryFb.Bind().Clear();
+			geometryFb.Bind().SetViewport().Clear();
 			shader.Use();
 
 			for (size_t i = 0; i < models.size(); i++)
@@ -109,8 +110,9 @@ namespace Nork::Renderer2 {
 			geometryFb.Normal().Bind(2);
 			geometryFb.Specular().Bind(3);
 
+			lightFb.Bind().SetViewport().Clear();
 			shader.Use();
-
+			DrawUtils::DrawQuad();
 		}
 	};
 }

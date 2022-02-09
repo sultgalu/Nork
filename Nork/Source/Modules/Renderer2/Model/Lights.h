@@ -31,6 +31,13 @@ namespace Nork::Renderer2
 
 	struct LightState
 	{
+		void ClearAll()
+		{
+			pointLights.clear();
+			pointShadows.clear();
+			dirLights.clear();
+			dirShadows.clear();
+		}
 		std::vector<PointLight> pointLights;
 		std::vector<PointShadow> pointShadows;
 		std::vector<DirLight> dirLights;

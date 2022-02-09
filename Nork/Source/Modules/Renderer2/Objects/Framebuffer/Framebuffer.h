@@ -4,14 +4,14 @@
 namespace Nork::Renderer2 {
 	struct FramebufferAttachments
 	{
-		std::optional<Texture2D> depth;
-		std::vector<std::pair<Texture2D, int>> colors;
-		FramebufferAttachments Color(Texture2D texture, int idx)
+		std::optional<Texture> depth;
+		std::vector<std::pair<Texture, int>> colors;
+		FramebufferAttachments Color(Texture texture, int idx)
 		{
 			colors.push_back({ texture, idx });
 			return *this;
 		}
-		FramebufferAttachments Depth(Texture2D texture)
+		FramebufferAttachments Depth(Texture texture)
 		{
 			depth = texture;
 			return *this;
@@ -46,18 +46,18 @@ namespace Nork::Renderer2 {
 			if (attachments.depth.has_value())
 			{
 				AddDepthTexture(attachments.depth.value().GetHandle());
-				this->width = attachments.depth.value().Attributes().width;
-				this->height = attachments.depth.value().Attributes().height;
+				this->width = attachments.depth.value().GetWidth();
+				this->height = attachments.depth.value().GetHeight();
 			}
 			else
 			{
-				this->width = attachments.colors[0].first.Attributes().width;
-				this->height = attachments.colors[0].first.Attributes().height;
+				this->width = attachments.colors[0].first.GetWidth();
+				this->height = attachments.colors[0].first.GetHeight();
 			}
 			for (auto att : attachments.colors)
 			{
-				if (att.first.Attributes().width != width
-					|| att.first.Attributes().height != height)
+				if (att.first.GetWidth() != width
+					|| att.first.GetHeight() != height)
 				{
 					Logger::Error("A framebuffer's attachments should be of the same resolution");
 				}
@@ -80,7 +80,7 @@ namespace Nork::Renderer2 {
 			glClear(clearBits);
 			return *this;
 		}
-		FramebufferAttachments& Attachments() { return attachments; }
+		FramebufferAttachments& GetAttachments() { return attachments; }
 	protected:
 		void AddColorTexture(GLuint texture, int idx)
 		{

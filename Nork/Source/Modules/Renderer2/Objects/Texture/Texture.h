@@ -6,7 +6,24 @@
 #include "TextureAttributes.h"
 
 namespace Nork::Renderer2 {
-	class Texture2D: public GLObject
+	class Texture : public GLObject
+	{
+	public:
+		void Destroy()
+		{
+			Logger::Info("Deleting texture ", handle, ".");
+			glDeleteTextures(1, &handle);
+		}
+		const TextureAttributes& GetAttributes() { return attributes; }
+		const TextureParams& GetParams() { return params; }
+		uint32_t GetWidth() { return attributes.width; }
+		uint32_t GetHeight() { return attributes.height; }
+	protected:
+		TextureParams params;
+		TextureAttributes attributes;
+	};
+
+	class Texture2D: public Texture
 	{
 	public:
 		Texture2D& Create()
@@ -14,11 +31,6 @@ namespace Nork::Renderer2 {
 			glCreateTextures(GL_TEXTURE_2D, 1, &handle);
 			Logger::Info("Created texture ", handle, ".");
 			return *this;
-		}
-		void Destroy()
-		{
-			Logger::Info("Deleting texture ", handle, ".");
-			glDeleteTextures(1, &handle);
 		}
 		Texture2D& SetParams(TextureParams params = TextureParams::Tex2DParams())
 		{
@@ -40,12 +52,9 @@ namespace Nork::Renderer2 {
 		}
 		Texture2D& Bind(int idx = 0);
 		const TextureAttributes& Attributes() { return attributes; }
-	private:
-		TextureParams params;
-		TextureAttributes attributes;
 	};
 
-	class TextureCube: public GLObject
+	class TextureCube: public Texture
 	{
 	public:
 		TextureCube& Create()
@@ -53,11 +62,6 @@ namespace Nork::Renderer2 {
 			glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &handle);
 			Logger::Info("Created texture ", handle, ".");
 			return *this;
-		}
-		void Destroy()
-		{
-			Logger::Info("Deleting texture ", handle, ".");
-			glDeleteTextures(1, &handle);
 		}
 		TextureCube& SetParams(TextureParams params = TextureParams::CubeMapParams())
 		{
@@ -89,9 +93,6 @@ namespace Nork::Renderer2 {
 			return *this;
 		}
 		TextureCube& Bind(int idx = 0);
-	private:
-		TextureParams params;
-		TextureAttributes attributes;
 	};
 }
 

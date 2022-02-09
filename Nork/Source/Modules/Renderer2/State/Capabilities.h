@@ -31,7 +31,7 @@ namespace Nork::Renderer2 {
 	public:
 		enum class Func
 		{
-			Less = GL_LESS
+			Less = GL_LESS, LessOrEqual = GL_LEQUAL
 		};
 
 		void SetFunc(Func func)

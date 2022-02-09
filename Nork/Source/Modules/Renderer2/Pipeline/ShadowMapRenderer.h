@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Config.h"
 #include "../Model/Lights.h"
 #include "../Model/Model.h"
 #include "../Objects/Shader/Shader.h"
@@ -58,6 +59,14 @@ namespace Nork::Renderer2 {
 					mesh.Draw();
 				}
 			}
+		}
+		static void BindDirShadowMap(const DirShadow& shadow, Framebuffer& fb)
+		{
+			fb.GetAttachments().depth.value().Bind(shadow.idx + Config::LightData::dirShadowBaseIndex);
+		}
+		static void BindPointShadowMap(const PointShadow& shadow, Framebuffer& fb)
+		{
+			fb.GetAttachments().depth.value().Bind(shadow.idx + Config::LightData::pointShadowBaseIndex);
 		}
 	};
 }

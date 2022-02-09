@@ -20,7 +20,7 @@ namespace Nork::Renderer2 {
 	struct Mesh
 	{
 		MeshTextureMaps textureMaps;
-		VertexArrayIndexed vao;
+		VertexArray vao;
 
 		inline void BindTextures()
 		{
