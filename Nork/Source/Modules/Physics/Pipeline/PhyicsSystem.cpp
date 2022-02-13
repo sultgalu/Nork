@@ -1,20 +1,12 @@
 #include "PhysicsSystem.h"
 #include "../Config.h"
-#include "CollisionDetectionGPU.h"
 #include "CollisionDetectionCPU.h"
 
 namespace Nork::Physics
 {
 	System::System()
 	{
-		if constexpr (Config::CollisionDetectionGPU)
-		{
-			collisionDetector = new CollisionDetectionGPU();
-		}
-		else
-		{
-			collisionDetector = new CollisionDetectionCPU(world);
-		}
+		collisionDetector = new CollisionDetectionCPU(world);
 	}
 	void System::Update(float delta)
 	{
@@ -404,43 +396,13 @@ namespace Nork::Physics
 		}
 	}
 
-	void System::SetIsGPUDetection(bool val)
-	{
-		if (val)
-		{
-			if (dynamic_cast<CollisionDetectionCPU*>(collisionDetector))
-			{
-				delete collisionDetector;
-				collisionDetector = new CollisionDetectionGPU();
-			}
-		}
-		else
-		{
-			if (dynamic_cast<CollisionDetectionGPU*>(collisionDetector))
-			{
-				delete collisionDetector;
-				collisionDetector = new CollisionDetectionCPU(this->world);
-			}
-		}
-
-		SetColliders(this->colls);
-	}
-
 	void System::SetColliders(std::span<Collider> colls)
 	{
-		if (IsGPUDetection())
+		world.ClearColliderData();
+		for (size_t i = 0; i < colls.size(); i++)
 		{
-			((CollisionDetectionGPU*)collisionDetector)->SetColliders(colls);
+			world.AddCollider(colls[i]);
 		}
-		else
-		{
-			world.ClearColliderData();
-			for (size_t i = 0; i < colls.size(); i++)
-			{
-				world.AddCollider(colls[i]);
-			}
-		}
-
 		this->colls = std::vector<Collider>(colls.begin(), colls.end());
 	}
 

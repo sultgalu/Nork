@@ -1,7 +1,7 @@
 #include "DrawUtils.h"
 #include "Objects/VertexArray/VertexArray.h"
 
-namespace Nork::Renderer2 {
+namespace Nork::Renderer {
 
 	std::vector<float> DrawUtils::GetQuadVertices()
 	{
@@ -109,6 +109,7 @@ namespace Nork::Renderer2 {
 		auto inds = DrawUtils::GetQuadIndices();
 		vao.GetVBO().Create().Bind(BufferTarget::Vertex).Allocate(verts.size() * sizeof(float), verts.data());
 		vao.GetIBO().Create().Bind(BufferTarget::Index).Allocate(inds.size() * sizeof(GLuint), inds.data());
+		vao.SetAttribs({2, 2});
 		return vao;
 	}
 
@@ -119,6 +120,7 @@ namespace Nork::Renderer2 {
 		auto inds = DrawUtils::GetCubeIndices();
 		vao.GetVBO().Create().Bind(BufferTarget::Vertex).Allocate(verts.size() * sizeof(float), verts.data());
 		vao.GetIBO().Create().Bind(BufferTarget::Index).Allocate(inds.size() * sizeof(GLuint), inds.data());
+		vao.SetAttribs({ 3 });
 		return vao;
 	}
 

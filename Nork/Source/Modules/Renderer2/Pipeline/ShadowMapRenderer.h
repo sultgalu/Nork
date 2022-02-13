@@ -6,7 +6,7 @@
 #include "../Objects/Shader/Shader.h"
 #include "../Objects/Framebuffer/Framebuffer.h"
 
-namespace Nork::Renderer2 {
+namespace Nork::Renderer {
 	class ShadowMapRenderer
 	{
 	public:
@@ -62,11 +62,11 @@ namespace Nork::Renderer2 {
 		}
 		static void BindDirShadowMap(const DirShadow& shadow, Framebuffer& fb)
 		{
-			fb.GetAttachments().depth.value().Bind(shadow.idx + Config::LightData::dirShadowBaseIndex);
+			fb.GetAttachments().depth.value().Bind2D(shadow.idx + Config::LightData::dirShadowBaseIndex);
 		}
 		static void BindPointShadowMap(const PointShadow& shadow, Framebuffer& fb)
 		{
-			fb.GetAttachments().depth.value().Bind(shadow.idx + Config::LightData::pointShadowBaseIndex);
+			fb.GetAttachments().depth.value().BindCube(shadow.idx + Config::LightData::pointShadowBaseIndex);
 		}
 	};
 }

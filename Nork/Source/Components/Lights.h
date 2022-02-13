@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Modules/Renderer/Data/Ligths.h"
+#include "Modules/Renderer2/Model/Lights.h"
 
 namespace Nork::Components
 {
@@ -19,10 +19,10 @@ namespace Nork::Components
 		T data;
 	};
 
-	struct PointLight : public Wrapper<Renderer2::PointLight>
+	struct PointLight : public Wrapper<Renderer::PointLight>
 	{
 		PointLight() 
-			: Wrapper(Renderer2::PointLight{ .position = { 0,0,0 }, .color = { 1,1,1,1 }})
+			: Wrapper(Renderer::PointLight{ .position = { 0,0,0 }, .color = { 1,1,1,1 }})
 		{
 			SetIntensity(7);
 		}
@@ -67,10 +67,10 @@ namespace Nork::Components
 		uint32_t intensity;
 	};
 
-	struct PointShadow : Wrapper<Renderer2::PointShadow>
+	struct PointShadow : Wrapper<Renderer::PointShadow>
 	{
 		PointShadow()
-			: Wrapper(Renderer2::PointShadow{ .bias = 0.0057, .biasMin = 0.0004 , .blur = 1, .radius = 0.024, .far = 50, .near = 1, .idx = 0 })
+			: Wrapper(Renderer::PointShadow{ .bias = 0.0057, .biasMin = 0.0004 , .blur = 1, .radius = 0.024, .far = 50, .near = 1, .idx = 0 })
 		{
 		}
 		inline void SetBias(float val) { data.bias = val; }
@@ -80,10 +80,10 @@ namespace Nork::Components
 		inline void SetFar(float val) { data.far = val; }
 	};
 
-	struct DirLight : Wrapper<Renderer2::DirLight>
+	struct DirLight : Wrapper<Renderer::DirLight>
 	{
 		DirLight()
-			: Wrapper(Renderer2::DirLight{ .direction = glm::normalize(glm::vec3(1.0f, -1.0f, 1.0f)), .color = {1,1,1,1} })
+			: Wrapper(Renderer::DirLight{ .direction = glm::normalize(glm::vec3(1.0f, -1.0f, 1.0f)), .color = {1,1,1,1} })
 		{
 		}
 
@@ -91,10 +91,10 @@ namespace Nork::Components
 		inline void SetColor(glm::vec4&& val) { data.color = glm::vec4(val); }
 		inline void SetDirection(glm::vec3&& val) { data.direction = glm::vec3(val); }
 	};
-	struct DirShadow : Wrapper<Renderer2::DirShadow>
+	struct DirShadow : Wrapper<Renderer::DirShadow>
 	{
 		DirShadow() 
-			: Wrapper(Renderer2::DirShadow {.VP = glm::identity<glm::mat4>(), .bias = 0.01f,
+			: Wrapper(Renderer::DirShadow {.VP = glm::identity<glm::mat4>(), .bias = 0.01f,
 				.biasMin = 0.01f , .pcfSize = 1})
 		{
 		}

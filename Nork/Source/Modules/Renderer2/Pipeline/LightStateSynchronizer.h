@@ -2,7 +2,7 @@
 #include "../Objects/Buffer/Buffer.h"
 #include "../Model/Lights.h"
 
-namespace Nork::Renderer2 {
+namespace Nork::Renderer {
 	
 	class LightStateSynchronizer
 	{

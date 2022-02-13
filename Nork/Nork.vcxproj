@@ -165,6 +165,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Modules\Renderer2\DrawUtils.cpp" />
+    <ClCompile Include="Source\Modules\Renderer2\LoadUtils.cpp" />
     <ClCompile Include="Source\Modules\Renderer2\Pipeline\Deferred\DeferredPipeline.cpp" />
     <ClCompile Include="Source\Modules\Renderer2\Objects\Framebuffer\Framebuffer2.cpp" />
     <ClCompile Include="Source\Modules\Renderer2\Objects\Buffer\Buffer2.cpp" />
@@ -172,11 +173,12 @@
     <ClCompile Include="Source\App\Application.cpp" />
     <ClCompile Include="Source\Core\NorkWindow.cpp" />
     <ClCompile Include="Source\Modules\Renderer2\State\Capabilities.cpp" />
-    <ClCompile Include="Source\Modules\Renderer\Window\Window.cpp" />
+    <ClCompile Include="Source\Modules\Renderer2\Window\Window.cpp" />
     <ClCompile Include="Source\Modules\Renderer2\Objects\Texture\Texture2.cpp" />
     <ClCompile Include="Source\Modules\Renderer2\Objects\VertexArray\VertexArray.cpp" />
     <ClInclude Include="Source\Core\RenderingSystem.h" />
     <ClInclude Include="Source\Modules\Renderer2\Config.h" />
+    <ClInclude Include="Source\Modules\Renderer2\LoadUtils.h" />
     <ClInclude Include="Source\Modules\Renderer2\Model\Lights.h" />
     <ClInclude Include="Source\Modules\Renderer2\Model\Mesh.h" />
     <ClInclude Include="Source\Modules\Renderer2\Model\Model.h" />
@@ -195,6 +197,7 @@
     <ClInclude Include="Source\Modules\Renderer2\Pipeline\PostProcess\SkyRenderer.h" />
     <ClInclude Include="Source\Modules\Renderer2\Pipeline\ShadowMapRenderer.h" />
     <ClInclude Include="Source\Modules\Renderer2\State\Capabilities.h" />
+    <ClInclude Include="Source\Modules\Renderer2\Window\Window.h" />
     <ClInclude Include="Source\Scene\Serialization\BinaryComponentSerializer.h" />
     <ClInclude Include="Source\Scene\Serialization\BinaryReader.h">
       <FileType>CppCode</FileType>
@@ -207,7 +210,6 @@
     <ClInclude Include="Source\Modules\Physics\Data\Common.h" />
     <ClInclude Include="Source\Modules\Physics\Data\GPU.h" />
     <ClInclude Include="Source\Modules\Physics\Data\SSBO.h" />
-    <ClInclude Include="Source\Modules\Physics\Pipeline\CollisionDetectionGPU.h" />
     <ClInclude Include="Source\Modules\Physics\Utils\MD.h" />
     <ClInclude Include="Source\Modules\Physics\Utils\AABB.h" />
     <ClInclude Include="Source\Modules\Physics\Utils\GJK.h" />
@@ -216,7 +218,6 @@
     <ClInclude Include="Source\Core\PolygonMesh.h" />
     <ClCompile Include="Source\Core\PolygonMesh.cpp" />
     <ClCompile Include="Source\Modules\Physics\Pipeline\CollisionDetectionCPU.cpp" />
-    <ClCompile Include="Source\Modules\Physics\Pipeline\CollisionDetectionGPU.cpp" />
     <ClCompile Include="Source\Modules\Physics\Utils\MD.cpp" />
     <ClCompile Include="Source\Modules\Physics\Utils\AABB.cpp" />
     <ClCompile Include="Source\Modules\Physics\Utils\GJK.cpp" />
@@ -224,37 +225,20 @@
     <ClCompile Include="Source\Modules\Physics\Utils\SAT.cpp" />
     <ClCompile Include="Source\Editor\Panels\Impl\MeshEditor.cpp" />
     <ClCompile Include="Source\Modules\Physics\Data\World.cpp" />
-    <ClCompile Include="Source\Modules\Physics\Pipeline\GPUPipeline.cpp" />
     <ClCompile Include="Source\Modules\Physics\Pipeline\PhyicsSystem.cpp" />
     <ClCompile Include="Source\Modules\Physics\Utils.cpp" />
-    <ClCompile Include="Source\Modules\Renderer\Pipeline\Capabilities.cpp" />
-    <ClCompile Include="Source\Modules\Renderer\Pipeline\StreamRenderer.cpp" />
-    <ClCompile Include="Source\Modules\Renderer\Pipeline\Framebuffer.cpp" />
     <ClCompile Include="Source\Editor\Panels\Impl\HierarchyPanel.cpp" />
     <ClCompile Include="Source\Platform\Windows\FileDialog.cpp" />
     <ClCompile Include="Source\Editor\Panels\Impl\InspectorPanel.cpp" />
     <ClCompile Include="Source\Scene\Scene.cpp" />
-    <ClCompile Include="Source\Scene\ResourceManager.cpp" />
     <ClCompile Include="Source\Core\CameraController.cpp" />
     <ClCompile Include="Source\Core\Engine.cpp" />
-    <ClCompile Include="Source\Modules\Renderer\Pipeline\LightManager.cpp" />
     <ClCompile Include="Source\Components\Impl\Camera.cpp" />
-    <ClCompile Include="Source\Modules\Renderer\Pipeline\Deferred.cpp" />
     <ClCompile Include="Source\Editor\Panels\Impl\LogPanel.cpp" />
-    <ClCompile Include="Source\Modules\Renderer\Loaders\Loaders.cpp" />
-    <ClCompile Include="Source\Modules\Renderer\Resource\DefaultResources.cpp" />
-    <ClCompile Include="Source\Modules\Renderer\Resource\ResourceCreator.cpp" />
-    <ClCompile Include="Source\Modules\Renderer\Utils\DrawUtils.cpp" />
-    <ClCompile Include="Source\Modules\Renderer\Utils\FramebufferUtils.cpp" />
-    <ClCompile Include="Source\Modules\Renderer\Utils\MeshUtils.cpp" />
-    <ClCompile Include="Source\Modules\Renderer\Utils\OtherUtils.cpp" />
-    <ClCompile Include="Source\Modules\Renderer\Utils\ShaderUtils.cpp" />
     <ClCompile Include="Source\Editor\Panels\Impl\MainPanel.cpp" />
     <ClCompile Include="Source\Editor\Panels\Impl\AssetsPanel.cpp" />
     <ClCompile Include="Source\Editor\Panels\Base\Panel.cpp" />
     <ClCompile Include="Source\Editor\Editor.cpp" />
-    <ClCompile Include="Source\Modules\Renderer\Utils\TextureUtils.cpp" />
-    <ClCompile Include="Source\Modules\Renderer\Utils\VAOUtils.cpp" />
     <ClCompile Include="Source\ThirdParty\include\imgui\backends\imgui_impl_glfw.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -326,51 +310,31 @@
     </ClCompile>
     <ClCompile Include="Source\Main\Entry.cpp" />
     <ClCompile Include="Source\Editor\Panels\Impl\ViewportPanel.cpp" />
-    <ClInclude Include="Source\Modules\Renderer\Window\Window.h" />
     <ClInclude Include="Source\Modules\Renderer2\Objects\Texture\Texture.h" />
     <ClInclude Include="Source\Modules\Renderer2\Objects\VertexArray\VertexArray.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\Panels\MeshEditor.h" />
     <ClInclude Include="Source\Modules\Physics\Data\World.h" />
-    <ClInclude Include="Source\Modules\Physics\Pipeline\GPUPipeline.h" />
     <ClInclude Include="Source\Modules\Physics\Pipeline\PhysicsSystem.h" />
     <ClInclude Include="Source\Modules\Physics\Utils.h" />
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\Buffers.h" />
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\Capabilities.h" />
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\StreamRenderer.h" />
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\VertexArray.h" />
     <ClInclude Include="Source\Scene\Serialization\BinarySerializer.h" />
     <ClInclude Include="Source\Editor\Panels\All.h" />
     <ClInclude Include="Source\Editor\Panels\HierarchyPanel.h" />
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\Framebuffer.h" />
     <ClInclude Include="Source\Platform\FileDialog.h" />
     <ClInclude Include="Source\Editor\EditorData.h" />
     <ClInclude Include="Source\Editor\Panels\InspectorPanel.h" />
     <ClInclude Include="Source\Scene\Scene.h" />
-    <ClInclude Include="Source\Scene\ResourceManager.h" />
     <ClInclude Include="Source\Components\All.h" />
     <ClInclude Include="Source\Components\Model.h" />
     <ClInclude Include="Source\Core\Engine.h" />
     <ClInclude Include="Source\Core\CameraController.h" />
     <ClInclude Include="Source\Core\InputState.h" />
-    <ClInclude Include="Source\Modules\Renderer\Helpers\Helpers.h" />
     <ClInclude Include="Source\Utils\Input.h" />
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\LightManager.h" />
     <ClInclude Include="Source\Components\Camera.h" />
     <ClInclude Include="Source\Components\Common.h" />
     <ClInclude Include="Source\Components\Lights.h" />
-    <ClInclude Include="Source\Modules\Renderer\Data\Ligths.h" />
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\Deferred.h" />
     <ClInclude Include="Source\Editor\Panels\LogPanel.h" />
-    <ClInclude Include="Source\Modules\Renderer\Data\Mesh.h" />
-    <ClInclude Include="Source\Modules\Renderer\Data\Texture.h" />
-    <ClInclude Include="Source\Modules\Renderer\Loaders\Loaders.h" />
-    <ClInclude Include="Source\Modules\Renderer\Resource\DefaultResources.h" />
-    <ClInclude Include="Source\Modules\Renderer\Resource\ResourceCreator.h" />
-    <ClInclude Include="Source\Modules\Renderer\Utils.h" />
-    <ClInclude Include="Source\Modules\Renderer\Config.h" />
-    <ClInclude Include="Source\Modules\Renderer\Data\Shader.h" />
     <ClInclude Include="Source\Editor\Panels\MainPanel.h" />
     <ClInclude Include="Source\Editor\Panels\AssetsPanel.h" />
     <ClInclude Include="Source\Editor\Panels\Base\Panel.h" />
@@ -386,9 +350,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\OneDrive\Dokumentumok\GameEngine_0\GameEngineEditor\resources\shaders\lightPass.shader" />
-    <None Include="Source\Shaders\aabb.shader" />
-    <None Include="Source\Shaders\colliderTransform.shader" />
-    <None Include="Source\Shaders\collision.shader" />
     <None Include="Source\Shaders\debug.shader" />
     <None Include="Source\Shaders\dirShadMap.shader" />
     <None Include="Source\Shaders\gPass.shader" />
@@ -398,10 +359,8 @@
     <None Include="Source\Shaders\point.shader" />
     <None Include="Source\Shaders\pointShadMap.shader" />
     <None Include="Source\Shaders\position.shader" />
-    <None Include="Source\Shaders\collisionRes.shader" />
-    <None Include="Source\Shaders\sat.shader" />
-    <None Include="Source\Shaders\sat_shared.shader" />
     <None Include="Source\Shaders\skybox.shader" />
+    <None Include="Source\Shaders\texture.shader" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

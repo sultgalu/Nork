@@ -10,7 +10,7 @@ namespace Nork::Editor
 	public:
 		Editor(Engine& engine);
 		void Render();
-		void SetDisplayTexture(GLuint tex);
+		void SetDisplayTexture(Renderer::Texture tex);
 	private:
 		EditorData data;
 	};

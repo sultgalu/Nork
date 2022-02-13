@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Nork::Renderer2 {
+namespace Nork::Renderer {
 	
 	template<GLenum Cap>
 	class Capability
@@ -110,9 +110,9 @@ namespace Nork::Renderer2 {
 	class Capabilities
 	{
 	public:
-		static DepthTestCap DepthTest();
-		static CullFaceCap CullFace();
-		static BlendCap Blend();
+		static DepthTestCap& DepthTest();
+		static CullFaceCap& CullFace();
+		static BlendCap& Blend();
 	private:
 	};
 }

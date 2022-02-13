@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Nork::Renderer2::Config
+namespace Nork::Renderer::Config
 {
 	struct LightData
 	{

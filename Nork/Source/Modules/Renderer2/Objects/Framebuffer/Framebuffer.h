@@ -1,7 +1,7 @@
 #pragma once
 #include "../Texture/Texture.h"
 
-namespace Nork::Renderer2 {
+namespace Nork::Renderer {
 	struct FramebufferAttachments
 	{
 		std::optional<Texture> depth;
@@ -21,6 +21,10 @@ namespace Nork::Renderer2 {
 	class Framebuffer: public GLObject
 	{
 	public:
+		static void BindDefault()
+		{
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		}
 		Framebuffer& Create()
 		{
 			glGenFramebuffers(1, &handle);
@@ -63,7 +67,22 @@ namespace Nork::Renderer2 {
 				}
 				AddColorTexture(att.first.GetHandle(), att.second);
 			}
+			UpdateDrawBuffers();
 			return *this;
+		}
+		void UpdateDrawBuffers()
+		{
+			if (attachments.colors.size() > 0)
+			{
+				auto buf = std::vector<GLenum>(attachments.colors.size());
+				for (size_t i = 0; i < buf.size(); i++)
+					buf[i] = GL_COLOR_ATTACHMENT0 + attachments.colors[i].second;
+				glDrawBuffers(buf.size(), buf.data());
+			}
+			else
+			{
+				glDrawBuffer(GL_NONE);
+			}
 		}
 		Framebuffer& Bind()
 		{

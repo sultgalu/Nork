@@ -5,9 +5,7 @@
 #include "../Utils/GJK.h"
 #include "../Utils/SAT.h"
 #include "../Utils/SAP.h"
-#include "GPUPipeline.h"
 #include "CollisionDetection.h"
-#include <Modules/Physics/Pipeline/CollisionDetectionGPU.h>
 
 namespace Nork::Physics
 {
@@ -37,8 +35,6 @@ namespace Nork::Physics
 		void VelocityUpdate(float delta);
 		void RotationUpdate(float delta);
 
-		void SetIsGPUDetection(bool val);
-		inline bool IsGPUDetection() { return dynamic_cast<CollisionDetectionGPU*>(collisionDetector); }
 		void SetColliders(std::span<Collider> colls);
 		void SetModels(std::span<glm::vec3> translate, std::span<glm::quat> quaternions);
 

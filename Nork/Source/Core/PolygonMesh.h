@@ -2,7 +2,6 @@
 
 #include "Modules/Physics/Data/World.h"
 #include "Modules/Physics/Utils.h"
-#include "Modules/Physics/Pipeline/GPUPipeline.h"
 
 namespace Nork
 {

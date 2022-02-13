@@ -19,9 +19,9 @@ namespace Nork {
 			ss << ifs.rdbuf();
 			return ss.str();
 		}
-		static Renderer2::ShaderType GetTypeByString(std::string_view str)
+		static Renderer::ShaderType GetTypeByString(std::string_view str)
 		{
-			using enum Renderer2::ShaderType;
+			using enum Renderer::ShaderType;
 			if (str._Equal("vertex")) [[likely]]
 				return Vertex;
 			else if (str._Equal("fragment"))
@@ -34,22 +34,22 @@ namespace Nork {
 			Logger::Error("ERR:: Unkown shader type ", str);
 			std::abort(); // :(
 		}
-		static std::unordered_map<Renderer2::ShaderType, std::string> SplitShaders(std::string content)
+		static std::unordered_map<Renderer::ShaderType, std::string> SplitShaders(std::string content)
 		{
 			const char* label = "#type";
 			size_t labelLen = strlen(label);
 
-			std::unordered_map<Renderer2::ShaderType, std::string> shaderSrcs;
+			std::unordered_map<Renderer::ShaderType, std::string> shaderSrcs;
 
 			size_t pos = content.find(label, 0);
-			Renderer2::ShaderType shadType;
+			Renderer::ShaderType shadType;
 			do
 			{ // the file must start with #type
 				size_t start = pos;
 				size_t eol = content.find_first_of("\r\n", pos); // idx of the end of the "#type" line
 
 				pos += labelLen + 1; // the first idx of "vertex"
-				std::string_view type = content.substr(pos, eol - pos); // must be "#type vertex" with whitespaces exactly like that.
+				std::string type = content.substr(pos, eol - pos); // must be "#type vertex" with whitespaces exactly like that.
 				shadType = GetTypeByString(type);
 
 				//size_t nextLinePos = s.find_first_not_of("\r\n", eol); // filtering out spaces
@@ -64,12 +64,12 @@ namespace Nork {
 			} while (true);
 			return shaderSrcs;
 		}
-		static void InitShaderFromSource(Renderer2::Shader& shader, std::string path)
+		static void InitShaderFromSource(Renderer::Shader& shader, std::string path)
 		{
 			shader.Create().Compile(SplitShaders(GetFileContent(path)));
 		}
 	public:
-		static void Load()
+		static void Init()
 		{
 			InitShaderFromSource(gPassShader, "Source/Shaders/gPass.shader");
 			InitShaderFromSource(lPassShader, "Source/Shaders/lightPass.shader");
@@ -78,10 +78,29 @@ namespace Nork {
 			InitShaderFromSource(skyboxShader, "Source/Shaders/skybox.shader");
 			InitShaderFromSource(pointShader, "Source/Shaders/point.shader");
 			InitShaderFromSource(lineShader, "Source/Shaders/line.shader");
+			InitShaderFromSource(textureShader, "Source/Shaders/texture.shader");
+
+			lPassShader.Use()
+				.SetInt("gPos", 0)
+				.SetInt("gDiff", 1)
+				.SetInt("gNorm", 2)
+				.SetInt("gSpec", 3);
+
+			for (int i = 0; i < 5; i++)
+				lPassShader.SetInt("dirShadowMaps[" + std::to_string(i) + "]", i + 10);
+			for (int i = 0; i < 5; i++)
+				lPassShader.SetInt("pointShadowMaps[" + std::to_string(i) + "]", i + 15);
+
+			using enum Renderer::TextureMapType;
+			gPassShader.Use()
+				.SetInt("materialTex.diffuse", (int)Diffuse)
+				.SetInt("materialTex.normals", (int)Normal)
+				.SetInt("materialTex.roughness", (int)Roughness)
+				.SetInt("materialTex.reflect", (int)Reflection);
 		}
-		inline static Renderer2::Shader gPassShader, lPassShader,
+		inline static Renderer::Shader gPassShader, lPassShader,
 			dShadowShader, pShadowShader,
-			skyboxShader,
+			skyboxShader, textureShader,
 			pointShader, lineShader;
 	};
 
@@ -90,7 +109,9 @@ namespace Nork {
 	public:
 		RenderingSystem& Init()
 		{
-			using namespace Renderer2;
+			using namespace Renderer;
+			Shaders::Init();
+
 			lightStateSyncher.Initialize();
 			for (auto& fb : pShadowFramebuffers)
 			{
@@ -99,7 +120,7 @@ namespace Nork {
 			}
 			for (auto& fb : dShadowFramebuffers)
 			{
-				auto depth = Texture2D().Create().Bind().SetParams().SetData(TextureAttributes{ .width = 4000, .height = 4000, .format = TextureFormat::Depth16 });
+				auto depth = Texture2D().Create().Bind().SetParams(TextureParams::FramebufferTex2DParams()).SetData(TextureAttributes{ .width = 4000, .height = 4000, .format = TextureFormat::Depth16 });
 				fb.Create().Bind().SetAttachments(FramebufferAttachments().Depth(depth));
 			}
 			gFb.Create().Bind();
@@ -107,6 +128,7 @@ namespace Nork {
 			gFb.CreateTextures(resolution.x, resolution.y, Depth16, RGB16F, RGB16F, RGB16F, RGBA16F);
 			lFb.Create().Bind();
 			lFb.CreateTextures(gFb, RGBA16F);
+			return *this;
 		}
 		void UpdateLights(entt::registry& reg)
 		{
@@ -116,10 +138,10 @@ namespace Nork {
 			auto pLights = reg.view<Components::PointLight>(entt::exclude<Components::PointShadow>);
 			
 			auto modelView = reg.view<Components::Model, Components::Transform>();
-			std::vector<Renderer2::Model> models;
+			std::vector<Renderer::Model> models;
 			for (auto& id : modelView)
 			{
-				models.push_back(Renderer2::Model {.meshes = modelView.get(id)._Myfirst._Val.meshes, .modelMatrix = modelView.get(id)._Get_rest()._Myfirst._Val.GetModelMatrix() });
+				models.push_back(Renderer::Model {.meshes = modelView.get(id)._Myfirst._Val.meshes, .modelMatrix = modelView.get(id)._Get_rest()._Myfirst._Val.GetModelMatrix() });
 			}
 			// ---------------------------
 			auto& lights = lightStateSyncher.GetLightState();
@@ -132,8 +154,8 @@ namespace Nork {
 				lights.dirLights.push_back(light);
 				lights.dirShadows.push_back(shadow);
 
-				Renderer2::ShadowMapRenderer::RenderDirLightShadowMap(light, shadow, models, dShadowFramebuffers[shadow.idx], Shaders::dShadowShader);
-				Renderer2::ShadowMapRenderer::BindDirShadowMap(shadow, dShadowFramebuffers[shadow.idx]);
+				Renderer::ShadowMapRenderer::RenderDirLightShadowMap(light, shadow, models, dShadowFramebuffers[shadow.idx], Shaders::dShadowShader);
+				Renderer::ShadowMapRenderer::BindDirShadowMap(shadow, dShadowFramebuffers[shadow.idx]);
 			}
 			for (auto& id : pLightsWS)
 			{
@@ -143,8 +165,8 @@ namespace Nork {
 				lights.pointLights.push_back(light);
 				lights.pointShadows.push_back(shadow);
 
-				Renderer2::ShadowMapRenderer::RenderPointLightShadowMap(light, shadow, models, pShadowFramebuffers[shadow.idx], Shaders::pShadowShader);
-				Renderer2::ShadowMapRenderer::BindPointShadowMap(shadow, pShadowFramebuffers[shadow.idx]);
+				Renderer::ShadowMapRenderer::RenderPointLightShadowMap(light, shadow, models, pShadowFramebuffers[shadow.idx], Shaders::pShadowShader);
+				Renderer::ShadowMapRenderer::BindPointShadowMap(shadow, pShadowFramebuffers[shadow.idx]);
 			}
 			for (auto& id : dLights)
 			{
@@ -199,18 +221,23 @@ namespace Nork {
 				pl.GetMutableData().position = tr.position;
 			}
 		}
-		void RenderScene(std::span<Renderer2::Model> models)
+		void RenderScene(std::span<Renderer::Model> models)
 		{
-			pipeline.GeometryPass(gFb, Shaders::gPassShader, models);
-			pipeline.LightPass(gFb, lFb, Shaders::lPassShader);
+			Renderer::DeferredPipeline::GeometryPass(gFb, Shaders::gPassShader, models);
+			Renderer::DeferredPipeline::LightPass(gFb, lFb, Shaders::lPassShader);
+			// lFb.BindDefault();
+			// lFb.Color().Bind();
+			// Shaders::textureShader.Use().SetInt("tex", 0);
+			// Renderer2::Capabilities::DepthTest().Disable();
+			// Renderer2::DrawUtils::DrawQuad();
+			// Renderer2::Capabilities::DepthTest().Enable();
 		}
-	private:
-		Renderer2::DeferredPipeline pipeline;
-		Renderer2::LightStateSynchronizer lightStateSyncher;
-		Renderer2::GeometryFramebuffer gFb;
-		Renderer2::LightFramebuffer lFb;
-		std::array<Renderer2::Framebuffer, 5> pShadowFramebuffers;
-		std::array<Renderer2::Framebuffer, 5> dShadowFramebuffers;
+	public:
+		Renderer::LightStateSynchronizer lightStateSyncher;
+		Renderer::GeometryFramebuffer gFb;
+		Renderer::LightFramebuffer lFb;
+		std::array<Renderer::Framebuffer, 5> pShadowFramebuffers;
+		std::array<Renderer::Framebuffer, 5> dShadowFramebuffers;
 	public:
 		int pointSize = 20;
 		float pointInternalSize = 0.5f, pointAA = 0.3f, lineWidth = 0.005f;

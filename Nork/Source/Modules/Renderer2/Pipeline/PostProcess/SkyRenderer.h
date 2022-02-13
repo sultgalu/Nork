@@ -5,7 +5,7 @@
 #include "../../Objects/Shader/Shader.h"
 #include "../../DrawUtils.h"
 
-namespace Nork::Renderer2 {
+namespace Nork::Renderer {
 	class SkyRenderer
 	{
 	public:

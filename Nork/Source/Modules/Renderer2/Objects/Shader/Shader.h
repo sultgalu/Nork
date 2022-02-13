@@ -1,9 +1,10 @@
 #pragma once
 #include "../GLObject.h"
 
-namespace Nork::Renderer2 {
-	enum class ShaderType: GLenum
+namespace Nork::Renderer {
+	enum class ShaderType : GLenum
 	{
+		None = GL_NONE,
 		Vertex = GL_VERTEX_SHADER,
 		Fragment = GL_FRAGMENT_SHADER,
 		Geometry = GL_GEOMETRY_SHADER,
@@ -25,67 +26,75 @@ namespace Nork::Renderer2 {
 			Logger::Info("Deleting shader ", handle, ".");
 			glDeleteProgram(handle);
 		}
-		inline void Use()
+		Shader& Use()
 		{
 			glUseProgram(handle);
+			return *this;
 		}
-		inline void GetUniformLocationAndSet(const char* name)
+		Shader& GetUniformLocationAndSet(const char* name)
 		{
 			uniformLocations[name] = GetUniformLocation(name);
 			if (uniformLocations[name] == -1)
 			{
 				Logger::Error("Couldn't find uniform location for ", name);
 			}
+			return *this;
 		}
-		inline void SetMat4(std::string name, const glm::mat4& value)
+		Shader& SetMat4(std::string name, const glm::mat4& value)
 		{
 			if (!uniformLocations.contains(name))
 			{
 				GetUniformLocationAndSet(name.c_str());
 			}
 			glUniformMatrix4fv(uniformLocations[name], 1, false, (const GLfloat*)(&value));
+			return *this;
 		}
-		inline void SetVec4(std::string name, const glm::vec4& value)
+		Shader& SetVec4(std::string name, const glm::vec4& value)
 		{
 			if (!uniformLocations.contains(name))
 			{
 				GetUniformLocationAndSet(name.c_str());
 			}
 			glUniform4f(uniformLocations[name], value.x, value.y, value.z, value.w);
+			return *this;
 		}
-		inline void SetVec2(std::string name, const glm::vec2& value)
+		Shader& SetVec2(std::string name, const glm::vec2& value)
 		{
 			if (!uniformLocations.contains(name))
 			{
 				GetUniformLocationAndSet(name.c_str());
 			}
 			glUniform2f(uniformLocations[name], value.x, value.y);
+			return *this;
 		}
-		inline void SetVec3(std::string name, const glm::vec3& value)
+		Shader& SetVec3(std::string name, const glm::vec3& value)
 		{
 			if (!uniformLocations.contains(name))
 			{
 				GetUniformLocationAndSet(name.c_str());
 			}
 			glUniform3f(uniformLocations[name], value.x, value.y, value.z);
+			return *this;
 		}
-		inline void SetFloat(std::string name, float value)
+		Shader& SetFloat(std::string name, float value)
 		{
 			if (!uniformLocations.contains(name))
 			{
 				GetUniformLocationAndSet(name.c_str());
 			}
 			glUniform1f(uniformLocations[name], value);
+			return *this;
 		}
-		inline void SetInt(std::string name, int value)
+		Shader& SetInt(std::string name, int value)
 		{
 			if (!uniformLocations.contains(name))
 			{
 				GetUniformLocationAndSet(name.c_str());
 			}
 			glUniform1i(uniformLocations[name], value);
+			return *this;
 		}
-		inline int GetUniformLocation(const char* name) { return glGetUniformLocation(handle, name); }
+		GLint GetUniformLocation(const char* name) { return glGetUniformLocation(handle, name); }
 	private:
 		std::unordered_map<std::string, GLint> uniformLocations;
 	};

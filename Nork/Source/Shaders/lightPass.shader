@@ -120,14 +120,13 @@ vec3 pLightShadow(PointLight light, Materials material, vec3 normal, vec3 viewDi
 
 void main()
 {
-	float x = gl_FragCoord.x / 1920.0f;
+	/*float x = gl_FragCoord.x / 1920.0f;
 	float y = gl_FragCoord.y / 1080.0f;
 
 	int i = int(x * cullConfig.cullRes.x);
 	int j = int(y * cullConfig.cullRes.y);
 
-	uvec2 range = ranges[j * int(cullConfig.cullRes.x) + i];
-	//if (range.y == 0) discard;
+	uvec2 range = ranges[j * int(cullConfig.cullRes.x) + i];*/
 	//----------------------------NEW-----------------------------
 	vec3 worldPos = texture(gPos, texCoord).rgb;
 	vec3 diff = texture(gDiff, texCoord).rgb;
@@ -150,29 +149,30 @@ void main()
 	{
 		result += dLight(dLs[i], material, normal, viewDir);
 	}
-	for (uint i = range.x; i < range.x + range.y; i++)
-	{
-		uint idx = pLightIndicies[i];
-		if (idx < pShadowCount) // plight has shadow
-		{
-			result += pLightShadow(pLs[idx], material, normal, viewDir, pLSs[idx], worldPos);
-		}
-		else
-		{
-			result += pLight(pLs[idx], material, worldPos, normal, viewDir);
-		}
-	}
-	/*for (int i = 0; i < int(pShadowCount); i++)
+	
+	//for (uint i = range.x; i < range.x + range.y; i++)
+	//{
+	//	uint idx = pLightIndicies[i];
+	//	if (idx < pShadowCount) // plight has shadow
+	//	{
+	//		result += pLightShadow(pLs[idx], material, normal, viewDir, pLSs[idx], worldPos);
+	//	}
+	//	else
+	//	{
+	//		result += pLight(pLs[idx], material, worldPos, normal, viewDir);
+	//	}
+	//}
+	for (int i = 0; i < int(pShadowCount); i++)
 	{
 		result += pLightShadow(pLs[i], material, normal, viewDir, pLSs[i], worldPos);
 	}
 	for (int i = int(pShadowCount); i < int(pLightCount); i++)
 	{
 		result += pLight(pLs[i], material, worldPos, normal, viewDir);
-	}*/
+	}
 	fColor = vec4(result, 1.0f);
-	//fColor = vec4(texture(dirShadowMaps[0], texCoord).rgb, 1.0f);
-	//fColor = vec4(0);
+	// fColor = vec4(texture(dirShadowMaps[0], texCoord).rgb, 1.0f);
+	// fColor = vec4(diff, 1);
 }
 
 vec3 dLight(DirLight light, Materials material, vec3 normal, vec3 viewDir)

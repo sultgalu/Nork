@@ -1,13 +1,8 @@
 #include "Engine.h"
 
-#include "Modules/Renderer/Loaders/Loaders.h"
-#include "Modules/Renderer/Resource/DefaultResources.h"
-#include "Modules/Renderer/Pipeline/StreamRenderer.h"
-#include "Modules/Renderer/Pipeline/Capabilities.h"
-#include "Modules/Physics/Pipeline/CollisionDetectionGPU.h"
+#include "Modules/Renderer2/LoadUtils.h"
 #include "Core/InputState.h"
 #include "App/Application.h"
-#include "RenderingSystem.h"
 
 namespace Nork
 {
@@ -16,43 +11,9 @@ namespace Nork
 	static constexpr auto dShadIdxSize = 10;
 	static constexpr auto pShadIdxSize = 10;
 
-	static Renderer::Shader CreateShaderFromPath(std::string_view path)
+	static std::vector<Renderer::Model> GetModels(entt::registry& reg)
 	{
-		std::ifstream stream(path.data());
-		std::stringstream buf;
-		buf << stream.rdbuf();
-
-		auto data = Renderer::ShaderData{ .source = buf.str() };
-		auto resource = Renderer::CreateShader(data);
-		stream.close();
-		return Renderer::Shader(resource);
-	}
-
-	static Renderer::Shader shader;
-	static Renderer::Shader pointShader;
-	static Renderer::Shader lineShader;
-
-	Renderer::DeferredData Engine::CreatePipelineResources()
-	{
-		using namespace Renderer::Utils::Texture;
-
-		shader = CreateShaderFromPath("Source/Shaders/position.shader");
-		pointShader = CreateShaderFromPath("Source/Shaders/point.shader");
-		lineShader = CreateShaderFromPath("Source/Shaders/line.shader");
-		lightMan.SetDebug(CreateShaderFromPath("Source/Shaders/debug.shader"));
-		return Renderer::DeferredData (Renderer::DeferredData::Shaders
-			{
-				.gPass = CreateShaderFromPath("Source/Shaders/gPass.shader"),
-				.lPass = CreateShaderFromPath("Source/Shaders/lightPass.shader"),
-				.skybox = CreateShaderFromPath("Source/Shaders/skybox.shader"),
-				//.extra = CreateShaderFromPath("Source/Shaders/debug.shader"),
-			}, 0);
-
-	} // TODO:: cannot do this well...
-
-	static std::vector<Renderer2::Model> GetModels(entt::registry& reg)
-	{
-		std::vector<Renderer2::Model> result;
+		std::vector<Renderer::Model> result;
 
 		auto view = reg.view<Components::Model, Components::Transform>();
 		result.reserve(view.size_hint());
@@ -62,7 +23,7 @@ namespace Nork
 			auto& model = view.get(id)._Myfirst._Val;
 			auto& tr = view.get(id)._Get_rest()._Myfirst._Val;
 
-			result.push_back(Renderer2::Model {.meshes = model.meshes, .modelMatrix = tr.GetModelMatrix()});
+			result.push_back(Renderer::Model {.meshes = model.meshes, .modelMatrix = tr.GetModelMatrix()});
 		}
 
 		return result;
@@ -85,39 +46,22 @@ namespace Nork
 		dShadowIndices.push_back(shad.GetData().idx);
 	}
 
-	Engine::Engine(EngineConfig config)
-		: scene(Scene::Scene()), pipeline(CreatePipelineResources()),
-		geometryFb(Renderer::GeometryFramebuffer(1920, 1080)),
-		lightFb(Renderer::LightPassFramebuffer(geometryFb.Depth(), geometryFb.Width(), geometryFb.Height())),
-		pSystem(), lightMan(CreateShaderFromPath("Source/Shaders/lightCull.shader"))
+	Engine::Engine(EngineConfig config) : 
+		pSystem()
 	{
-		using namespace Renderer::Pipeline;
-		Renderer::DefaultResources::Init();
+		auto& reg = scene.registry;
+		reg.on_construct<Components::DirShadow>().connect<&Engine::OnDShadowAdded>(this);
+		reg.on_destroy<Components::DirShadow>().connect<&Engine::OnDShadowRemoved>(this);
+		renderingSystem.Init();
 
-		dShadowFramebuffers.reserve(dShadIdxSize);
-		pShadowFramebuffers.reserve(pShadIdxSize);
 		for (int i = dShadIdxSize - 1; i > -1; i--)
 		{
 			dShadowIndices.push_back(i);
-			dShadowFramebuffers.push_back(Renderer::DirShadowFramebuffer(4000, 4000));
 		}
 		for (int i = pShadIdxSize - 1; i > -1; i--)
 		{
 			pShadowIndices.push_back(i);
-			pShadowFramebuffers.push_back(Renderer::PointShadowFramebuffer(1000, 1000));
 		}
-
-		auto& reg = scene.registry;
-		reg.on_construct<Components::DirShadow>().connect<&Engine::OnDShadowAdded>(this);
-		reg.on_destroy<Components::DirShadow>().connect<&Engine::OnDShadowRemoved>(this);
-
-		using namespace Renderer::Utils::Texture;
-		auto skyboxResource = scene.resMan.GetCubemapTexture("Resources/Textures/skybox", ".jpg",
-			TextureParams{ .wrap = Wrap::ClampToEdge, .filter = Filter::Linear, .magLinear = false, .genMipmap = false });
-		pipeline.data.skyboxTex = skyboxResource.id;
-
-		idMap = geometryFb.Extend<Format::R32UI>();
-		lightFb.Extend<Format::R32UI>(idMap);
 	}
 
 	void Engine::Launch()
@@ -133,22 +77,13 @@ namespace Nork
 			PhysicsUpdate(); // NEW
 			auto models = GetModels(this->scene.registry);
 
-			static auto renderingSystem = RenderingSystem().Init();
 			renderingSystem.SyncComponents(scene.registry);
-			auto cam = GetActiveCamera();
-			renderingSystem.ViewProjectionUpdate(*cam.value());
+			auto& cam = scene.GetMainCamera();
+			renderingSystem.ViewProjectionUpdate(cam);
 			renderingSystem.UpdateLights(scene.registry);
 			renderingSystem.RenderScene(models);
-			/*SyncComponents();
-			ViewProjectionUpdate();
-			UpdateLights();
-			pipeline.DrawScene(*((std::vector<Renderer::Model>*)&models), lightFb, geometryFb);
-			if (drawSky)
-				pipeline.DrawSkybox();
-			DrawHitboxes();*/
 
-
-			Renderer::FramebufferBase::UseDefault();
+			Renderer::Framebuffer::BindDefault();
 
 			sender.Send(RenderUpdatedEvent());
 			Profiler::Clear();
@@ -159,94 +94,16 @@ namespace Nork
 	}
 	void Engine::ReadId(int x, int y)
 	{
-		uint32_t res;
+		/*uint32_t res;
 		Renderer::Utils::Other::ReadPixels(lightFb.GetFBO(), lightFb.ColorAttForExtension(0), x, y, Renderer::Utils::Texture::Format::R32UI, &res);
 		if (res != 0)
 		{
 			Application::Get().dispatcher.GetSender().Send(IdQueryResultEvent(x, y, res));
-		}
+		}*/
 	}
 	Engine::~Engine()
 	{
 	}
-	void Engine::SyncComponents()
-	{
-		auto& reg = scene.registry;
-		auto pls = reg.view<Components::Transform, Components::PointLight>();
-
-		for (auto& id : pls)
-		{
-			auto& tr = pls.get(id)._Myfirst._Val;
-			auto& pl = pls.get(id)._Get_rest()._Myfirst._Val;
-
-			pl.GetMutableData().position = tr.position;
-		}
-	}
-	void Engine::UpdateLights()
-	{
-		MetaLogger().Error("this does nothing");
-		//auto& reg = scene.registry;
-		//auto dLightsWS = reg.view<Components::DirLight, Components::DirShadow>();
-		//auto pLightsWS = reg.view<Components::PointLight, Components::PointShadow>();
-		//auto dLights = reg.view<Components::DirLight>(entt::exclude<Components::DirShadow>);
-		//auto pLights = reg.view<Components::PointLight>(entt::exclude<Components::PointShadow>);
-		//// for shadow map drawing only
-		//static auto pShadowMapShader = CreateShaderFromPath("Source/Shaders/pointShadMap.shader");
-		//static auto dShadowMapShader = CreateShaderFromPath("Source/Shaders/dirShadMap.shader");
-
-		//auto modelView = reg.view<Components::Model, Components::Transform>();
-		//std::vector<std::pair<std::vector<Renderer::Mesh>, glm::mat4>> models;
-		//for (auto& id : modelView)
-		//{
-		//	models.push_back(std::pair(modelView.get(id)._Myfirst._Val.meshes, modelView.get(id)._Get_rest()._Myfirst._Val.GetModelMatrix()));
-		//}
-		//// ---------------------------
-	
-		//std::vector<Renderer::DirShadow> DS;
-		//std::vector<Renderer::PointShadow> PS;
-		//std::vector<Renderer::DirLight> DL;
-		//std::vector<Renderer::PointLight> PL;
-		//DS.reserve(dLightsWS.size_hint());
-		//PS.reserve(pLightsWS.size_hint());
-		//DL.reserve(dLights.size_hint());
-		//PL.reserve(pLights.size_hint());
-
-		//for (auto& id : dLightsWS)
-		//{
-		//	const auto& light = dLightsWS.get(id)._Myfirst._Val.GetData();
-		//	const auto& shadow = dLightsWS.get(id)._Get_rest()._Myfirst._Val.GetData();
-		//	DL.push_back(light);
-		//	DS.push_back(shadow);
-
-		//	lightMan.DrawDirShadowMap(light, shadow, models, dShadowFramebuffers[shadow.idx], dShadowMapShader);
-		//	pipeline.UseShadowMap(shadow, dShadowFramebuffers[shadow.idx]);
-		//}
-		//for (auto& id : pLightsWS)
-		//{
-		//	auto& light = pLightsWS.get(id)._Myfirst._Val.GetData();
-		//	auto& shadow = pLightsWS.get(id)._Get_rest()._Myfirst._Val.GetData();
-
-		//	PL.push_back(light);
-		//	PS.push_back(shadow);
-
-		//	lightMan.DrawPointShadowMap(light, shadow, models, pShadowFramebuffers[shadow.idx], pShadowMapShader);
-		//	pipeline.UseShadowMap(shadow, pShadowFramebuffers[shadow.idx]);
-		//}
-		//for (auto& id : dLights)
-		//{
-		//	DL.push_back(dLights.get(id)._Myfirst._Val.GetData());
-		//}
-		//for (auto& id : pLights)
-		//{
-		//	PL.push_back(pLights.get(id)._Myfirst._Val.GetData());
-		//}
-		//auto& cam = scene.GetMainCamera();
-		//lightMan.SetDirLightData(DL, DS);
-		////lightMan.SetPointLightData(PL, PS);
-		//lightMan.SetPointLightData(PL, PS, cam.view, cam.projection);
-		//lightMan.Update();
-	}
-
 	static std::vector<std::pair<std::string, float>> deltas;
 	std::vector<std::pair<std::string, float>> Engine::GetDeltas()
 	{
@@ -359,138 +216,5 @@ namespace Nork
 				kin.w = pWorld.kinems[i++].w;
 			});
 		deltas.push_back(std::pair("read back psystem results", t.Reset()));
-	}
-	void Engine::DrawHitboxes()
-	{
-		static Renderer::Pipeline::StreamRenderer<glm::vec3, float, uint32_t> renderer;
-		static Renderer::Pipeline::StreamRenderer<glm::vec3> renderer2;
-
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glPointSize(pointSize);
-
-		using namespace Renderer;
-		using namespace Capabilities;
-		using enum Capability;
-
-		auto view = scene.registry.view<Components::Transform, Polygon>();
-		
-		auto asVertices = [](std::span<glm::vec3> verts, glm::mat4 model)
-		{
-			std::vector<Components::Vertex> res;
-			res.reserve(verts.size());
-			for (size_t i = 0; i < verts.size(); i++)
-			{
-				res.push_back(Components::Vertex(glm::vec3(model * glm::vec4(verts[i], 1))));
-			}
-			return res;
-		};
-
-		if (drawPolies || sat)
-		{
-			Capabilities::With<Enable<FaceCulling, Depth>, Disable<Blend>, Set<BlendFunc<GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA>>>([&]()
-				{
-					Capabilities::With<Enable<Blend>, Disable<Depth, FaceCulling>>([&]()
-						{
-							if (drawPolies)
-							{
-								view.each([&](entt::entity id, Components::Transform& tr, Polygon& poly)
-									{
-										std::vector<Components::Vertex> verts = asVertices(poly.vertices, tr.TranslationRotationMatrix());
-										renderer.UploadVertices(std::span(verts));
-
-										if (drawTriangles)
-										{
-											shader.Use();
-											renderer.DrawAsTriangle(*(reinterpret_cast<std::vector<uint32_t>*>(&poly.tris)));
-										}
-										if (drawLines)
-										{
-											auto faces = poly.GetFaces();
-											auto edges = poly.GetEdges(faces);
-											lineShader.Use();
-											renderer.DrawAsLines(std::span((uint32_t*)(edges.data()), edges.size() * 2));
-										}
-										if (drawPoints)
-										{
-											std::vector<uint32_t> seq(poly.vertices.size());
-											for (size_t i = 0; i < poly.vertices.size(); i++)
-												seq.push_back(i);
-											pointShader.Use();
-											renderer.DrawAsPoints(seq);
-										}
-										if (drawPoints)
-										{
-											renderer2.UploadVertices(std::span(pSystem.contactPoints));
-											pointShader.SetVec4("colorDefault", glm::vec4(1, 1, 1, 1));
-											renderer2.DrawAsPoints(pSystem.contactPoints.size());
-
-											//auto md = Physics::MD::MinkowskiDifference(pWorld.shapes[0].verts, pWorld.shapes[1].verts);
-											//renderer2.UploadVertices(std::span(md));
-											//renderer2.DrawAsPoints(md.size());
-											
-											/*pointShader.SetVec4("colorDefault", glm::vec4(0, 1, 0, 1));
-											std::vector<glm::vec3> Center{ {0, 0, 0} };
-											renderer2.UploadVertices(std::span(Center));
-											renderer2.DrawAsPoints(1);*/
-
-											pointShader.SetVec4("colorDefault", pointColor);
-										}
-
-										
-									});
-							}
-						});
-				});
-		}
-
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_CULL_FACE);
-	}
-	void Engine::ViewProjectionUpdate()
-	{
-		auto& camera = scene.GetMainCamera();
-
-		shader.Use();
-		shader.SetMat4("VP", camera.viewProjection);
-		shader.SetVec4("colorDefault", triangleColor);
-		shader.SetVec4("colorSelected", glm::vec4(selectedColor, triAlpha));
-
-		pointShader.Use();
-		pointShader.SetMat4("VP", camera.viewProjection);
-		pointShader.SetFloat("aa", pointAA);
-		pointShader.SetFloat("size", pointInternalSize);
-		pointShader.SetVec4("colorDefault", pointColor);
-		pointShader.SetVec4("colorSelected", glm::vec4(selectedColor, pointAlpha));
-
-		lineShader.Use();
-		lineShader.SetMat4("VP", camera.viewProjection);
-		lineShader.SetFloat("width", lineWidth);
-		lineShader.SetVec4("colorDefault", lineColor);
-		lineShader.SetVec4("colorSelected", glm::vec4(selectedColor, lineAlpha));
-
-		//lightMan.dShadowMapShader->SetMat4("VP", vp);
-		pipeline.data.shaders.gPass.Use();
-		pipeline.data.shaders.gPass.SetMat4("VP", camera.viewProjection);
-
-		pipeline.data.shaders.lPass.Use();
-		pipeline.data.shaders.lPass.SetVec3("viewPos", camera.position);
-
-		pipeline.data.shaders.skybox.Use();
-		auto vp = camera.projection * glm::mat4(glm::mat3(camera.view));
-		pipeline.data.shaders.skybox.SetMat4("VP", vp);
-	}
-
-	static Renderer::Shader setupShaderRes, aabbShaderRes, satShaderRes;
-	std::array<GLuint, 3> Physics::CollisionDetectionGPU::Get_Setup_AABB_SAT_Shaders()
-	{
-		setupShaderRes = CreateShaderFromPath("Source/Shaders/colliderTransform.shader");
-		aabbShaderRes = CreateShaderFromPath("Source/Shaders/aabb.shader");
-		satShaderRes = CreateShaderFromPath("Source/Shaders/sat.shader");
-
-		return { setupShaderRes.GetProgram() , aabbShaderRes.GetProgram() , satShaderRes.GetProgram() };
-	}
-	void Physics::CollisionDetectionGPU::FreeShaders()
-	{
-
 	}
 }

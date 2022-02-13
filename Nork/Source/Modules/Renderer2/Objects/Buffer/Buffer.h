@@ -2,7 +2,7 @@
 
 #include "../GLObject.h"
 
-namespace Nork::Renderer2 {
+namespace Nork::Renderer {
 	enum class BufferTarget : GLenum
 	{
 		Vertex = GL_ARRAY_BUFFER, Index = GL_ELEMENT_ARRAY_BUFFER,
@@ -67,7 +67,7 @@ namespace Nork::Renderer2 {
 	private:
 		size_t size = 0;
 
-		GLenum usage;
+		GLenum usage = GL_STATIC_DRAW;
 		GLenum target;
 	};
 }

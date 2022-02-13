@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Nork::Renderer2 {
+namespace Nork::Renderer {
 	enum class TextureFormat : int
 	{
 		RGBA8 = GL_RGBA8, RGBA16F = GL_RGBA16F, RGBA32F = GL_RGBA32F, RGBA = RGBA8,

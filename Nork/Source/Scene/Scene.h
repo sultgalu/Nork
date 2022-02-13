@@ -1,6 +1,5 @@
 #pragma once
 
-#include "ResourceManager.h"
 #include "Components/All.h"
 
 namespace Nork::Scene
@@ -34,12 +33,16 @@ namespace Nork::Scene
 		{
 			return registry.emplace<T>(id, args...);
 		}
-		Components::Model& AddModel(entt::entity id, std::string src = "")
+		Components::Model& AddModel(entt::entity id)
+		{
+			return registry.emplace<Components::Model>(id, GetDefaultCube());
+		}
+		/*Components::Model& AddModel(entt::entity id, std::string src = "")
 		{
 			ownedModels[id] = src;
 			return registry.emplace<Components::Model>(id, GetModelByResource(
 				src._Equal("") ? resMan.GetCube() : resMan.GetMeshes(src)));
-		}
+		}*/
 		template<DefaultRemovable T>
 		inline bool RemoveComponent(entt::entity id)
 		{
@@ -48,26 +51,12 @@ namespace Nork::Scene
 		template<std::same_as<Components::Model> T>
 		inline bool RemoveComponent(entt::entity id)
 		{
-			if (ownedModels.contains(id))
-			{
-				if (ownedModels[id]._Equal(""))
-				{
-					ownedModels.erase(id);
-					return registry.remove<Components::Model>(id) == 1;
-				}
-
-				resMan.DroppedMeshResource(ownedModels[id]);
-				ownedModels.erase(id);
-				return registry.remove<Components::Model>(id) == 1;
-			}
-			MetaLogger().Error(static_cast<size_t>(id), " is not owning any models.");
-			return false;
+			return registry.remove<Components::Model>(id) == 1;
 		}
 		void Load(std::string path);
 		void Save(std::string path);
 		inline void Reset()
 		{
-			FreeResources();
 			registry = entt::registry();
 		}
 		inline Components::Camera& GetMainCamera()
@@ -89,26 +78,16 @@ namespace Nork::Scene
 			return cam;
 		}
 	private:
-		Components::Model GetModelByResource(std::vector<Renderer::MeshResource> resource);
-		void FreeResources()
+		static Components::Model GetDefaultCube()
 		{
-			auto view = registry.view<Components::Model>();
-			for (auto& res : ownedModels)
-			{
-				if (res.second._Equal(""))
-					return;
-				if (!view.contains(res.first))
-					Logger::Error((size_t)res.first, "(id) was holding on for a model resource but did not have a model component.");
-				resMan.DroppedMeshResource(res.second);
-			}
-			ownedModels.clear();
+			static auto cube = CreateDefaultCube();
+			return cube;
 		}
+		static Components::Model CreateDefaultCube();
 		uuid GenUniqueId();
+
 	public:
 		entt::entity MainCameraNode;
 		entt::registry registry;
-		ResourceManager resMan;
-
-		std::unordered_map<entt::entity, std::string> ownedModels;
 	};
 }

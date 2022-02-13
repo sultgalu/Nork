@@ -25,7 +25,7 @@ struct TextureParams
 	TextureWrap wrap = TextureWrap::Repeat;
 	TextureFilter filter = TextureFilter::LinearMipmapNearest;
 	bool magLinear = true;
-	bool genMipmap = true;
+	bool genMipmap = false;
 	static consteval TextureParams CubeMapParams()
 	{
 		return TextureParams{
@@ -42,6 +42,16 @@ struct TextureParams
 			.filter = TextureFilter::LinearMipmapNearest,
 			.magLinear = true,
 			.genMipmap = true
+		};
+	}
+
+	static consteval TextureParams FramebufferTex2DParams()
+	{
+		return TextureParams{
+			.wrap = TextureWrap::ClampToEdge,
+			.filter = TextureFilter::Linear,
+			.magLinear = true,
+			.genMipmap = false
 		};
 	}
 

@@ -6,14 +6,6 @@
 #include "Components/Common.h"
 #include "Editor/Editor.h"
 #include "Core/NorkWindow.h"
-#include "Modules/Renderer/Data/Shader.h"
-#include "Modules/Renderer/Data/Mesh.h"
-#include "Modules/Renderer/Data/Texture.h"
-#include "Modules/Renderer/Utils.h"
-#include "Modules/Renderer/Resource/ResourceCreator.h"
-#include "Modules/Renderer/Resource/DefaultResources.h"
-#include "Modules/Renderer/Loaders/Loaders.h"
-#include "Modules/Renderer/Pipeline/Deferred.h"
 #include "Core/Engine.h"
 #include "App/Application.h"
 using namespace Nork;
@@ -36,7 +28,7 @@ int main()
 	enginePtr = &engine;
 	Editor::Editor editor(engine);
 
-	editor.SetDisplayTexture(engine.lightFb.Result());
+	editor.SetDisplayTexture(engine.renderingSystem.lFb.Color());
 	dispatcher.GetReceiver().Subscribe<RenderUpdatedEvent>([&](const RenderUpdatedEvent& ev)
 		{
 			editor.Render();
@@ -93,7 +85,7 @@ int main()
 
 	auto sun = engine.scene.CreateNode();
 	auto& l = engine.scene.AddComponent<Components::DirLight>(sun);
-	l.SetColor(glm::vec4(0.1f, 0.08f, 0.05, 1));
+	l.SetColor(glm::vec4(0.5f, 0.4f, 0.25, 1));
 	auto& shad = engine.scene.AddComponent<Components::DirShadow>(sun);
 	shad.far = 100; shad.near = -100; shad.left = -100; shad.right = 100; shad.bottom = -100; shad.top = 100;
 	shad.RecalcVP(l.GetView());
@@ -121,15 +113,16 @@ int main()
 	//		}
 	//	}
 	//}
-
-	/*engine.appEventMan.GetReceiver().Subscribe<Event::Types::OnUpdate>([&](const Event::Types::OnUpdate& e)
+	
+	/*Application::Get().dispatcher.GetReceiver().Subscribe<RenderUpdatedEvent>([&](const RenderUpdatedEvent& e)
 		{
-			using namespace Components;
-			using namespace Input;
-
+			editor.SetDisplayTexture(engine.renderingSystem.dShadowFramebuffers[0].GetAttachments().depth.value());
 		});*/
 
 	Application::Get().window.SetupCallbacks();
 	//Application::Get().window.Resize(1280, 720);
+	engine.physicsUpdate = true;
+	engine.scene.GetMainCamera().SetPosition(glm::vec3(-58, 16, -91));
+	engine.scene.GetMainCamera().SetRotation(-10, 60);
 	engine.Launch();
 }

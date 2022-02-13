@@ -5,7 +5,7 @@
 #include "TextureFormat.h"
 #include "TextureAttributes.h"
 
-namespace Nork::Renderer2 {
+namespace Nork::Renderer {
 	class Texture : public GLObject
 	{
 	public:
@@ -14,6 +14,8 @@ namespace Nork::Renderer2 {
 			Logger::Info("Deleting texture ", handle, ".");
 			glDeleteTextures(1, &handle);
 		}
+		Texture& Bind2D(int idx = 0);
+		Texture& BindCube(int idx = 0);
 		const TextureAttributes& GetAttributes() { return attributes; }
 		const TextureParams& GetParams() { return params; }
 		uint32_t GetWidth() { return attributes.width; }
@@ -28,7 +30,7 @@ namespace Nork::Renderer2 {
 	public:
 		Texture2D& Create()
 		{
-			glCreateTextures(GL_TEXTURE_2D, 1, &handle);
+			glGenTextures(1, &handle);
 			Logger::Info("Created texture ", handle, ".");
 			return *this;
 		}
@@ -59,7 +61,7 @@ namespace Nork::Renderer2 {
 	public:
 		TextureCube& Create()
 		{
-			glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &handle);
+			glGenTextures(1, &handle);
 			Logger::Info("Created texture ", handle, ".");
 			return *this;
 		}

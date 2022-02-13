@@ -2,7 +2,7 @@
 
 #include "Mesh.h"
 
-namespace Nork::Renderer2 {
+namespace Nork::Renderer {
 	struct Model
 	{
 		std::vector<Mesh> meshes;

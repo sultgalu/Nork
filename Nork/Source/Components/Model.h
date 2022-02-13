@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Modules/Renderer/Data/Mesh.h"
+#include "Modules/Renderer2/Model/Mesh.h"
 
 namespace Nork::Components
 {
 	struct Model
 	{
-		std::vector<Nork::Renderer2::Mesh> meshes;
+		std::vector<Nork::Renderer::Mesh> meshes;
 	};
 }

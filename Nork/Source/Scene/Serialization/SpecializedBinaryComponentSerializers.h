@@ -25,7 +25,7 @@ namespace Nork
 	template<>
 	inline void BinaryComponentSerializer<Model>::operator<<(Model& model)
 	{
-		std::string& src = scene.ownedModels[id];
+		std::string src = "";
 		Logger::Info("Serializing model with source path: ", src);
 
 		writer << src.size();
@@ -38,6 +38,7 @@ namespace Nork
 		reader >> size;
 
 		std::string src = std::string(reader.ReadStr(size));
-		scene.AddModel(id, src);
+		if (src._Equal(""))
+			scene.AddModel(id);
 	}
 }

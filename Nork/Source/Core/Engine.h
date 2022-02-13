@@ -1,12 +1,12 @@
 #pragma once
 #include "NorkWindow.h"
-#include "Modules/Renderer/Pipeline/Deferred.h"
-#include "Modules/Renderer/Pipeline/LightManager.h"
 #include "Core/CameraController.h"
 #include "Scene/Scene.h"
 #include "PolygonMesh.h"
 #include "Modules/Physics/Data/World.h"
 #include "Modules/Physics/Pipeline/PhysicsSystem.h"
+#include "Modules/Renderer2/Objects/Shader/Shader.h"
+#include "RenderingSystem.h"
 
 namespace Nork
 {
@@ -25,37 +25,16 @@ namespace Nork
 		~Engine();
 		void Launch();
 		void ReadId(int x, int y);
+		static std::unordered_map<Renderer::ShaderType, std::string> SplitShaderContent(std::string source);
 	private:
-		Renderer::DeferredData CreatePipelineResources();
-		void SyncComponents();
-		void UpdateLights();
 		void PhysicsUpdate();
-		void DrawHitboxes();
-		void ViewProjectionUpdate();
 		void OnDShadowAdded(entt::registry& reg, entt::entity ent);
 		void OnDShadowRemoved(entt::registry& reg, entt::entity ent);
 	public:
-		Renderer::Deferred pipeline;
-		Renderer::LightManager lightMan;
 		Scene::Scene scene;
-
-		//MeshWorld<Vertex> meshes = MeshWorld<Vertex>::GetCube();
-		
-		std::vector<Renderer::DirShadowFramebuffer> dShadowFramebuffers;
-		std::vector<Renderer::PointShadowFramebuffer> pShadowFramebuffers;
-		Renderer::GeometryFramebuffer geometryFb;
-		Renderer::LightPassFramebuffer lightFb;
 		GLuint idMap;
 
-		int pointSize = 20;
-		float pointInternalSize = 0.5f, pointAA = 0.3f, lineWidth = 0.005f;
-
-		float pointAlpha = 1.0f, lineAlpha = 1.0f, triAlpha = 0.6f;
-		glm::vec4 pointColor = { 1,0,0, 1.0f};
-		glm::vec4 lineColor = { 0,0,1, 0.3f};
-		glm::vec4 triangleColor = { 0,1,0, 0.4f};
-		glm::vec3 selectedColor = { 1,0,1 };
-
+		RenderingSystem renderingSystem;
 		bool drawPolies = false, drawLines = true, drawPoints = true, drawTriangles = true, drawSky = false;
 		bool satRes = false, gjkRes = false, clipRes = false, aabbRes = false;
 		bool sat = false, gjk = false, clip = true, aabb = true;
@@ -70,6 +49,5 @@ namespace Nork
 		static std::vector<std::pair<std::string, float>> GetDeltas();
 	};
 
-	extern std::optional<Components::Camera*> GetActiveCamera();
 	extern Engine& GetEngine();
 }

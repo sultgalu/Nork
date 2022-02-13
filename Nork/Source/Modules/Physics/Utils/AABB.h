@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Data/World.h"
-#include "Modules/Renderer/Data/Shader.h"
+#include "Modules/Renderer2/Objects/Shader/Shader.h"
 
 namespace Nork::Physics
 {

@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Shader.h"
 
-namespace Nork::Renderer2 {
+namespace Nork::Renderer {
 	Shader& Shader::Compile(std::unordered_map<ShaderType, std::string> sources)
 	{
 		std::unordered_map<GLenum, int> handles;

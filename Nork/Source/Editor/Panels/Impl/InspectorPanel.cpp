@@ -121,25 +121,25 @@ namespace Nork::Editor
 				{
 					if (ImGui::BeginTabItem("Diffuse"))
 					{
-						ImGui::Image((ImTextureID)model->meshes[meshIdx].textures[(int)Renderer::TextureUse::Diffuse], ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
+						ImGui::Image((ImTextureID)model->meshes[meshIdx].textureMaps[(int)Renderer::TextureMapType::Diffuse].GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
 							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
 						ImGui::EndTabItem();
 					}
 					if (ImGui::BeginTabItem("Normal"))
 					{
-						ImGui::Image((ImTextureID)model->meshes[meshIdx].textures[(int)Renderer::TextureUse::Normal], ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
+						ImGui::Image((ImTextureID)model->meshes[meshIdx].textureMaps[(int)Renderer::TextureMapType::Normal].GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
 							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
 						ImGui::EndTabItem();
 					}
 					if (ImGui::BeginTabItem("Roughness"))
 					{
-						ImGui::Image((ImTextureID)model->meshes[meshIdx].textures[(int)Renderer::TextureUse::Roughness], ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
+						ImGui::Image((ImTextureID)model->meshes[meshIdx].textureMaps[(int)Renderer::TextureMapType::Roughness].GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
 							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
 						ImGui::EndTabItem();
 					}
 					if (ImGui::BeginTabItem("Metalness"))
 					{
-						ImGui::Image((ImTextureID)model->meshes[meshIdx].textures[(int)Renderer::TextureUse::Reflection], ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
+						ImGui::Image((ImTextureID)model->meshes[meshIdx].textureMaps[(int)Renderer::TextureMapType::Reflection].GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
 							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
 						ImGui::EndTabItem();
 					}
@@ -159,8 +159,9 @@ namespace Nork::Editor
 				std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::_3D, L"Load model", L"Load");
 				if (!p.empty())
 				{
-					scene.RemoveComponent<Model>(data.selectedEnt);
-					scene.AddModel(data.selectedEnt, p);
+					MetaLogger().Error("implement this");
+					//scene.RemoveComponent<Model>(data.selectedEnt);
+					//scene.AddModel(data.selectedEnt, p);
 				}
 			}
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
@@ -199,11 +200,11 @@ namespace Nork::Editor
 			static bool on = false;
 			if (ImGui::Checkbox("WildCard", &on))
 			{
-				static GLuint saved = data.engine.pipeline.data.skyboxTex;
-				if (on)
-					data.engine.pipeline.data.skyboxTex = data.engine.pShadowFramebuffers[comp->GetData().idx].Texture();
-				else
-					data.engine.pipeline.data.skyboxTex = saved;
+				// static GLuint saved = data.engine.pipeline.data.skyboxTex;
+				// if (on)
+				// 	data.engine.pipeline.data.skyboxTex = data.engine.pShadowFramebuffers[comp->GetData().idx].Texture();
+				// else
+				// 	data.engine.pipeline.data.skyboxTex = saved;
 			}
 			if (ImGui::DragFloat2("Far, Near", &comp->GetMutableData().far, 0.001f, 0, 0, "%.3f"))
 			{

@@ -1,5 +1,4 @@
 #include "../MeshEditor.h"
-#include "Modules/Physics/Pipeline/CollisionDetectionGPU.h"
 #include "Modules/Physics/Pipeline/CollisionDetectionCPU.h"
 #include "App/Application.h"
 
@@ -67,11 +66,11 @@ namespace Nork::Editor
 	}
 	void MeshEditorPanel::DrawContent()
 	{
-		int val = data.engine.lightMan.cullQ;
+		/*int val = data.engine.lightMan.cullQ;
 		if (ImGui::DragInt("Point Anti-Aliasing", &val, 1, 1, 32))
 		{
 			data.engine.lightMan.cullQ = val;
-		}
+		}*/
 		
 		if (data.selectedPoly == nullptr)
 		{
@@ -267,13 +266,6 @@ namespace Nork::Editor
 			auto pair = SAPdeltas[i];
 			ImGui::Text(pair.first.append(": ").append(std::to_string(pair.second)).c_str());
 		}
-		ImGui::Separator();	
-		auto GPUdeltas = Physics::CollisionDetectionGPU::GetDeltas();
-		for (size_t i = 0; i < GPUdeltas.size(); i++)
-		{
-			auto pair = GPUdeltas[i];
-			ImGui::Text(pair.first.append(": ").append(std::to_string(pair.second)).c_str());
-		}
 		ImGui::Separator();
 		auto pDeltas = data.engine.pSystem.deltas;
 		for (size_t i = 0; i < pDeltas.size(); i++)
@@ -283,8 +275,6 @@ namespace Nork::Editor
 		}
 
 		ImGui::DragFloat("Physics speed", &data.engine.physicsSpeed, 0.001f, 0, 10, "%.3f", ImGuiSliderFlags_Logarithmic);
-		bool GPUDetection = data.engine.pSystem.IsGPUDetection();
-		if (ImGui::Checkbox("GPU Detection", &GPUDetection)) data.engine.pSystem.SetIsGPUDetection(GPUDetection);
 		ImGui::Checkbox("Update polies", &data.engine.updatePoliesForPhysics);
 		ImGui::Checkbox("Update Velocities", &data.engine.pSystem.updateVelocities);
 		ImGui::Checkbox("Update Rotation", &data.engine.pSystem.updateRotation);
@@ -297,7 +287,7 @@ namespace Nork::Editor
 		ImGui::Checkbox("Draw Sky", &data.engine.drawSky);
 
 		auto options = ImGuiColorEditFlags_DefaultOptions_ | ImGuiColorEditFlags_AlphaPreview | ImGuiColorEditFlags_AlphaBar;
-		ImGui::ColorEdit4("Point Color", &data.engine.pointColor.r, options);
+		/*ImGui::ColorEdit4("Point Color", &data.engine.pointColor.r, options);
 		ImGui::ColorEdit4("Line Color", &data.engine.lineColor.r, options);
 		ImGui::ColorEdit4("Triangle Color", &data.engine.triangleColor.r, options);
 		ImGui::ColorEdit3("Focused Color", &data.engine.selectedColor.r, options);
@@ -307,6 +297,6 @@ namespace Nork::Editor
 		ImGui::SliderFloat("Line Width", &data.engine.lineWidth, 0, 1, "%.3f", ImGuiSliderFlags_Logarithmic);
 		ImGui::SliderInt("Point Size", &data.engine.pointSize, 1, 1000, "%d", ImGuiSliderFlags_Logarithmic);
 		ImGui::DragFloat("Point Internal size", &data.engine.pointInternalSize, 0.01f, 0, 1, "%.2f");
-		ImGui::DragFloat("Point Anti-Aliasing", &data.engine.pointAA, 0.001, 0, 1, "%.3f");
+		ImGui::DragFloat("Point Anti-Aliasing", &data.engine.pointAA, 0.001, 0, 1, "%.3f");*/
 	}
 }

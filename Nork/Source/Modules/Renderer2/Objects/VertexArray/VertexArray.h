@@ -3,7 +3,7 @@
 #include "../GLObject.h"
 #include "../Buffer/Buffer.h"
 
-namespace Nork::Renderer2 {
+namespace Nork::Renderer {
 	enum class DrawMode: GLenum
 	{
 		Triangles = GL_TRIANGLES, 

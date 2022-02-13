@@ -2,7 +2,7 @@
 
 #include "TextureFormat.h"
 
-namespace Nork::Renderer2 {
+namespace Nork::Renderer {
 	struct TextureAttributes
 	{
 		uint32_t width, height;

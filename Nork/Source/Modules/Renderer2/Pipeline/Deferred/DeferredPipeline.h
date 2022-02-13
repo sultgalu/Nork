@@ -7,7 +7,7 @@
 #include "../../Model/Model.h"
 #include "../../DrawUtils.h"
 
-namespace Nork::Renderer2 {
+namespace Nork::Renderer {
 	class GeometryFramebuffer: public Framebuffer
 	{
 	public:
@@ -16,11 +16,11 @@ namespace Nork::Renderer2 {
 			TextureFormat normal, TextureFormat specular)
 		{
 			auto attachments = FramebufferAttachments()
-				.Color(Texture2D().Create().Bind().SetParams().SetData(TextureAttributes{ .width = width, .height = height, .format = position }), 0)
-				.Color(Texture2D().Create().Bind().SetParams().SetData(TextureAttributes{ .width = width, .height = height, .format = diffuse }), 1)
-				.Color(Texture2D().Create().Bind().SetParams().SetData(TextureAttributes{ .width = width, .height = height, .format = normal }), 2)
-				.Color(Texture2D().Create().Bind().SetParams().SetData(TextureAttributes{ .width = width, .height = height, .format = specular }), 3)
-				.Depth(Texture2D().Create().Bind().SetParams().SetData(TextureAttributes{ .width = width, .height = height, .format = depth }));
+				.Color(Texture2D().Create().Bind().SetParams(TextureParams::FramebufferTex2DParams()).SetData(TextureAttributes{ .width = width, .height = height, .format = position }), 0)
+				.Color(Texture2D().Create().Bind().SetParams(TextureParams::FramebufferTex2DParams()).SetData(TextureAttributes{ .width = width, .height = height, .format = diffuse }), 1)
+				.Color(Texture2D().Create().Bind().SetParams(TextureParams::FramebufferTex2DParams()).SetData(TextureAttributes{ .width = width, .height = height, .format = normal }), 2)
+				.Color(Texture2D().Create().Bind().SetParams(TextureParams::FramebufferTex2DParams()).SetData(TextureAttributes{ .width = width, .height = height, .format = specular }), 3)
+				.Depth(Texture2D().Create().Bind().SetParams(TextureParams::FramebufferTex2DParams()).SetData(TextureAttributes{ .width = width, .height = height, .format = depth }));
 
 			SetAttachments(attachments);
 			return *this;
@@ -50,22 +50,14 @@ namespace Nork::Renderer2 {
 	class LightFramebuffer : public Framebuffer
 	{
 	public:
-		LightFramebuffer& CreateTextures(uint32_t width, uint32_t height, TextureFormat color, TextureFormat depth)
-		{
-			auto attachments = FramebufferAttachments()
-				.Color(Texture2D().Create().Bind().SetParams().SetData(TextureAttributes{ .width = width, .height = height, .format = color }), 0)
-				.Depth(Texture2D().Create().Bind().SetParams().SetData(TextureAttributes{ .width = width, .height = height, .format = depth }));
-
-			SetAttachments(attachments);
-			return *this;
-		}
 		LightFramebuffer& CreateTextures(GeometryFramebuffer& gFb, TextureFormat color)
 		{
 			auto attachments = FramebufferAttachments()
-				.Color(Texture2D().Create().Bind().SetParams().SetData(TextureAttributes{ .width = gFb.Diffuse().Attributes().width, .height = gFb.Diffuse().Attributes().height, .format = color }), 0)
+				.Color(Texture2D().Create().Bind().SetParams(TextureParams::FramebufferTex2DParams()).SetData(TextureAttributes{ .width = gFb.Diffuse().Attributes().width, .height = gFb.Diffuse().Attributes().height, .format = color }), 0)
 				.Depth(gFb.Depth());
 
 			SetAttachments(attachments);
+			clearBits = GL_COLOR_BUFFER_BIT;
 			return *this;
 		}
 		Texture2D& Color()
@@ -104,15 +96,22 @@ namespace Nork::Renderer2 {
 		}
 		static void LightPass(GeometryFramebuffer& geometryFb, LightFramebuffer& lightFb, Shader& shader)
 		{
-			Capabilities::DepthTest().Disable();
 			geometryFb.Position().Bind(0);
 			geometryFb.Diffuse().Bind(1);
 			geometryFb.Normal().Bind(2);
 			geometryFb.Specular().Bind(3);
 
+			//glClearColor(1, 0, 1, 1);
 			lightFb.Bind().SetViewport().Clear();
+			//lightFb.BindDefault();
+			//glViewport(0, 0, 1920, 1080);
 			shader.Use();
+
+			Capabilities::DepthTest().Disable();
+			Capabilities::CullFace().Disable();
 			DrawUtils::DrawQuad();
+			Capabilities::DepthTest().Enable();
+			//glViewport(0, 0, 1920, 1080);
 		}
 	};
 }

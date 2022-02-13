@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Base/Panel.h"
+#include "Modules/Renderer2/Objects/Texture/Texture.h"
 
 namespace Nork::Editor
 {
@@ -17,7 +18,7 @@ namespace Nork::Editor
 			bool isViewportDoubleClicked = false;
 		};
 		inline MouseState GetMouseState() { return mouseState; }
-		inline void SetTexture(GLuint tex) { image.texture = tex; }
+		inline void SetTexture(Renderer::Texture& tex) { image.texture = tex; }
 	private:
 		virtual void Begin() override;
 		virtual void DrawContent() override;
@@ -26,7 +27,7 @@ namespace Nork::Editor
 		{
 			glm::vec2 uv_min = glm::vec2(0, 1);
 			glm::vec2 uv_max = glm::vec2(1, 0);
-			unsigned int texture = 0;
+			Renderer::Texture texture;
 			glm::vec2 resolution = glm::vec2(1920, 1080);
 		};
 

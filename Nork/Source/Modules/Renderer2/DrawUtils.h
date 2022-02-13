@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Nork::Renderer2 {
+namespace Nork::Renderer {
 	class DrawUtils
 	{
 	public:
