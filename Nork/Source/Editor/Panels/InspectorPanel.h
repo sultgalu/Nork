@@ -31,6 +31,6 @@ namespace Nork::Editor
 		void NameComp(Tag*);
 	private:
 		//entt::registry& reg;
-		Scene::Scene& scene;
+		Scene& scene;
 	};
 }

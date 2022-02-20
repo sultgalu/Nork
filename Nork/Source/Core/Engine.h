@@ -31,7 +31,7 @@ namespace Nork
 		void OnDShadowAdded(entt::registry& reg, entt::entity ent);
 		void OnDShadowRemoved(entt::registry& reg, entt::entity ent);
 	public:
-		Scene::Scene scene;
+		Scene scene;
 		GLuint idMap;
 
 		RenderingSystem renderingSystem;

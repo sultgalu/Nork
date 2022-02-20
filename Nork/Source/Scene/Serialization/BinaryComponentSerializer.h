@@ -9,7 +9,7 @@ namespace Nork
 	class BinaryComponentSerializer
 	{
 	public:
-		BinaryComponentSerializer(entt::registry& reg, Scene::Scene& scene, BinaryWriter& writer, entt::entity id)
+		BinaryComponentSerializer(entt::registry& reg, Scene& scene, BinaryWriter& writer, entt::entity id)
 			: reg(reg), scene(scene), writer(writer), id(id)
 		{
 		}
@@ -21,7 +21,7 @@ namespace Nork
 	private:
 		BinaryWriter& writer;
 		entt::registry& reg;
-		Scene::Scene& scene;
+		Scene& scene;
 		entt::entity id;
 	};
 
@@ -29,7 +29,7 @@ namespace Nork
 	class BinaryComponentDeserializer
 	{
 	public:
-		BinaryComponentDeserializer(entt::registry& reg, Scene::Scene& scene, BinaryReader& reader, entt::entity id)
+		BinaryComponentDeserializer(entt::registry& reg, Scene& scene, BinaryReader& reader, entt::entity id)
 			: reg(reg), scene(scene), reader(reader), id(id)
 		{
 		}
@@ -40,7 +40,7 @@ namespace Nork
 	private:
 		BinaryReader& reader;
 		entt::registry& reg;
-		Scene::Scene& scene;
+		Scene& scene;
 		entt::entity id;
 	};
 

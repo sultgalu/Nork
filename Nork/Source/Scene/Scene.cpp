@@ -31,7 +31,7 @@ namespace Nork
 	using Deserializer = SerializationFactory::BinaryDeserializer;
 }
 
-namespace Nork::Scene
+namespace Nork
 {
 	void Scene::Save(std::string path)
 	{

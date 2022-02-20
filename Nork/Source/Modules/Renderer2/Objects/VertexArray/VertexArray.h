@@ -34,7 +34,7 @@ namespace Nork::Renderer {
 		Buffer& GetIBO() { return ibo; }
 		void Draw(DrawMode mode = DrawMode::Triangles)
 		{
-			glDrawArrays(std::to_underlying(mode), 0, vbo.Size() / stride);
+			glDrawArrays(std::to_underlying(mode), 0, vbo.GetSize() / stride);
 		}
 		void DrawIndexed(std::span<uint32_t> indices, DrawMode mode = DrawMode::Triangles)
 		{
@@ -42,7 +42,7 @@ namespace Nork::Renderer {
 		}
 		void DrawIndexed(DrawMode mode = DrawMode::Triangles)
 		{
-			glDrawElements(std::to_underlying(mode), ibo.Size() / sizeof(GLuint), GL_UNSIGNED_INT, 0);
+			glDrawElements(std::to_underlying(mode), ibo.GetSize() / sizeof(GLuint), GL_UNSIGNED_INT, 0);
 		}
 		VertexArray& SetAttribs(std::vector<int> attrLens)
 		{

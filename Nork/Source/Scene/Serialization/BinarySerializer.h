@@ -12,7 +12,7 @@ namespace Nork
 	class BinarySerializer
 	{
 	public:
-		BinarySerializer(entt::registry& reg, Scene::Scene& scene) 
+		BinarySerializer(entt::registry& reg, Scene& scene) 
 			: reg(reg), scene(scene) { }
 
 		std::vector<char>& Serialize()
@@ -68,14 +68,14 @@ namespace Nork
 	private:
 		BinaryWriter writer;
 		entt::registry& reg;
-		Scene::Scene& scene;
+		Scene& scene;
 	};
 
 	template<class... Components>
 	class BinaryDeserializer
 	{
 	public:
-		BinaryDeserializer(entt::registry& reg, Scene::Scene& scene, std::span<char> data)
+		BinaryDeserializer(entt::registry& reg, Scene& scene, std::span<char> data)
 			: reg(reg), scene(scene), reader(data)
 		{
 		}
@@ -135,7 +135,7 @@ namespace Nork
 	private:
 		BinaryReader reader;
 		entt::registry& reg;
-		Scene::Scene& scene;
+		Scene& scene;
 	};
 
 	// entCount|fullSize

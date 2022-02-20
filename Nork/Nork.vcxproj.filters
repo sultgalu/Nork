@@ -126,16 +126,16 @@
     <ClCompile Include="Source\App\Application.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer2\Objects\Texture\Texture2.cpp">
+    <ClCompile Include="Source\Modules\Renderer2\Objects\Texture\Texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer2\Objects\Shader\Shader2.cpp">
+    <ClCompile Include="Source\Modules\Renderer2\Objects\Shader\Shader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer2\Objects\Buffer\Buffer2.cpp">
+    <ClCompile Include="Source\Modules\Renderer2\Objects\Buffer\Buffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer2\Objects\Framebuffer\Framebuffer2.cpp">
+    <ClCompile Include="Source\Modules\Renderer2\Objects\Framebuffer\Framebuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Modules\Renderer2\Pipeline\Deferred\DeferredPipeline.cpp">

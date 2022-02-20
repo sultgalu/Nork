@@ -101,17 +101,13 @@ namespace Nork::Renderer {
 			geometryFb.Normal().Bind(2);
 			geometryFb.Specular().Bind(3);
 
-			//glClearColor(1, 0, 1, 1);
 			lightFb.Bind().SetViewport().Clear();
-			//lightFb.BindDefault();
-			//glViewport(0, 0, 1920, 1080);
 			shader.Use();
 
 			Capabilities::DepthTest().Disable();
 			Capabilities::CullFace().Disable();
 			DrawUtils::DrawQuad();
 			Capabilities::DepthTest().Enable();
-			//glViewport(0, 0, 1920, 1080);
 		}
 	};
 }

@@ -11,24 +11,6 @@ namespace Nork
 	static constexpr auto dShadIdxSize = 10;
 	static constexpr auto pShadIdxSize = 10;
 
-	static std::vector<Renderer::Model> GetModels(entt::registry& reg)
-	{
-		std::vector<Renderer::Model> result;
-
-		auto view = reg.view<Components::Model, Components::Transform>();
-		result.reserve(view.size_hint());
-
-		for (auto& id : view)
-		{
-			auto& model = view.get(id)._Myfirst._Val;
-			auto& tr = view.get(id)._Get_rest()._Myfirst._Val;
-
-			result.push_back(Renderer::Model {.meshes = model.meshes, .modelMatrix = tr.GetModelMatrix()});
-		}
-
-		return result;
-	}
-
 	void Engine::OnDShadowAdded(entt::registry& reg, entt::entity id)
 	{
 		auto& shad = reg.get<Components::DirShadow>(id);
@@ -74,16 +56,8 @@ namespace Nork
 			sender.Send(UpdateEvent());
 			sender.Send(RenderUpdateEvent());
 			
+			renderingSystem.Update(scene);
 			PhysicsUpdate(); // NEW
-			auto models = GetModels(this->scene.registry);
-
-			renderingSystem.SyncComponents(scene.registry);
-			auto& cam = scene.GetMainCamera();
-			renderingSystem.ViewProjectionUpdate(cam);
-			renderingSystem.UpdateLights(scene.registry);
-			renderingSystem.RenderScene(models);
-
-			Renderer::Framebuffer::BindDefault();
 
 			sender.Send(RenderUpdatedEvent());
 			Profiler::Clear();

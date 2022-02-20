@@ -107,6 +107,23 @@ namespace Nork {
 	class RenderingSystem
 	{
 	public:
+		static std::vector<Renderer::Model> GetModels(entt::registry& reg)
+		{
+			std::vector<Renderer::Model> result;
+
+			auto view = reg.view<Components::Model, Components::Transform>();
+			result.reserve(view.size_hint());
+
+			for (auto& id : view)
+			{
+				auto& model = view.get(id)._Myfirst._Val;
+				auto& tr = view.get(id)._Get_rest()._Myfirst._Val;
+
+				result.push_back(Renderer::Model{ .meshes = model.meshes, .modelMatrix = tr.GetModelMatrix() });
+			}
+
+			return result;
+		}
 		RenderingSystem& Init()
 		{
 			using namespace Renderer;
@@ -225,12 +242,18 @@ namespace Nork {
 		{
 			Renderer::DeferredPipeline::GeometryPass(gFb, Shaders::gPassShader, models);
 			Renderer::DeferredPipeline::LightPass(gFb, lFb, Shaders::lPassShader);
-			// lFb.BindDefault();
-			// lFb.Color().Bind();
-			// Shaders::textureShader.Use().SetInt("tex", 0);
-			// Renderer2::Capabilities::DepthTest().Disable();
-			// Renderer2::DrawUtils::DrawQuad();
-			// Renderer2::Capabilities::DepthTest().Enable();
+		}
+		void Update(Scene& scene)
+		{
+			auto models = GetModels(scene.registry);
+
+			SyncComponents(scene.registry);
+			auto& cam = scene.GetMainCamera();
+			ViewProjectionUpdate(cam);
+			UpdateLights(scene.registry);
+			RenderScene(models);
+
+			Renderer::Framebuffer::BindDefault();
 		}
 	public:
 		Renderer::LightStateSynchronizer lightStateSyncher;

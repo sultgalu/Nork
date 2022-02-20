@@ -2,7 +2,7 @@
 
 #include "Components/All.h"
 
-namespace Nork::Scene
+namespace Nork
 {
 	template<typename T>
 	concept DefaultEmplaceable = true
