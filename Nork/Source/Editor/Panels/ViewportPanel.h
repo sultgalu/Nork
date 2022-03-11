@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Base/Panel.h"
-#include "Modules/Renderer2/Objects/Texture/Texture.h"
+#include "Modules/Renderer/Objects/Texture/Texture.h"
 
 namespace Nork::Editor
 {

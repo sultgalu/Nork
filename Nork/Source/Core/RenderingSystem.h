@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Modules/Renderer2/Objects/Shader/Shader.h"
-#include "Modules/Renderer2/Model/Model.h"
-#include "Modules/Renderer2/Pipeline/LightStateSynchronizer.h"
-#include "Modules/Renderer2/Pipeline/ShadowMapRenderer.h"
-#include "Modules/Renderer2/Pipeline/Deferred/DeferredPipeline.h"
+#include "Modules/Renderer/Objects/Shader/Shader.h"
+#include "Modules/Renderer/Model/Model.h"
+#include "Modules/Renderer/Pipeline/LightStateSynchronizer.h"
+#include "Modules/Renderer/Pipeline/ShadowMapRenderer.h"
+#include "Modules/Renderer/Pipeline/Deferred/DeferredPipeline.h"
 #include "Components/All.h"
 
 namespace Nork {

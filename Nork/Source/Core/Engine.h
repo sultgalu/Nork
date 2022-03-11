@@ -5,7 +5,7 @@
 #include "PolygonMesh.h"
 #include "Modules/Physics/Data/World.h"
 #include "Modules/Physics/Pipeline/PhysicsSystem.h"
-#include "Modules/Renderer2/Objects/Shader/Shader.h"
+#include "Modules/Renderer/Objects/Shader/Shader.h"
 #include "RenderingSystem.h"
 
 namespace Nork

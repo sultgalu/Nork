@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Modules/Renderer2/Model/Lights.h"
+#include "Modules/Renderer/Model/Lights.h"
 
 namespace Nork::Components
 {

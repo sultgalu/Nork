@@ -126,34 +126,34 @@
     <ClCompile Include="Source\App\Application.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer2\Objects\Texture\Texture.cpp">
+    <ClCompile Include="Source\Modules\Renderer\Objects\Texture\Texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer2\Objects\Shader\Shader.cpp">
+    <ClCompile Include="Source\Modules\Renderer\Objects\Shader\Shader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer2\Objects\Buffer\Buffer.cpp">
+    <ClCompile Include="Source\Modules\Renderer\Objects\Buffer\Buffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer2\Objects\Framebuffer\Framebuffer.cpp">
+    <ClCompile Include="Source\Modules\Renderer\Objects\Framebuffer\Framebuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer2\Pipeline\Deferred\DeferredPipeline.cpp">
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\Deferred\DeferredPipeline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer2\Objects\VertexArray\VertexArray.cpp">
+    <ClCompile Include="Source\Modules\Renderer\Objects\VertexArray\VertexArray.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer2\State\Capabilities.cpp">
+    <ClCompile Include="Source\Modules\Renderer\State\Capabilities.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer2\DrawUtils.cpp">
+    <ClCompile Include="Source\Modules\Renderer\DrawUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer2\LoadUtils.cpp">
+    <ClCompile Include="Source\Modules\Renderer\LoadUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer2\Window\Window.cpp">
+    <ClCompile Include="Source\Modules\Renderer\Window\Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -308,70 +308,70 @@
     <ClInclude Include="Source\App\Application.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer2\Objects\Texture\Texture.h">
+    <ClInclude Include="Source\Modules\Renderer\Objects\Texture\Texture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer2\Objects\GLObject.h">
+    <ClInclude Include="Source\Modules\Renderer\Objects\GLObject.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer2\Objects\Texture\TextureFormat.h">
+    <ClInclude Include="Source\Modules\Renderer\Objects\Texture\TextureFormat.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer2\Objects\Texture\TextureParams.h">
+    <ClInclude Include="Source\Modules\Renderer\Objects\Texture\TextureParams.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer2\Objects\Texture\TextureAttributes.h">
+    <ClInclude Include="Source\Modules\Renderer\Objects\Texture\TextureAttributes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer2\Objects\Shader\Shader.h">
+    <ClInclude Include="Source\Modules\Renderer\Objects\Shader\Shader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer2\Objects\Buffer\Buffer.h">
+    <ClInclude Include="Source\Modules\Renderer\Objects\Buffer\Buffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer2\Objects\Framebuffer\Framebuffer.h">
+    <ClInclude Include="Source\Modules\Renderer\Objects\Framebuffer\Framebuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer2\State\Capabilities.h">
+    <ClInclude Include="Source\Modules\Renderer\State\Capabilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer2\Pipeline\Deferred\DeferredPipeline.h">
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\Deferred\DeferredPipeline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer2\Objects\VertexArray\VertexArray.h">
+    <ClInclude Include="Source\Modules\Renderer\Objects\VertexArray\VertexArray.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer2\Model\Mesh.h">
+    <ClInclude Include="Source\Modules\Renderer\Model\Mesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer2\Model\Model.h">
+    <ClInclude Include="Source\Modules\Renderer\Model\Model.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer2\DrawUtils.h">
+    <ClInclude Include="Source\Modules\Renderer\DrawUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\RenderingSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer2\Pipeline\LightStateSynchronizer.h">
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\LightStateSynchronizer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer2\Model\Lights.h">
+    <ClInclude Include="Source\Modules\Renderer\Model\Lights.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer2\Pipeline\ShadowMapRenderer.h">
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\ShadowMapRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer2\Pipeline\PostProcess\SkyRenderer.h">
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\PostProcess\SkyRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer2\Config.h">
+    <ClInclude Include="Source\Modules\Renderer\Config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer2\LoadUtils.h">
+    <ClInclude Include="Source\Modules\Renderer\LoadUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer2\Window\Window.h">
+    <ClInclude Include="Source\Modules\Renderer\Window\Window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
