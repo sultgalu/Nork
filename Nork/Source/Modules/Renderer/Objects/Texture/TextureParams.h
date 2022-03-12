@@ -46,7 +46,6 @@ struct TextureParams
 			.genMipmap = true
 		};
 	}
-
 	static consteval TextureParams FramebufferTex2DParams()
 	{
 		return TextureParams{

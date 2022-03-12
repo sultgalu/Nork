@@ -164,6 +164,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Core\RenderingSystem.cpp" />
     <ClCompile Include="Source\Modules\Renderer\DrawUtils.cpp" />
     <ClCompile Include="Source\Modules\Renderer\LoadUtils.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Pipeline\Deferred\DeferredPipeline.cpp" />

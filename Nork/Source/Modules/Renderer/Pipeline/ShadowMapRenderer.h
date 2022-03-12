@@ -5,6 +5,7 @@
 #include "../Model/Model.h"
 #include "../Objects/Shader/Shader.h"
 #include "../Objects/Framebuffer/Framebuffer.h"
+#include "../State/Capabilities.h"
 
 namespace Nork::Renderer {
 	class ShadowMapRenderer
@@ -36,6 +37,7 @@ namespace Nork::Renderer {
 			shader.SetFloat("far", shadow.far);
 			shader.SetVec3("ligthPos", pos);
 
+			Capabilities::DepthTest().Enable();
 			for (size_t i = 0; i < models.size(); i++)
 			{
 				shader.SetMat4("model", models[i].modelMatrix);
@@ -48,9 +50,9 @@ namespace Nork::Renderer {
 		static void RenderDirLightShadowMap(const DirLight& light, const DirShadow& shadow, const std::span<Model> models, Framebuffer& fb, Shader& shader)
 		{
 			fb.Bind().SetViewport().Clear();
-			shader.Use();
-			shader.SetMat4("VP", shadow.VP);
+			shader.Use().SetMat4("VP", shadow.VP);
 
+			Capabilities::DepthTest().Enable();
 			for (size_t i = 0; i < models.size(); i++)
 			{
 				shader.SetMat4("model", models[i].modelMatrix);
