@@ -38,7 +38,6 @@ namespace Nork::Renderer {
 		Buffer& Bind();
 		Buffer& BindBase(GLuint index);
 		void Allocate(size_t size, const void* data = nullptr);
-		void Allocate(BufferUsage usage, size_t size, const void* data = nullptr);
 		void SetData(const void* data, size_t size, size_t offset = 0);
 		void GetData(void* data, size_t size, size_t offset = 0);
 		size_t GetSize() { return size; }
@@ -48,7 +47,7 @@ namespace Nork::Renderer {
 		static void ResetBoundBufferState();
 	protected:
 		size_t size;
-		BufferUsage usage;
 		BufferTarget target;
+		const BufferUsage usage;
 	};
 }

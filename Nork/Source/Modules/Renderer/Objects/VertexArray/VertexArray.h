@@ -52,8 +52,8 @@ namespace Nork::Renderer {
 			: GLObject(handle), attrLens(attrLens), stride(stride), vbo(vbo) 
 		{}
 	protected:
-		std::vector<int> attrLens;
-		int stride;
+		const std::vector<int> attrLens;
+		const int stride;
 		std::shared_ptr<Buffer> vbo, ibo = nullptr;
 	};
 }

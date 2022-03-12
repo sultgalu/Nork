@@ -4,6 +4,72 @@
 
 namespace Nork
 {
+	// SceneNode = entity + its child entities
+	//class SceneNode
+	//{
+	//public:
+	//	SceneNode& GetParent() const { return *parent; }
+	//	entt::entity GetEntity() const { return entity; }
+	//	const std::vector<SceneNode>& GetChildren() const { return children; }
+
+	//	SceneNode(entt::entity entity, SceneNode& parent) 
+	//		: parent(&parent), entity(entity)
+	//	{
+	//	}
+
+	//	void ForEachChildren(std::function<void(SceneNode&)> f)
+	//	{
+	//		for (size_t i = 0; i < children.size(); i++)
+	//		{
+	//			f(children[i]);
+	//			children[i].ForEachChildren(f);
+	//		}
+	//	}
+
+	//	SceneNode& AddChild(SceneNode& node)
+	//	{
+	//		children.push_back(node);
+	//		if (node.HasParent())
+	//		{
+	//			node.parent->RemoveChild(node); // this can't happen before adding to our children (would create invalid reference)
+	//		}
+	//		node.parent = this;
+	//		return node;
+	//	}
+
+	//	SceneNode& AddChild(entt::entity entity)
+	//	{
+	//		children.push_back(SceneNode(entity, *this));
+	//		return children.back();
+	//	}
+
+	//	bool RemoveChild(SceneNode& node)
+	//	{
+	//		for (size_t i = 0; i < children.size(); i++)
+	//		{
+	//			if (children[i] == node)
+	//			{
+	//				children.erase(children.begin() + i);
+	//				return true;
+	//			}
+	//		}
+	//		return false;
+	//	}
+
+	//	bool HasParent() { return parent != nullptr; }
+
+	//	bool operator==(const SceneNode& other)
+	//	{
+	//		return other.entity == entity;
+	//	}
+
+	//private:
+	//	entt::entity entity;
+	//	SceneNode* parent;
+	//	std::vector<SceneNode> children = {};
+
+	//};
+	
 	template<typename T>
 	concept DefaultEmplaceable = true
 		&& std::_Not_same_as<T, Components::Model>;
@@ -87,6 +153,7 @@ namespace Nork
 		uuid GenUniqueId();
 
 	public:
+		//SceneNode root;
 		entt::entity MainCameraNode;
 		entt::registry registry;
 	};

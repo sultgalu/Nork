@@ -24,8 +24,8 @@ namespace Nork::Renderer {
 		uint32_t GetWidth() { return attributes.width; }
 		uint32_t GetHeight() { return attributes.height; }
 	protected:
-		TextureParams params;
-		TextureAttributes attributes;
+		const TextureParams params;
+		const TextureAttributes attributes;
 	};
 
 	class Texture2D: public Texture

@@ -22,14 +22,8 @@ namespace Nork::Renderer {
 	{
 	public:
 		Framebuffer(GLuint handle, int width, int height, FramebufferAttachments attachments)
-			: GLObject(handle), width(width), height(height), attachments(attachments)
-		{
-			clearBits = 0;
-			if (attachments.depth != nullptr)
-				clearBits |= GL_DEPTH_BUFFER_BIT;
-			if (!attachments.colors.empty())
-				clearBits |= GL_COLOR_BUFFER_BIT;
-		}
+			: GLObject(handle), width(width), height(height), attachments(attachments), clearBits(GetClearBits(attachments))
+		{}
 		~Framebuffer()
 		{
 			Logger::Info("Deleting framebuffer ", handle, ".");
@@ -54,12 +48,21 @@ namespace Nork::Renderer {
 			glClear(clearBits);
 			return *this;
 		}
-		FramebufferAttachments& GetAttachments() { return attachments; }
+		const FramebufferAttachments& GetAttachments() { return attachments; }
 	protected:
+		static GLenum GetClearBits(FramebufferAttachments& attachments)
+		{
+			GLenum clearBits = 0;
+			if (attachments.depth != nullptr)
+				clearBits |= GL_DEPTH_BUFFER_BIT;
+			if (!attachments.colors.empty())
+				clearBits |= GL_COLOR_BUFFER_BIT;
+			return clearBits;
+		}
 	protected:
-		int width, height;
+		const int width, height;
 		GLenum clearBits;
-		FramebufferAttachments attachments;
+		const FramebufferAttachments attachments;
 	};
 
 }

@@ -65,9 +65,9 @@ namespace Nork {
 			} while (true);
 			return shaderSrcs;
 		}
-		static void InitShaderFromSource(Renderer::Shader& shader, std::string path)
+		static void InitShaderFromSource(std::shared_ptr<Renderer::Shader>& shader, std::string path)
 		{
-			shader.Create().Compile(SplitShaders(GetFileContent(path)));
+			shader = Renderer::ShaderBuilder().Sources(SplitShaders(GetFileContent(path))).Create();
 		}
 	public:
 		static void Init()
@@ -81,25 +81,25 @@ namespace Nork {
 			InitShaderFromSource(lineShader, "Source/Shaders/line.shader");
 			InitShaderFromSource(textureShader, "Source/Shaders/texture.shader");
 
-			lPassShader.Use()
+			lPassShader->Use()
 				.SetInt("gPos", 0)
 				.SetInt("gDiff", 1)
 				.SetInt("gNorm", 2)
 				.SetInt("gSpec", 3);
 
 			for (int i = 0; i < 5; i++)
-				lPassShader.SetInt("dirShadowMaps[" + std::to_string(i) + "]", i + 10);
+				lPassShader->SetInt("dirShadowMaps[" + std::to_string(i) + "]", i + 10);
 			for (int i = 0; i < 5; i++)
-				lPassShader.SetInt("pointShadowMaps[" + std::to_string(i) + "]", i + 15);
+				lPassShader->SetInt("pointShadowMaps[" + std::to_string(i) + "]", i + 15);
 
 			using enum Renderer::TextureMapType;
-			gPassShader.Use()
+			gPassShader->Use()
 				.SetInt("materialTex.diffuse", (int)Diffuse)
 				.SetInt("materialTex.normals", (int)Normal)
 				.SetInt("materialTex.roughness", (int)Roughness)
 				.SetInt("materialTex.reflect", (int)Reflection);
 		}
-		inline static Renderer::Shader gPassShader, lPassShader,
+		inline static std::shared_ptr<Renderer::Shader> gPassShader, lPassShader,
 			dShadowShader, pShadowShader,
 			skyboxShader, textureShader,
 			pointShader, lineShader;
@@ -185,7 +185,7 @@ namespace Nork {
 				lights.dirLights.push_back(light);
 				lights.dirShadows.push_back(shadow);
 
-				Renderer::ShadowMapRenderer::RenderDirLightShadowMap(light, shadow, models, *dShadowFramebuffers[shadow.idx], Shaders::dShadowShader);
+				Renderer::ShadowMapRenderer::RenderDirLightShadowMap(light, shadow, models, *dShadowFramebuffers[shadow.idx], *Shaders::dShadowShader);
 				Renderer::ShadowMapRenderer::BindDirShadowMap(shadow, *dShadowFramebuffers[shadow.idx]);
 			}
 			for (auto& id : pLightsWS)
@@ -196,7 +196,7 @@ namespace Nork {
 				lights.pointLights.push_back(light);
 				lights.pointShadows.push_back(shadow);
 
-				Renderer::ShadowMapRenderer::RenderPointLightShadowMap(light, shadow, models, *pShadowFramebuffers[shadow.idx], Shaders::pShadowShader);
+				Renderer::ShadowMapRenderer::RenderPointLightShadowMap(light, shadow, models, *pShadowFramebuffers[shadow.idx], *Shaders::pShadowShader);
 				Renderer::ShadowMapRenderer::BindPointShadowMap(shadow, *pShadowFramebuffers[shadow.idx]);
 			}
 			for (auto& id : dLights)
@@ -216,29 +216,29 @@ namespace Nork {
 			// shader.SetVec4("colorDefault", triangleColor);
 			// shader.SetVec4("colorSelected", glm::vec4(selectedColor, triAlpha));
 
-			Shaders::pointShader.Use();
-			Shaders::pointShader.SetMat4("VP", camera.viewProjection);
-			Shaders::pointShader.SetFloat("aa", pointAA);
-			Shaders::pointShader.SetFloat("size", pointInternalSize);
-			Shaders::pointShader.SetVec4("colorDefault", pointColor);
-			Shaders::pointShader.SetVec4("colorSelected", glm::vec4(selectedColor, pointAlpha));
+			Shaders::pointShader->Use();
+			Shaders::pointShader->SetMat4("VP", camera.viewProjection);
+			Shaders::pointShader->SetFloat("aa", pointAA);
+			Shaders::pointShader->SetFloat("size", pointInternalSize);
+			Shaders::pointShader->SetVec4("colorDefault", pointColor);
+			Shaders::pointShader->SetVec4("colorSelected", glm::vec4(selectedColor, pointAlpha));
 
-			Shaders::lineShader.Use();
-			Shaders::lineShader.SetMat4("VP", camera.viewProjection);
-			Shaders::lineShader.SetFloat("width", lineWidth);
-			Shaders::lineShader.SetVec4("colorDefault", lineColor);
-			Shaders::lineShader.SetVec4("colorSelected", glm::vec4(selectedColor, lineAlpha));
+			Shaders::lineShader->Use();
+			Shaders::lineShader->SetMat4("VP", camera.viewProjection);
+			Shaders::lineShader->SetFloat("width", lineWidth);
+			Shaders::lineShader->SetVec4("colorDefault", lineColor);
+			Shaders::lineShader->SetVec4("colorSelected", glm::vec4(selectedColor, lineAlpha));
 
 			//lightMan.dShadowMapShader->SetMat4("VP", vp);
-			Shaders::gPassShader.Use();
-			Shaders::gPassShader.SetMat4("VP", camera.viewProjection);
+			Shaders::gPassShader->Use();
+			Shaders::gPassShader->SetMat4("VP", camera.viewProjection);
 
-			Shaders::lPassShader.Use();
-			Shaders::lPassShader.SetVec3("viewPos", camera.position);
+			Shaders::lPassShader->Use();
+			Shaders::lPassShader->SetVec3("viewPos", camera.position);
 
-			Shaders::skyboxShader.Use();
+			Shaders::skyboxShader->Use();
 			auto vp = camera.projection * glm::mat4(glm::mat3(camera.view));
-			Shaders::skyboxShader.SetMat4("VP", vp);
+			Shaders::skyboxShader->SetMat4("VP", vp);
 		}
 		void SyncComponents(entt::registry& reg)
 		{
@@ -254,8 +254,8 @@ namespace Nork {
 		}
 		void RenderScene(std::span<Renderer::Model> models)
 		{
-			Renderer::DeferredPipeline::GeometryPass(*gFb, Shaders::gPassShader, models);
-			Renderer::DeferredPipeline::LightPass(*gFb, *lFb, Shaders::lPassShader);
+			Renderer::DeferredPipeline::GeometryPass(*gFb, *Shaders::gPassShader, models);
+			Renderer::DeferredPipeline::LightPass(*gFb, *lFb, *Shaders::lPassShader);
 		}
 		void Update(Scene& scene)
 		{

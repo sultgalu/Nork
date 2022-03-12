@@ -11,17 +11,13 @@ namespace Nork::Renderer {
 		Compute = GL_COMPUTE_SHADER,
 	};
 
-	class Shader : GLObjectOld
+	class Shader : public GLObject
 	{
 	public:
-		Shader& Compile(std::unordered_map<ShaderType, std::string> sources);
-		Shader& Create()
-		{
-			handle = glCreateProgram();
-			Logger::Info("Created shader ", handle);
-			return *this;
-		}
-		void Destroy()
+		Shader(GLuint handle)
+			: GLObject(handle)
+		{}
+		~Shader()
 		{
 			Logger::Info("Deleting shader ", handle, ".");
 			glDeleteProgram(handle);
