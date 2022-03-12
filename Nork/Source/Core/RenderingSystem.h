@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Modules/Renderer/Objects/GLManager.h"
 #include "Modules/Renderer/Objects/Shader/Shader.h"
 #include "Modules/Renderer/Model/Model.h"
 #include "Modules/Renderer/Pipeline/LightStateSynchronizer.h"
@@ -132,19 +133,32 @@ namespace Nork {
 			lightStateSyncher.Initialize();
 			for (auto& fb : pShadowFramebuffers)
 			{
-				auto depth = TextureCube().Create().Bind().SetParams().SetData(TextureAttributes{ .width = 1000, .height = 1000, .format = TextureFormat::Depth16 });
-				fb.Create().Bind().SetAttachments(FramebufferAttachments().Depth(depth));
+				auto depth = TextureBuilder()
+					.Params(TextureParams::CubeMapParams())
+					.Attributes(TextureAttributes{ .width = 1000, .height = 1000, .format = TextureFormat::Depth16 })
+					.CreateCubeEmpty();
+				fb = FramebufferBuilder().Attachments(FramebufferAttachments().Depth(depth)).Create();
 			}
 			for (auto& fb : dShadowFramebuffers)
 			{
-				auto depth = Texture2D().Create().Bind().SetParams(TextureParams::FramebufferTex2DParams()).SetData(TextureAttributes{ .width = 4000, .height = 4000, .format = TextureFormat::Depth16 });
-				fb.Create().Bind().SetAttachments(FramebufferAttachments().Depth(depth));
+				auto depth = TextureBuilder()
+					.Params(TextureParams::Tex2DParams())
+					.Attributes(TextureAttributes{ .width = 4000, .height = 4000, .format = TextureFormat::Depth16 })
+					.Create2DEmpty();
+				fb = FramebufferBuilder().Attachments(FramebufferAttachments().Depth(depth)).Create();
 			}
-			gFb.Create().Bind();
-			using enum TextureFormat;
-			gFb.CreateTextures(resolution.x, resolution.y, Depth16, RGB16F, RGB16F, RGB16F, RGBA16F);
-			lFb.Create().Bind();
-			lFb.CreateTextures(gFb, RGBA16F);
+			gFb = GeometryFramebufferBuilder()
+				.Width(resolution.x).Height(resolution.y)
+				.Depth(TextureFormat::Depth16)
+				.Position(TextureFormat::RGB16F)
+				.Normal(TextureFormat::RGB16F)
+				.Diffuse(TextureFormat::RGB16F)
+				.Specular(TextureFormat::RGBA16F)
+				.Create();
+			lFb = LightFramebufferBuilder()
+				.DepthTexture(gFb->Depth())
+				.ColorFormat(TextureFormat::RGBA16F)
+				.Create();
 			return *this;
 		}
 		void UpdateLights(entt::registry& reg)
@@ -171,8 +185,8 @@ namespace Nork {
 				lights.dirLights.push_back(light);
 				lights.dirShadows.push_back(shadow);
 
-				Renderer::ShadowMapRenderer::RenderDirLightShadowMap(light, shadow, models, dShadowFramebuffers[shadow.idx], Shaders::dShadowShader);
-				Renderer::ShadowMapRenderer::BindDirShadowMap(shadow, dShadowFramebuffers[shadow.idx]);
+				Renderer::ShadowMapRenderer::RenderDirLightShadowMap(light, shadow, models, *dShadowFramebuffers[shadow.idx], Shaders::dShadowShader);
+				Renderer::ShadowMapRenderer::BindDirShadowMap(shadow, *dShadowFramebuffers[shadow.idx]);
 			}
 			for (auto& id : pLightsWS)
 			{
@@ -182,8 +196,8 @@ namespace Nork {
 				lights.pointLights.push_back(light);
 				lights.pointShadows.push_back(shadow);
 
-				Renderer::ShadowMapRenderer::RenderPointLightShadowMap(light, shadow, models, pShadowFramebuffers[shadow.idx], Shaders::pShadowShader);
-				Renderer::ShadowMapRenderer::BindPointShadowMap(shadow, pShadowFramebuffers[shadow.idx]);
+				Renderer::ShadowMapRenderer::RenderPointLightShadowMap(light, shadow, models, *pShadowFramebuffers[shadow.idx], Shaders::pShadowShader);
+				Renderer::ShadowMapRenderer::BindPointShadowMap(shadow, *pShadowFramebuffers[shadow.idx]);
 			}
 			for (auto& id : dLights)
 			{
@@ -240,8 +254,8 @@ namespace Nork {
 		}
 		void RenderScene(std::span<Renderer::Model> models)
 		{
-			Renderer::DeferredPipeline::GeometryPass(gFb, Shaders::gPassShader, models);
-			Renderer::DeferredPipeline::LightPass(gFb, lFb, Shaders::lPassShader);
+			Renderer::DeferredPipeline::GeometryPass(*gFb, Shaders::gPassShader, models);
+			Renderer::DeferredPipeline::LightPass(*gFb, *lFb, Shaders::lPassShader);
 		}
 		void Update(Scene& scene)
 		{
@@ -257,10 +271,10 @@ namespace Nork {
 		}
 	public:
 		Renderer::LightStateSynchronizer lightStateSyncher;
-		Renderer::GeometryFramebuffer gFb;
-		Renderer::LightFramebuffer lFb;
-		std::array<Renderer::Framebuffer, 5> pShadowFramebuffers;
-		std::array<Renderer::Framebuffer, 5> dShadowFramebuffers;
+		std::shared_ptr<Renderer::GeometryFramebuffer> gFb;
+		std::shared_ptr<Renderer::LightFramebuffer> lFb;
+		std::array<std::shared_ptr<Renderer::Framebuffer>, 5> pShadowFramebuffers;
+		std::array<std::shared_ptr<Renderer::Framebuffer>, 5> dShadowFramebuffers;
 	public:
 		int pointSize = 20;
 		float pointInternalSize = 0.5f, pointAA = 0.3f, lineWidth = 0.005f;

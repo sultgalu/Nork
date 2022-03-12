@@ -147,7 +147,7 @@ namespace Nork::Editor
 			glfwMakeContextCurrent(backup_current_context);
 		}
 	}
-	void Editor::SetDisplayTexture(Renderer::Texture tex)
+	void Editor::SetDisplayTexture(std::shared_ptr<Renderer::Texture> tex)
 	{
 		for (auto& panel : panels)
 		{

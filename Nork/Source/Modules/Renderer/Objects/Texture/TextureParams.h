@@ -12,23 +12,25 @@ enum class TextureFilter
 {
 	Nearest = GL_NEAREST, Linear = GL_LINEAR, LinearMipmapLinear = GL_LINEAR_MIPMAP_LINEAR,
 	NearestMipmapLinear = GL_NEAREST_MIPMAP_LINEAR, LinearMipmapNearest = GL_LINEAR_MIPMAP_NEAREST,
-	NearestMipmapNearest = GL_NEAREST_MIPMAP_NEAREST
+	NearestMipmapNearest = GL_NEAREST_MIPMAP_NEAREST,
+	None = GL_NONE
 };
 
 enum class TextureWrap
 {
-	Repeat = GL_REPEAT, MirrorRepeat = GL_MIRRORED_REPEAT, ClampToEdge = GL_CLAMP_TO_EDGE, ClampToBorder = GL_CLAMP_TO_BORDER
+	Repeat = GL_REPEAT, MirrorRepeat = GL_MIRRORED_REPEAT, ClampToEdge = GL_CLAMP_TO_EDGE, ClampToBorder = GL_CLAMP_TO_BORDER,
+	None = GL_NONE
 };
 
 struct TextureParams
 {
-	TextureWrap wrap = TextureWrap::Repeat;
-	TextureFilter filter = TextureFilter::LinearMipmapNearest;
+	TextureWrap wrap = TextureWrap::None;
+	TextureFilter filter = TextureFilter::None;
 	bool magLinear = true;
 	bool genMipmap = false;
 	static consteval TextureParams CubeMapParams()
 	{
-		return TextureParams{
+		return TextureParams {
 			.wrap = TextureWrap::ClampToEdge,
 			.filter = TextureFilter::Linear,
 			.magLinear = false,
@@ -37,7 +39,7 @@ struct TextureParams
 	}
 	static consteval TextureParams Tex2DParams()
 	{
-		return TextureParams{
+		return TextureParams {
 			.wrap = TextureWrap::Repeat,
 			.filter = TextureFilter::LinearMipmapNearest,
 			.magLinear = true,

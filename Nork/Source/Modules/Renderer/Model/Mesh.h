@@ -1,7 +1,9 @@
 #pragma once
 
+#include "../Objects/GLManager.h"
 #include "../Objects/VertexArray/VertexArray.h"
 #include "../Objects/Texture/Texture.h"
+#include "../Objects/GLManager.h"
 
 namespace Nork::Renderer {
 	enum class TextureMapType : uint8_t
@@ -20,12 +22,12 @@ namespace Nork::Renderer {
 	{
 		Mesh& CreateVAO(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices)
 		{
-			vao.GetVBO().Create().Bind(BufferTarget::Vertex).Allocate(sizeof(Vertex) * vertices.size(), vertices.data());
-			vao.Create().Bind().SetAttribs(std::vector<int>{3, 3, 2, 3, 3 });
-			vao.GetIBO().Create().Bind(BufferTarget::Index).Allocate(sizeof(unsigned int) * indices.size(), indices.data());
+			auto vbo = BufferBuilder().Target(BufferTarget::Vertex).Usage(BufferUsage::StaticDraw).Data(vertices.data(), vertices.size() * sizeof(Vertex)).Create();
+			auto ibo = BufferBuilder().Target(BufferTarget::Index).Usage(BufferUsage::StaticDraw).Data(indices.data(), indices.size() * sizeof(GLuint)).Create();
+			vao = VertexArrayBuilder().VBO(vbo).IBO(ibo).Attributes({ 3, 3, 2, 3, 3 }).Create();
 			return *this;
 		}
-		Mesh& SetTextureMaps(std::vector<std::pair<TextureMapType, Texture2D>> textures = {})
+		Mesh& SetTextureMaps(std::vector<std::pair<TextureMapType, std::shared_ptr<Texture2D>>> textures = {})
 		{
 			textureMaps = GetDefaultTextureMaps();
 			for (auto& tex : textures)
@@ -34,42 +36,49 @@ namespace Nork::Renderer {
 			}
 			return *this;
 		}
-		std::array<Texture2D, std::to_underlying(TextureMapType::COUNT)> textureMaps;
-		VertexArray vao;
+		std::array<std::shared_ptr<Texture2D>, std::to_underlying(TextureMapType::COUNT)> textureMaps;
+		std::shared_ptr<VertexArray> vao;
 
 		inline void BindTextures()
 		{
 			for (int i = 0; i < textureMaps.size(); i++)
 			{
-				textureMaps[i].Bind(i);
+				textureMaps[i]->Bind(i);
 			}
 		}
 		inline void Draw()
 		{
-			vao.Bind().DrawIndexed();
+			vao->Bind().DrawIndexed();
 		}
 	private:
-		static Texture2D CreateDefaultDiffuse()
+		static std::shared_ptr<Texture2D> CreateDefaultDiffuse()
 		{
 			float data[]{ 1.0f, 1.0f, 1.0f, 1.0f };
-			return Texture2D().Create().Bind().SetParams().SetData(TextureAttributes{ .width = 1, .height = 1, .format = TextureFormat::RGBA32F }, data);
+			return CreateTexture2D(TextureFormat::RGBA32F, data);
 		}
-		static Texture2D CreateDefaultNormal()
+		static std::shared_ptr<Texture2D> CreateDefaultNormal()
 		{
 			float data[]{ 0.5f, 0.5f, 1.0f };
-			return Texture2D().Create().Bind().SetParams().SetData(TextureAttributes{ .width = 1, .height = 1, .format = TextureFormat::RGB32F }, data);
+			return CreateTexture2D(TextureFormat::RGB32F, data);
 		}
-		static Texture2D CreateDefaultReflective()
+		static std::shared_ptr<Texture2D> CreateDefaultReflective()
 		{
 			float data[]{ 0.5f };
-			return Texture2D().Create().Bind().SetParams().SetData(TextureAttributes{ .width = 1, .height = 1, .format = TextureFormat::R32F }, data);
+			return CreateTexture2D(TextureFormat::R32F, data);
 		}
-		static Texture2D CreateDefaultRoughness()
+		static std::shared_ptr<Texture2D> CreateDefaultRoughness()
 		{
 			float data[]{ 0.5f };
-			return Texture2D().Create().Bind().SetParams().SetData(TextureAttributes{ .width = 1, .height = 1, .format = TextureFormat::R32F }, data);
+			return CreateTexture2D(TextureFormat::R32F, data);
 		}
-		static std::array<Texture2D, std::to_underlying(TextureMapType::COUNT)> GetDefaultTextureMaps()
+		static std::shared_ptr<Texture2D> CreateTexture2D(TextureFormat format, void* data)
+		{
+			return TextureBuilder()
+				.Params(TextureParams::Tex2DParams())
+				.Attributes(TextureAttributes{ .width = 1, .height = 1, .format = format })
+				.Create2DWithData(data);
+		}
+		static std::array<std::shared_ptr<Texture2D>, std::to_underlying(TextureMapType::COUNT)> GetDefaultTextureMaps()
 		{
 			static auto diff = CreateDefaultDiffuse();
 			static auto norm = CreateDefaultNormal();

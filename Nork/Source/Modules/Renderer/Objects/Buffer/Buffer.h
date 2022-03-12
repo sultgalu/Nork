@@ -26,25 +26,29 @@ namespace Nork::Renderer {
 		DynamicCopy = GL_DYNAMIC_COPY, StaticCopy = GL_STATIC_COPY, StreamCopy = GL_STREAM_COPY,
 	};
 
-	class Buffer: public GLObject
+	class Buffer : public GLObject
 	{
 	public:
-		Buffer& Create();
-		void Destroy();
+		Buffer(GLuint handle, size_t size, BufferUsage usage, BufferTarget target)
+			: GLObject(handle), size(size), usage(usage), target(target)
+		{}
+		~Buffer();
+
 		Buffer& Bind(BufferTarget target);
-		void SetData(const void* data, size_t size, size_t offset = 0);
-		void Allocate(size_t size, const void* data = nullptr, BufferUsage usage = BufferUsage::StaticDraw);
+		Buffer& Bind();
 		Buffer& BindBase(GLuint index);
+		void Allocate(size_t size, const void* data = nullptr);
+		void Allocate(BufferUsage usage, size_t size, const void* data = nullptr);
+		void SetData(const void* data, size_t size, size_t offset = 0);
 		void GetData(void* data, size_t size, size_t offset = 0);
 		size_t GetSize() { return size; }
 		BufferTarget GetTarget() { return target; }
 		BufferUsage GetUsage() { return usage; }
 		static const std::unordered_map<BufferTarget, GLuint>& GetBoundBuffers();
 		static void ResetBoundBufferState();
-	private:
-		size_t size = 0;
-		BufferUsage usage = BufferUsage::None;
-		BufferTarget target = BufferTarget::None;
+	protected:
+		size_t size;
+		BufferUsage usage;
+		BufferTarget target;
 	};
 }
-

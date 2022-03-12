@@ -1,5 +1,5 @@
 #include "DrawUtils.h"
-#include "Objects/VertexArray/VertexArray.h"
+#include "Objects/GLManager.h"
 
 namespace Nork::Renderer {
 
@@ -102,39 +102,37 @@ namespace Nork::Renderer {
 		return indices;
 	}
 
-	static VertexArray GetQuadVao()
+	static std::shared_ptr<VertexArray> GetQuadVao()
 	{
-		VertexArray vao = VertexArray().Create().Bind();
 		auto verts = DrawUtils::GetQuadVertices();
 		auto inds = DrawUtils::GetQuadIndices();
-		vao.GetVBO().Create().Bind(BufferTarget::Vertex).Allocate(verts.size() * sizeof(float), verts.data());
-		vao.GetIBO().Create().Bind(BufferTarget::Index).Allocate(inds.size() * sizeof(GLuint), inds.data());
-		vao.SetAttribs({2, 2});
+		auto vbo = BufferBuilder().Target(BufferTarget::Vertex).Usage(BufferUsage::StaticDraw).Data(verts.data(), verts.size() * sizeof(float)).Create();
+		auto ibo = BufferBuilder().Target(BufferTarget::Index).Usage(BufferUsage::StaticDraw).Data(inds.data(), inds.size() * sizeof(GLuint)).Create();
+		auto vao = VertexArrayBuilder().VBO(vbo).IBO(ibo).Attributes({ 2, 2 }).Create();
 		return vao;
 	}
 
-	static VertexArray GetCubeVao()
+	static std::shared_ptr<VertexArray> GetCubeVao()
 	{
-		VertexArray vao = VertexArray().Create().Bind();
 		auto verts = DrawUtils::GetCubeVertices();
 		auto inds = DrawUtils::GetCubeIndices();
-		vao.GetVBO().Create().Bind(BufferTarget::Vertex).Allocate(verts.size() * sizeof(float), verts.data());
-		vao.GetIBO().Create().Bind(BufferTarget::Index).Allocate(inds.size() * sizeof(GLuint), inds.data());
-		vao.SetAttribs({ 3 });
+		auto vbo = BufferBuilder().Target(BufferTarget::Vertex).Usage(BufferUsage::StaticDraw).Data(verts.data(), verts.size() * sizeof(float)).Create();
+		auto ibo = BufferBuilder().Target(BufferTarget::Index).Usage(BufferUsage::StaticDraw).Data(inds.data(), inds.size() * sizeof(GLuint)).Create();
+		auto vao = VertexArrayBuilder().VBO(vbo).IBO(ibo).Attributes({ 3 }).Create();
 		return vao;
 	}
 
 	void DrawUtils::DrawQuad()
 	{
-		static VertexArray quadVao = GetQuadVao();
-		quadVao.Bind().DrawIndexed();
-		//glBindVertexArray(quadVao);
-		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		static auto quadVao = GetQuadVao();
+		quadVao->Bind().DrawIndexed();
+		// glBindVertexArray(quadVao);
+		// glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 	}
 
 	void DrawUtils::DrawCube()
 	{
-		static VertexArray cubeVao = GetCubeVao();
-		cubeVao.Bind().DrawIndexed();
+		static auto cubeVao = GetCubeVao();
+		cubeVao->Bind().DrawIndexed();
 	}
 }

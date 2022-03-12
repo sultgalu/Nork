@@ -62,11 +62,11 @@ namespace Nork::Renderer {
 		}
 		static void BindDirShadowMap(const DirShadow& shadow, Framebuffer& fb)
 		{
-			fb.GetAttachments().depth.value().Bind2D(shadow.idx + Config::LightData::dirShadowBaseIndex);
+			fb.GetAttachments().depth->Bind2D(shadow.idx + Config::LightData::dirShadowBaseIndex);
 		}
 		static void BindPointShadowMap(const PointShadow& shadow, Framebuffer& fb)
 		{
-			fb.GetAttachments().depth.value().BindCube(shadow.idx + Config::LightData::pointShadowBaseIndex);
+			fb.GetAttachments().depth->BindCube(shadow.idx + Config::LightData::pointShadowBaseIndex);
 		}
 	};
 }

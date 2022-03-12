@@ -4,14 +4,14 @@
 namespace Nork::Renderer {
 	struct FramebufferAttachments
 	{
-		std::optional<Texture> depth;
-		std::vector<std::pair<Texture, int>> colors;
-		FramebufferAttachments Color(Texture texture, int idx)
+		std::shared_ptr<Texture> depth = nullptr;
+		std::vector<std::pair<std::shared_ptr<Texture>, int>> colors;
+		FramebufferAttachments& Color(std::shared_ptr<Texture> texture, int idx)
 		{
 			colors.push_back({ texture, idx });
 			return *this;
 		}
-		FramebufferAttachments Depth(Texture texture)
+		FramebufferAttachments& Depth(std::shared_ptr<Texture> texture)
 		{
 			depth = texture;
 			return *this;
@@ -21,68 +21,23 @@ namespace Nork::Renderer {
 	class Framebuffer: public GLObject
 	{
 	public:
-		static void BindDefault()
+		Framebuffer(GLuint handle, int width, int height, FramebufferAttachments attachments)
+			: GLObject(handle), width(width), height(height), attachments(attachments)
 		{
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			clearBits = 0;
+			if (attachments.depth != nullptr)
+				clearBits |= GL_DEPTH_BUFFER_BIT;
+			if (!attachments.colors.empty())
+				clearBits |= GL_COLOR_BUFFER_BIT;
 		}
-		Framebuffer& Create()
-		{
-			glGenFramebuffers(1, &handle);
-			Logger::Info("Created framebuffer ", handle);
-			return *this;
-		}
-		void Destroy()
+		~Framebuffer()
 		{
 			Logger::Info("Deleting framebuffer ", handle, ".");
 			glDeleteFramebuffers(1, &handle);
 		}
-		Framebuffer& SetAttachments(FramebufferAttachments attachments)
+		static void BindDefault()
 		{
-			clearBits = 0;
-			if (attachments.depth.has_value())
-				clearBits |= GL_DEPTH_BUFFER_BIT;
-			if (!attachments.colors.empty())
-				clearBits |= GL_COLOR_BUFFER_BIT;
-
-			this->attachments = attachments;
-
-			Bind();
-			if (attachments.depth.has_value())
-			{
-				AddDepthTexture(attachments.depth.value().GetHandle());
-				this->width = attachments.depth.value().GetWidth();
-				this->height = attachments.depth.value().GetHeight();
-			}
-			else
-			{
-				this->width = attachments.colors[0].first.GetWidth();
-				this->height = attachments.colors[0].first.GetHeight();
-			}
-			for (auto att : attachments.colors)
-			{
-				if (att.first.GetWidth() != width
-					|| att.first.GetHeight() != height)
-				{
-					Logger::Error("A framebuffer's attachments should be of the same resolution");
-				}
-				AddColorTexture(att.first.GetHandle(), att.second);
-			}
-			UpdateDrawBuffers();
-			return *this;
-		}
-		void UpdateDrawBuffers()
-		{
-			if (attachments.colors.size() > 0)
-			{
-				auto buf = std::vector<GLenum>(attachments.colors.size());
-				for (size_t i = 0; i < buf.size(); i++)
-					buf[i] = GL_COLOR_ATTACHMENT0 + attachments.colors[i].second;
-				glDrawBuffers(buf.size(), buf.data());
-			}
-			else
-			{
-				glDrawBuffer(GL_NONE);
-			}
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
 		Framebuffer& Bind()
 		{
@@ -101,18 +56,11 @@ namespace Nork::Renderer {
 		}
 		FramebufferAttachments& GetAttachments() { return attachments; }
 	protected:
-		void AddColorTexture(GLuint texture, int idx)
-		{
-			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + idx, texture, 0);
-		}
-		void AddDepthTexture(GLuint texture)
-		{
-			glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, texture, 0);
-		}
 	protected:
 		int width, height;
 		GLenum clearBits;
 		FramebufferAttachments attachments;
 	};
+
 }
 

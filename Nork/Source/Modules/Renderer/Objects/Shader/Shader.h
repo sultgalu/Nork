@@ -11,7 +11,7 @@ namespace Nork::Renderer {
 		Compute = GL_COMPUTE_SHADER,
 	};
 
-	class Shader : GLObject
+	class Shader : GLObjectOld
 	{
 	public:
 		Shader& Compile(std::unordered_map<ShaderType, std::string> sources);

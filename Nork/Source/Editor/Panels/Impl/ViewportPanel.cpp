@@ -1,11 +1,12 @@
 #include "pch.h"
 #include "../ViewportPanel.h"
+#include "Modules/Renderer/Objects/GLManager.h"
 #include "App/Application.h"
 
 namespace Nork::Editor
 {
 	static int viewportCounter = 0;
-	static Renderer::Texture2D defaultTex;
+	static std::shared_ptr<Renderer::Texture2D> defaultTex;
 
 	ViewportPanel::ViewportPanel(EditorData& d)
 		: Nork::Editor::Panel(std::format("Viewport#{}", viewportCounter++), d),
@@ -13,8 +14,11 @@ namespace Nork::Editor
 		camContr(CameraController(events, 
 			data.engine.scene.GetMainCamera()))
 	{
-		uint8_t texData[3] = { 128, 228 , 0 };
-		defaultTex.Create().Bind().SetParams().SetData(Renderer::TextureAttributes{ .width = 1, .height = 1, .format = Renderer::TextureFormat::RGB }, texData);
+		uint8_t texData[3] = { 128, 228 , 0 }; 
+		defaultTex = Renderer::TextureBuilder()
+			.Params(TextureParams::Tex2DParams())
+			.Attributes(Renderer::TextureAttributes{ .width = 1, .height = 1, .format = Renderer::TextureFormat::RGB })
+			.Create2DWithData(texData);
 		image.texture = defaultTex;
 
 		static Timer timer;
@@ -85,7 +89,7 @@ namespace Nork::Editor
 		glm::vec2 texSize(image.resolution.x, image.resolution.y);
 		glm::vec2 displaySize = GetDisplaySize(texSize);
 
-		ImGui::Image((ImTextureID)image.texture.GetHandle(), ImVec2(displaySize.x, displaySize.y), ImVec2(image.uv_min.x, image.uv_min.y),
+		ImGui::Image((ImTextureID)image.texture->GetHandle(), ImVec2(displaySize.x, displaySize.y), ImVec2(image.uv_min.x, image.uv_min.y),
 			ImVec2(image.uv_max.x, image.uv_max.y), ImVec4(1, 1, 1, 1), ImVec4(0, 0, 0, 0));
 		mouseState.isViewportHovered = ImGui::IsItemHovered();
 		mouseState.isViewportDoubleClicked = mouseState.isViewportHovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
@@ -102,7 +106,7 @@ namespace Nork::Editor
 			ImGui::OpenPopup("texturesToDisplay");
 		ImGui::SameLine();
 		ImGui::Text((std::to_string(actualPos2.x) + ";" + std::to_string(actualPos2.y)).c_str());
-		ImGui::Text(("texture ID: " + std::to_string(image.texture.GetHandle())).c_str());
+		ImGui::Text(("texture ID: " + std::to_string(image.texture->GetHandle())).c_str());
 
 		if (ImGui::BeginPopup("texturesToDisplay"))
 		{
@@ -112,7 +116,7 @@ namespace Nork::Editor
 			}*/
 			if (ImGui::Selectable("Default"))
 			{
-				image.texture = data.engine.renderingSystem.lFb.Color();
+				image.texture = data.engine.renderingSystem.lFb->Color();
 			}
 			/*if (ImGui::Selectable("Ids"))
 			{
@@ -120,38 +124,38 @@ namespace Nork::Editor
 			}*/
 			if (ImGui::Selectable("GBuffer: depth"))
 			{
-				image.texture = data.engine.renderingSystem.gFb.Depth();
+				image.texture = data.engine.renderingSystem.gFb->Depth();
 			}
 			if (ImGui::Selectable("GBuffer: position"))
 			{
-				image.texture = data.engine.renderingSystem.gFb.Position();
+				image.texture = data.engine.renderingSystem.gFb->Position();
 			}
 			if (ImGui::Selectable("GBuffer: normal"))
 			{
-				image.texture = data.engine.renderingSystem.gFb.Normal();
+				image.texture = data.engine.renderingSystem.gFb->Normal();
 			}
 			if (ImGui::Selectable("GBuffer: diffuse"))
 			{
-				image.texture = data.engine.renderingSystem.gFb.Diffuse();
+				image.texture = data.engine.renderingSystem.gFb->Diffuse();
 			}
 			if (ImGui::Selectable("GBuffer: specular"))
 			{
-				image.texture = data.engine.renderingSystem.gFb.Specular();
+				image.texture = data.engine.renderingSystem.gFb->Specular();
 			}
 			for (size_t i = 0; i < data.engine.renderingSystem.dShadowFramebuffers.size(); i++)
 			{
-				auto& opt = data.engine.renderingSystem.dShadowFramebuffers[i].GetAttachments().depth;
-				if (opt.has_value() && ImGui::Selectable(("Dirlight ShadowMap #" + std::to_string(i)).c_str()))
+				auto& opt = data.engine.renderingSystem.dShadowFramebuffers[i]->GetAttachments().depth;
+				if (opt != nullptr && ImGui::Selectable(("Dirlight ShadowMap #" + std::to_string(i)).c_str()))
 				{
-					image.texture = data.engine.renderingSystem.dShadowFramebuffers[i].GetAttachments().depth.value();
+					image.texture = data.engine.renderingSystem.dShadowFramebuffers[i]->GetAttachments().depth;
 				}
 			}
 			for (size_t i = 0; i < data.engine.renderingSystem.pShadowFramebuffers.size(); i++)
 			{
-				auto& opt = data.engine.renderingSystem.pShadowFramebuffers[i].GetAttachments().depth;
-				if (opt.has_value() && ImGui::Selectable(("Pointlight ShadowMap #" + std::to_string(i)).c_str()))
+				auto& opt = data.engine.renderingSystem.pShadowFramebuffers[i]->GetAttachments().depth;
+				if (opt != nullptr && ImGui::Selectable(("Pointlight ShadowMap #" + std::to_string(i)).c_str()))
 				{
-					image.texture = data.engine.renderingSystem.pShadowFramebuffers[i].GetAttachments().depth.value();
+					image.texture = data.engine.renderingSystem.pShadowFramebuffers[i]->GetAttachments().depth;
 				}
 			}
 			

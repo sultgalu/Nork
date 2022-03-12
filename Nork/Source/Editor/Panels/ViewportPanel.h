@@ -18,7 +18,7 @@ namespace Nork::Editor
 			bool isViewportDoubleClicked = false;
 		};
 		inline MouseState GetMouseState() { return mouseState; }
-		inline void SetTexture(Renderer::Texture& tex) { image.texture = tex; }
+		inline void SetTexture(std::shared_ptr<Renderer::Texture> tex) { image.texture = tex; }
 	private:
 		virtual void Begin() override;
 		virtual void DrawContent() override;
@@ -27,7 +27,7 @@ namespace Nork::Editor
 		{
 			glm::vec2 uv_min = glm::vec2(0, 1);
 			glm::vec2 uv_max = glm::vec2(1, 0);
-			Renderer::Texture texture;
+			std::shared_ptr<Renderer::Texture> texture;
 			glm::vec2 resolution = glm::vec2(1920, 1080);
 		};
 

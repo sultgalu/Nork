@@ -183,6 +183,9 @@
     <ClInclude Include="Source\Modules\Renderer\Model\Mesh.h" />
     <ClInclude Include="Source\Modules\Renderer\Model\Model.h" />
     <ClInclude Include="Source\Modules\Renderer\DrawUtils.h" />
+    <ClInclude Include="Source\Modules\Renderer\Objects\Framebuffer\GeometryFramebuffer.h" />
+    <ClInclude Include="Source\Modules\Renderer\Objects\Framebuffer\LightFramebuffer.h" />
+    <ClInclude Include="Source\Modules\Renderer\Objects\GLManager.h" />
     <ClInclude Include="Source\Modules\Renderer\Pipeline\Deferred\DeferredPipeline.h" />
     <ClInclude Include="Source\Modules\Renderer\Objects\Framebuffer\Framebuffer.h" />
     <ClInclude Include="Source\Modules\Renderer\Objects\Buffer\Buffer.h" />
