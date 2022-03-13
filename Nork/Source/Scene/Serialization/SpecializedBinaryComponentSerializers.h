@@ -34,11 +34,12 @@ namespace Nork
 	template<>
 	inline void BinaryComponentDeserializer<Model>::operator>>(Model& model)
 	{
+		std::abort();
 		size_t size;
 		reader >> size;
 
 		std::string src = std::string(reader.ReadStr(size));
-		if (src._Equal(""))
-			scene.AddModel(id);
+		//if (src._Equal(""))
+		//	scene.AddModel(id);
 	}
 }

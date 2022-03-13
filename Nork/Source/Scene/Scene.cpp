@@ -287,7 +287,7 @@ namespace Nork
 
 		return bitangents;
 	}
-	Components::Model Scene::CreateDefaultCube()
+	Components::Model Entity::CreateDefaultCube()
 	{
 		auto positions = GetCubeVertexPositions();
 		auto texCoords = GetCubeVertexTexCoords();
@@ -311,10 +311,5 @@ namespace Nork
 		auto indices = GetCubeIndices();
 		auto mesh = Renderer::Mesh().CreateVAO(vertices, indices).SetTextureMaps();
 		return Components::Model{ .meshes = { mesh } };
-	}
-
-	uuid Scene::GenUniqueId()
-	{
-		return std::rand();
 	}
 }

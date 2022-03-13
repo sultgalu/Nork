@@ -58,7 +58,7 @@ namespace Nork::Editor
 		{
 			data.engine.scene.Load(fileName);
 			data.selectedPoly = nullptr;
-			data.selectedEnt = data.engine.scene.registry.data()[0];
+			data.selectedNode = nullptr;
 		}
 	}
 

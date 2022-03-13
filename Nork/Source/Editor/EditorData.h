@@ -19,7 +19,7 @@ namespace Nork::Editor
 		inline EditorData(Engine& en) : engine(en) {}
 	public:
 		Engine& engine;
-		entt::entity selectedEnt = entt::null;
+		SceneNode* selectedNode = nullptr;
 		std::bitset<IdQueryMode::COUNT> idQueryMode;
 		Polygon* selectedPoly = nullptr;
 	};

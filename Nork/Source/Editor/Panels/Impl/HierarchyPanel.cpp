@@ -1,32 +1,64 @@
 #include "../HierarchyPanel.h"
 
+namespace Nork::Editor {
+	static void RecursiveDraw(EditorData& data, SceneNode& node)
+	{
+		auto& ent = node.GetEntity();
+		auto* name = ent.TryGetComponent<Components::Tag>();
+
+		std::string str;
+		if (name == nullptr)
+			str = std::string(("UNNAMED(ID=" + std::to_string(static_cast<int>(ent.Id())) + ")").c_str());
+		else
+			str = std::string(name->tag);
+
+		// if (ImGui::Selectable(str.c_str(), data.selectedNode == &node))
+		// {
+		// 	data.selectedNode = &node;
+		// }
+
+		auto flags = ImGuiTreeNodeFlags_DefaultOpen;
+		if (node.GetChildren().empty())
+			flags |= ImGuiTreeNodeFlags_Leaf;
+		if (&node == data.selectedNode)
+			flags |= ImGuiTreeNodeFlags_Selected;
+		if (true)
+			flags |= ImGuiTreeNodeFlags_OpenOnArrow 
+			| ImGuiTreeNodeFlags_OpenOnDoubleClick;
+
+		bool open = ImGui::TreeNodeEx(str.c_str(), flags);
+		if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+		{
+			data.selectedNode = &node;
+		}
+		if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
+		{
+			data.selectedNode = &node;
+			ImGui::OpenPopup("entRightClick");
+		}
+		if (open)
+		{
+			for (auto& child : node.GetChildren())
+			{
+				RecursiveDraw(data, *child);
+			}
+			ImGui::TreePop();
+		}
+		// ImGui::Indent(10);
+		// ImGui::Unindent(10);
+	}
+}
+
 void Nork::Editor::HierarchyPanel::DrawContent()
 {
-	reg.each([this](entt::entity ent)
-		{
-			auto* name = this->reg.try_get<Components::Tag>(ent);
-
-			std::string str;
-			if (name == nullptr)
-				str = std::string(("UNNAMED(ID=" + std::to_string(static_cast<int>(ent)) + ")").c_str());
-			else
-				str = std::string(name->tag);
-
-			if (ImGui::Selectable(str.c_str(), data.selectedEnt == ent))
-				data.selectedEnt = ent;
-			if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
-			{
-				data.selectedEnt = ent;
-				ImGui::OpenPopup("entRightClick");
-			}
-		});
+	RecursiveDraw(data, data.engine.scene.root);
 
 	if (ImGui::BeginPopup("entRightClick"))
 	{
 		if (ImGui::Selectable("Delete"))
 		{
-			data.engine.scene.DeleteNode(data.selectedEnt);
-			data.selectedEnt = entt::null;
+			data.engine.scene.DeleteNode(*data.selectedNode);
+			data.selectedNode = nullptr;
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::EndPopup();

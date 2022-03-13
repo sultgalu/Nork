@@ -23,8 +23,6 @@ int main()
 	auto& engine = Application::Get().engine;
 	auto& dispatcher = Application::Get().dispatcher;
 
-	auto cameraNode = engine.scene.CreateNode();
-	auto& cam = engine.scene.AddComponent<Components::Camera>(cameraNode);
 	enginePtr = &engine;
 	Editor::Editor editor(engine);
 
@@ -33,6 +31,13 @@ int main()
 		{
 			editor.Render();
 		});
+
+	auto& dummyNode = engine.scene.CreateNode();
+	dummyNode.GetEntity().AddComponent<Components::Tag>().tag = "DUMMY";
+	auto& dummyChildNode = engine.scene.CreateNode(dummyNode);
+	dummyChildNode.GetEntity().AddModel();
+	dummyChildNode.GetEntity().AddComponent<Components::Tag>().tag = "CHILD";
+	dummyChildNode.GetEntity().AddComponent<Components::Transform>();
 
 	int dim = 4;
 	int sep = 3;
@@ -45,12 +50,12 @@ int main()
 		{
 			for (int k = start; k < end; k++)
 			{
-				auto node = engine.scene.CreateNode();
-				engine.scene.AddModel(node);
-				engine.scene.AddComponent<Components::Transform>(node).position = glm::vec3(i * sep, j * sep, k * sep);
-				engine.scene.AddComponent<Components::Kinematic>(node).mass = 0.1f;
-				engine.scene.AddComponent<Polygon>(node);
-				engine.scene.AddComponent<Components::Tag>(node).tag = std::to_string(i).append("-").append(std::to_string(j)).append("-").append(std::to_string(k));
+				auto ent = engine.scene.CreateNode().GetEntity();
+				ent.AddModel();
+				ent.AddComponent<Components::Transform>().position = glm::vec3(i * sep, j * sep, k * sep);
+				ent.AddComponent<Components::Kinematic>().mass = 0.1f;
+				ent.AddComponent<Polygon>();
+				ent.AddComponent<Components::Tag>().tag = std::to_string(i).append("-").append(std::to_string(j)).append("-").append(std::to_string(k));
 			}
 		}
 	}
@@ -61,13 +66,13 @@ int main()
 	}
 
 	glm::vec3 scale = glm::vec3(100, 1, 100);
-	auto ground = engine.scene.CreateNode();
-	engine.scene.AddModel(ground);
-	auto& tr = engine.scene.AddComponent<Components::Transform>(ground);
+	auto ground = engine.scene.CreateNode().GetEntity();
+	ground.AddModel();
+	auto& tr = ground.AddComponent<Components::Transform>();
 	tr.position = glm::vec3(0, -10, 0);
 	tr.scale = scale;
-	engine.scene.AddComponent<Polygon>(ground).Scale(scale);
-	engine.scene.AddComponent<Components::Tag>(ground).tag = "GROUND";
+	ground.AddComponent<Polygon>().Scale(scale);
+	ground.AddComponent<Components::Tag>().tag = "GROUND";
 
 	/*auto node1 = engine.scene.CreateNode();
 	engine.scene.AddModel(node1);
@@ -83,13 +88,13 @@ int main()
 	engine.scene.AddComponent<Poly>(node2);
 	engine.scene.AddComponent<Components::Tag>(node2).tag = "NODE 2";*/
 
-	auto sun = engine.scene.CreateNode();
-	auto& l = engine.scene.AddComponent<Components::DirLight>(sun);
+	auto sun = engine.scene.CreateNode().GetEntity();
+	auto& l = sun.AddComponent<Components::DirLight>();
 	l.SetColor(glm::vec4(0.5f, 0.4f, 0.25, 1));
-	auto& shad = engine.scene.AddComponent<Components::DirShadow>(sun);
+	auto& shad = sun.AddComponent<Components::DirShadow>();
 	shad.far = 100; shad.near = -100; shad.left = -100; shad.right = 100; shad.bottom = -100; shad.top = 100;
 	shad.RecalcVP(l.GetView());
-	engine.scene.AddComponent<Components::Tag>(sun).tag = "SUN";
+	sun.AddComponent<Components::Tag>().tag = "SUN";
 	
 	//int offsX = 10;
 	//int dimP = 5;

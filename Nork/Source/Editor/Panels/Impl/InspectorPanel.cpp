@@ -60,7 +60,7 @@ namespace Nork::Editor
 			ImGui::DragFloat3("position#camera", &cam->position.x);
 			if (ImGui::Button("Delete"))
 			{
-				scene.RemoveComponent<Camera>(data.selectedEnt);
+				data.selectedNode->GetEntity().RemoveComponent<Camera>();
 			}
 			ImGui::PopStyleColor();
 
@@ -99,7 +99,7 @@ namespace Nork::Editor
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 			if (ImGui::Button("Delete"))
 			{
-				scene.RemoveComponent<Transform>(data.selectedEnt);
+				data.selectedNode->GetEntity().RemoveComponent<Transform>();
 			}
 			ImGui::PopStyleColor();
 			ImGui::TreePop();
@@ -167,7 +167,7 @@ namespace Nork::Editor
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 			if (ImGui::Button("Delete"))
 			{
-				scene.RemoveComponent<Model>(data.selectedEnt);
+				data.selectedNode->GetEntity().RemoveComponent<Model>();
 			}
 			ImGui::PopStyleColor();
 
@@ -186,7 +186,7 @@ namespace Nork::Editor
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 			if (ImGui::Button("Delete"))
 			{
-				scene.RemoveComponent<PointLight>(data.selectedEnt);
+				data.selectedNode->GetEntity().RemoveComponent<PointLight>();
 			}
 			ImGui::PopStyleColor();
 
@@ -234,7 +234,7 @@ namespace Nork::Editor
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 			if (ImGui::Button("Delete"))
 			{
-				scene.RemoveComponent<DirShadow>(data.selectedEnt);
+				data.selectedNode->GetEntity().RemoveComponent<DirShadow>();
 			}
 			ImGui::PopStyleColor();
 
@@ -255,7 +255,7 @@ namespace Nork::Editor
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 			if (ImGui::Button("Delete"))
 			{
-				scene.RemoveComponent<DirLight>(data.selectedEnt);
+				data.selectedNode->GetEntity().RemoveComponent<DirLight>();
 			}
 			ImGui::PopStyleColor();
 
@@ -297,7 +297,7 @@ namespace Nork::Editor
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 			if (ImGui::Button("Delete"))
 			{
-				scene.RemoveComponent<DirShadow>(data.selectedEnt);
+				data.selectedNode->GetEntity().RemoveComponent<DirShadow>();
 			}
 			ImGui::PopStyleColor();
 
@@ -325,7 +325,7 @@ namespace Nork::Editor
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 			if (ImGui::Button("Delete"))
 			{
-				scene.RemoveComponent<Kinematic>(data.selectedEnt);
+				data.selectedNode->GetEntity().RemoveComponent<Kinematic>();
 			}
 			ImGui::PopStyleColor();
 
@@ -344,7 +344,7 @@ namespace Nork::Editor
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 			if (ImGui::Button("Delete"))
 			{
-				scene.RemoveComponent<Tag>(data.selectedEnt);
+				data.selectedNode->GetEntity().RemoveComponent<Polygon>();
 			}
 			ImGui::PopStyleColor();
 
@@ -372,7 +372,7 @@ namespace Nork::Editor
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 			if (ImGui::Button("Delete"))
 			{
-				scene.RemoveComponent<Tag>(data.selectedEnt);
+				data.selectedNode->GetEntity().RemoveComponent<Tag>();
 			}
 			ImGui::PopStyleColor();
 
@@ -383,18 +383,18 @@ namespace Nork::Editor
 	template<>
 	inline void InspectorPanel::CompSelector<Model>()
 	{
-		if (ImGui::Selectable("Model", false, scene.registry.any_of<Model>(data.selectedEnt) ? ImGuiSelectableFlags_Disabled : 0))
+		if (ImGui::Selectable("Model", false, data.selectedNode->GetEntity().HasAnyComponentsOf<Model>() ? ImGuiSelectableFlags_Disabled : 0))
 		{
-			scene.AddModel(data.selectedEnt);
+			data.selectedNode->GetEntity().AddModel();
 			ImGui::CloseCurrentPopup();
 		}
 	}
 	template<typename T>
 	void InspectorPanel::CompSelector()
 	{
-		if (ImGui::Selectable(GetCompName<T>().c_str(), false, scene.registry.any_of<T>(data.selectedEnt) ? ImGuiSelectableFlags_Disabled : 0))
+		if (ImGui::Selectable(GetCompName<T>().c_str(), false, data.selectedNode->GetEntity().HasAnyComponentsOf<T>() ? ImGuiSelectableFlags_Disabled : 0))
 		{
-			scene.AddComponent<T>(data.selectedEnt);
+			data.selectedNode->GetEntity().AddComponent<T>();
 			ImGui::CloseCurrentPopup();
 		}
 	}
@@ -424,23 +424,23 @@ namespace Nork::Editor
 	{
 		entt::registry& reg = scene.registry;
 
-		auto& selected = data.selectedEnt;
+		auto selected = data.selectedNode;
 
 		using namespace Components;
 
-		if (reg.valid(selected))
+		if (selected != nullptr)
 		{
-			auto* tr = reg.try_get<Transform>(selected);
-			auto* pL = reg.try_get<PointLight>(selected);
-			auto* pS = reg.try_get<PointShadow>(selected);
-			//auto* sL = scene.ents.try_get<SpotLight>(selected);
-			auto* dL = reg.try_get<DirLight>(selected);
-			auto* dS = reg.try_get<DirShadow>(selected);
-			auto* name = reg.try_get<Tag>(selected);
-			auto* model = reg.try_get<Model>(selected);
-			auto* cam = reg.try_get<Camera>(selected);
-			auto* kin = reg.try_get<Kinematic>(selected);
-			auto* poly = reg.try_get<Polygon>(selected);
+			auto& ent = selected->GetEntity();
+			auto* tr = ent.TryGetComponent<Transform>();
+			auto* pL = ent.TryGetComponent<PointLight>();
+			auto* pS = ent.TryGetComponent<PointShadow>();
+			auto* dL = ent.TryGetComponent<DirLight>();
+			auto* dS = ent.TryGetComponent<DirShadow>();
+			auto* name = ent.TryGetComponent<Tag>();
+			auto* model = ent.TryGetComponent<Model>();
+			auto* cam = ent.TryGetComponent<Camera>();
+			auto* kin = ent.TryGetComponent<Kinematic>();
+			auto* poly = ent.TryGetComponent<Polygon>();
 
 			if (tr != nullptr)
 			{
