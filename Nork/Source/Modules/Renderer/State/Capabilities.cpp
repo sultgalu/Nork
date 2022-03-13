@@ -1,19 +1,93 @@
 #include "Capabilities.h"
 
 namespace Nork::Renderer {
-	DepthTestCap& Capabilities::DepthTest()
+	static DepthFunc depthFunc;
+	static bool depthTest;
+	static CullFaceSide cullFaceSide;
+	static bool cullFace;
+	static BlendFunc blendFunc;
+	static bool blend;
+
+	static std::array<GLenum, 2> GetSrcAndDst(BlendFunc func)
 	{
-		static DepthTestCap cap;
-		return cap;
+		using enum BlendFunc;
+		switch (func)
+		{
+		case SrcAlpha_1MinuseSrcAlpha:
+			return { GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA };
+		default:
+			return { GL_NONE ,GL_NONE };
+		}
 	}
-	CullFaceCap& Capabilities::CullFace()
+
+	Capabilities::Enables& Capabilities::Enables::DepthTest(DepthFunc func)
 	{
-		static CullFaceCap cap;
-		return cap;
+		if (!depthTest)
+		{
+			glEnable(GL_DEPTH_TEST);
+			depthTest = true;
+		}
+		if (depthFunc != func)
+		{
+			glDepthFunc(static_cast<GLenum>(func));
+			depthFunc = func;
+		}
+		return *this;
 	}
-	BlendCap& Capabilities::Blend()
+	Capabilities::Enables& Capabilities::Enables::CullFace(CullFaceSide side)
 	{
-		static BlendCap cap;
-		return cap;
+		if (!cullFace)
+		{
+			glEnable(GL_CULL_FACE);
+			cullFace = true;
+		}
+		if (cullFaceSide != side)
+		{
+			glCullFace(static_cast<GLenum>(side));
+			cullFaceSide = side;
+		}
+		return *this;
+	}
+	Capabilities::Enables& Capabilities::Enables::Blend(BlendFunc func)
+	{
+		if (!blend)
+		{
+			glEnable(GL_BLEND);
+			blend = true;
+		}
+		if (blendFunc != func)
+		{
+			auto srcAndDest = GetSrcAndDst(func);
+			glBlendFunc(srcAndDest[0], srcAndDest[1]);
+			blendFunc = func;
+		}
+		return *this;
+	}
+	Capabilities::Disables& Capabilities::Disables::Blend()
+	{
+		if (blend)
+		{
+			glDisable(GL_BLEND);
+			blend = false;
+		}
+		return *this;
+	}
+	Capabilities::Disables& Capabilities::Disables::DepthTest()
+	{
+		if (depthTest)
+		{
+			glDisable(GL_DEPTH_TEST);
+			depthTest = false;
+		}
+		return *this;
+	}
+	Capabilities::Disables& Capabilities::Disables::CullFace()
+	{
+		if (cullFace)
+		{
+			glDisable(GL_CULL_FACE);
+			cullFace = false;
+		}
+		return *this;
 	}
 }

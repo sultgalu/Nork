@@ -7,20 +7,18 @@ namespace Nork::Renderer {
 		GLObject(GLuint handle) : handle(handle) {}
 		inline bool IsCreated() { return handle != 0; }
 		GLuint GetHandle() { return handle; }
+		void SetDebugLabel(std::string label)
+		{
+			glObjectLabel(GetIdentifier(), handle, -1, label.c_str());
+		}
+
 		GLObject(const GLObject&) = delete;
 		GLObject(GLObject&) = delete;
 		GLObject& operator=(const GLObject&) = delete;
 		GLObject& operator=(GLObject&) = delete;
 	protected:
 		GLuint handle = 0;
-	};
-
-	class GLObjectOld
-	{
-	public:
-		inline bool IsCreated() { return handle != 0; }
-		GLuint GetHandle() { return handle; }
 	protected:
-		GLuint handle = 0;
+		virtual GLenum GetIdentifier() = 0;
 	};
 }

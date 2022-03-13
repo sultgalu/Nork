@@ -63,6 +63,11 @@ namespace Nork::Renderer {
 		const int width, height;
 		GLenum clearBits;
 		const FramebufferAttachments attachments;
+	private:
+		GLenum GetIdentifier() override
+		{
+			return GL_FRAMEBUFFER;
+		}
 	};
 
 }

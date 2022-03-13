@@ -51,10 +51,15 @@ namespace Nork::Renderer {
 		VertexArray(GLuint handle, std::vector<int> attrLens, int stride, std::shared_ptr<Buffer> vbo)
 			: GLObject(handle), attrLens(attrLens), stride(stride), vbo(vbo) 
 		{}
-	protected:
+	private:
 		const std::vector<int> attrLens;
 		const int stride;
 		std::shared_ptr<Buffer> vbo, ibo = nullptr;
+	private:
+		GLenum GetIdentifier() override
+		{
+			return GL_VERTEX_ARRAY;
+		}
 	};
 }
 

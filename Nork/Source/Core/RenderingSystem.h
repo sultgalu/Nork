@@ -81,7 +81,7 @@ namespace Nork {
 			InitShaderFromSource(pointShader, "Source/Shaders/point.shader");
 			InitShaderFromSource(lineShader, "Source/Shaders/line.shader");
 			InitShaderFromSource(textureShader, "Source/Shaders/texture.shader");
-
+			
 			lPassShader->Use()
 				.SetInt("gPos", 0)
 				.SetInt("gDiff", 1)

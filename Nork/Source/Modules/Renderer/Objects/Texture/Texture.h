@@ -26,6 +26,11 @@ namespace Nork::Renderer {
 	protected:
 		const TextureParams params;
 		const TextureAttributes attributes;
+	private:
+		GLenum GetIdentifier() override
+		{
+			return GL_TEXTURE;
+		}
 	};
 
 	class Texture2D: public Texture

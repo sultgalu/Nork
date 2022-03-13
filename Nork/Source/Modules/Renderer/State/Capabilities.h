@@ -1,118 +1,41 @@
 #pragma once
 
 namespace Nork::Renderer {
-	
-	template<GLenum Cap>
-	class Capability
+	enum class DepthFunc
 	{
-	public:
-		void Enable()
-		{
-			if (!isEnabled)
-			{
-				glEnable(Cap);
-				isEnabled = true;
-			}
-		}
-		void Disable()
-		{
-			if (isEnabled)
-			{
-				glDisable(Cap);
-				isEnabled = false;
-			}
-		}
-	protected:
-		bool isEnabled = false;
+		Less = GL_LESS, LessOrEqual = GL_LEQUAL
 	};
-
-	class DepthTestCap : public Capability<GL_DEPTH_TEST>
+	enum class CullFaceSide
 	{
-	public:
-		enum class Func
-		{
-			Less = GL_LESS, LessOrEqual = GL_LEQUAL
-		};
-
-		void SetFunc(Func func)
-		{
-			if (currentFunc != func)
-			{
-				glDepthFunc(static_cast<GLenum>(func));
-				currentFunc = func;
-			}
-		}
-	private:
-		Func currentFunc = Func::Less;
+		Back = GL_BACK, Front = GL_FRONT, FrontAndBack = GL_FRONT_AND_BACK
 	};
-
-	class CullFaceCap : public Capability<GL_CULL_FACE>
+	enum class BlendFunc
 	{
-	public:
-		enum class Face
-		{
-			Back = GL_BACK, Front = GL_FRONT, FrontAndBack = GL_FRONT_AND_BACK
-		};
-		void SetFace(Face face)
-		{
-			if (currentFace != face)
-			{
-				glCullFace(static_cast<GLenum>(face));
-				currentFace = face;
-			}
-		}
-	private:
-		Face currentFace = Face::Back;
+		None, SrcAlpha_1MinuseSrcAlpha
 	};
-
-	class BlendCap : public Capability<GL_BLEND>
-	{
-	public:
-		enum class Func
-		{
-			None, SrcAlpha_1MinuseSrcAlpha
-		};
-		void SetFunc(Func func)
-		{
-			if (currentFunc != func)
-			{
-				glBlendFunc(GetSrc(func), GetDst(func));
-				currentFunc = func;
-			}
-		}
-	private:
-		static GLenum GetSrc(Func func)
-		{
-			using enum Func;
-			switch (func)
-			{
-			case SrcAlpha_1MinuseSrcAlpha:
-				return GL_SRC_ALPHA;
-			default:
-				return GL_NONE;
-			}
-		}
-		static GLenum GetDst(Func func)
-		{
-			using enum Func;
-			switch (func)
-			{
-			case SrcAlpha_1MinuseSrcAlpha:
-				return GL_ONE_MINUS_SRC_ALPHA;
-			default:
-				return GL_NONE;
-			}
-		}
-	private:
-		Func currentFunc = Func::None;
-	};
-
 	class Capabilities
 	{
 	public:
-		static DepthTestCap& DepthTest();
-		static CullFaceCap& CullFace();
-		static BlendCap& Blend();
-	private:
+		struct Disables
+		{
+			Disables& DepthTest();
+			Disables& CullFace();
+			Disables& Blend();
+		};
+		struct Enables
+		{
+			Enables& DepthTest(DepthFunc func = DepthFunc::Less);
+			Enables& CullFace(CullFaceSide side = CullFaceSide::Back);
+			Enables& Blend(BlendFunc func = BlendFunc::SrcAlpha_1MinuseSrcAlpha);
+			Disables Disable() { return Disables(); }
+		};
+		Enables Enable()
+		{
+			return Enables();
+		}
+		Disables Disable()
+		{
+			return Disables();
+		}
 	};
 }

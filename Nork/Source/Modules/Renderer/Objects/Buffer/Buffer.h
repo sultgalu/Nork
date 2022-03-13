@@ -49,5 +49,10 @@ namespace Nork::Renderer {
 		size_t size;
 		BufferTarget target;
 		const BufferUsage usage;
+	private:
+		GLenum GetIdentifier() override
+		{
+			return GL_BUFFER;
+		}
 	};
 }

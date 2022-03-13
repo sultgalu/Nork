@@ -32,12 +32,12 @@ int main()
 			editor.Render();
 		});
 
-	auto& dummyNode = engine.scene.CreateNode();
-	dummyNode.GetEntity().AddComponent<Components::Tag>().tag = "DUMMY";
-	auto& dummyChildNode = engine.scene.CreateNode(dummyNode);
-	dummyChildNode.GetEntity().AddModel();
-	dummyChildNode.GetEntity().AddComponent<Components::Tag>().tag = "CHILD";
-	dummyChildNode.GetEntity().AddComponent<Components::Transform>();
+	auto dummyNode = engine.scene.CreateNode();
+	dummyNode->GetEntity().AddComponent<Components::Tag>().tag = "DUMMY";
+	auto dummyChildNode = engine.scene.CreateNode(*dummyNode);
+	dummyChildNode->GetEntity().AddModel();
+	dummyChildNode->GetEntity().AddComponent<Components::Tag>().tag = "CHILD";
+	dummyChildNode->GetEntity().AddComponent<Components::Transform>();
 
 	int dim = 4;
 	int sep = 3;
@@ -50,7 +50,7 @@ int main()
 		{
 			for (int k = start; k < end; k++)
 			{
-				auto ent = engine.scene.CreateNode().GetEntity();
+				auto ent = engine.scene.CreateNode()->GetEntity();
 				ent.AddModel();
 				ent.AddComponent<Components::Transform>().position = glm::vec3(i * sep, j * sep, k * sep);
 				ent.AddComponent<Components::Kinematic>().mass = 0.1f;
@@ -66,7 +66,7 @@ int main()
 	}
 
 	glm::vec3 scale = glm::vec3(100, 1, 100);
-	auto ground = engine.scene.CreateNode().GetEntity();
+	auto ground = engine.scene.CreateNode()->GetEntity();
 	ground.AddModel();
 	auto& tr = ground.AddComponent<Components::Transform>();
 	tr.position = glm::vec3(0, -10, 0);
@@ -88,7 +88,7 @@ int main()
 	engine.scene.AddComponent<Poly>(node2);
 	engine.scene.AddComponent<Components::Tag>(node2).tag = "NODE 2";*/
 
-	auto sun = engine.scene.CreateNode().GetEntity();
+	auto sun = engine.scene.CreateNode()->GetEntity();
 	auto& l = sun.AddComponent<Components::DirLight>();
 	l.SetColor(glm::vec4(0.5f, 0.4f, 0.25, 1));
 	auto& shad = sun.AddComponent<Components::DirShadow>();

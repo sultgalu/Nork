@@ -18,73 +18,66 @@ namespace Nork::Renderer {
 		glm::vec3 tangent, biTangent;
 	};
 
-	struct Mesh
+	class Mesh
 	{
-		Mesh& CreateVAO(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices)
+	public:
+		Mesh(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices);
+		Mesh& SetTexture(std::shared_ptr<Texture2D> texture, TextureMapType type)
 		{
-			auto vbo = BufferBuilder().Target(BufferTarget::Vertex).Usage(BufferUsage::StaticDraw).Data(vertices.data(), vertices.size() * sizeof(Vertex)).Create();
-			auto ibo = BufferBuilder().Target(BufferTarget::Index).Usage(BufferUsage::StaticDraw).Data(indices.data(), indices.size() * sizeof(GLuint)).Create();
-			vao = VertexArrayBuilder().VBO(vbo).IBO(ibo).Attributes({ 3, 3, 2, 3, 3 }).Create();
+			textureMaps[std::to_underlying(type)] = texture;
 			return *this;
 		}
-		Mesh& SetTextureMaps(std::vector<std::pair<TextureMapType, std::shared_ptr<Texture2D>>> textures = {})
+		Mesh& DiffuseMap(std::shared_ptr<Texture2D> texture)
 		{
-			textureMaps = GetDefaultTextureMaps();
-			for (auto& tex : textures)
-			{
-				textureMaps[std::to_underlying(tex.first)] = tex.second;
-			}
-			return *this;
+			return SetTexture(texture, TextureMapType::Diffuse);
 		}
-		std::array<std::shared_ptr<Texture2D>, std::to_underlying(TextureMapType::COUNT)> textureMaps;
-		std::shared_ptr<VertexArray> vao;
+		Mesh& NormalMap(std::shared_ptr<Texture2D> texture)
+		{
+			return SetTexture(texture, TextureMapType::Normal);
+		}
+		Mesh& ReflectionMap(std::shared_ptr<Texture2D> texture)
+		{
+			return SetTexture(texture, TextureMapType::Reflection);
+		}
+		Mesh& RoughnessMap(std::shared_ptr<Texture2D> texture)
+		{
+			return SetTexture(texture, TextureMapType::Roughness);
+		}
 
-		inline void BindTextures()
+		std::shared_ptr<Texture2D> DiffuseMap()
+		{
+			return textureMaps[std::to_underlying(TextureMapType::Diffuse)];
+		}
+		std::shared_ptr<Texture2D> NormalMap()
+		{
+			return textureMaps[std::to_underlying(TextureMapType::Normal)];
+		}
+		std::shared_ptr<Texture2D> ReflectionMap()
+		{
+			return textureMaps[std::to_underlying(TextureMapType::Reflection)];
+		}
+		std::shared_ptr<Texture2D> RoughnessMap()
+		{
+			return textureMaps[std::to_underlying(TextureMapType::Roughness)];
+		}
+
+		Mesh& BindTextures()
 		{
 			for (int i = 0; i < textureMaps.size(); i++)
 			{
 				textureMaps[i]->Bind(i);
 			}
+			return *this;
 		}
-		inline void Draw()
+		void Draw()
 		{
 			vao->Bind().DrawIndexed();
 		}
+		static Mesh Cube();
 	private:
-		static std::shared_ptr<Texture2D> CreateDefaultDiffuse()
-		{
-			float data[]{ 1.0f, 1.0f, 1.0f, 1.0f };
-			return CreateTexture2D(TextureFormat::RGBA32F, data);
-		}
-		static std::shared_ptr<Texture2D> CreateDefaultNormal()
-		{
-			float data[]{ 0.5f, 0.5f, 1.0f };
-			return CreateTexture2D(TextureFormat::RGB32F, data);
-		}
-		static std::shared_ptr<Texture2D> CreateDefaultReflective()
-		{
-			float data[]{ 0.5f };
-			return CreateTexture2D(TextureFormat::R32F, data);
-		}
-		static std::shared_ptr<Texture2D> CreateDefaultRoughness()
-		{
-			float data[]{ 0.5f };
-			return CreateTexture2D(TextureFormat::R32F, data);
-		}
-		static std::shared_ptr<Texture2D> CreateTexture2D(TextureFormat format, void* data)
-		{
-			return TextureBuilder()
-				.Params(TextureParams::Tex2DParams())
-				.Attributes(TextureAttributes{ .width = 1, .height = 1, .format = format })
-				.Create2DWithData(data);
-		}
-		static std::array<std::shared_ptr<Texture2D>, std::to_underlying(TextureMapType::COUNT)> GetDefaultTextureMaps()
-		{
-			static auto diff = CreateDefaultDiffuse();
-			static auto norm = CreateDefaultNormal();
-			static auto refl = CreateDefaultReflective();
-			static auto rough = CreateDefaultRoughness();
-			return { diff, norm, refl, rough };
-		}
+		static std::array<std::shared_ptr<Texture2D>, std::to_underlying(TextureMapType::COUNT)> GetDefaultTextureMaps();
+	private:
+		std::array<std::shared_ptr<Texture2D>, std::to_underlying(TextureMapType::COUNT)> textureMaps;
+		std::shared_ptr<VertexArray> vao;
 	};	
 }

@@ -93,6 +93,11 @@ namespace Nork::Renderer {
 		GLint GetUniformLocation(const char* name) { return glGetUniformLocation(handle, name); }
 	private:
 		std::unordered_map<std::string, GLint> uniformLocations;
+	private:
+		GLenum GetIdentifier() override
+		{
+			return GL_PROGRAM;
+		}
 	};
 }
 

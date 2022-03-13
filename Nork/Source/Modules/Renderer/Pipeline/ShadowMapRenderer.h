@@ -36,15 +36,12 @@ namespace Nork::Renderer {
 
 			shader.SetFloat("far", shadow.far);
 			shader.SetVec3("ligthPos", pos);
-
-			Capabilities::DepthTest().Enable();
+			
+			Capabilities()
+				.Enable().DepthTest().CullFace();
 			for (size_t i = 0; i < models.size(); i++)
 			{
-				shader.SetMat4("model", models[i].modelMatrix);
-				for (auto& mesh : models[i].meshes)
-				{
-					mesh.Draw();
-				}
+				models[i].DrawTextureless(shader);
 			}
 		}
 		static void RenderDirLightShadowMap(const DirLight& light, const DirShadow& shadow, const std::span<Model> models, Framebuffer& fb, Shader& shader)
@@ -52,14 +49,11 @@ namespace Nork::Renderer {
 			fb.Bind().SetViewport().Clear();
 			shader.Use().SetMat4("VP", shadow.VP);
 
-			Capabilities::DepthTest().Enable();
+			Capabilities()
+				.Enable().DepthTest().CullFace();
 			for (size_t i = 0; i < models.size(); i++)
 			{
-				shader.SetMat4("model", models[i].modelMatrix);
-				for (auto& mesh : models[i].meshes)
-				{
-					mesh.Draw();
-				}
+				models[i].DrawTextureless(shader);
 			}
 		}
 		static void BindDirShadowMap(const DirShadow& shadow, Framebuffer& fb)

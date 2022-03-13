@@ -126,8 +126,6 @@ namespace Nork::Renderer {
 	{
 		static auto quadVao = GetQuadVao();
 		quadVao->Bind().DrawIndexed();
-		// glBindVertexArray(quadVao);
-		// glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 	}
 
 	void DrawUtils::DrawCube()

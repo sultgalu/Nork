@@ -167,6 +167,7 @@
     <ClCompile Include="Source\Core\RenderingSystem.cpp" />
     <ClCompile Include="Source\Modules\Renderer\DrawUtils.cpp" />
     <ClCompile Include="Source\Modules\Renderer\LoadUtils.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Model\Mesh.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Pipeline\Deferred\DeferredPipeline.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Framebuffer\Framebuffer.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Buffer\Buffer.cpp" />
@@ -202,10 +203,13 @@
     <ClInclude Include="Source\Modules\Renderer\Pipeline\ShadowMapRenderer.h" />
     <ClInclude Include="Source\Modules\Renderer\State\Capabilities.h" />
     <ClInclude Include="Source\Modules\Renderer\Window\Window.h" />
+    <ClInclude Include="Source\Scene\Entity.h" />
+    <ClInclude Include="Source\Scene\SceneNode.h" />
     <ClInclude Include="Source\Scene\Serialization\BinaryComponentSerializer.h" />
     <ClInclude Include="Source\Scene\Serialization\BinaryReader.h">
       <FileType>CppCode</FileType>
     </ClInclude>
+    <ClCompile Include="Source\Scene\SceneNode.cpp" />
     <ClCompile Include="Source\Utils\Profiler.cpp" />
     <ClInclude Include="Source\Scene\Serialization\BinaryWriter.h" />
     <ClInclude Include="Source\Modules\Physics\Config.h" />
