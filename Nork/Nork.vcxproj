@@ -334,7 +334,7 @@
     <ClInclude Include="Source\Editor\Panels\InspectorPanel.h" />
     <ClInclude Include="Source\Scene\Scene.h" />
     <ClInclude Include="Source\Components\All.h" />
-    <ClInclude Include="Source\Components\Model.h" />
+    <ClInclude Include="Source\Components\Drawable.h" />
     <ClInclude Include="Source\Core\Engine.h" />
     <ClInclude Include="Source\Core\CameraController.h" />
     <ClInclude Include="Source\Core\InputState.h" />

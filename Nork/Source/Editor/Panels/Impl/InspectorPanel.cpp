@@ -105,7 +105,7 @@ namespace Nork::Editor
 			ImGui::TreePop();
 		}
 	}
-	void InspectorPanel::ModelComp(Model* model)
+	void InspectorPanel::ModelComp(Drawable* dr)
 	{
 		if (ImGui::TreeNodeEx("Model", ImGuiTreeNodeFlags_DefaultOpen))
 		{
@@ -114,32 +114,32 @@ namespace Nork::Editor
 			{
 				ImGui::Unindent();
 				static int meshIdx = 0;
-				if (meshIdx >= model->meshes.size())
-					meshIdx = model->meshes.size() - 1;
-				ImGui::SliderInt("Mesh of model", &meshIdx, 0, model->meshes.size() - 1);
+				if (meshIdx >= dr->model.Meshes().size())
+					meshIdx = dr->model.Meshes().size() - 1;
+				ImGui::SliderInt("Mesh of model", &meshIdx, 0, dr->model.Meshes().size() - 1);
 				if (ImGui::BeginTabBar("MaterialTexturesTab"))
 				{
 					if (ImGui::BeginTabItem("Diffuse"))
 					{
-						ImGui::Image((ImTextureID)model->meshes[meshIdx].DiffuseMap()->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
+						ImGui::Image((ImTextureID)dr->model.Meshes()[meshIdx].DiffuseMap()->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
 							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
 						ImGui::EndTabItem();
 					}
 					if (ImGui::BeginTabItem("Normal"))
 					{
-						ImGui::Image((ImTextureID)model->meshes[meshIdx].NormalMap()->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
+						ImGui::Image((ImTextureID)dr->model.Meshes()[meshIdx].NormalMap()->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
 							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
 						ImGui::EndTabItem();
 					}
 					if (ImGui::BeginTabItem("Roughness"))
 					{
-						ImGui::Image((ImTextureID)model->meshes[meshIdx].RoughnessMap()->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
+						ImGui::Image((ImTextureID)dr->model.Meshes()[meshIdx].RoughnessMap()->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
 							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
 						ImGui::EndTabItem();
 					}
 					if (ImGui::BeginTabItem("Metalness"))
 					{
-						ImGui::Image((ImTextureID)model->meshes[meshIdx].ReflectionMap()->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
+						ImGui::Image((ImTextureID)dr->model.Meshes()[meshIdx].ReflectionMap()->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
 							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
 						ImGui::EndTabItem();
 					}
@@ -167,7 +167,7 @@ namespace Nork::Editor
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 			if (ImGui::Button("Delete"))
 			{
-				data.selectedNode->GetEntity().RemoveComponent<Model>();
+				data.selectedNode->GetEntity().RemoveComponent<Drawable>();
 			}
 			ImGui::PopStyleColor();
 
@@ -380,15 +380,6 @@ namespace Nork::Editor
 		}
 
 	}
-	template<>
-	inline void InspectorPanel::CompSelector<Model>()
-	{
-		if (ImGui::Selectable("Model", false, data.selectedNode->GetEntity().HasAnyComponentsOf<Model>() ? ImGuiSelectableFlags_Disabled : 0))
-		{
-			data.selectedNode->GetEntity().AddModel();
-			ImGui::CloseCurrentPopup();
-		}
-	}
 	template<typename T>
 	void InspectorPanel::CompSelector()
 	{
@@ -413,7 +404,7 @@ namespace Nork::Editor
 			this->CompSelector<DirLight>();
 			this->CompSelector<DirShadow>();
 			this->CompSelector<Camera>();
-			this->CompSelector<Model>();
+			this->CompSelector<Drawable>();
 			this->CompSelector<Kinematic>();
 			this->CompSelector<Polygon>();
 
@@ -437,7 +428,7 @@ namespace Nork::Editor
 			auto* dL = ent.TryGetComponent<DirLight>();
 			auto* dS = ent.TryGetComponent<DirShadow>();
 			auto* name = ent.TryGetComponent<Tag>();
-			auto* model = ent.TryGetComponent<Model>();
+			auto* dr = ent.TryGetComponent<Drawable>();
 			auto* cam = ent.TryGetComponent<Camera>();
 			auto* kin = ent.TryGetComponent<Kinematic>();
 			auto* poly = ent.TryGetComponent<Polygon>();
@@ -467,9 +458,9 @@ namespace Nork::Editor
 				PointShadowComp(pS, pL);
 				ImGui::Separator();
 			}
-			if (model != nullptr)
+			if (dr != nullptr)
 			{
-				ModelComp(model);
+				ModelComp(dr);
 				ImGui::Separator();
 			}
 			if (dL != nullptr)

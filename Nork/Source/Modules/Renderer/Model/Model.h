@@ -6,6 +6,9 @@ namespace Nork::Renderer {
 	class Model
 	{
 	public:
+		Model(const std::vector<Mesh>& meshes, glm::mat4 modelMatrix)
+			: meshes(meshes), modelMatrix(modelMatrix)
+		{}
 		void Draw()
 		{
 			for (size_t i = 0; i < meshes.size(); i++)
@@ -30,8 +33,23 @@ namespace Nork::Renderer {
 			shader.SetMat4("model", modelMatrix);
 			DrawTextureless();
 		}
+		static Model Cube()
+		{
+			static Model cube = Model({ Mesh::Cube() }, glm::identity<glm::mat4>());
+			return cube;
+		}
+		void SetModelMatrix(const glm::mat4& m)
+		{
+			modelMatrix = m;
+		}
+		std::vector<Mesh>& Meshes()
+		{
+			return meshes;
+		}
 	private:
 		std::vector<Mesh> meshes;
 		glm::mat4 modelMatrix;
 	};
+
+	using ModelIterator = std::function<void(std::function<void(Model&)>)>;
 }

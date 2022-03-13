@@ -1,22 +1,17 @@
 #include "RenderingSystem.h"
 
 namespace Nork{
-	std::vector<Renderer::Model> RenderingSystem::GetModels(entt::registry& reg)
+	Renderer::ModelIterator ModelIterator(entt::registry& reg)
 	{
-		std::vector<Renderer::Model> result;
-
-		auto view = reg.view<Components::Model, Components::Transform>();
-		result.reserve(view.size_hint());
-
-		for (auto& id : view)
+		auto iterator = [&](auto func)
 		{
-			auto& model = view.get(id)._Myfirst._Val;
-			auto& tr = view.get(id)._Get_rest()._Myfirst._Val;
-
-			result.push_back(Renderer::Model{ .meshes = model.meshes, .modelMatrix = tr.GetModelMatrix() });
-		}
-
-		return result;
+			reg.view<Components::Drawable>()
+				.each([&](auto id, Components::Drawable& dr)
+				{
+					func(dr.model);
+				});
+		};
+		return iterator;
 	}
 	RenderingSystem& RenderingSystem::Init()
 	{
@@ -56,17 +51,12 @@ namespace Nork{
 	}
 	void RenderingSystem::UpdateLights(entt::registry& reg)
 	{
-		auto dLightsWS = reg.view<Components::DirLight, Components::DirShadow>();
-		auto pLightsWS = reg.view<Components::PointLight, Components::PointShadow>();
-		auto dLights = reg.view<Components::DirLight>(entt::exclude<Components::DirShadow>);
-		auto pLights = reg.view<Components::PointLight>(entt::exclude<Components::PointShadow>);
+		using namespace Components;
+		auto dLightsWS = reg.view<DirLight, DirShadow>();
+		auto pLightsWS = reg.view<PointLight, PointShadow>();
+		auto dLights = reg.view<DirLight>(entt::exclude<DirShadow>);
+		auto pLights = reg.view<PointLight>(entt::exclude<PointShadow>);
 
-		auto modelView = reg.view<Components::Model, Components::Transform>();
-		std::vector<Renderer::Model> models;
-		for (auto& id : modelView)
-		{
-			models.push_back(Renderer::Model{ .meshes = modelView.get(id)._Myfirst._Val.meshes, .modelMatrix = modelView.get(id)._Get_rest()._Myfirst._Val.GetModelMatrix() });
-		}
 		// ---------------------------
 		auto& lights = lightStateSyncher.GetLightState();
 		lights.ClearAll();
@@ -78,7 +68,7 @@ namespace Nork{
 			lights.dirLights.push_back(light);
 			lights.dirShadows.push_back(shadow);
 
-			Renderer::ShadowMapRenderer::RenderDirLightShadowMap(light, shadow, models, *dShadowFramebuffers[shadow.idx], *Shaders::dShadowShader);
+			Renderer::ShadowMapRenderer::RenderDirLightShadowMap(light, shadow, ModelIterator(reg), *dShadowFramebuffers[shadow.idx], *Shaders::dShadowShader);
 			Renderer::ShadowMapRenderer::BindDirShadowMap(shadow, *dShadowFramebuffers[shadow.idx]);
 		}
 		for (auto& id : pLightsWS)
@@ -89,7 +79,7 @@ namespace Nork{
 			lights.pointLights.push_back(light);
 			lights.pointShadows.push_back(shadow);
 
-			Renderer::ShadowMapRenderer::RenderPointLightShadowMap(light, shadow, models, *pShadowFramebuffers[shadow.idx], *Shaders::pShadowShader);
+			Renderer::ShadowMapRenderer::RenderPointLightShadowMap(light, shadow, ModelIterator(reg), *pShadowFramebuffers[shadow.idx], *Shaders::pShadowShader);
 			Renderer::ShadowMapRenderer::BindPointShadowMap(shadow, *pShadowFramebuffers[shadow.idx]);
 		}
 		for (auto& id : dLights)
@@ -135,30 +125,28 @@ namespace Nork{
 	}
 	void RenderingSystem::SyncComponents(entt::registry& reg)
 	{
-		auto pls = reg.view<Components::Transform, Components::PointLight>();
-
-		for (auto& id : pls)
-		{
-			auto& tr = pls.get(id)._Myfirst._Val;
-			auto& pl = pls.get(id)._Get_rest()._Myfirst._Val;
-
-			pl.GetMutableData().position = tr.position;
-		}
+		using namespace Components;
+		reg.view<PointLight, Transform>().each([](auto id, PointLight& pl, Transform& tr)
+			{
+				pl.GetMutableData().position = tr.position;
+			});
+		reg.view<Drawable, Transform>().each([](auto id, Drawable& dr, Transform& tr)
+			{
+				dr.model.SetModelMatrix(tr.GetModelMatrix());
+			});
 	}
-	void RenderingSystem::RenderScene(std::span<Renderer::Model> models)
+	void RenderingSystem::RenderScene(entt::registry& reg)
 	{
-		Renderer::DeferredPipeline::GeometryPass(*gFb, *Shaders::gPassShader, models);
+		Renderer::DeferredPipeline::GeometryPass(*gFb, *Shaders::gPassShader, ModelIterator(reg));
 		Renderer::DeferredPipeline::LightPass(*gFb, *lFb, *Shaders::lPassShader);
 	}
 	void RenderingSystem::Update(Scene& scene)
 	{
-		auto models = GetModels(scene.registry);
-
 		SyncComponents(scene.registry);
 		auto& cam = scene.GetMainCamera();
 		ViewProjectionUpdate(cam);
 		UpdateLights(scene.registry);
-		RenderScene(models);
+		RenderScene(scene.registry);
 
 		Renderer::Framebuffer::BindDefault();
 	}

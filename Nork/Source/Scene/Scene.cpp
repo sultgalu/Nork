@@ -15,7 +15,7 @@ namespace Nork
 	template<> static constexpr size_t componentId<PointShadow> = 4;
 	template<> static constexpr size_t componentId<Kinematic> = 5;
 	template<> static constexpr size_t componentId<Tag> = 6;
-	template<> static constexpr size_t componentId<Model> = 7;
+	template<> static constexpr size_t componentId<Drawable> = 7;
 
 	template<class... Components>
 	struct SerializationRegistry
@@ -25,7 +25,7 @@ namespace Nork
 	};
 	using SerializationFactory =
 		SerializationRegistry<Transform, DirLight, PointLight,
-		DirShadow, PointShadow, Kinematic, Tag, Model>;
+		DirShadow, PointShadow, Kinematic, Tag, Drawable>;
 
 	using Serializer = SerializationFactory::BinarySerializer;
 	using Deserializer = SerializationFactory::BinaryDeserializer;

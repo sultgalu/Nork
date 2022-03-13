@@ -109,12 +109,11 @@ namespace Nork {
 	class RenderingSystem
 	{
 	public:
-		static std::vector<Renderer::Model> GetModels(entt::registry& reg);
 		RenderingSystem& Init();
 		void UpdateLights(entt::registry& reg);
 		void ViewProjectionUpdate(Components::Camera& camera);
 		void SyncComponents(entt::registry& reg);
-		void RenderScene(std::span<Renderer::Model> models);
+		void RenderScene(entt::registry& reg);
 		void Update(Scene& scene);
 	public:
 		Renderer::LightStateSynchronizer lightStateSyncher;

@@ -35,7 +35,7 @@ int main()
 	auto dummyNode = engine.scene.CreateNode();
 	dummyNode->GetEntity().AddComponent<Components::Tag>().tag = "DUMMY";
 	auto dummyChildNode = engine.scene.CreateNode(*dummyNode);
-	dummyChildNode->GetEntity().AddModel();
+	dummyChildNode->GetEntity().AddComponent<Components::Drawable>();
 	dummyChildNode->GetEntity().AddComponent<Components::Tag>().tag = "CHILD";
 	dummyChildNode->GetEntity().AddComponent<Components::Transform>();
 
@@ -51,7 +51,7 @@ int main()
 			for (int k = start; k < end; k++)
 			{
 				auto ent = engine.scene.CreateNode()->GetEntity();
-				ent.AddModel();
+				ent.AddComponent<Components::Drawable>();
 				ent.AddComponent<Components::Transform>().position = glm::vec3(i * sep, j * sep, k * sep);
 				ent.AddComponent<Components::Kinematic>().mass = 0.1f;
 				ent.AddComponent<Polygon>();
@@ -67,7 +67,7 @@ int main()
 
 	glm::vec3 scale = glm::vec3(100, 1, 100);
 	auto ground = engine.scene.CreateNode()->GetEntity();
-	ground.AddModel();
+	ground.AddComponent<Components::Drawable>();
 	auto& tr = ground.AddComponent<Components::Transform>();
 	tr.position = glm::vec3(0, -10, 0);
 	tr.scale = scale;

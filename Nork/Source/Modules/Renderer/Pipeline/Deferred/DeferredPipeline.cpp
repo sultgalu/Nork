@@ -3,7 +3,7 @@
 
 namespace Nork::Renderer {
 
-	void DeferredPipeline::GeometryPass(GeometryFramebuffer& geometryFb, Shader& shader, std::span<Model> models)
+	void DeferredPipeline::GeometryPass(GeometryFramebuffer& geometryFb, Shader& shader, ModelIterator iterator)
 	{
 		geometryFb.Bind().SetViewport().Clear();
 		shader.Use();
@@ -11,10 +11,11 @@ namespace Nork::Renderer {
 		Capabilities()
 			.Enable().DepthTest().CullFace()
 			.Disable().Blend();
-		for (size_t i = 0; i < models.size(); i++)
-		{
-			models[i].Draw(shader);
-		}
+
+		iterator([&](Model& model)
+			{
+				model.Draw(shader);
+			});
 	}
 	void DeferredPipeline::LightPass(GeometryFramebuffer& geometryFb, LightFramebuffer& lightFb, Shader& shader)
 	{

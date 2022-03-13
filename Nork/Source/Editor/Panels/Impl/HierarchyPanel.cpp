@@ -36,6 +36,16 @@ namespace Nork::Editor {
 			data.selectedNode = &node;
 			ImGui::OpenPopup("entRightClick");
 		}
+		if (ImGui::BeginPopup("entRightClick"))
+		{
+			if (ImGui::Selectable("Delete"))
+			{
+				data.engine.scene.DeleteNode(*data.selectedNode);
+				data.selectedNode = nullptr;
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
 		if (open)
 		{
 			for (auto& child : node.GetChildren())
@@ -53,17 +63,6 @@ void Nork::Editor::HierarchyPanel::DrawContent()
 {
 	RecursiveDraw(data, data.engine.scene.root);
 
-	if (ImGui::BeginPopup("entRightClick"))
-	{
-		if (ImGui::Selectable("Delete"))
-		{
-			data.engine.scene.DeleteNode(*data.selectedNode);
-			data.selectedNode = nullptr;
-			ImGui::CloseCurrentPopup();
-		}
-		ImGui::EndPopup();
-	}
-
 	ImGui::Separator();
 
 	if (ImGui::Button("Add new"))
@@ -73,7 +72,7 @@ void Nork::Editor::HierarchyPanel::DrawContent()
 		name = std::string("ent #" + std::to_string(static_cast<int>(newEnt)));
 		reg.emplace<Components::Transform>(newEnt);
 	}
-	ImGui::SetCursorPosY(ImGui::GetWindowContentRegionMax().y - ImGui::GetTextLineHeight());
+	//ImGui::SetCursorPosY(ImGui::GetWindowContentRegionMax().y - ImGui::GetTextLineHeight());
 	if (ImGui::Button("Reset to empty"))
 	{
 		ImGui::OpenPopup("SceneResetPopup");

@@ -218,7 +218,7 @@
     <ClInclude Include="Source\Core\Engine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Components\Model.h">
+    <ClInclude Include="Source\Components\Drawable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Components\All.h">

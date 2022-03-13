@@ -11,7 +11,7 @@ namespace Nork::Renderer {
 	class ShadowMapRenderer
 	{
 	public:
-		static void RenderPointLightShadowMap(const PointLight& light, const PointShadow& shadow, const std::span<Model> models, Framebuffer& fb, Shader& shader)
+		static void RenderPointLightShadowMap(const PointLight& light, const PointShadow& shadow, ModelIterator iterator, Framebuffer& fb, Shader& shader)
 		{
 			fb.Bind().SetViewport().Clear();
 			shader.Use();
@@ -39,22 +39,24 @@ namespace Nork::Renderer {
 			
 			Capabilities()
 				.Enable().DepthTest().CullFace();
-			for (size_t i = 0; i < models.size(); i++)
-			{
-				models[i].DrawTextureless(shader);
-			}
+
+			iterator([&](Model& model)
+				{
+					model.DrawTextureless(shader);
+				});
 		}
-		static void RenderDirLightShadowMap(const DirLight& light, const DirShadow& shadow, const std::span<Model> models, Framebuffer& fb, Shader& shader)
+		static void RenderDirLightShadowMap(const DirLight& light, const DirShadow& shadow, ModelIterator iterator, Framebuffer& fb, Shader& shader)
 		{
 			fb.Bind().SetViewport().Clear();
 			shader.Use().SetMat4("VP", shadow.VP);
 
 			Capabilities()
 				.Enable().DepthTest().CullFace();
-			for (size_t i = 0; i < models.size(); i++)
-			{
-				models[i].DrawTextureless(shader);
-			}
+
+			iterator([&](Model& model)
+				{
+					model.DrawTextureless(shader);
+				});
 		}
 		static void BindDirShadowMap(const DirShadow& shadow, Framebuffer& fb)
 		{

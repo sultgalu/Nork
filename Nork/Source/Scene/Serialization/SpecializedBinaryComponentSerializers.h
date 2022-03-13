@@ -23,7 +23,7 @@ namespace Nork
 	}
 
 	template<>
-	inline void BinaryComponentSerializer<Model>::operator<<(Model& model)
+	inline void BinaryComponentSerializer<Drawable>::operator<<(Drawable& model)
 	{
 		std::string src = "";
 		Logger::Info("Serializing model with source path: ", src);
@@ -32,7 +32,7 @@ namespace Nork
 		writer << src;
 	}
 	template<>
-	inline void BinaryComponentDeserializer<Model>::operator>>(Model& model)
+	inline void BinaryComponentDeserializer<Drawable>::operator>>(Drawable& model)
 	{
 		std::abort();
 		size_t size;

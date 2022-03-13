@@ -13,7 +13,7 @@ namespace Nork::Renderer {
 	class DeferredPipeline
 	{
 	public:
-		static void GeometryPass(GeometryFramebuffer& geometryFb, Shader& shader, std::span<Model> models);
+		static void GeometryPass(GeometryFramebuffer& geometryFb, Shader& shader, ModelIterator iterator);
 		static void LightPass(GeometryFramebuffer& geometryFb, LightFramebuffer& lightFb, Shader& shader);
 	};
 }
