@@ -14,7 +14,7 @@ namespace Nork
 	void Engine::OnDShadowAdded(entt::registry& reg, entt::entity id)
 	{
 		auto& shad = reg.get<Components::DirShadow>(id);
-		shad.GetMutableData().idx = dShadowIndices.back();
+		shad.idx = dShadowIndices.back();
 		dShadowIndices.pop_back();
 
 		// should handle it elsewhere
@@ -25,7 +25,7 @@ namespace Nork
 	void Engine::OnDShadowRemoved(entt::registry& reg, entt::entity id)
 	{
 		auto& shad = reg.get<Components::DirShadow>(id);
-		dShadowIndices.push_back(shad.GetData().idx);
+		dShadowIndices.push_back(shad.idx);
 	}
 
 	Engine::Engine(EngineConfig config) : 
@@ -57,7 +57,7 @@ namespace Nork
 			sender.Send(RenderUpdateEvent());
 			
 			renderingSystem.Update(scene);
-			PhysicsUpdate(); // NEW
+			// PhysicsUpdate(); // NEW
 
 			sender.Send(RenderUpdatedEvent());
 			Profiler::Clear();

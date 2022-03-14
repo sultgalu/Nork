@@ -12,7 +12,7 @@ namespace Nork::Editor
 		: Nork::Editor::Panel(std::format("Viewport#{}", viewportCounter++), d),
 		mouseState(MouseState{}), image(ImageConfig{}),
 		camContr(CameraController(events, 
-			data.engine.scene.GetMainCamera()))
+			data.engine.scene))
 	{
 		uint8_t texData[3] = { 128, 228 , 0 }; 
 		defaultTex = Renderer::TextureBuilder()

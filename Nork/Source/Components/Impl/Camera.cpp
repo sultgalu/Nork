@@ -80,6 +80,14 @@ namespace Nork::Components
 		this->UpdateViewProjection();
 	}
 
+	void Camera::Update()
+	{
+		UpdateFrontRight();
+		UpdateView();
+		UpdateProjection();
+		UpdateViewProjection();
+	}
+
 	void Camera::SetRotation(float pitch, float yaw)
 	{
 		this->pitch = pitch;

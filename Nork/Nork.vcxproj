@@ -203,13 +203,16 @@
     <ClInclude Include="Source\Modules\Renderer\Pipeline\ShadowMapRenderer.h" />
     <ClInclude Include="Source\Modules\Renderer\State\Capabilities.h" />
     <ClInclude Include="Source\Modules\Renderer\Window\Window.h" />
+    <ClInclude Include="Source\Modules\Serialization\Json.h" />
     <ClInclude Include="Source\Scene\Entity.h" />
     <ClInclude Include="Source\Scene\SceneNode.h" />
     <ClInclude Include="Source\Scene\Serialization\BinaryComponentSerializer.h" />
     <ClInclude Include="Source\Scene\Serialization\BinaryReader.h">
       <FileType>CppCode</FileType>
     </ClInclude>
+    <ClCompile Include="Source\Modules\Serialization\Json.cpp" />
     <ClCompile Include="Source\Scene\SceneNode.cpp" />
+    <ClCompile Include="Source\Scene\Serialization\JsonSerializer.cpp" />
     <ClCompile Include="Source\Utils\Profiler.cpp" />
     <ClInclude Include="Source\Scene\Serialization\BinaryWriter.h" />
     <ClInclude Include="Source\Modules\Physics\Config.h" />
@@ -338,6 +341,7 @@
     <ClInclude Include="Source\Core\Engine.h" />
     <ClInclude Include="Source\Core\CameraController.h" />
     <ClInclude Include="Source\Core\InputState.h" />
+    <ClInclude Include="Source\Scene\Serialization\JsonSerializer.h" />
     <ClInclude Include="Source\Utils\Input.h" />
     <ClInclude Include="Source\Components\Camera.h" />
     <ClInclude Include="Source\Components\Common.h" />

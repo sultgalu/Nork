@@ -178,7 +178,7 @@ namespace Nork::Editor
 	{
 		if (ImGui::TreeNodeEx("PLight", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			if (ImGui::ColorEdit4("Color##PlIght", (float*)&(pL->GetMutableData().color.r))) {}
+			if (ImGui::ColorEdit4("Color##PlIght", (float*)&(pL->color.r))) {}
 			int pow = pL->GetPower();
 			if (ImGui::DragInt("Intensity", &(pow), 1, 0, PointLight::maxPower))
 				pL->SetIntensity(pow);
@@ -206,14 +206,14 @@ namespace Nork::Editor
 				// else
 				// 	data.engine.pipeline.data.skyboxTex = saved;
 			}
-			if (ImGui::DragFloat2("Far, Near", &comp->GetMutableData().far, 0.001f, 0, 0, "%.3f"))
+			if (ImGui::DragFloat2("Far, Near", &comp->far, 0.001f, 0, 0, "%.3f"))
 			{
 				//comp->RecalcVP(dl->GetView());
 			}
-			float bias = comp->GetData().bias;
-			float biasMin = comp->GetData().biasMin;
-			int blur = (int)comp->GetData().blur;
-			float rad = comp->GetData().radius;
+			float bias = comp->bias;
+			float biasMin = comp->biasMin;
+			int blur = (int)comp->blur;
+			float rad = comp->radius;
 			if (ImGui::SliderFloat("Bias", &bias, 0, 1, "%.5f", ImGuiSliderFlags_Logarithmic))
 			{
 				comp->SetBias(bias);
@@ -230,7 +230,7 @@ namespace Nork::Editor
 			{
 				comp->SetRadius(rad);
 			}
-			if (ImGui::SliderInt("IDX", &comp->GetMutableData().idx, 0, 4));
+			if (ImGui::SliderInt("IDX", &comp->idx, 0, 4));
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 			if (ImGui::Button("Delete"))
 			{
@@ -245,13 +245,13 @@ namespace Nork::Editor
 	{
 		if (ImGui::TreeNodeEx("Directional light", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			if (ImGui::SliderFloat3("Direction", (float*)&(dL->GetMutableData().direction.x), -1, 1))
+			if (ImGui::SliderFloat3("Direction", (float*)&(dL->direction.x), -1, 1))
 			{
 				if (ds != nullptr)
 					ds->RecalcVP(dL->GetView());
 				// dL->SetDirection(std::forward<glm::vec3&>(glm::normalize(dL->GetData().direction)));
 			}
-			if (ImGui::ColorEdit4("Color", &(dL->GetMutableData().color.r))) {}
+			if (ImGui::ColorEdit4("Color", &(dL->color.r))) {}
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 			if (ImGui::Button("Delete"))
 			{
@@ -278,9 +278,9 @@ namespace Nork::Editor
 			{
 				comp->RecalcVP(dl->GetView());
 			}
-			float bias = comp->GetData().bias;
-			float biasMin = comp->GetData().biasMin;
-			int pcfSize = (int)comp->GetData().pcfSize;
+			float bias = comp->bias;
+			float biasMin = comp->biasMin;
+			int pcfSize = (int)comp->pcfSize;
 			if (ImGui::SliderFloat("Bias", &bias, 0, 1, "%.5f", ImGuiSliderFlags_Logarithmic))
 			{
 				comp->SetBias(bias);
@@ -293,7 +293,7 @@ namespace Nork::Editor
 			{
 				comp->SetPcfSize(pcfSize);
 			}
-			if (ImGui::SliderInt("IDX", &comp->GetMutableData().idx, 0, 4));
+			if (ImGui::SliderInt("IDX", &comp->idx, 0, 4));
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 			if (ImGui::Button("Delete"))
 			{

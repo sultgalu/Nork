@@ -2,14 +2,15 @@
 
 #include "Core/InputState.h"
 #include "Components/Camera.h"
+#include "Scene/Scene.h"
 
 namespace Nork
 {
 	class CameraController
 	{
 	public:
-		CameraController(Receiver& receiver, Components::Camera& cam)
-			: camera(cam)
+		CameraController(Receiver& receiver, Scene& scene)
+			: scene(scene)
 		{
 			SetupInputHandling(receiver);
 		}
@@ -19,6 +20,6 @@ namespace Nork
 		void HandleScroll(const MouseScrollEvent& event);
 		void HandleMouseMove(const MouseMoveEvent& event);
 	public:
-		Components::Camera& camera;
+		Scene& scene;
 	};
 }

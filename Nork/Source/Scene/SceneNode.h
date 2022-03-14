@@ -10,12 +10,8 @@ namespace Nork {
 		SceneNode(Entity entity, SceneNode& parent)
 			: parent(&parent), entity(entity)
 		{}
-		static SceneNode CreateRoot(Entity entity)
-		{
-			SceneNode root(entity);
-			root.parent = nullptr;
-			return root;
-		}
+		SceneNode(Entity entity) : entity(entity), parent(nullptr)
+		{}
 
 		std::shared_ptr<SceneNode> AddChild(Entity entity);
 		void AddChild(std::shared_ptr<SceneNode> node);
@@ -33,9 +29,6 @@ namespace Nork {
 		SceneNode& GetParent() const { return *parent; }
 		const std::vector<std::shared_ptr<SceneNode>>& GetChildren() const { return children; }
 		std::vector<std::shared_ptr<SceneNode>>& GetChildren() { return children; }
-	private:
-		SceneNode(Entity entity) : entity(entity)
-		{}
 	private:
 		Entity entity;
 		SceneNode* parent;

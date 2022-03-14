@@ -30,19 +30,24 @@ namespace Nork {
 			return registry.try_get<T>(id);
 		}
 		template<class T>
-		inline const T& GetComponent() const
-		{
-			return registry.get<T>(id);
-		}
-		template<class T>
 		inline const T* TryGetComponent() const
 		{
 			return registry.try_get<T>(id);
+		}
+		template<class T>
+		inline const T& GetComponent() const
+		{
+			return registry.get<T>(id);
 		}
 		template<class... T>
 		inline bool HasAnyComponentsOf() const
 		{
 			return registry.any_of<T...>(id);
+		}
+		template<class T>
+		inline bool HasComponent() const
+		{
+			return registry.any_of<T>(id);
 		}
 		template<class... T>
 		inline bool HasAllComponentsOf() const

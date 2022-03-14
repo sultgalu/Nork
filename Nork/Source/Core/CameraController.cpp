@@ -9,6 +9,7 @@ namespace Nork
 		using enum Components::Camera::Direction;
 
 		auto& input = Application::Get().inputState;
+		auto& camera = scene.GetMainCamera();
 
 		if (input.Is(Key::W, KeyState::Down))
 		{
@@ -39,7 +40,7 @@ namespace Nork
 	}
 	void CameraController::HandleScroll(const MouseScrollEvent& event)
 	{
-		camera.Zoom(event.offset);
+		scene.GetMainCamera().Zoom(event.offset);
 	}
 	void CameraController::HandleMouseMove(const MouseMoveEvent& event)
 	{
@@ -52,7 +53,7 @@ namespace Nork
 		auto& input = Application::Get().inputState;
 		if (input.Is(MouseButton::Left, MouseButtonState::Down))
 		{
-			camera.Rotate(-offsY, offsX);
+			scene.GetMainCamera().Rotate(-offsY, offsX);
 		}
 		x = event.offsetX;
 		y = event.offsetY;

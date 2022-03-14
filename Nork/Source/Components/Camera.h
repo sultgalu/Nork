@@ -17,19 +17,12 @@ namespace Nork::Components
 
 		Camera() : Camera(45.0f, 1920.f / 1080.f, 0.1f, 1000.0f) {}
 		Camera(float fieldOfViewDegrees, float aspectRatio, float nearClip, float farClip);
-		// float GetYaw() { return yaw; }
-		// glm::vec3 GetFront() { return front; }
-		// glm::vec3 GetPosition() { return position; }
-		// glm::mat4 GetView() { return view; }
-		// glm::mat4 GetProjection() { return projection; }
-		// float GetSpeed() { return moveSpeed; }
 		void Move(Direction direction, float delta);
 		void Zoom(float delta);
 		void Rotate(float deltaPitch, float deltaYaw);
 		void SetRotation(float pitch, float yaw);
 		void SetPosition(glm::vec3 pos);
-	public:
-		//inline const glm::mat4& GetViewProjection() const { return this->viewProjection; } 
+		void Update();
 	public:
 		float FOV, ratio, nearClip, farClip;
 		float pitch = 0.0f, yaw = 0.0f, moveSpeed = 0.01f, zoomSpeed = 0.1f, rotationSpeed = 0.1f;

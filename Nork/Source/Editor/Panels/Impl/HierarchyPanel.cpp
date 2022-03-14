@@ -44,6 +44,14 @@ namespace Nork::Editor {
 				data.selectedNode = nullptr;
 				ImGui::CloseCurrentPopup();
 			}
+			if (ImGui::Selectable("Orphan"))
+			{
+				while (!data.selectedNode->GetChildren().empty())
+				{
+					data.engine.scene.DeleteNode(*data.selectedNode->GetChildren().front());
+				}
+				ImGui::CloseCurrentPopup();
+			}
 			ImGui::EndPopup();
 		}
 		if (open)
@@ -61,7 +69,7 @@ namespace Nork::Editor {
 
 void Nork::Editor::HierarchyPanel::DrawContent()
 {
-	RecursiveDraw(data, data.engine.scene.root);
+	RecursiveDraw(data, *data.engine.scene.root);
 
 	ImGui::Separator();
 

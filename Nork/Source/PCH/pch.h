@@ -65,7 +65,7 @@
 
 #include <glfw/glfw3.h>
 
-////-----------------EDITOR-----------------------
+////-----------------IMGUI-----------------------
 
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
@@ -82,6 +82,5 @@
 //--------------OURS----------------
 
 #include "Utils/Logger.h"
-#include "Utils/Timer.h"
 #include "Utils/Template.h"
 #include "Utils/Profiler.h"

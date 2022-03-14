@@ -1,70 +1,58 @@
 #include "pch.h"
 #include "Scene.h"
 #include "Serialization/BinarySerializer.h"
+#include "Serialization/JsonSerializer.h"
 
 namespace fs = std::filesystem;
 
 namespace Nork
 {
-	using namespace Components;
-
-	template<> static constexpr size_t componentId<Transform> = 0;
-	template<> static constexpr size_t componentId<DirLight> = 1;
-	template<> static constexpr size_t componentId<PointLight> = 2;
-	template<> static constexpr size_t componentId<DirShadow> = 3;
-	template<> static constexpr size_t componentId<PointShadow> = 4;
-	template<> static constexpr size_t componentId<Kinematic> = 5;
-	template<> static constexpr size_t componentId<Tag> = 6;
-	template<> static constexpr size_t componentId<Drawable> = 7;
-
-	template<class... Components>
-	struct SerializationRegistry
-	{
-		using BinarySerializer = BinarySerializer<Components...>;
-		using BinaryDeserializer = BinaryDeserializer<Components...>;
-	};
-	using SerializationFactory =
-		SerializationRegistry<Transform, DirLight, PointLight,
-		DirShadow, PointShadow, Kinematic, Tag, Drawable>;
-
-	using Serializer = SerializationFactory::BinarySerializer;
-	using Deserializer = SerializationFactory::BinaryDeserializer;
-}
-
-namespace Nork
-{
 	void Scene::Save(std::string path)
 	{
-		std::ofstream stream(path, std::ios::binary);
+		std::ofstream stream(path, std::ios::out);
 		
-		auto vec = Serializer(registry, *this).Serialize();
-		stream.write(vec.data(), vec.size());
-		stream.close();
+		try
+		{
+			stream << JsonSerializer(registry).Serialize(*root);
+		} catch (std::exception e)
+		{
+			Logger::Error(e.what());
+		}
 	}
 	void Scene::Load(std::string path)
 	{
 		registry = entt::registry();
-		std::ifstream stream(path, std::ios::binary | std::ios::ate);
 		
-		size_t size = stream.tellg();
-		stream.seekg(0, std::ios_base::beg);
-		std::vector<char> buf(size, '\0');
-		stream.read(buf.data(), size);
-		Deserializer(registry, *this, std::span(buf)).Deserialize();
+		std::ifstream ifs(path, std::ios::in);
+		try
+		{
+			std::stringstream ss;
+			ss << ifs.rdbuf();
+			ifs.close();
+			root = JsonSerializer(registry).Deserialize(ss.str());
+			// std::ofstream stream("tempmppmppmpm.json", std::ios::out);
+			// try
+			// {
+			// 	stream << JsonSerializer(registry).Serialize(*root);
+			// } catch (std::exception e)
+			// {
+			// 	Logger::Error(e.what());
+			// }
+		} catch (std::exception e)
+		{
+			Logger::Error(e.what());
+		}
 		
-		stream.close();
 	}
 	Scene::Scene() 
-		: registry(), root(SceneNode::CreateRoot(Entity(registry.create(), registry)))
+		: registry(), root(std::make_shared<SceneNode>(SceneNode(Entity(registry.create(), registry))))
 	{
-		mainCameraNode = CreateNode();
-		mainCameraNode->GetEntity().AddComponent<Components::Camera>();
-		root.GetEntity().AddComponent<Components::Tag>().tag = "root";
+		root->GetEntity().AddComponent<Components::Tag>().tag = "root";
 	}
 	std::shared_ptr<SceneNode> Scene::CreateNode()
 	{
 		Entity entity(registry.create(), registry);
-		return root.AddChild(entity);
+		return root->AddChild(entity);
 	}
 	std::shared_ptr<SceneNode> Scene::CreateNode(SceneNode& parent)
 	{
@@ -79,5 +67,18 @@ namespace Nork
 		}
 		registry.destroy(node.GetEntity().Id());
 		node.GetParent().RemoveChild(node);
+	}
+	Components::Camera& Scene::GetMainCamera()
+	{
+		for (auto [id, cam, tag] : registry.view<Components::Camera, Components::Tag>().each())
+		{
+			if (tag.tag == "Main Camera")
+				return cam;
+		}
+
+		auto mainCameraNode = CreateNode();
+		auto cam = mainCameraNode->GetEntity().AddComponent<Components::Camera>();
+		mainCameraNode->GetEntity().AddComponent<Components::Tag>().tag = "Main Camera";
+		return cam;
 	}
 }

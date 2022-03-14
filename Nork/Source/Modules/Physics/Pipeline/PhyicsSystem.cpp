@@ -411,7 +411,7 @@ namespace Nork::Physics
 		deltas.clear();
 		Timer t;
 		collisionDetector->UpdateTransforms(translate, quaternions);
-		deltas.push_back(std::pair("Update Transformss", t.Elapsed()));
+		deltas.push_back(std::pair("Update Transforms", t.Elapsed()));
 	}
 
 	void System::VelocityUpdate(float delta)

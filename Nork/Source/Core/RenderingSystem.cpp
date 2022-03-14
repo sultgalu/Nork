@@ -5,11 +5,10 @@ namespace Nork{
 	{
 		auto iterator = [&](auto func)
 		{
-			reg.view<Components::Drawable>()
-				.each([&](auto id, Components::Drawable& dr)
-				{
-					func(dr.model);
-				});
+			for (auto [id, dr] : reg.view<Components::Drawable>().each())
+			{
+				func(dr.model);
+			}
 		};
 		return iterator;
 	}
@@ -63,8 +62,8 @@ namespace Nork{
 
 		for (auto& id : dLightsWS)
 		{
-			const auto& light = dLightsWS.get(id)._Myfirst._Val.GetData();
-			const auto& shadow = dLightsWS.get(id)._Get_rest()._Myfirst._Val.GetData();
+			const auto& light = dLightsWS.get(id)._Myfirst._Val;
+			const auto& shadow = dLightsWS.get(id)._Get_rest()._Myfirst._Val;
 			lights.dirLights.push_back(light);
 			lights.dirShadows.push_back(shadow);
 
@@ -73,8 +72,8 @@ namespace Nork{
 		}
 		for (auto& id : pLightsWS)
 		{
-			auto& light = pLightsWS.get(id)._Myfirst._Val.GetData();
-			auto& shadow = pLightsWS.get(id)._Get_rest()._Myfirst._Val.GetData();
+			auto& light = pLightsWS.get(id)._Myfirst._Val;
+			auto& shadow = pLightsWS.get(id)._Get_rest()._Myfirst._Val;
 
 			lights.pointLights.push_back(light);
 			lights.pointShadows.push_back(shadow);
@@ -84,11 +83,11 @@ namespace Nork{
 		}
 		for (auto& id : dLights)
 		{
-			lights.dirLights.push_back(dLights.get(id)._Myfirst._Val.GetData());
+			lights.dirLights.push_back(dLights.get(id)._Myfirst._Val);
 		}
 		for (auto& id : pLights)
 		{
-			lights.pointLights.push_back(pLights.get(id)._Myfirst._Val.GetData());
+			lights.pointLights.push_back(pLights.get(id)._Myfirst._Val);
 		}
 		lightStateSyncher.Synchronize();
 	}
@@ -126,14 +125,14 @@ namespace Nork{
 	void RenderingSystem::SyncComponents(entt::registry& reg)
 	{
 		using namespace Components;
-		reg.view<PointLight, Transform>().each([](auto id, PointLight& pl, Transform& tr)
-			{
-				pl.GetMutableData().position = tr.position;
-			});
-		reg.view<Drawable, Transform>().each([](auto id, Drawable& dr, Transform& tr)
-			{
-				dr.model.SetModelMatrix(tr.GetModelMatrix());
-			});
+		for (auto [id, pl, tr] : reg.view<PointLight, Transform>().each())
+		{
+			pl.position = tr.position;
+		}
+		for (auto [id, dr, tr] : reg.view<Drawable, Transform>().each())
+		{
+			dr.model.SetModelMatrix(tr.GetModelMatrix());
+		}
 	}
 	void RenderingSystem::RenderScene(entt::registry& reg)
 	{

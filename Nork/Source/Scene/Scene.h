@@ -18,13 +18,10 @@ namespace Nork
 		{
 			registry = entt::registry();
 		}
-		inline Components::Camera& GetMainCamera()
-		{
-			return mainCameraNode->GetEntity().GetComponent<Components::Camera>();
-		}
+		Components::Camera& GetMainCamera();
 	public:
 		entt::registry registry;
-		SceneNode root;
-		std::shared_ptr<SceneNode> mainCameraNode;
+		std::shared_ptr<SceneNode> root;
+		// std::weak_ptr<SceneNode> mainCameraNode;
 	};
 }
