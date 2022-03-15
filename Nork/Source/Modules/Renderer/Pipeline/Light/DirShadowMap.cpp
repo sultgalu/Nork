@@ -1,10 +1,20 @@
 #include "pch.h"
 #include "DirShadowMap.h"
-#include "../State/Capabilities.h"
-#include "../Config.h"
+#include "../../State/Capabilities.h"
+#include "../../Config.h"
+#include "../../Objects/Texture/TextureBuilder.h"
+#include "../../Objects/Framebuffer/FramebufferBuilder.h"
 
 namespace Nork::Renderer {
-
+	DirShadowMap::DirShadowMap(std::shared_ptr<Shader> shader, uint32_t width, uint32_t height, TextureFormat depthFormat)
+		: shader(shader)
+	{
+		auto depth = TextureBuilder()
+			.Params(TextureParams::FramebufferTex2DParams())
+			.Attributes(TextureAttributes{ .width = width, .height = height, .format = depthFormat })
+			.Create2DEmpty();
+		framebuffer = FramebufferBuilder().Attachments(FramebufferAttachments().Depth(depth)).Create();
+	}
 	void DirShadowMap::Render(const DirLight& light, const DirShadow& shadow, ModelIterator iterator)
 	{
 		framebuffer->Bind().SetViewport().Clear();

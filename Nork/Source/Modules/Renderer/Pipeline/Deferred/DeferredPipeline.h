@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../State/Capabilities.h"
-#include "../../Objects/Framebuffer/Framebuffer.h"
+#include "../../Objects/Framebuffer/GeometryFramebuffer.h"
+#include "../../Objects/Framebuffer/LightFramebuffer.h"
 #include "../../Objects/Shader/Shader.h"
 #include "../../Model/Model.h"
 

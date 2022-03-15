@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Mesh.h"
+#include "../Objects/Shader/Shader.h"
 
 namespace Nork::Renderer {
 	class Model

@@ -1,14 +1,12 @@
 #pragma once
 
 #include "Scene/Scene.h"
-#include "Modules/Renderer/Objects/GLManager.h"
 #include "Modules/Renderer/Objects/Shader/Shader.h"
 #include "Modules/Renderer/Model/Model.h"
-#include "Modules/Renderer/Pipeline/LightStateSynchronizer.h"
-#include "Modules/Renderer/Pipeline/DirShadowMap.h"
-#include "Modules/Renderer/Pipeline/PointShadowMap.h"
+#include "Modules/Renderer/Pipeline/Light/LightState.h"
+#include "Modules/Renderer/Pipeline/Light/DirShadowMap.h"
+#include "Modules/Renderer/Pipeline/Light/PointShadowMap.h"
 #include "Modules/Renderer/Pipeline/Deferred/DeferredPipeline.h"
-#include "Components/All.h"
 
 namespace Nork {
 	
@@ -67,46 +65,11 @@ namespace Nork {
 			} while (true);
 			return shaderSrcs;
 		}
-		static std::shared_ptr<Renderer::Shader> InitShaderFromSource(std::string path)
-		{
-			return Renderer::ShaderBuilder().Sources(SplitShaders(GetFileContent(path))).Create();
-		}
+		static std::shared_ptr<Renderer::Shader> InitShaderFromSource(std::string path);
 	public:
-		Shaders()
-		{
-			SetLightPassShader(InitShaderFromSource("Source/Shaders/lightPass.shader"));
-			SetGeometryPassShader(InitShaderFromSource("Source/Shaders/gPass.shader"));
-			dShadowShader = InitShaderFromSource("Source/Shaders/dirShadMap.shader");
-			pShadowShader = InitShaderFromSource("Source/Shaders/pointShadMap.shader");
-			skyboxShader = InitShaderFromSource("Source/Shaders/skybox.shader");
-			pointShader = InitShaderFromSource("Source/Shaders/point.shader");
-			lineShader = InitShaderFromSource("Source/Shaders/line.shader");
-			textureShader = InitShaderFromSource("Source/Shaders/texture.shader");
-		}
-		void SetLightPassShader(std::shared_ptr<Renderer::Shader> shader)
-		{
-			lPassShader = shader;
-			lPassShader->Use()
-				.SetInt("gPos", 0)
-				.SetInt("gDiff", 1)
-				.SetInt("gNorm", 2)
-				.SetInt("gSpec", 3);
-
-			for (int i = 0; i < 5; i++)
-				lPassShader->SetInt("dirShadowMaps[" + std::to_string(i) + "]", i + 10);
-			for (int i = 0; i < 5; i++)
-				lPassShader->SetInt("pointShadowMaps[" + std::to_string(i) + "]", i + 15);
-		}
-		void SetGeometryPassShader(std::shared_ptr<Renderer::Shader> shader)
-		{
-			gPassShader = shader;
-			using enum Renderer::TextureMapType;
-			gPassShader->Use()
-				.SetInt("materialTex.diffuse", (int)Diffuse)
-				.SetInt("materialTex.normals", (int)Normal)
-				.SetInt("materialTex.roughness", (int)Roughness)
-				.SetInt("materialTex.reflect", (int)Reflection);
-		}
+		Shaders();
+		void SetLightPassShader(std::shared_ptr<Renderer::Shader> shader);
+		void SetGeometryPassShader(std::shared_ptr<Renderer::Shader> shader);
 		std::shared_ptr<Renderer::Shader> gPassShader, lPassShader,
 			dShadowShader, pShadowShader,
 			skyboxShader, textureShader,
@@ -135,7 +98,7 @@ namespace Nork {
 	public:
 		Shaders shaders;
 		Renderer::DeferredPipeline deferredPipeline;
-		Renderer::LightStateSynchronizer lightStateSyncher;
+		Renderer::LightState lightState;
 		std::array<std::shared_ptr<Renderer::DirShadowMap>, 5> dirShadowMaps;
 		std::array<std::shared_ptr<Renderer::PointShadowMap>, 5> pointShadowMaps;
 	};

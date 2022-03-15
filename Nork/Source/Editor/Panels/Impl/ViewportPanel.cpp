@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "../ViewportPanel.h"
-#include "Modules/Renderer/Objects/GLManager.h"
+#include "Modules/Renderer/Objects/Texture/TextureBuilder.h"
 #include "App/Application.h"
 
 namespace Nork::Editor

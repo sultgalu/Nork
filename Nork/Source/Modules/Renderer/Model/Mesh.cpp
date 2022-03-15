@@ -1,4 +1,7 @@
 #include "Mesh.h"
+#include "../Objects/Buffer/BufferBuilder.h"
+#include "../Objects/Texture/TextureBuilder.h"
+#include "../Objects/VertexArray/VertexArrayBuilder.h"
 
 namespace Nork::Renderer {
 	static std::shared_ptr<Texture2D> CreateTexture2D(TextureFormat format, std::vector<float> data)

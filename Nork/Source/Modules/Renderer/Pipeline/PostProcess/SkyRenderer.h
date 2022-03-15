@@ -11,14 +11,11 @@ namespace Nork::Renderer {
 	public:
 		static void RenderSkybox(TextureCube& texture, Shader& shader)
 		{
-			Capabilities::DepthTest().Enable();
-			Capabilities::DepthTest().SetFunc(DepthTestCap::Func::LessOrEqual);
+			Capabilities().Enable().DepthTest(DepthFunc::LessOrEqual);
 			texture.Bind();
 			shader.Use();
 
 			DrawUtils::DrawCube();
-
-			Capabilities::DepthTest().SetFunc(DepthTestCap::Func::LessOrEqual); // set back
 		}
 	};
 }

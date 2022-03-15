@@ -14,8 +14,8 @@ namespace Nork::Renderer {
 	class Shader : public GLObject
 	{
 	public:
-		Shader(GLuint handle)
-			: GLObject(handle)
+		Shader(GLuint handle, std::vector<ShaderType> types)
+			: GLObject(handle), shaderTypes(types)
 		{}
 		~Shader()
 		{
@@ -27,70 +27,57 @@ namespace Nork::Renderer {
 			glUseProgram(handle);
 			return *this;
 		}
-		Shader& GetUniformLocationAndSet(const char* name)
+		Shader& SetMat4(const char* name, const glm::mat4& value)
 		{
-			uniformLocations[name] = GetUniformLocation(name);
-			if (uniformLocations[name] == -1)
+			glUniformMatrix4fv(GetOrQueryUniformLocation(name), 1, false, (const GLfloat*)(&value));
+			return *this;
+		}
+		Shader& SetVec4(const char* name, const glm::vec4& value)
+		{
+			glUniform4f(GetOrQueryUniformLocation(name), value.x, value.y, value.z, value.w);
+			return *this;
+		}
+		Shader& SetVec2(const char* name, const glm::vec2& value)
+		{
+			glUniform2f(GetOrQueryUniformLocation(name), value.x, value.y);
+			return *this;
+		}
+		Shader& SetVec3(const char* name, const glm::vec3& value)
+		{
+			glUniform3f(GetOrQueryUniformLocation(name), value.x, value.y, value.z);
+			return *this;
+		}
+		Shader& SetFloat(const char* name, float value)
+		{
+			glUniform1f(GetOrQueryUniformLocation(name), value);
+			return *this;
+		}
+		Shader& SetInt(const char* name, int value)
+		{
+			glUniform1i(GetOrQueryUniformLocation(name), value);
+			return *this;
+		}
+		GLint GetOrQueryUniformLocation(const char* name)
+		{
+			auto loc = uniformLocations.find(name);
+			if (loc == uniformLocations.end())
+			{
+				return QueryAndSetUniformLocation(name);
+			}
+			return loc->second;
+		}
+		GLint QueryAndSetUniformLocation(const char* name)
+		{
+			auto loc = glGetUniformLocation(handle, name);
+			if (loc == -1)
 			{
 				Logger::Error("Couldn't find uniform location for ", name);
 			}
-			return *this;
+			uniformLocations[name] = loc;
+			return loc;
 		}
-		Shader& SetMat4(std::string name, const glm::mat4& value)
-		{
-			if (!uniformLocations.contains(name))
-			{
-				GetUniformLocationAndSet(name.c_str());
-			}
-			glUniformMatrix4fv(uniformLocations[name], 1, false, (const GLfloat*)(&value));
-			return *this;
-		}
-		Shader& SetVec4(std::string name, const glm::vec4& value)
-		{
-			if (!uniformLocations.contains(name))
-			{
-				GetUniformLocationAndSet(name.c_str());
-			}
-			glUniform4f(uniformLocations[name], value.x, value.y, value.z, value.w);
-			return *this;
-		}
-		Shader& SetVec2(std::string name, const glm::vec2& value)
-		{
-			if (!uniformLocations.contains(name))
-			{
-				GetUniformLocationAndSet(name.c_str());
-			}
-			glUniform2f(uniformLocations[name], value.x, value.y);
-			return *this;
-		}
-		Shader& SetVec3(std::string name, const glm::vec3& value)
-		{
-			if (!uniformLocations.contains(name))
-			{
-				GetUniformLocationAndSet(name.c_str());
-			}
-			glUniform3f(uniformLocations[name], value.x, value.y, value.z);
-			return *this;
-		}
-		Shader& SetFloat(std::string name, float value)
-		{
-			if (!uniformLocations.contains(name))
-			{
-				GetUniformLocationAndSet(name.c_str());
-			}
-			glUniform1f(uniformLocations[name], value);
-			return *this;
-		}
-		Shader& SetInt(std::string name, int value)
-		{
-			if (!uniformLocations.contains(name))
-			{
-				GetUniformLocationAndSet(name.c_str());
-			}
-			glUniform1i(uniformLocations[name], value);
-			return *this;
-		}
-		GLint GetUniformLocation(const char* name) { return glGetUniformLocation(handle, name); }
+	public:
+		const std::vector<ShaderType> shaderTypes;
 	private:
 		std::unordered_map<std::string, GLint> uniformLocations;
 	private:

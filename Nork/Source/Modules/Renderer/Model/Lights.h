@@ -28,19 +28,4 @@ namespace Nork::Renderer
 		float bias, biasMin, pcfSize;
 		int idx;
 	};
-
-	struct LightState
-	{
-		void ClearAll()
-		{
-			pointLights.clear();
-			pointShadows.clear();
-			dirLights.clear();
-			dirShadows.clear();
-		}
-		std::vector<PointLight> pointLights;
-		std::vector<PointShadow> pointShadows;
-		std::vector<DirLight> dirLights;
-		std::vector<DirShadow> dirShadows;
-	};
 }

@@ -1,9 +1,20 @@
 #include "pch.h"
 #include "PointShadowMap.h"
-#include "../State/Capabilities.h"
-#include "../Config.h"
+#include "../../State/Capabilities.h"
+#include "../../Config.h"
+#include "../../Objects/Framebuffer/FramebufferBuilder.h"
+#include "../../Objects/Texture/TextureBuilder.h"
 
 namespace Nork::Renderer {
+	PointShadowMap::PointShadowMap(std::shared_ptr<Shader> shader, uint32_t size, TextureFormat depthFormat)
+		: shader(shader)
+	{
+		auto depth = TextureBuilder()
+			.Params(TextureParams::CubeMapParams())
+			.Attributes(TextureAttributes{ .width = size, .height = size, .format = depthFormat })
+			.CreateCubeEmpty();
+		framebuffer = FramebufferBuilder().Attachments(FramebufferAttachments().Depth(depth)).Create();
+	}
 	void PointShadowMap::Render(const PointLight& light, const PointShadow& shadow, ModelIterator iterator)
 	{
 		framebuffer->Bind().SetViewport().Clear();
@@ -24,7 +35,7 @@ namespace Nork::Renderer {
 		for (int i = 0; i < VP.size(); i++)
 		{
 			VP[i] = projection * VP[i];
-			shader->SetMat4("VP[" + std::to_string(i) + "]", VP[i]);
+			shader->SetMat4(("VP[" + std::to_string(i) + "]").c_str(), VP[i]);
 		}
 
 		shader->SetFloat("far", shadow.far);

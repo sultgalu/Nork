@@ -165,8 +165,17 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Core\PhysicsSystem.cpp" />
-    <ClCompile Include="Source\Modules\Renderer\Pipeline\DirShadowMap.cpp" />
-    <ClCompile Include="Source\Modules\Renderer\Pipeline\PointShadowMap.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Objects\Buffer\BufferBuilder.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Objects\Framebuffer\FramebufferBuilder.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Objects\Framebuffer\GeometryFramebufferBuilder.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Objects\Framebuffer\LightFramebufferBuilder.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Objects\GLManager.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Objects\Shader\ShaderBuilder.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Objects\Texture\TextureBuilder.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Objects\VertexArray\VertexArrayBuilder.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\Light\DirShadowMap.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\Light\LightState.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\Light\PointShadowMap.cpp" />
     <ClCompile Include="Source\Core\RenderingSystem.cpp" />
     <ClCompile Include="Source\Modules\Renderer\DrawUtils.cpp" />
     <ClCompile Include="Source\Modules\Renderer\LoadUtils.cpp" />
@@ -182,8 +191,15 @@
     <ClCompile Include="Source\Modules\Renderer\Objects\Texture\Texture.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\VertexArray\VertexArray.cpp" />
     <ClInclude Include="Source\Core\PhysicsSystem.h" />
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\DirShadowMap.h" />
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\PointShadowMap.h" />
+    <ClInclude Include="Source\Modules\Renderer\Objects\Buffer\BufferBuilder.h" />
+    <ClInclude Include="Source\Modules\Renderer\Objects\Framebuffer\FramebufferBuilder.h" />
+    <ClInclude Include="Source\Modules\Renderer\Objects\Framebuffer\GeometryFramebufferBuilder.h" />
+    <ClInclude Include="Source\Modules\Renderer\Objects\Framebuffer\LightFramebufferBuilder.h" />
+    <ClInclude Include="Source\Modules\Renderer\Objects\Shader\ShaderBuilder.h" />
+    <ClInclude Include="Source\Modules\Renderer\Objects\Texture\TextureBuilder.h" />
+    <ClInclude Include="Source\Modules\Renderer\Objects\VertexArray\VertexArrayBuilder.h" />
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\Light\DirShadowMap.h" />
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\Light\PointShadowMap.h" />
     <ClInclude Include="Source\Core\RenderingSystem.h" />
     <ClInclude Include="Source\Modules\Renderer\Config.h" />
     <ClInclude Include="Source\Modules\Renderer\LoadUtils.h" />
@@ -204,7 +220,7 @@
     <ClInclude Include="Source\Modules\Renderer\Objects\Texture\TextureAttributes.h" />
     <ClInclude Include="Source\Modules\Renderer\Objects\Texture\TextureFormat.h" />
     <ClInclude Include="Source\Modules\Renderer\Objects\Texture\TextureParams.h" />
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\LightStateSynchronizer.h" />
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\Light\LightState.h" />
     <ClInclude Include="Source\Modules\Renderer\Pipeline\PostProcess\SkyRenderer.h" />
     <ClInclude Include="Source\Modules\Renderer\State\Capabilities.h" />
     <ClInclude Include="Source\Modules\Renderer\Window\Window.h" />

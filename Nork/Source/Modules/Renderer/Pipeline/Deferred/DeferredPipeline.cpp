@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "DeferredPipeline.h"
+#include "../../State/Capabilities.h"
 #include "../../DrawUtils.h"
 
 namespace Nork::Renderer {

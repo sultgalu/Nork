@@ -1,9 +1,7 @@
 #pragma once
 
-#include "../Objects/GLManager.h"
 #include "../Objects/VertexArray/VertexArray.h"
 #include "../Objects/Texture/Texture.h"
-#include "../Objects/GLManager.h"
 
 namespace Nork::Renderer {
 	enum class TextureMapType : uint8_t

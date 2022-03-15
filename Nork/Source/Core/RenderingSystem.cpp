@@ -1,4 +1,7 @@
 #include "RenderingSystem.h"
+#include "Modules/Renderer/Objects/Framebuffer/GeometryFramebufferBuilder.h"
+#include "Modules/Renderer/Objects/Framebuffer/LightFramebufferBuilder.h"
+#include "Modules/Renderer/Objects/Shader/ShaderBuilder.h"
 
 namespace Nork{
 	static std::shared_ptr<Renderer::GeometryFramebuffer> CreateGeometryFramebuffer(uint32_t width, uint32_t height)
@@ -39,8 +42,6 @@ namespace Nork{
 	RenderingSystem::RenderingSystem()
 		: deferredPipeline(CreateDeferredPipeline(resolution.x, resolution.y, shaders.gPassShader, shaders.lPassShader))
 	{
-		lightStateSyncher.Initialize();
-
 		using namespace Renderer;
 		for (auto& sm : dirShadowMaps)
 		{
@@ -54,45 +55,37 @@ namespace Nork{
 	void RenderingSystem::UpdateLights(entt::registry& reg)
 	{
 		using namespace Components;
-		auto dLightsWS = reg.view<DirLight, DirShadow>();
-		auto pLightsWS = reg.view<PointLight, PointShadow>();
-		auto dLights = reg.view<DirLight>(entt::exclude<DirShadow>);
-		auto pLights = reg.view<PointLight>(entt::exclude<PointShadow>);
 
-		// ---------------------------
-		auto& lights = lightStateSyncher.GetLightState();
-		lights.ClearAll();
-
-		for (auto& id : dLightsWS)
+		lightState.dirLights.clear();
+		lightState.dirShadows.clear();
+		for (auto [id, light, shadow] : reg.view<DirLight, DirShadow>().each())
 		{
-			const auto& light = dLightsWS.get(id)._Myfirst._Val;
-			const auto& shadow = dLightsWS.get(id)._Get_rest()._Myfirst._Val;
-			lights.dirLights.push_back(light);
-			lights.dirShadows.push_back(shadow);
+			lightState.dirLights.push_back(light);
+			lightState.dirShadows.push_back(shadow);
 
 			dirShadowMaps[shadow.idx]->Render(light, shadow, ModelIterator(reg));
 			dirShadowMaps[shadow.idx]->Bind(shadow);
 		}
-		for (auto& id : pLightsWS)
+		for (auto [id, light] : reg.view<DirLight>(entt::exclude<DirShadow>).each())
 		{
-			auto& light = pLightsWS.get(id)._Myfirst._Val;
-			auto& shadow = pLightsWS.get(id)._Get_rest()._Myfirst._Val;
+			lightState.dirLights.push_back(light);
+		}
 
-			lights.pointLights.push_back(light);
-			lights.pointShadows.push_back(shadow);
+		lightState.pointLights.clear();
+		lightState.pointShadows.clear();
+		for (auto [id, light, shadow] : reg.view<PointLight, PointShadow>().each())
+		{
+			lightState.pointLights.push_back(light);
+			lightState.pointShadows.push_back(shadow);
 
 			pointShadowMaps[shadow.idx]->Render(light, shadow, ModelIterator(reg));
 			pointShadowMaps[shadow.idx]->Bind(shadow);
 		}
-		for (auto& id : dLights)
+		for (auto [id, light] : reg.view<PointLight>(entt::exclude<PointShadow>).each())
 		{
-			lights.dirLights.push_back(dLights.get(id)._Myfirst._Val);
+			lightState.pointLights.push_back(light);
 		}
-		for (auto& id : pLights)
-		{
-			lights.pointLights.push_back(pLights.get(id)._Myfirst._Val);
-		}
-		lightStateSyncher.Synchronize();
+		lightState.Upload();
 	}
 	void RenderingSystem::ViewProjectionUpdate(Components::Camera& camera)
 	{
@@ -151,4 +144,46 @@ namespace Nork{
 
 		Renderer::Framebuffer::BindDefault();
 	}
+	std::shared_ptr<Renderer::Shader> Shaders::InitShaderFromSource(std::string path)
+	{
+		return Renderer::ShaderBuilder().Sources(SplitShaders(GetFileContent(path))).Create();
+	}
+	Shaders::Shaders()
+	{
+		SetLightPassShader(InitShaderFromSource("Source/Shaders/lightPass.shader"));
+		SetGeometryPassShader(InitShaderFromSource("Source/Shaders/gPass.shader"));
+		dShadowShader = InitShaderFromSource("Source/Shaders/dirShadMap.shader");
+		pShadowShader = InitShaderFromSource("Source/Shaders/pointShadMap.shader");
+		skyboxShader = InitShaderFromSource("Source/Shaders/skybox.shader");
+		pointShader = InitShaderFromSource("Source/Shaders/point.shader");
+		lineShader = InitShaderFromSource("Source/Shaders/line.shader");
+		textureShader = InitShaderFromSource("Source/Shaders/texture.shader");
+	}
+
+	void Shaders::SetLightPassShader(std::shared_ptr<Renderer::Shader> shader)
+	{
+		lPassShader = shader;
+		lPassShader->Use()
+			.SetInt("gPos", 0)
+			.SetInt("gDiff", 1)
+			.SetInt("gNorm", 2)
+			.SetInt("gSpec", 3);
+
+		for (int i = 0; i < 5; i++)
+			lPassShader->SetInt(("dirShadowMaps[" + std::to_string(i) + "]").c_str(), i + 10);
+		for (int i = 0; i < 5; i++)
+			lPassShader->SetInt(("pointShadowMaps[" + std::to_string(i) + "]").c_str(), i + 15);
+	}
+
+	void Shaders::SetGeometryPassShader(std::shared_ptr<Renderer::Shader> shader)
+	{
+		gPassShader = shader;
+		using enum Renderer::TextureMapType;
+		gPassShader->Use()
+			.SetInt("materialTex.diffuse", (int)Diffuse)
+			.SetInt("materialTex.normals", (int)Normal)
+			.SetInt("materialTex.roughness", (int)Roughness)
+			.SetInt("materialTex.reflect", (int)Reflection);
+	}
+
 }
