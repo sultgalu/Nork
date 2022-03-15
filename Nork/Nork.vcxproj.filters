@@ -102,7 +102,7 @@
     <ClCompile Include="Source\Modules\Physics\Utils\AABB.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Physics\Pipeline\PhyicsSystem.cpp">
+    <ClCompile Include="Source\Modules\Physics\Pipeline\Pipeline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Modules\Physics\Utils\SAP.cpp">
@@ -284,7 +284,7 @@
     <ClInclude Include="Source\Modules\Physics\Utils\AABB.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Physics\Pipeline\PhysicsSystem.h">
+    <ClInclude Include="Source\Modules\Physics\Pipeline\Pipeline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Modules\Physics\Utils\SAP.h">

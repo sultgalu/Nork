@@ -9,11 +9,11 @@
 
 namespace Nork::Physics
 {
-	class System
+	class Pipeline
 	{
 
 	public:
-		System();
+		Pipeline();
 
 		std::vector<Collider> colls;
 		CollisionDetection* collisionDetector;

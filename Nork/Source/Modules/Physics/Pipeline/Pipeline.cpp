@@ -1,14 +1,14 @@
-#include "PhysicsSystem.h"
+#include "Pipeline.h"
 #include "../Config.h"
 #include "CollisionDetectionCPU.h"
 
 namespace Nork::Physics
 {
-	System::System()
+	Pipeline::Pipeline()
 	{
 		collisionDetector = new CollisionDetectionCPU(world);
 	}
-	void System::Update(float delta)
+	void Pipeline::Update(float delta)
 	{
 		Timer summaT;
 		Timer t;
@@ -202,7 +202,7 @@ namespace Nork::Physics
 		return result;
 	}
 
-	void System::GenContactPoints()
+	void Pipeline::GenContactPoints()
 	{
 		contactPoints.clear();
 		auto& colls = collisionDetector->GetResults();
@@ -248,7 +248,7 @@ namespace Nork::Physics
 			}
 		}
 	}
-	void System::ResolveCollisions(float delta)
+	void Pipeline::ResolveCollisions(float delta)
 	{
 		auto& colls = collisionDetector->GetResults();
 		for (size_t i = 0; i < colls.size(); i++)
@@ -384,7 +384,7 @@ namespace Nork::Physics
 			}
 		}
 	}
-	void System::RotationUpdate(float delta)
+	void Pipeline::RotationUpdate(float delta)
 	{
 		for (size_t i = 0; i < world.kinems.size(); i++)
 		{
@@ -396,7 +396,7 @@ namespace Nork::Physics
 		}
 	}
 
-	void System::SetColliders(std::span<Collider> colls)
+	void Pipeline::SetColliders(std::span<Collider> colls)
 	{
 		world.ClearColliderData();
 		for (size_t i = 0; i < colls.size(); i++)
@@ -406,7 +406,7 @@ namespace Nork::Physics
 		this->colls = std::vector<Collider>(colls.begin(), colls.end());
 	}
 
-	void System::SetModels(std::span<glm::vec3> translate, std::span<glm::quat> quaternions)
+	void Pipeline::SetModels(std::span<glm::vec3> translate, std::span<glm::quat> quaternions)
 	{
 		deltas.clear();
 		Timer t;
@@ -414,7 +414,7 @@ namespace Nork::Physics
 		deltas.push_back(std::pair("Update Transforms", t.Elapsed()));
 	}
 
-	void System::VelocityUpdate(float delta)
+	void Pipeline::VelocityUpdate(float delta)
 	{
 		for (size_t i = 0; i < world.kinems.size(); i++)
 		{

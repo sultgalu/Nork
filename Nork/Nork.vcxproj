@@ -241,7 +241,7 @@
     <ClCompile Include="Source\Modules\Physics\Utils\SAT.cpp" />
     <ClCompile Include="Source\Editor\Panels\Impl\MeshEditor.cpp" />
     <ClCompile Include="Source\Modules\Physics\Data\World.cpp" />
-    <ClCompile Include="Source\Modules\Physics\Pipeline\PhyicsSystem.cpp" />
+    <ClCompile Include="Source\Modules\Physics\Pipeline\Pipeline.cpp" />
     <ClCompile Include="Source\Modules\Physics\Utils.cpp" />
     <ClCompile Include="Source\Editor\Panels\Impl\HierarchyPanel.cpp" />
     <ClCompile Include="Source\Platform\Windows\FileDialog.cpp" />
@@ -332,7 +332,7 @@
   <ItemGroup>
     <ClInclude Include="Source\Editor\Panels\MeshEditor.h" />
     <ClInclude Include="Source\Modules\Physics\Data\World.h" />
-    <ClInclude Include="Source\Modules\Physics\Pipeline\PhysicsSystem.h" />
+    <ClInclude Include="Source\Modules\Physics\Pipeline\Pipeline.h" />
     <ClInclude Include="Source\Modules\Physics\Utils.h" />
     <ClInclude Include="Source\Scene\Serialization\BinarySerializer.h" />
     <ClInclude Include="Source\Editor\Panels\All.h" />

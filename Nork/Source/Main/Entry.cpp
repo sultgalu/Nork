@@ -62,7 +62,7 @@ int main()
 
 	if (dim > 5)
 	{
-		engine.drawPolies = false;
+		engine.physicsSystem.drawPolies = false;
 	}
 
 	glm::vec3 scale = glm::vec3(100, 1, 100);

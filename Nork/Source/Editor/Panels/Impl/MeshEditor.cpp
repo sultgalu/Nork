@@ -209,16 +209,16 @@ namespace Nork::Editor
 		
 		ImGui::Text(std::string("AABB DELTA: ").append(std::to_string(Physics::AABBTest::GetDelta())).append("ms").c_str());
 		ImGui::Text("AABB result:");
-		if (data.engine.aabbRes) ImGui::TextColored(ImVec4(0, 1, 0, 1), "  COLLISION!!");
+		if (data.engine.physicsSystem.aabbRes) ImGui::TextColored(ImVec4(0, 1, 0, 1), "  COLLISION!!");
 		else ImGui::TextColored(ImVec4(1, 0, 0, 1), "  no collision");
 		ImGui::Text("Clip result:");
-		if (data.engine.clipRes) ImGui::TextColored(ImVec4(0, 1, 0, 1), "  COLLISION!!");
+		if (data.engine.physicsSystem.clipRes) ImGui::TextColored(ImVec4(0, 1, 0, 1), "  COLLISION!!");
 		else ImGui::TextColored(ImVec4(1, 0, 0, 1), "  no collision");
 		ImGui::Text("GJK result:");
-		if (data.engine.gjkRes) ImGui::TextColored(ImVec4(0, 1, 0, 1), "  COLLISION!!");
+		if (data.engine.physicsSystem.gjkRes) ImGui::TextColored(ImVec4(0, 1, 0, 1), "  COLLISION!!");
 		else ImGui::TextColored(ImVec4(1, 0, 0, 1), "  no collision");
 		ImGui::Text("SAT result:");
-		if (data.engine.satRes) ImGui::TextColored(ImVec4(0, 1, 0, 1), "  COLLISION!!");
+		if (data.engine.physicsSystem.satRes) ImGui::TextColored(ImVec4(0, 1, 0, 1), "  COLLISION!!");
 		else ImGui::TextColored(ImVec4(1, 0, 0, 1), "  no collision");
 
 		static bool setBack = false;
@@ -227,7 +227,7 @@ namespace Nork::Editor
 			data.engine.physicsUpdate = false;
 			setBack = false;
 		}
-		if (data.engine.satRes)
+		if (data.engine.physicsSystem.satRes)
 		{
 			if(ImGui::Button("Physics Update"))
 			{
@@ -238,22 +238,22 @@ namespace Nork::Editor
 
 		ImGui::Checkbox("Physics Update##LongPeriod", &data.engine.physicsUpdate);
 
-		bool g = data.engine.pSystem.g != 0;
+		bool g = data.engine.physicsSystem.pipeline.g != 0;
 		static float savedG = 0;
-		ImGui::DragFloat("Gravity", &data.engine.pSystem.g);
+		ImGui::DragFloat("Gravity", &data.engine.physicsSystem.pipeline.g);
 		if (ImGui::Checkbox("Gravity##LongPeriod", &g))
 		{
-			if (g) data.engine.pSystem.g = savedG;
+			if (g) data.engine.physicsSystem.pipeline.g = savedG;
 			else
 			{
-				savedG = data.engine.pSystem.g;
-				data.engine.pSystem.g = 0;
+				savedG = data.engine.physicsSystem.pipeline.g;
+				data.engine.physicsSystem.pipeline.g = 0;
 			}
 		}
-		ImGui::SliderFloat("Coefficient", &data.engine.pSystem.coefficient, 0, 1);
+		ImGui::SliderFloat("Coefficient", &data.engine.physicsSystem.pipeline.coefficient, 0, 1);
 
 		ImGui::Separator();
-		auto Enginedeltas = Engine::GetDeltas();
+		auto Enginedeltas = data.engine.physicsSystem.deltas;
 		for (size_t i = 0; i < Enginedeltas.size(); i++)
 		{
 			auto pair = Enginedeltas[i];
@@ -267,24 +267,24 @@ namespace Nork::Editor
 			ImGui::Text(pair.first.append(": ").append(std::to_string(pair.second)).c_str());
 		}
 		ImGui::Separator();
-		auto pDeltas = data.engine.pSystem.deltas;
+		auto pDeltas = data.engine.physicsSystem.pipeline.deltas;
 		for (size_t i = 0; i < pDeltas.size(); i++)
 		{
 			auto pair = pDeltas[i];
 			ImGui::Text(pair.first.append(": ").append(std::to_string(pair.second)).c_str());
 		}
 
-		ImGui::DragFloat("Physics speed", &data.engine.physicsSpeed, 0.001f, 0, 10, "%.3f", ImGuiSliderFlags_Logarithmic);
-		ImGui::Checkbox("Update polies", &data.engine.updatePoliesForPhysics);
-		ImGui::Checkbox("Update Velocities", &data.engine.pSystem.updateVelocities);
-		ImGui::Checkbox("Update Rotation", &data.engine.pSystem.updateRotation);
-		ImGui::Checkbox("Detect Collisions", &data.engine.pSystem.detectCollisions);
-		ImGui::Checkbox("Handle Collisions", &data.engine.pSystem.handleCollisions);
-		ImGui::Checkbox("Draw Polies", &data.engine.drawPolies);
-		ImGui::Checkbox("Draw Triangles", &data.engine.drawTriangles);
-		ImGui::Checkbox("Draw Lines", &data.engine.drawLines);
-		ImGui::Checkbox("Draw Points", &data.engine.drawPoints);
-		ImGui::Checkbox("Draw Sky", &data.engine.drawSky);
+		ImGui::DragFloat("Physics speed", &data.engine.physicsSystem.physicsSpeed, 0.001f, 0, 10, "%.3f", ImGuiSliderFlags_Logarithmic);
+		ImGui::Checkbox("Update polies", &data.engine.physicsSystem.updatePoliesForPhysics);
+		ImGui::Checkbox("Update Velocities", &data.engine.physicsSystem.pipeline.updateVelocities);
+		ImGui::Checkbox("Update Rotation", &data.engine.physicsSystem.pipeline.updateRotation);
+		ImGui::Checkbox("Detect Collisions", &data.engine.physicsSystem.pipeline.detectCollisions);
+		ImGui::Checkbox("Handle Collisions", &data.engine.physicsSystem.pipeline.handleCollisions);
+		ImGui::Checkbox("Draw Polies", &data.engine.physicsSystem.drawPolies);
+		ImGui::Checkbox("Draw Triangles", &data.engine.physicsSystem.drawTriangles);
+		ImGui::Checkbox("Draw Lines", &data.engine.physicsSystem.drawLines);
+		ImGui::Checkbox("Draw Points", &data.engine.physicsSystem.drawPoints);
+		ImGui::Checkbox("Draw Sky", &data.engine.physicsSystem.drawSky);
 
 		auto options = ImGuiColorEditFlags_DefaultOptions_ | ImGuiColorEditFlags_AlphaPreview | ImGuiColorEditFlags_AlphaBar;
 		/*ImGui::ColorEdit4("Point Color", &data.engine.pointColor.r, options);
