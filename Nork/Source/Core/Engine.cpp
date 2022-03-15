@@ -55,7 +55,7 @@ namespace Nork
 			sender.Send(UpdateEvent());
 			sender.Send(RenderUpdateEvent());
 			
-			renderingSystem.Update(scene);
+			renderingSystem.Update(scene.registry, scene.GetMainCamera());
 			PhysicsUpdate(); // NEW
 
 			sender.Send(RenderUpdatedEvent());

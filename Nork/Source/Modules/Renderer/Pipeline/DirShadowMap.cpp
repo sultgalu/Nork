@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "DirShadowMapRenderer.h"
+#include "DirShadowMap.h"
 #include "../State/Capabilities.h"
 #include "../Config.h"
 

@@ -117,11 +117,12 @@ namespace Nork {
 	{
 	public:
 		RenderingSystem();
+
 		void UpdateLights(entt::registry& reg);
 		void ViewProjectionUpdate(Components::Camera& camera);
 		void SyncComponents(entt::registry& reg);
 		void RenderScene(entt::registry& reg);
-		void Update(Scene& scene);
+		void Update(entt::registry& registry, Components::Camera& camera);
 	public:
 		int pointSize = 20;
 		float pointInternalSize = 0.5f, pointAA = 0.3f, lineWidth = 0.005f;

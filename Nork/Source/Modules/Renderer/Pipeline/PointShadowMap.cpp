@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "PointShadowMapRenderer.h"
+#include "PointShadowMap.h"
 #include "../State/Capabilities.h"
 #include "../Config.h"
 

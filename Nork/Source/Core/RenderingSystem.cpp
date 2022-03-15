@@ -142,13 +142,12 @@ namespace Nork{
 		deferredPipeline.GeometryPass(ModelIterator(reg));
 		deferredPipeline.LightPass();
 	}
-	void RenderingSystem::Update(Scene& scene)
+	void RenderingSystem::Update(entt::registry& registry, Components::Camera& camera)
 	{
-		SyncComponents(scene.registry);
-		auto& cam = scene.GetMainCamera();
-		ViewProjectionUpdate(cam);
-		UpdateLights(scene.registry);
-		RenderScene(scene.registry);
+		SyncComponents(registry);
+		ViewProjectionUpdate(camera);
+		UpdateLights(registry);
+		RenderScene(registry);
 
 		Renderer::Framebuffer::BindDefault();
 	}

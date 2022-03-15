@@ -177,6 +177,9 @@
     <ClCompile Include="Source\Modules\Renderer\Pipeline\DirShadowMap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Core\PhysicsSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\PCH\pch.h">
@@ -417,6 +420,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Modules\Renderer\Pipeline\DirShadowMap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\PhysicsSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

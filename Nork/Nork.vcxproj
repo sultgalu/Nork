@@ -164,6 +164,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Core\PhysicsSystem.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Pipeline\DirShadowMap.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Pipeline\PointShadowMap.cpp" />
     <ClCompile Include="Source\Core\RenderingSystem.cpp" />
@@ -180,6 +181,7 @@
     <ClCompile Include="Source\Modules\Renderer\Window\Window.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Texture\Texture.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\VertexArray\VertexArray.cpp" />
+    <ClInclude Include="Source\Core\PhysicsSystem.h" />
     <ClInclude Include="Source\Modules\Renderer\Pipeline\DirShadowMap.h" />
     <ClInclude Include="Source\Modules\Renderer\Pipeline\PointShadowMap.h" />
     <ClInclude Include="Source\Core\RenderingSystem.h" />
