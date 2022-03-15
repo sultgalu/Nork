@@ -5,7 +5,8 @@
 #include "Modules/Renderer/Objects/Shader/Shader.h"
 #include "Modules/Renderer/Model/Model.h"
 #include "Modules/Renderer/Pipeline/LightStateSynchronizer.h"
-#include "Modules/Renderer/Pipeline/ShadowMapRenderer.h"
+#include "Modules/Renderer/Pipeline/DirShadowMap.h"
+#include "Modules/Renderer/Pipeline/PointShadowMap.h"
 #include "Modules/Renderer/Pipeline/Deferred/DeferredPipeline.h"
 #include "Components/All.h"
 
@@ -66,22 +67,25 @@ namespace Nork {
 			} while (true);
 			return shaderSrcs;
 		}
-		static void InitShaderFromSource(std::shared_ptr<Renderer::Shader>& shader, std::string path)
+		static std::shared_ptr<Renderer::Shader> InitShaderFromSource(std::string path)
 		{
-			shader = Renderer::ShaderBuilder().Sources(SplitShaders(GetFileContent(path))).Create();
+			return Renderer::ShaderBuilder().Sources(SplitShaders(GetFileContent(path))).Create();
 		}
 	public:
-		static void Init()
+		Shaders()
 		{
-			InitShaderFromSource(gPassShader, "Source/Shaders/gPass.shader");
-			InitShaderFromSource(lPassShader, "Source/Shaders/lightPass.shader");
-			InitShaderFromSource(dShadowShader, "Source/Shaders/dirShadMap.shader");
-			InitShaderFromSource(pShadowShader, "Source/Shaders/pointShadMap.shader");
-			InitShaderFromSource(skyboxShader, "Source/Shaders/skybox.shader");
-			InitShaderFromSource(pointShader, "Source/Shaders/point.shader");
-			InitShaderFromSource(lineShader, "Source/Shaders/line.shader");
-			InitShaderFromSource(textureShader, "Source/Shaders/texture.shader");
-			
+			SetLightPassShader(InitShaderFromSource("Source/Shaders/lightPass.shader"));
+			SetGeometryPassShader(InitShaderFromSource("Source/Shaders/gPass.shader"));
+			dShadowShader = InitShaderFromSource("Source/Shaders/dirShadMap.shader");
+			pShadowShader = InitShaderFromSource("Source/Shaders/pointShadMap.shader");
+			skyboxShader = InitShaderFromSource("Source/Shaders/skybox.shader");
+			pointShader = InitShaderFromSource("Source/Shaders/point.shader");
+			lineShader = InitShaderFromSource("Source/Shaders/line.shader");
+			textureShader = InitShaderFromSource("Source/Shaders/texture.shader");
+		}
+		void SetLightPassShader(std::shared_ptr<Renderer::Shader> shader)
+		{
+			lPassShader = shader;
 			lPassShader->Use()
 				.SetInt("gPos", 0)
 				.SetInt("gDiff", 1)
@@ -92,7 +96,10 @@ namespace Nork {
 				lPassShader->SetInt("dirShadowMaps[" + std::to_string(i) + "]", i + 10);
 			for (int i = 0; i < 5; i++)
 				lPassShader->SetInt("pointShadowMaps[" + std::to_string(i) + "]", i + 15);
-
+		}
+		void SetGeometryPassShader(std::shared_ptr<Renderer::Shader> shader)
+		{
+			gPassShader = shader;
 			using enum Renderer::TextureMapType;
 			gPassShader->Use()
 				.SetInt("materialTex.diffuse", (int)Diffuse)
@@ -100,7 +107,7 @@ namespace Nork {
 				.SetInt("materialTex.roughness", (int)Roughness)
 				.SetInt("materialTex.reflect", (int)Reflection);
 		}
-		inline static std::shared_ptr<Renderer::Shader> gPassShader, lPassShader,
+		std::shared_ptr<Renderer::Shader> gPassShader, lPassShader,
 			dShadowShader, pShadowShader,
 			skyboxShader, textureShader,
 			pointShader, lineShader;
@@ -109,18 +116,12 @@ namespace Nork {
 	class RenderingSystem
 	{
 	public:
-		RenderingSystem& Init();
+		RenderingSystem();
 		void UpdateLights(entt::registry& reg);
 		void ViewProjectionUpdate(Components::Camera& camera);
 		void SyncComponents(entt::registry& reg);
 		void RenderScene(entt::registry& reg);
 		void Update(Scene& scene);
-	public:
-		Renderer::LightStateSynchronizer lightStateSyncher;
-		std::shared_ptr<Renderer::GeometryFramebuffer> gFb;
-		std::shared_ptr<Renderer::LightFramebuffer> lFb;
-		std::array<std::shared_ptr<Renderer::Framebuffer>, 5> pShadowFramebuffers;
-		std::array<std::shared_ptr<Renderer::Framebuffer>, 5> dShadowFramebuffers;
 	public:
 		int pointSize = 20;
 		float pointInternalSize = 0.5f, pointAA = 0.3f, lineWidth = 0.005f;
@@ -130,5 +131,11 @@ namespace Nork {
 		glm::vec4 triangleColor = { 0,1,0, 0.4f };
 		glm::vec3 selectedColor = { 1,0,1 };
 		glm::uvec2 resolution = { 1920, 1080 };
+	public:
+		Shaders shaders;
+		Renderer::DeferredPipeline deferredPipeline;
+		Renderer::LightStateSynchronizer lightStateSyncher;
+		std::array<std::shared_ptr<Renderer::DirShadowMap>, 5> dirShadowMaps;
+		std::array<std::shared_ptr<Renderer::PointShadowMap>, 5> pointShadowMaps;
 	};
 }

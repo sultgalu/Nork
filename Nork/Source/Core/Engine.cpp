@@ -29,12 +29,11 @@ namespace Nork
 	}
 
 	Engine::Engine(EngineConfig config) : 
-		pSystem()
+		pSystem(), renderingSystem()
 	{
 		auto& reg = scene.registry;
 		reg.on_construct<Components::DirShadow>().connect<&Engine::OnDShadowAdded>(this);
 		reg.on_destroy<Components::DirShadow>().connect<&Engine::OnDShadowRemoved>(this);
-		renderingSystem.Init();
 
 		for (int i = dShadIdxSize - 1; i > -1; i--)
 		{
@@ -57,7 +56,7 @@ namespace Nork
 			sender.Send(RenderUpdateEvent());
 			
 			renderingSystem.Update(scene);
-			// PhysicsUpdate(); // NEW
+			PhysicsUpdate(); // NEW
 
 			sender.Send(RenderUpdatedEvent());
 			Profiler::Clear();

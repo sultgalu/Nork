@@ -164,6 +164,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\DirShadowMap.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\PointShadowMap.cpp" />
     <ClCompile Include="Source\Core\RenderingSystem.cpp" />
     <ClCompile Include="Source\Modules\Renderer\DrawUtils.cpp" />
     <ClCompile Include="Source\Modules\Renderer\LoadUtils.cpp" />
@@ -178,6 +180,8 @@
     <ClCompile Include="Source\Modules\Renderer\Window\Window.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Texture\Texture.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\VertexArray\VertexArray.cpp" />
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\DirShadowMap.h" />
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\PointShadowMap.h" />
     <ClInclude Include="Source\Core\RenderingSystem.h" />
     <ClInclude Include="Source\Modules\Renderer\Config.h" />
     <ClInclude Include="Source\Modules\Renderer\LoadUtils.h" />
@@ -200,7 +204,6 @@
     <ClInclude Include="Source\Modules\Renderer\Objects\Texture\TextureParams.h" />
     <ClInclude Include="Source\Modules\Renderer\Pipeline\LightStateSynchronizer.h" />
     <ClInclude Include="Source\Modules\Renderer\Pipeline\PostProcess\SkyRenderer.h" />
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\ShadowMapRenderer.h" />
     <ClInclude Include="Source\Modules\Renderer\State\Capabilities.h" />
     <ClInclude Include="Source\Modules\Renderer\Window\Window.h" />
     <ClInclude Include="Source\Modules\Serialization\Json.h" />

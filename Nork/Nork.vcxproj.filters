@@ -171,6 +171,12 @@
     <ClCompile Include="Source\Scene\Serialization\JsonSerializer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\PointShadowMap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\DirShadowMap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\PCH\pch.h">
@@ -374,9 +380,6 @@
     <ClInclude Include="Source\Modules\Renderer\Model\Lights.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\ShadowMapRenderer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Modules\Renderer\Pipeline\PostProcess\SkyRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -408,6 +411,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Scene\Serialization\JsonSerializer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\PointShadowMap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\DirShadowMap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

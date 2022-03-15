@@ -1,12 +1,13 @@
 #include "pch.h"
 #include "DeferredPipeline.h"
+#include "../../DrawUtils.h"
 
 namespace Nork::Renderer {
 
-	void DeferredPipeline::GeometryPass(GeometryFramebuffer& geometryFb, Shader& shader, ModelIterator iterator)
+	void DeferredPipeline::GeometryPass(ModelIterator iterator)
 	{
-		geometryFb.Bind().SetViewport().Clear();
-		shader.Use();
+		geometryFb->Bind().SetViewport().Clear();
+		geomatryShader->Use();
 
 		Capabilities()
 			.Enable().DepthTest().CullFace()
@@ -14,18 +15,18 @@ namespace Nork::Renderer {
 
 		iterator([&](Model& model)
 			{
-				model.Draw(shader);
+				model.Draw(*geomatryShader);
 			});
 	}
-	void DeferredPipeline::LightPass(GeometryFramebuffer& geometryFb, LightFramebuffer& lightFb, Shader& shader)
+	void DeferredPipeline::LightPass()
 	{
-		geometryFb.Position()->Bind(0);
-		geometryFb.Diffuse()->Bind(1);
-		geometryFb.Normal()->Bind(2);
-		geometryFb.Specular()->Bind(3);
+		geometryFb->Position()->Bind(0);
+		geometryFb->Diffuse()->Bind(1);
+		geometryFb->Normal()->Bind(2);
+		geometryFb->Specular()->Bind(3);
 
-		lightFb.Bind().SetViewport().Clear();
-		shader.Use();
+		lightFb->Bind().SetViewport().Clear();
+		lightShader->Use();
 
 		Capabilities()
 			.Disable().DepthTest().Blend();

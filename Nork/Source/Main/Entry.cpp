@@ -26,7 +26,7 @@ int main()
 	enginePtr = &engine;
 	Editor::Editor editor(engine);
 
-	editor.SetDisplayTexture(engine.renderingSystem.lFb->Color());
+	editor.SetDisplayTexture(engine.renderingSystem.deferredPipeline.lightFb->Color());
 	dispatcher.GetReceiver().Subscribe<RenderUpdatedEvent>([&](const RenderUpdatedEvent& ev)
 		{
 			editor.Render();

@@ -116,7 +116,7 @@ namespace Nork::Editor
 			}*/
 			if (ImGui::Selectable("Default"))
 			{
-				image.texture = data.engine.renderingSystem.lFb->Color();
+				image.texture = data.engine.renderingSystem.deferredPipeline.lightFb->Color();
 			}
 			/*if (ImGui::Selectable("Ids"))
 			{
@@ -124,38 +124,36 @@ namespace Nork::Editor
 			}*/
 			if (ImGui::Selectable("GBuffer: depth"))
 			{
-				image.texture = data.engine.renderingSystem.gFb->Depth();
+				image.texture = data.engine.renderingSystem.deferredPipeline.geometryFb->Depth();
 			}
 			if (ImGui::Selectable("GBuffer: position"))
 			{
-				image.texture = data.engine.renderingSystem.gFb->Position();
+				image.texture = data.engine.renderingSystem.deferredPipeline.geometryFb->Position();
 			}
 			if (ImGui::Selectable("GBuffer: normal"))
 			{
-				image.texture = data.engine.renderingSystem.gFb->Normal();
+				image.texture = data.engine.renderingSystem.deferredPipeline.geometryFb->Normal();
 			}
 			if (ImGui::Selectable("GBuffer: diffuse"))
 			{
-				image.texture = data.engine.renderingSystem.gFb->Diffuse();
+				image.texture = data.engine.renderingSystem.deferredPipeline.geometryFb->Diffuse();
 			}
 			if (ImGui::Selectable("GBuffer: specular"))
 			{
-				image.texture = data.engine.renderingSystem.gFb->Specular();
+				image.texture = data.engine.renderingSystem.deferredPipeline.geometryFb->Specular();
 			}
-			for (size_t i = 0; i < data.engine.renderingSystem.dShadowFramebuffers.size(); i++)
+			for (size_t i = 0; i < data.engine.renderingSystem.dirShadowMaps.size(); i++)
 			{
-				auto& opt = data.engine.renderingSystem.dShadowFramebuffers[i]->GetAttachments().depth;
-				if (opt != nullptr && ImGui::Selectable(("Dirlight ShadowMap #" + std::to_string(i)).c_str()))
+				if (ImGui::Selectable(("Dirlight ShadowMap #" + std::to_string(i)).c_str()))
 				{
-					image.texture = data.engine.renderingSystem.dShadowFramebuffers[i]->GetAttachments().depth;
+					image.texture = data.engine.renderingSystem.dirShadowMaps[i]->Get();
 				}
 			}
-			for (size_t i = 0; i < data.engine.renderingSystem.pShadowFramebuffers.size(); i++)
+			for (size_t i = 0; i < data.engine.renderingSystem.pointShadowMaps.size(); i++)
 			{
-				auto& opt = data.engine.renderingSystem.pShadowFramebuffers[i]->GetAttachments().depth;
-				if (opt != nullptr && ImGui::Selectable(("Pointlight ShadowMap #" + std::to_string(i)).c_str()))
+				if (ImGui::Selectable(("Pointlight ShadowMap #" + std::to_string(i)).c_str()))
 				{
-					image.texture = data.engine.renderingSystem.pShadowFramebuffers[i]->GetAttachments().depth;
+					image.texture = data.engine.renderingSystem.pointShadowMaps[i]->Get();
 				}
 			}
 			

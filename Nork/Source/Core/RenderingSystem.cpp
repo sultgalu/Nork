@@ -1,6 +1,30 @@
 #include "RenderingSystem.h"
 
 namespace Nork{
+	static std::shared_ptr<Renderer::GeometryFramebuffer> CreateGeometryFramebuffer(uint32_t width, uint32_t height)
+	{
+		using enum Renderer::TextureFormat;
+		return Renderer::GeometryFramebufferBuilder()
+			.Width(width).Height(height)
+			.Depth(Depth16)
+			.Position(RGB16F)
+			.Normal(RGB16F)
+			.Diffuse(RGB16F)
+			.Specular(RGBA16F)
+			.Create();
+	}
+	static std::shared_ptr<Renderer::LightFramebuffer> CreateLightFramebuffer(std::shared_ptr<Renderer::GeometryFramebuffer> gFb)
+	{
+		return Renderer::LightFramebufferBuilder()
+			.DepthTexture(gFb->Depth())
+			.ColorFormat(Renderer::TextureFormat::RGBA16F)
+			.Create();
+	}
+	static Renderer::DeferredPipeline CreateDeferredPipeline(uint32_t width, uint32_t height, std::shared_ptr<Renderer::Shader> gShader, std::shared_ptr<Renderer::Shader> lShader)
+	{
+		auto fb = CreateGeometryFramebuffer(width, height);
+		return Renderer::DeferredPipeline(fb, CreateLightFramebuffer(fb), gShader, lShader);
+	}
 	Renderer::ModelIterator ModelIterator(entt::registry& reg)
 	{
 		auto iterator = [&](auto func)
@@ -12,41 +36,20 @@ namespace Nork{
 		};
 		return iterator;
 	}
-	RenderingSystem& RenderingSystem::Init()
+	RenderingSystem::RenderingSystem()
+		: deferredPipeline(CreateDeferredPipeline(resolution.x, resolution.y, shaders.gPassShader, shaders.lPassShader))
 	{
-		using namespace Renderer;
-		Shaders::Init();
-
 		lightStateSyncher.Initialize();
-		for (auto& fb : pShadowFramebuffers)
+
+		using namespace Renderer;
+		for (auto& sm : dirShadowMaps)
 		{
-			auto depth = TextureBuilder()
-				.Params(TextureParams::CubeMapParams())
-				.Attributes(TextureAttributes{ .width = 1000, .height = 1000, .format = TextureFormat::Depth16 })
-				.CreateCubeEmpty();
-			fb = FramebufferBuilder().Attachments(FramebufferAttachments().Depth(depth)).Create();
+			sm = std::make_shared<DirShadowMap>(shaders.dShadowShader, 4000, 4000, TextureFormat::Depth16);
 		}
-		for (auto& fb : dShadowFramebuffers)
+		for (auto& sm : pointShadowMaps)
 		{
-			auto depth = TextureBuilder()
-				.Params(TextureParams::FramebufferTex2DParams())
-				.Attributes(TextureAttributes{ .width = 4000, .height = 4000, .format = TextureFormat::Depth16 })
-				.Create2DEmpty();
-			fb = FramebufferBuilder().Attachments(FramebufferAttachments().Depth(depth)).Create();
+			sm = std::make_shared<PointShadowMap>(shaders.pShadowShader, 1000, TextureFormat::Depth16);
 		}
-		gFb = GeometryFramebufferBuilder()
-			.Width(resolution.x).Height(resolution.y)
-			.Depth(TextureFormat::Depth16)
-			.Position(TextureFormat::RGB16F)
-			.Normal(TextureFormat::RGB16F)
-			.Diffuse(TextureFormat::RGB16F)
-			.Specular(TextureFormat::RGBA16F)
-			.Create();
-		lFb = LightFramebufferBuilder()
-			.DepthTexture(gFb->Depth())
-			.ColorFormat(TextureFormat::RGBA16F)
-			.Create();
-		return *this;
 	}
 	void RenderingSystem::UpdateLights(entt::registry& reg)
 	{
@@ -67,8 +70,8 @@ namespace Nork{
 			lights.dirLights.push_back(light);
 			lights.dirShadows.push_back(shadow);
 
-			Renderer::ShadowMapRenderer::RenderDirLightShadowMap(light, shadow, ModelIterator(reg), *dShadowFramebuffers[shadow.idx], *Shaders::dShadowShader);
-			Renderer::ShadowMapRenderer::BindDirShadowMap(shadow, *dShadowFramebuffers[shadow.idx]);
+			dirShadowMaps[shadow.idx]->Render(light, shadow, ModelIterator(reg));
+			dirShadowMaps[shadow.idx]->Bind(shadow);
 		}
 		for (auto& id : pLightsWS)
 		{
@@ -78,8 +81,8 @@ namespace Nork{
 			lights.pointLights.push_back(light);
 			lights.pointShadows.push_back(shadow);
 
-			Renderer::ShadowMapRenderer::RenderPointLightShadowMap(light, shadow, ModelIterator(reg), *pShadowFramebuffers[shadow.idx], *Shaders::pShadowShader);
-			Renderer::ShadowMapRenderer::BindPointShadowMap(shadow, *pShadowFramebuffers[shadow.idx]);
+			pointShadowMaps[shadow.idx]->Render(light, shadow, ModelIterator(reg));
+			pointShadowMaps[shadow.idx]->Bind(shadow);
 		}
 		for (auto& id : dLights)
 		{
@@ -98,29 +101,29 @@ namespace Nork{
 		// shader.SetVec4("colorDefault", triangleColor);
 		// shader.SetVec4("colorSelected", glm::vec4(selectedColor, triAlpha));
 
-		Shaders::pointShader->Use();
-		Shaders::pointShader->SetMat4("VP", camera.viewProjection);
-		Shaders::pointShader->SetFloat("aa", pointAA);
-		Shaders::pointShader->SetFloat("size", pointInternalSize);
-		Shaders::pointShader->SetVec4("colorDefault", pointColor);
-		Shaders::pointShader->SetVec4("colorSelected", glm::vec4(selectedColor, pointAlpha));
+		shaders.pointShader->Use();
+		shaders.pointShader->SetMat4("VP", camera.viewProjection);
+		shaders.pointShader->SetFloat("aa", pointAA);
+		shaders.pointShader->SetFloat("size", pointInternalSize);
+		shaders.pointShader->SetVec4("colorDefault", pointColor);
+		shaders.pointShader->SetVec4("colorSelected", glm::vec4(selectedColor, pointAlpha));
 
-		Shaders::lineShader->Use();
-		Shaders::lineShader->SetMat4("VP", camera.viewProjection);
-		Shaders::lineShader->SetFloat("width", lineWidth);
-		Shaders::lineShader->SetVec4("colorDefault", lineColor);
-		Shaders::lineShader->SetVec4("colorSelected", glm::vec4(selectedColor, lineAlpha));
+		shaders.lineShader->Use();
+		shaders.lineShader->SetMat4("VP", camera.viewProjection);
+		shaders.lineShader->SetFloat("width", lineWidth);
+		shaders.lineShader->SetVec4("colorDefault", lineColor);
+		shaders.lineShader->SetVec4("colorSelected", glm::vec4(selectedColor, lineAlpha));
 
 		//lightMan.dShadowMapShader->SetMat4("VP", vp);
-		Shaders::gPassShader->Use();
-		Shaders::gPassShader->SetMat4("VP", camera.viewProjection);
+		shaders.gPassShader->Use();
+		shaders.gPassShader->SetMat4("VP", camera.viewProjection);
 
-		Shaders::lPassShader->Use();
-		Shaders::lPassShader->SetVec3("viewPos", camera.position);
+		shaders.lPassShader->Use();
+		shaders.lPassShader->SetVec3("viewPos", camera.position);
 
-		Shaders::skyboxShader->Use();
+		shaders.skyboxShader->Use();
 		auto vp = camera.projection * glm::mat4(glm::mat3(camera.view));
-		Shaders::skyboxShader->SetMat4("VP", vp);
+		shaders.skyboxShader->SetMat4("VP", vp);
 	}
 	void RenderingSystem::SyncComponents(entt::registry& reg)
 	{
@@ -136,8 +139,8 @@ namespace Nork{
 	}
 	void RenderingSystem::RenderScene(entt::registry& reg)
 	{
-		Renderer::DeferredPipeline::GeometryPass(*gFb, *Shaders::gPassShader, ModelIterator(reg));
-		Renderer::DeferredPipeline::LightPass(*gFb, *lFb, *Shaders::lPassShader);
+		deferredPipeline.GeometryPass(ModelIterator(reg));
+		deferredPipeline.LightPass();
 	}
 	void RenderingSystem::Update(Scene& scene)
 	{
