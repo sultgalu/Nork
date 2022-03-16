@@ -73,10 +73,6 @@
 
 ////-----------------OTHERS-----------------------
 
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-#include <assimp/Importer.hpp>
-
 #include <entt/single_include/entt/entt.hpp>
 
 //--------------OURS----------------
@@ -84,3 +80,4 @@
 #include "Utils/Logger.h"
 #include "Utils/Template.h"
 #include "Utils/Profiler.h"
+#include "Utils/Observed.h"

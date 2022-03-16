@@ -1,10 +1,28 @@
 #include "pch.h"
 #include "DeferredPipeline.h"
 #include "../../State/Capabilities.h"
+#include "../../Objects/Framebuffer/GeometryFramebufferBuilder.h"
+#include "../../Objects/Framebuffer/LightFramebufferBuilder.h"
 #include "../../DrawUtils.h"
 
 namespace Nork::Renderer {
-
+	DeferredPipeline::DeferredPipeline(std::shared_ptr<Shader> geomatryShader, std::shared_ptr<Shader> lightShader, uint32_t width, uint32_t height)
+		: geomatryShader(geomatryShader), lightShader(lightShader)
+	{
+		using enum Renderer::TextureFormat;
+		geometryFb = GeometryFramebufferBuilder()
+			.Width(width).Height(height)
+			.Position(RGB16F)
+			.Normal(RGB16F)
+			.Diffuse(RGB16F)
+			.Specular(RGBA16F)
+			.Depth(Depth16)
+			.Create();
+		lightFb = LightFramebufferBuilder()
+			.DepthTexture(geometryFb->Depth())
+			.ColorFormat(Renderer::TextureFormat::RGBA16F)
+			.Create();
+	}
 	void DeferredPipeline::GeometryPass(ModelIterator iterator)
 	{
 		geometryFb->Bind().SetViewport().Clear();

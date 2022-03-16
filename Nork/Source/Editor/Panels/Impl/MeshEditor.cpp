@@ -287,16 +287,18 @@ namespace Nork::Editor
 		ImGui::Checkbox("Draw Sky", &data.engine.physicsSystem.drawSky);
 
 		auto options = ImGuiColorEditFlags_DefaultOptions_ | ImGuiColorEditFlags_AlphaPreview | ImGuiColorEditFlags_AlphaBar;
-		/*ImGui::ColorEdit4("Point Color", &data.engine.pointColor.r, options);
-		ImGui::ColorEdit4("Line Color", &data.engine.lineColor.r, options);
-		ImGui::ColorEdit4("Triangle Color", &data.engine.triangleColor.r, options);
-		ImGui::ColorEdit3("Focused Color", &data.engine.selectedColor.r, options);
-		ImGui::SliderFloat("Point alpha (focused)", &data.engine.pointAlpha, 0, 1, "%.2f");
-		ImGui::SliderFloat("Line alpha (focused)", &data.engine.lineAlpha, 0, 1, "%.2f");
-		ImGui::SliderFloat("Triangle alpha (focused)", &data.engine.triAlpha, 0, 1, "%.2f");
-		ImGui::SliderFloat("Line Width", &data.engine.lineWidth, 0, 1, "%.3f", ImGuiSliderFlags_Logarithmic);
-		ImGui::SliderInt("Point Size", &data.engine.pointSize, 1, 1000, "%d", ImGuiSliderFlags_Logarithmic);
-		ImGui::DragFloat("Point Internal size", &data.engine.pointInternalSize, 0.01f, 0, 1, "%.2f");
-		ImGui::DragFloat("Point Anti-Aliasing", &data.engine.pointAA, 0.001, 0, 1, "%.3f");*/
+		ImGui::SliderInt("Point Size", &data.engine.renderingSystem.globalShaderUniform.pointSize, 1, 1000, "%d", ImGuiSliderFlags_Logarithmic);
+		ImGui::DragFloat("Point Internal size", &data.engine.renderingSystem.globalShaderUniform.pointInternalSize, 0.01f, 0, 1, "%.2f");
+		ImGui::DragFloat("Point Anti-Aliasing", &data.engine.renderingSystem.globalShaderUniform.pointAA, 0.001, 0, 1, "%.3f");
+		ImGui::ColorEdit4("Point Color", &data.engine.renderingSystem.globalShaderUniform.pointColor.r, options);
+		ImGui::SliderFloat("Point alpha (focused)", &data.engine.renderingSystem.globalShaderUniform.pointAlpha, 0, 1, "%.2f");
+
+		ImGui::SliderFloat("Line Width", &data.engine.renderingSystem.globalShaderUniform.lineWidth, 0, 1, "%.3f", ImGuiSliderFlags_Logarithmic);
+		ImGui::ColorEdit4("Line Color", &data.engine.renderingSystem.globalShaderUniform.lineColor.r, options);
+		ImGui::SliderFloat("Line alpha (focused)", &data.engine.renderingSystem.globalShaderUniform.lineAlpha, 0, 1, "%.2f");
+
+		ImGui::SliderFloat("Triangle alpha (focused)", &data.engine.renderingSystem.globalShaderUniform.triAlpha, 0, 1, "%.2f");
+
+		ImGui::ColorEdit3("Focused Color", &data.engine.renderingSystem.globalShaderUniform.selectedColor.r, options);
 	}
 }

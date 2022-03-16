@@ -10,6 +10,10 @@
 #define STBI_NO_PNM
 #include <stb/stb_image.h>
 
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+#include <assimp/Importer.hpp>
+
 namespace Nork::Renderer
 {
 	static TextureFormat GetFormat(int channels)

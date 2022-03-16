@@ -4,46 +4,32 @@ namespace Nork::Components
 {
 	struct Transform
 	{
-		Transform() : position(glm::vec3(0)), scale(glm::vec3(1)) {}
+		Transform();
+
+		glm::vec3 Translate(const glm::vec3& translation);
+		glm::vec3 Scaling(const glm::vec3& scale);
+		glm::quat Rotate(const glm::vec3& axis, float angle);
+
+		glm::mat4 TranslationMatrix();
+		glm::mat4 RotationMatrix();
+		glm::mat4 TranslationRotationMatrix();
+		glm::mat4 ModelMatrix();
+
+		const glm::vec3& Position() const { return position; }
+		const glm::vec3& Scale() const { return scale; }
+		const glm::quat& Rotation() const { return quaternion; }
+		Transform& Position(const glm::vec3& v);
+		Transform& Scale(const glm::vec3& v);
+		Transform& Rotation(const glm::quat& v);
+
+
+	private:
 		glm::vec3 position, scale;
-		glm::quat quaternion = glm::identity<glm::quat>();
-		mutable glm::mat4 modelMatrix = GetModelMatrix();
-		bool changed = true;
-		void Translate(glm::vec3 translation)
-		{
-			position += translation;
-			changed = true;
-		}
-		glm::mat4 GetModelMatrix() const
-		{
-			if (changed)
-			{
-				modelMatrix = glm::scale(glm::translate(glm::identity<glm::mat4>(), position) * RotationMatrix(), scale);
-				// changed = false;
-			}
-			return modelMatrix;
-		}
+		glm::quat quaternion;
+		
+		bool changed;
 
-		glm::mat4 RotationMatrix() const
-		{
-			/*glm::mat4 rot = glm::rotate(glm::identity<glm::mat4>(), rotation.z, glm::vec3(0, 0, 1));
-			rot *= glm::rotate(glm::identity<glm::mat4>(), rotation.x, glm::vec3(1, 0, 0));
-			rot *= glm::rotate(glm::identity<glm::mat4>(), rotation.y, glm::vec3(0, 1, 0));*/
-			return glm::mat4_cast(quaternion);
-		}
-
-		void Rotate(glm::vec3 axis, float angle)
-		{
-			quaternion = glm::rotate(quaternion, angle, axis);
-		}
-
-		glm::mat4 TranslationRotationMatrix() const
-		{
-			if (changed)
-			{
-				return glm::translate(glm::identity<glm::mat4>(), position) * RotationMatrix();
-			}
-		}
+		glm::mat4 modelMatrix;
 	};
 
 	struct Tag

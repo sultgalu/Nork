@@ -21,7 +21,7 @@ namespace Nork
 	void Scene::Load(std::string path)
 	{
 		registry = entt::registry();
-		
+
 		std::ifstream ifs(path, std::ios::in);
 		try
 		{
@@ -29,14 +29,6 @@ namespace Nork
 			ss << ifs.rdbuf();
 			ifs.close();
 			root = JsonSerializer(registry).Deserialize(ss.str());
-			// std::ofstream stream("tempmppmppmpm.json", std::ios::out);
-			// try
-			// {
-			// 	stream << JsonSerializer(registry).Serialize(*root);
-			// } catch (std::exception e)
-			// {
-			// 	Logger::Error(e.what());
-			// }
 		} catch (std::exception e)
 		{
 			Logger::Error(e.what());

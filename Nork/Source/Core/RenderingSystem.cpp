@@ -3,31 +3,7 @@
 #include "Modules/Renderer/Objects/Framebuffer/LightFramebufferBuilder.h"
 #include "Modules/Renderer/Objects/Shader/ShaderBuilder.h"
 
-namespace Nork{
-	static std::shared_ptr<Renderer::GeometryFramebuffer> CreateGeometryFramebuffer(uint32_t width, uint32_t height)
-	{
-		using enum Renderer::TextureFormat;
-		return Renderer::GeometryFramebufferBuilder()
-			.Width(width).Height(height)
-			.Depth(Depth16)
-			.Position(RGB16F)
-			.Normal(RGB16F)
-			.Diffuse(RGB16F)
-			.Specular(RGBA16F)
-			.Create();
-	}
-	static std::shared_ptr<Renderer::LightFramebuffer> CreateLightFramebuffer(std::shared_ptr<Renderer::GeometryFramebuffer> gFb)
-	{
-		return Renderer::LightFramebufferBuilder()
-			.DepthTexture(gFb->Depth())
-			.ColorFormat(Renderer::TextureFormat::RGBA16F)
-			.Create();
-	}
-	static Renderer::DeferredPipeline CreateDeferredPipeline(uint32_t width, uint32_t height, std::shared_ptr<Renderer::Shader> gShader, std::shared_ptr<Renderer::Shader> lShader)
-	{
-		auto fb = CreateGeometryFramebuffer(width, height);
-		return Renderer::DeferredPipeline(fb, CreateLightFramebuffer(fb), gShader, lShader);
-	}
+namespace Nork {
 	Renderer::ModelIterator ModelIterator(entt::registry& reg)
 	{
 		auto iterator = [&](auto func)
@@ -40,7 +16,7 @@ namespace Nork{
 		return iterator;
 	}
 	RenderingSystem::RenderingSystem()
-		: deferredPipeline(CreateDeferredPipeline(resolution.x, resolution.y, shaders.gPassShader, shaders.lPassShader))
+		: deferredPipeline(shaders.gPassShader, shaders.lPassShader, resolution.x, resolution.y)
 	{
 		using namespace Renderer;
 		for (auto& sm : dirShadowMaps)
@@ -51,6 +27,19 @@ namespace Nork{
 		{
 			sm = std::make_shared<PointShadowMap>(shaders.pShadowShader, 1000, TextureFormat::Depth16);
 		}
+	}
+	void RenderingSystem::UpdateGlobalUniform()
+	{
+		shaders.pointShader->Use()
+			.SetFloat("aa", globalShaderUniform.pointAA)
+			.SetFloat("size", globalShaderUniform.pointInternalSize)
+			.SetVec4("colorDefault", globalShaderUniform.pointColor)
+			.SetVec4("colorSelected", glm::vec4(globalShaderUniform.selectedColor, globalShaderUniform.pointAlpha));
+
+		shaders.lineShader->Use()
+			.SetFloat("width", globalShaderUniform.lineWidth)
+			.SetVec4("colorDefault", globalShaderUniform.lineColor)
+			.SetVec4("colorSelected", glm::vec4(globalShaderUniform.selectedColor, globalShaderUniform.lineAlpha));
 	}
 	void RenderingSystem::UpdateLights(entt::registry& reg)
 	{
@@ -89,45 +78,25 @@ namespace Nork{
 	}
 	void RenderingSystem::ViewProjectionUpdate(Components::Camera& camera)
 	{
-		// shader.Use();
-		// shader.SetMat4("VP", camera.viewProjection);
-		// shader.SetVec4("colorDefault", triangleColor);
-		// shader.SetVec4("colorSelected", glm::vec4(selectedColor, triAlpha));
+		shaders.pointShader->Use().SetMat4("VP", camera.viewProjection);
+		shaders.lineShader->Use().SetMat4("VP", camera.viewProjection);
+		
+		shaders.gPassShader->Use().SetMat4("VP", camera.viewProjection);
+		shaders.lPassShader->Use().SetVec3("viewPos", camera.position);
 
-		shaders.pointShader->Use();
-		shaders.pointShader->SetMat4("VP", camera.viewProjection);
-		shaders.pointShader->SetFloat("aa", pointAA);
-		shaders.pointShader->SetFloat("size", pointInternalSize);
-		shaders.pointShader->SetVec4("colorDefault", pointColor);
-		shaders.pointShader->SetVec4("colorSelected", glm::vec4(selectedColor, pointAlpha));
-
-		shaders.lineShader->Use();
-		shaders.lineShader->SetMat4("VP", camera.viewProjection);
-		shaders.lineShader->SetFloat("width", lineWidth);
-		shaders.lineShader->SetVec4("colorDefault", lineColor);
-		shaders.lineShader->SetVec4("colorSelected", glm::vec4(selectedColor, lineAlpha));
-
-		//lightMan.dShadowMapShader->SetMat4("VP", vp);
-		shaders.gPassShader->Use();
-		shaders.gPassShader->SetMat4("VP", camera.viewProjection);
-
-		shaders.lPassShader->Use();
-		shaders.lPassShader->SetVec3("viewPos", camera.position);
-
-		shaders.skyboxShader->Use();
 		auto vp = camera.projection * glm::mat4(glm::mat3(camera.view));
-		shaders.skyboxShader->SetMat4("VP", vp);
+		shaders.skyboxShader->Use().SetMat4("VP", vp);
 	}
 	void RenderingSystem::SyncComponents(entt::registry& reg)
 	{
 		using namespace Components;
 		for (auto [id, pl, tr] : reg.view<PointLight, Transform>().each())
 		{
-			pl.position = tr.position;
+			pl.position = tr.Position();
 		}
 		for (auto [id, dr, tr] : reg.view<Drawable, Transform>().each())
 		{
-			dr.model.SetModelMatrix(tr.GetModelMatrix());
+			dr.model.SetModelMatrix(tr.ModelMatrix());
 		}
 	}
 	void RenderingSystem::RenderScene(entt::registry& reg)
@@ -138,6 +107,11 @@ namespace Nork{
 	void RenderingSystem::Update(entt::registry& registry, Components::Camera& camera)
 	{
 		SyncComponents(registry);
+		if (globalShaderUniform.IsChanged())
+		{
+			UpdateGlobalUniform();
+			Logger::Info("Updating");
+		}
 		ViewProjectionUpdate(camera);
 		UpdateLights(registry);
 		RenderScene(registry);

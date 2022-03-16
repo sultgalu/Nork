@@ -71,7 +71,7 @@ namespace Nork::Editor
 	{
 		if (ImGui::TreeNodeEx("Transform", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			if (ImGui::DragFloat3("Position", &(tr->position.x), 0.1f))
+			/*if (ImGui::DragFloat3("Position", &(tr->position.x), 0.1f))
 			{
 			}
 			if (ImGui::DragFloat3("Scale", &(tr->scale.x), 0.001f, 0.001f, 1000.0f, "%.3f", ImGuiSliderFlags_Logarithmic))
@@ -95,7 +95,7 @@ namespace Nork::Editor
 			if (ImGui::DragFloat4("Quaternion", &(tr->quaternion.w), 0.1f))
 			{
 				tr->quaternion = glm::normalize(tr->quaternion);
-			}
+			}*/
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 			if (ImGui::Button("Delete"))
 			{

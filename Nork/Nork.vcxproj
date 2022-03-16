@@ -164,6 +164,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Components\Impl\Common.cpp" />
     <ClCompile Include="Source\Core\PhysicsSystem.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Buffer\BufferBuilder.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Framebuffer\FramebufferBuilder.cpp" />
@@ -368,6 +369,7 @@
     <ClInclude Include="Source\Editor\Editor.h" />
     <ClInclude Include="Source\Core\Event.h" />
     <ClInclude Include="Source\Utils\Logger.h" />
+    <ClInclude Include="Source\Utils\Observed.h" />
     <ClInclude Include="Source\Utils\Profiler.h" />
     <ClInclude Include="Source\Utils\Template.h" />
     <ClInclude Include="Source\Utils\Timer.h" />

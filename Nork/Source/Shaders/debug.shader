@@ -13,7 +13,6 @@ void main()
 #type fragment
 #version 430 core
 
-
 out vec4 fColor;
 
 struct Config

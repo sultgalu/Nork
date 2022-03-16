@@ -17,18 +17,21 @@ namespace Nork {
 	using namespace Components;
 	template<> JsonObject JsonComponentSerializer<Transform>::Serialize(const Transform& component)
 	{
+		glm::vec3 pos = component.Position(), scale = component.Scale();
+		glm::quat rot = component.Rotation();
 		return JsonObject()
-			.Property("position", JsonArray().Elements((float*)&component.position, 3))
-			.Property("scale", JsonArray().Elements((float*)&component.scale, 3))
-			.Property("quaternion", JsonArray().Elements((float*)&component.quaternion, 4));
+			.Property("position", JsonArray().Elements((float*)&pos, 3))
+			.Property("scale", JsonArray().Elements((float*)&scale, 3))
+			.Property("quaternion", JsonArray().Elements((float*)&rot, 4));
 	}
 	template<> Transform JsonComponentSerializer<Transform>::Deserialize(const JsonObject& json)
 	{
-		Transform comp;
-		json.Get<JsonArray>("position").Get<float>((float*)&comp.position, 3);
-		json.Get<JsonArray>("scale").Get<float>((float*)&comp.scale, 3);
-		json.Get<JsonArray>("quaternion").Get<float>((float*)&comp.quaternion, 4);
-		return comp;
+		glm::vec3 pos, scale;
+		glm::quat rot;
+		json.Get<JsonArray>("position").Get<float>((float*)&pos, 3);
+		json.Get<JsonArray>("scale").Get<float>((float*)&scale, 3);
+		json.Get<JsonArray>("quaternion").Get<float>((float*)&rot, 4);
+		return Transform().Position(pos).Scale(scale).Rotation(rot);
 	}
 
 	template<> JsonObject JsonComponentSerializer<DirLight>::Serialize(const DirLight& component)

@@ -75,25 +75,38 @@ namespace Nork {
 			skyboxShader, textureShader,
 			pointShader, lineShader;
 	};
+	struct GlobalShaderUniform
+	{
+		float pointInternalSize = 0.5f;
+		float pointAA = 0.3f;
+		float pointAlpha = 1.0f;
+		int pointSize = 20;
+		glm::vec4 pointColor = glm::vec4(1, 0, 0, 1.0f);
 
+		float lineWidth = 0.005f;
+		float lineAlpha = 1.0f;
+		float triAlpha = 0.6f;
+		float dummy; // for alignment
+
+		glm::vec4 lineColor = glm::vec4(0, 0, 1, 0.3f);
+
+		glm::vec3 selectedColor = glm::vec3(1, 0, 1);
+	};
 	class RenderingSystem
 	{
 	public:
 		RenderingSystem();
 
+		void UpdateGlobalUniform();
 		void UpdateLights(entt::registry& reg);
 		void ViewProjectionUpdate(Components::Camera& camera);
 		void SyncComponents(entt::registry& reg);
 		void RenderScene(entt::registry& reg);
 		void Update(entt::registry& registry, Components::Camera& camera);
-	public:
-		int pointSize = 20;
-		float pointInternalSize = 0.5f, pointAA = 0.3f, lineWidth = 0.005f;
-		float pointAlpha = 1.0f, lineAlpha = 1.0f, triAlpha = 0.6f;
-		glm::vec4 pointColor = { 1,0,0, 1.0f };
-		glm::vec4 lineColor = { 0,0,1, 0.3f };
-		glm::vec4 triangleColor = { 0,1,0, 0.4f };
-		glm::vec3 selectedColor = { 1,0,1 };
+
+		GlobalShaderUniform GetGlobalShaderUniform() { return globalShaderUniform; }
+	
+	private:
 		glm::uvec2 resolution = { 1920, 1080 };
 	public:
 		Shaders shaders;
@@ -101,5 +114,7 @@ namespace Nork {
 		Renderer::LightState lightState;
 		std::array<std::shared_ptr<Renderer::DirShadowMap>, 5> dirShadowMaps;
 		std::array<std::shared_ptr<Renderer::PointShadowMap>, 5> pointShadowMaps;
+
+		Observed<GlobalShaderUniform> globalShaderUniform;
 	};
 }

@@ -108,6 +108,16 @@ namespace Nork::Editor
 		ImGui::Text((std::to_string(actualPos2.x) + ";" + std::to_string(actualPos2.y)).c_str());
 		ImGui::Text(("texture ID: " + std::to_string(image.texture->GetHandle())).c_str());
 
+		static glm::vec2 res;
+		ImGui::SliderFloat2("asd", &res.x, 0, 2000);
+		if (ImGui::Button("Change Res"))
+		{
+			auto& pipeline = data.engine.renderingSystem.deferredPipeline;
+			pipeline = Renderer::DeferredPipeline(pipeline.geomatryShader, 
+				pipeline.lightShader, res.x, res.y);
+			image.texture = pipeline.lightFb->Color();
+		}
+
 		if (ImGui::BeginPopup("texturesToDisplay"))
 		{
 			/*if (ImGui::Selectable("DEBUG"))

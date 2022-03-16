@@ -52,7 +52,7 @@ int main()
 			{
 				auto ent = engine.scene.CreateNode()->GetEntity();
 				ent.AddComponent<Components::Drawable>();
-				ent.AddComponent<Components::Transform>().position = glm::vec3(i * sep, j * sep, k * sep);
+				ent.AddComponent<Components::Transform>().Position(glm::vec3(i * sep, j * sep, k * sep));
 				ent.AddComponent<Components::Kinematic>().mass = 0.1f;
 				ent.AddComponent<Polygon>();
 				ent.AddComponent<Components::Tag>().tag = std::to_string(i).append("-").append(std::to_string(j)).append("-").append(std::to_string(k));
@@ -68,9 +68,9 @@ int main()
 	glm::vec3 scale = glm::vec3(100, 1, 100);
 	auto ground = engine.scene.CreateNode()->GetEntity();
 	ground.AddComponent<Components::Drawable>();
-	auto& tr = ground.AddComponent<Components::Transform>();
-	tr.position = glm::vec3(0, -10, 0);
-	tr.scale = scale;
+	auto& tr = ground.AddComponent<Components::Transform>()
+		.Position(glm::vec3(0, -10, 0))
+		.Scale(scale);
 	ground.AddComponent<Polygon>().Scale(scale);
 	ground.AddComponent<Components::Tag>().tag = "GROUND";
 
