@@ -48,6 +48,7 @@ struct PointShadow
 	int blur;
 	float radius, far, near;
 	int idx;
+	float dummy;
 };
 
 struct CullConfig
@@ -74,24 +75,24 @@ layout(std140, binding = 2) uniform asd2
 };
 layout(std140, binding = 3) uniform asd3
 {
-	PointLight pLs[1024];
+	PointLight pLs[10];
 };
 layout(std140, binding = 4) uniform asd4
 {
 	PointShadow pLSs[10];
 };
-layout(std430, binding = 10) buffer Buf0
-{
-	uint pLightIndicies[];
-};
-layout(std430, binding = 11) buffer Buf
-{
-	uvec2 ranges[];
-};
-layout(std430, binding = 12) buffer BUF3
-{
-	CullConfig cullConfig;
-};
+//layout(std430, binding = 10) buffer Buf0
+//{
+//	uint pLightIndicies[];
+//};
+//layout(std430, binding = 11) buffer Buf
+//{
+//	uvec2 ranges[];
+//};
+//layout(std430, binding = 12) buffer BUF3
+//{
+//	CullConfig cullConfig;
+//};
 // --------- GLOBAL ----------
 
 struct Materials
@@ -110,8 +111,8 @@ uniform sampler2D gDiff;
 uniform sampler2D gNorm;
 uniform sampler2D gSpec;
 
-uniform sampler2D dirShadowMaps[5];
-uniform samplerCube pointShadowMaps[5];
+uniform sampler2DShadow dirShadowMaps[5];
+uniform samplerCubeShadow pointShadowMaps[15];
 
 vec3 dLight(DirLight light, Materials material, vec3 normal, vec3 viewDir);
 vec3 dLightShadow(DirLight light, Materials material, vec3 normal, vec3 viewDir, DirShadow shadow, vec3 worldPos);
@@ -167,9 +168,12 @@ void main()
 	{
 		result += pLightShadow(pLs[i], material, normal, viewDir, pLSs[i], worldPos);
 	}
-	for (uint i = pShadowCount; i < pLightCount; i++)
+	if (pShadowCount < pLightCount) // if left out, weird rendering happens (can't handle for loop below)
 	{
-		result += pLight(pLs[i], material, worldPos, normal, viewDir);
+		for (uint i = pShadowCount; i < pLightCount; i++)
+		{
+			result += pLight(pLs[i], material, worldPos, normal, viewDir);
+		}
 	}
 	fColor = vec4(result, 1.0f);
 	// fColor = vec4(texture(dirShadowMaps[0], texCoord).rgb, 1.0f);
@@ -194,17 +198,8 @@ float dShadow(DirShadow shadow, float bias, vec4 lightView)
 {
 	vec3 fragPos = lightView.xyz / lightView.w; // clipping
 	fragPos = (fragPos + 1.0f) / 2.0f; // [-1;1] -> [0;1]
-
-	float shad = 0.0f;
-	vec2 texelPortion = 1.0f / textureSize(dirShadowMaps[shadow.idx], 0);
-	for (float i = -shadow.pcfSize; i < shadow.pcfSize + 1; i++) // anti-aliasing shadows basically
-	{
-		for (float j = -shadow.pcfSize; j < shadow.pcfSize + 1; j++)
-		{
-			shad += (texture(dirShadowMaps[shadow.idx], fragPos.xy + (vec2(i * texelPortion.x, j * texelPortion.y))).r + bias < fragPos.z) ? 0.0f : 1.0f;
-		}
-	}
-	return shad / pow(shadow.pcfSize * 2 + 1, 2);
+	fragPos.z -= bias;
+	return texture(dirShadowMaps[shadow.idx], fragPos.xyz);
 }
 vec3 dLightShadow(DirLight light, Materials material, vec3 normal, vec3 viewDir, DirShadow shadow, vec3 worldPos)
 {
@@ -251,26 +246,7 @@ vec3 pLight(PointLight light, Materials material, vec3 worldPos, vec3 normal, ve
 float pShadow(PointShadow shadow, float bias, vec3 worldPos, vec3 lightPos)
 {
 	vec3 direction = worldPos - lightPos;
-	float depth = length(direction);
-
-	const vec3 offs[20] = vec3[]
-	(
-		vec3(1, 1, 1), vec3(1, -1, 1), vec3(-1, -1, 1), vec3(-1, 1, 1),
-		vec3(1, 1, -1), vec3(1, -1, -1), vec3(-1, -1, -1), vec3(-1, 1, -1),
-		vec3(1, 1, 0), vec3(1, -1, 0), vec3(-1, -1, 0), vec3(-1, 1, 0),
-		vec3(1, 0, 1), vec3(-1, 0, 1), vec3(1, 0, -1), vec3(-1, 0, -1),
-		vec3(0, 1, 1), vec3(0, -1, 1), vec3(0, -1, -1), vec3(0, 1, -1)
-		);
-
-	float shad = 0.0f;
-	bias *= shadow.far; // bias is given in [0;1] range, making it [0;far] 
-	for (int i = 0; i < shadow.blur; i++)
-	{
-		float closestDepth = texture(pointShadowMaps[shadow.idx], direction + offs[i] * shadow.radius).r;
-		closestDepth *= shadow.far; // [0;1] -> [0;farPlane] (we divided it in shadowShader)
-		shad += closestDepth + bias < depth ? 0.0f : 1.0f;
-	}
-	return shad / (shadow.blur == 0 ? 1.0f : shadow.blur);
+	return texture(pointShadowMaps[shadow.idx], vec4(direction.xyz, length(direction) / shadow.far - bias));
 }
 vec3 pLightShadow(PointLight light, Materials material, vec3 normal, vec3 viewDir, PointShadow shadow, vec3 worldPos)
 {

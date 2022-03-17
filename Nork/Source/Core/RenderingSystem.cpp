@@ -5,7 +5,6 @@
 #include "Modules/Renderer/Pipeline/PostProcess/SkyRenderer.h"
 #include "Modules/Renderer/LoadUtils.h"
 #include "Modules/Renderer/Objects/Texture/TextureBuilder.h"
-#include "Modules/Renderer/Config.h"
 
 namespace Nork {
 	Renderer::ModelIterator ModelIterator(entt::registry& reg)
@@ -27,11 +26,11 @@ namespace Nork {
 		using namespace Renderer;
 		for (auto& sm : dirShadowMaps)
 		{
-			sm = std::make_shared<DirShadowMap>(shaders.dShadowShader, 4000, 4000, TextureFormat::Depth16);
+			sm = std::make_shared<DirShadowMap>(shaders.dShadowShader, 400, 400, TextureFormat::Depth16);
 		}
 		for (auto& sm : pointShadowMaps)
 		{
-			sm = std::make_shared<PointShadowMap>(shaders.pShadowShader, 1000, TextureFormat::Depth16);
+			sm = std::make_shared<PointShadowMap>(shaders.pShadowShader, 100, TextureFormat::Depth16);
 		}
 
 		// auto image = Renderer::LoadUtils::LoadCubemapImages("Resources/Textures/skybox", ".jpg");
@@ -162,9 +161,9 @@ namespace Nork {
 			.SetInt("gNorm", 2)
 			.SetInt("gSpec", 3);
 
-		for (int i = 0; i < 5; i++)
+		for (int i = 0; i < Renderer::Config::LightData::dirShadowsLimit; i++)
 			lPassShader->SetInt(("dirShadowMaps[" + std::to_string(i) + "]").c_str(), i + Renderer::Config::LightData::dirShadowBaseIndex);
-		for (int i = 0; i < 5; i++)
+		for (int i = 0; i < Renderer::Config::LightData::pointShadowsLimit; i++)
 			lPassShader->SetInt(("pointShadowMaps[" + std::to_string(i) + "]").c_str(), i + Renderer::Config::LightData::pointShadowBaseIndex);
 	}
 

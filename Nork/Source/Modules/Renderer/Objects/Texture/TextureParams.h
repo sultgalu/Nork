@@ -28,12 +28,13 @@ struct TextureParams
 	TextureFilter filter = TextureFilter::None;
 	bool magLinear = true;
 	bool genMipmap = false;
+	bool shadow = false;
+
 	static consteval TextureParams CubeMapParams()
 	{
 		return TextureParams {
 			.wrap = TextureWrap::ClampToEdge,
 			.filter = TextureFilter::Linear,
-			.magLinear = true,
 			.genMipmap = false
 		};
 	}
@@ -42,7 +43,6 @@ struct TextureParams
 		return TextureParams {
 			.wrap = TextureWrap::Repeat,
 			.filter = TextureFilter::LinearMipmapNearest,
-			.magLinear = true,
 			.genMipmap = true
 		};
 	}
@@ -51,8 +51,17 @@ struct TextureParams
 		return TextureParams{
 			.wrap = TextureWrap::ClampToEdge,
 			.filter = TextureFilter::Linear,
-			.magLinear = true,
 			.genMipmap = false
+		};
+	}
+	static consteval TextureParams ShadowMapParams()
+	{
+		return TextureParams{
+			.wrap = TextureWrap::ClampToEdge,
+			.filter = TextureFilter::Linear,
+			.magLinear = true, // shadow anti-aliasing
+			.genMipmap = false,
+			.shadow = true
 		};
 	}
 

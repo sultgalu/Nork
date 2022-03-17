@@ -220,7 +220,7 @@ namespace Nork::Editor
 			ImGui::SliderFloat("Minimum bias", &comp->biasMin, 0, 1, "%.5f", ImGuiSliderFlags_Logarithmic);
 			ImGui::SliderInt("Blur", &comp->blur, 0, 9);
 			(ImGui::SliderFloat("Radius", &comp->radius, 0.0f, 1.0f));
-			if (ImGui::SliderInt("IDX", &comp->idx, 0, 4));
+			if (ImGui::SliderInt("IDX", &comp->idx, 0, Renderer::Config::LightData::pointShadowsLimit - 1));
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 			if (ImGui::Button("Delete"))
 			{

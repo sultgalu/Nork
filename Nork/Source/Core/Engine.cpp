@@ -8,8 +8,8 @@ namespace Nork
 {
 	static std::vector<uint8_t> dShadowIndices;
 	static std::vector<uint8_t> pShadowIndices;
-	static constexpr auto dShadIdxSize = 10;
-	static constexpr auto pShadIdxSize = 10;
+	static constexpr auto dShadIdxSize = Renderer::Config::LightData::dirShadowsLimit;
+	static constexpr auto pShadIdxSize = Renderer::Config::LightData::pointShadowsLimit;
 
 	void Engine::OnDShadowAdded(entt::registry& reg, entt::entity id)
 	{
@@ -28,11 +28,19 @@ namespace Nork
 		dShadowIndices.push_back(shad.idx);
 	}
 
+	static void OnPShadAdded(entt::registry& reg, entt::entity id)
+	{
+		auto& shad = reg.get<Components::PointShadow>(id);
+		shad.idx = pShadowIndices.back();
+		pShadowIndices.pop_back();
+	}
+
 	Engine::Engine(EngineConfig config)
 	{
 		auto& reg = scene.registry;
 		reg.on_construct<Components::DirShadow>().connect<&Engine::OnDShadowAdded>(this);
 		reg.on_destroy<Components::DirShadow>().connect<&Engine::OnDShadowRemoved>(this);
+		reg.on_construct<Components::PointShadow>().connect<OnPShadAdded>();
 
 		for (int i = dShadIdxSize - 1; i > -1; i--)
 		{

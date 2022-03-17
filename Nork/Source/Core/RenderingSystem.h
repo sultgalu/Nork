@@ -7,6 +7,7 @@
 #include "Modules/Renderer/Pipeline/Light/DirShadowMap.h"
 #include "Modules/Renderer/Pipeline/Light/PointShadowMap.h"
 #include "Modules/Renderer/Pipeline/Deferred/DeferredPipeline.h"
+#include "Modules/Renderer/Config.h"
 
 namespace Nork {
 	
@@ -112,8 +113,8 @@ namespace Nork {
 		Shaders shaders;
 		Renderer::DeferredPipeline deferredPipeline;
 		Renderer::LightState lightState;
-		std::array<std::shared_ptr<Renderer::DirShadowMap>, 5> dirShadowMaps;
-		std::array<std::shared_ptr<Renderer::PointShadowMap>, 5> pointShadowMaps;
+		std::array<std::shared_ptr<Renderer::DirShadowMap>, Renderer::Config::LightData::dirShadowsLimit> dirShadowMaps;
+		std::array<std::shared_ptr<Renderer::PointShadowMap>, Renderer::Config::LightData::pointShadowsLimit> pointShadowMaps;
 		std::shared_ptr<Renderer::TextureCube> skybox;
 
 		Observed<GlobalShaderUniform> globalShaderUniform;

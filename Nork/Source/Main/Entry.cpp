@@ -90,40 +90,34 @@ int main()
 	shad.RecalcVP(l.GetView());
 	sun.AddComponent<Components::Tag>().tag = "SUN";
 	
-	//int offsX = 10;
-	//int dimP = 5;
-	//int sepP = 3;
-	//int startP = -dimP / 2;
-	//int endP = dimP / 2 + dimP % 2;
+	int offsX = 10;
+	int dimP = 2;
+	int sepP = 3;
+	int startP = -dimP / 2;
+	int endP = dimP / 2 + dimP % 2;
+	int shadows = 8;
 
-	//for (int i = startP; i < endP; i++)
-	//{
-	//	for (int j = 0; j < dimP; j++)
-	//	{
-	//		for (int k = startP; k < endP; k++)
-	//		{
-	//			auto node = engine.scene.CreateNode();
-	//			engine.scene.AddComponent<Components::PointLight>(node);
-	//			engine.scene.AddModel(node);
-	//			engine.scene.AddComponent<Components::Transform>(node).position = glm::vec3(i * sepP + offsX, j * sepP, k * sepP);
-	//			//engine.scene.AddComponent<Components::Kinematic>(node).mass = 0.1f;
-	//			//engine.scene.AddComponent<Polygon>(node);
-	//			//engine.scene.AddComponent<Components::Tag>(node).tag = std::to_string(i).append("-").append(std::to_string(j)).append("-").append(std::to_string(k));
-	//		}
-	//	}
-	//}
+	for (int i = startP; i < endP; i++)
+	{
+		for (int j = 0; j < dimP; j++)
+		{
+			for (int k = startP; k < endP; k++)
+			{
+				auto pl = engine.scene.CreateNode()->GetEntity();
+				pl.AddComponent<Components::Transform>().SetPosition({ i * sepP + offsX, j * sepP, k * sepP });
+				pl.AddComponent<Components::Drawable>();
+				pl.AddComponent<Components::PointLight>().SetIntensity(10);
+				if (shadows-- > 0)
+					pl.AddComponent<Components::PointShadow>().blur = 6;
+				pl.AddComponent<Components::Tag>().tag = "pointLight" + std::to_string((k-startP) + j * dimP + (i-startP) * dimP * dimP);
+			}
+		}
+	}
 	
 	/*Application::Get().dispatcher.GetReceiver().Subscribe<RenderUpdatedEvent>([&](const RenderUpdatedEvent& e)
 		{
 			editor.SetDisplayTexture(engine.renderingSystem.dShadowFramebuffers[0].GetAttachments().depth.value());
 		});*/
-
-	auto pl = engine.scene.CreateNode()->GetEntity();
-	pl.AddComponent<Components::Transform>().SetPosition({-15.0f, 10.0f, 0.0f});
-	pl.AddComponent<Components::Drawable>();
-	pl.AddComponent<Components::PointLight>().SetIntensity(160);
-	pl.AddComponent<Components::PointShadow>();
-	pl.AddComponent<Components::Tag>().tag = "pointLight";
 	
 	Application::Get().window.SetupCallbacks();
 	//Application::Get().window.Resize(1280, 720);

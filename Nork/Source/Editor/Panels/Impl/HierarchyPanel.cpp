@@ -1,6 +1,7 @@
 #include "../HierarchyPanel.h"
 
 namespace Nork::Editor {
+	static bool del = false;
 	static void RecursiveDraw(EditorData& data, SceneNode& node)
 	{
 		auto& ent = node.GetEntity();
@@ -40,8 +41,9 @@ namespace Nork::Editor {
 		{
 			if (ImGui::Selectable("Delete"))
 			{
-				data.engine.scene.DeleteNode(*data.selectedNode);
-				data.selectedNode = nullptr;
+				del = true;
+				// data.engine.scene.DeleteNode(*data.selectedNode);
+				// data.selectedNode = nullptr;
 				ImGui::CloseCurrentPopup();
 			}
 			if (ImGui::Selectable("Orphan"))
@@ -69,7 +71,13 @@ namespace Nork::Editor {
 
 void Nork::Editor::HierarchyPanel::DrawContent()
 {
+	del = false;
 	RecursiveDraw(data, *data.engine.scene.root);
+	if (del)
+	{
+		data.engine.scene.DeleteNode(*data.selectedNode);
+		data.selectedNode = nullptr;
+	}
 
 	ImGui::Separator();
 
