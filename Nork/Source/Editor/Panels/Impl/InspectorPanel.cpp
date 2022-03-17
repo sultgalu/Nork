@@ -71,14 +71,20 @@ namespace Nork::Editor
 	{
 		if (ImGui::TreeNodeEx("Transform", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			/*if (ImGui::DragFloat3("Position", &(tr->position.x), 0.1f))
+			auto pos = tr->GetPosition();
+			auto scale = tr->GetScale();
+			auto quat = tr->GetRotation();
+
+			if (ImGui::DragFloat3("Position", &(pos.x), 0.1f))
 			{
+				tr->SetPosition(pos);
 			}
-			if (ImGui::DragFloat3("Scale", &(tr->scale.x), 0.001f, 0.001f, 1000.0f, "%.3f", ImGuiSliderFlags_Logarithmic))
+			if (ImGui::DragFloat3("Scale", &(scale.x), 0.001f, 0.001f, 1000.0f, "%.3f", ImGuiSliderFlags_Logarithmic))
 			{
+				tr->SetScale(scale);
 			}
-			glm::vec3 rotationAxis = glm::axis(tr->quaternion);
-			float angle = glm::angle(tr->quaternion);
+			glm::vec3 rotationAxis = glm::axis(quat);
+			float angle = glm::angle(quat);
 			float rotateAmount = 0;
 			if (ImGui::DragFloat("Rotate", &rotateAmount, 0.01f))
 			{
@@ -86,16 +92,16 @@ namespace Nork::Editor
 			}
 			if (ImGui::DragFloat("Set Rotation", &angle, 0.01f))
 			{
-				tr->quaternion = glm::angleAxis(angle, glm::normalize(rotationAxis));
+				tr->SetRotation(glm::angleAxis(angle, glm::normalize(rotationAxis)));
 			}
 			if (ImGui::DragFloat3("Set Rotation Axis", &rotationAxis.x, 0.01f))
 			{
-				tr->quaternion = glm::angleAxis(angle, glm::normalize(rotationAxis));
+				tr->SetRotation(glm::angleAxis(angle, glm::normalize(rotationAxis)));
 			}
-			if (ImGui::DragFloat4("Quaternion", &(tr->quaternion.w), 0.1f))
+			if (ImGui::DragFloat4("Quaternion", &quat.w, 0.1f))
 			{
-				tr->quaternion = glm::normalize(tr->quaternion);
-			}*/
+				tr->SetRotation(glm::normalize(quat));
+			}
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 			if (ImGui::Button("Delete"))
 			{
@@ -179,8 +185,8 @@ namespace Nork::Editor
 		if (ImGui::TreeNodeEx("PLight", ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			if (ImGui::ColorEdit4("Color##PlIght", (float*)&(pL->color.r))) {}
-			int pow = pL->GetPower();
-			if (ImGui::DragInt("Intensity", &(pow), 1, 0, PointLight::maxPower))
+			int pow = pL->GetIntensity();
+			if (ImGui::DragInt("Intensity", &(pow), 1, 0, 10000))
 				pL->SetIntensity(pow);
 
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
@@ -200,36 +206,20 @@ namespace Nork::Editor
 			static bool on = false;
 			if (ImGui::Checkbox("WildCard", &on))
 			{
-				// static GLuint saved = data.engine.pipeline.data.skyboxTex;
-				// if (on)
-				// 	data.engine.pipeline.data.skyboxTex = data.engine.pShadowFramebuffers[comp->GetData().idx].Texture();
-				// else
-				// 	data.engine.pipeline.data.skyboxTex = saved;
+				if (on)
+					data.engine.renderingSystem.skybox = data.engine.renderingSystem.pointShadowMaps[comp->idx]->Get();
+				else
+					data.engine.renderingSystem.skybox = nullptr;
 			}
-			if (ImGui::DragFloat2("Far, Near", &comp->far, 0.001f, 0, 0, "%.3f"))
-			{
-				//comp->RecalcVP(dl->GetView());
-			}
+			ImGui::DragFloat2("Far, Near", &comp->far, 0.001f, 0, 0, "%.3f");
 			float bias = comp->bias;
 			float biasMin = comp->biasMin;
 			int blur = (int)comp->blur;
 			float rad = comp->radius;
-			if (ImGui::SliderFloat("Bias", &bias, 0, 1, "%.5f", ImGuiSliderFlags_Logarithmic))
-			{
-				comp->SetBias(bias);
-			}
-			if (ImGui::SliderFloat("Minimum bias", &biasMin, 0, 1, "%.5f", ImGuiSliderFlags_Logarithmic))
-			{
-				comp->SetBiasMin(biasMin);
-			}
-			if (ImGui::SliderInt("Blur", &blur, 0, 9))
-			{
-				comp->SetBlur(blur);
-			}
-			if (ImGui::SliderFloat("Radius", &rad, 0.0f, 1.0f))
-			{
-				comp->SetRadius(rad);
-			}
+			ImGui::SliderFloat("Bias", &comp->bias, 0, 1, "%.5f", ImGuiSliderFlags_Logarithmic);
+			ImGui::SliderFloat("Minimum bias", &comp->biasMin, 0, 1, "%.5f", ImGuiSliderFlags_Logarithmic);
+			ImGui::SliderInt("Blur", &comp->blur, 0, 9);
+			(ImGui::SliderFloat("Radius", &comp->radius, 0.0f, 1.0f));
 			if (ImGui::SliderInt("IDX", &comp->idx, 0, 4));
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 			if (ImGui::Button("Delete"))

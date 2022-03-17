@@ -26,7 +26,7 @@ namespace Nork {
 		collView.each([&](entt::entity id, Transform& tr, Kinematic& kin, Polygon& poly)
 			{
 				pWorld.kinems.push_back(Physics::KinematicData{
-					.position = tr.Position(), .quaternion = tr.Rotation(),
+					.position = tr.GetPosition(), .quaternion = tr.GetRotation(),
 					.velocity = kin.velocity, .w = kin.w, .mass = kin.mass,
 					.isStatic = false, .forces = kin.forces });
 			});
@@ -34,7 +34,7 @@ namespace Nork {
 		collOnlyView.each([&](entt::entity id, Transform& tr, Polygon& poly)
 			{
 				pWorld.kinems.push_back(Physics::KinematicData{
-					.position = tr.Position(), .quaternion = tr.Rotation(),
+					.position = tr.GetPosition(), .quaternion = tr.GetRotation(),
 					.velocity = glm::vec3(0),.w = glm::vec3(0), .mass = 1,
 					.isStatic = true, .forces = glm::vec3(0), });
 			});
@@ -42,7 +42,7 @@ namespace Nork {
 		view.each([&](entt::entity id, Transform& tr, Kinematic& kin)
 			{
 				pWorld.kinems.push_back(Physics::KinematicData{
-					.position = tr.Position(), .quaternion = tr.Rotation(),
+					.position = tr.GetPosition(), .quaternion = tr.GetRotation(),
 					.velocity = kin.velocity, .w = kin.w, .mass = kin.mass,
 					.isStatic = false, .forces = kin.forces });
 			});
@@ -76,14 +76,14 @@ namespace Nork {
 
 		collView.each([&](entt::entity id, Transform& tr, Kinematic& kin, Polygon& poly)
 			{
-				translations.push_back(tr.Position());
-				quaternions.push_back(tr.Rotation());
+				translations.push_back(tr.GetPosition());
+				quaternions.push_back(tr.GetRotation());
 			});
 
 		collOnlyView.each([&](entt::entity id, Transform& tr, Polygon& poly)
 			{
-				translations.push_back(tr.Position());
-				quaternions.push_back(tr.Rotation());
+				translations.push_back(tr.GetPosition());
+				quaternions.push_back(tr.GetRotation());
 			});
 		deltas.push_back(std::pair("fill model buf", t.Reset()));
 
@@ -98,10 +98,10 @@ namespace Nork {
 		deltas.push_back(std::pair("getKinView", t.Reset()));
 		kinView.each([&](entt::entity id, Transform& tr, Kinematic& kin)
 			{
-				tr.Position(pWorld.kinems[i].position);
+				tr.SetPosition(pWorld.kinems[i].position);
 				kin.velocity = pWorld.kinems[i].velocity;
 				kin.forces = pWorld.kinems[i].forces;
-				tr.Rotation(pWorld.kinems[i].quaternion);
+				tr.SetRotation(pWorld.kinems[i].quaternion);
 				kin.w = pWorld.kinems[i++].w;
 			});
 		deltas.push_back(std::pair("read back psystem results", t.Reset()));

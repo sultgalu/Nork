@@ -15,12 +15,12 @@ namespace Nork::Components
 		glm::mat4 TranslationRotationMatrix();
 		glm::mat4 ModelMatrix();
 
-		const glm::vec3& Position() const { return position; }
-		const glm::vec3& Scale() const { return scale; }
-		const glm::quat& Rotation() const { return quaternion; }
-		Transform& Position(const glm::vec3& v);
-		Transform& Scale(const glm::vec3& v);
-		Transform& Rotation(const glm::quat& v);
+		const glm::vec3& GetPosition() const { return position; }
+		const glm::vec3& GetScale() const { return scale; }
+		const glm::quat& GetRotation() const { return quaternion; }
+		Transform& SetPosition(const glm::vec3& v);
+		Transform& SetScale(const glm::vec3& v);
+		Transform& SetRotation(const glm::quat& v);
 
 
 	private:
@@ -59,12 +59,6 @@ namespace Nork::Components
 			this->selected = selected;
 			this->id = ++idCounter;
 		}
-	};
-
-	struct OldKinematic
-	{
-		float mass = 1.0f;
-		glm::vec3 velocity;
 	};
 
 	struct Kinematic

@@ -33,22 +33,32 @@ namespace Nork::Renderer
 	}
     Image LoadUtils::LoadImage(std::string_view path)
     {
-		Image img{};
         int width = 0, height = 0, channels = 0;
 
-		unsigned char* data = stbi_load(path.data(), &img.width, &img.height, &img.channels, 0);
+		unsigned char* data = stbi_load(path.data(), &width, &height, &channels, 0);
 		size_t size = (size_t)width * height * channels;
 		if (data)
 		{
-			img.data.assign(data, data + size);
+			//auto d = std::vector<char>(data, data + size);
+			auto image = Image{
+				.width = (uint32_t)width,
+				.height = (uint32_t)height,
+				.channels = (uint32_t)channels,
+				.format = GetFormat(channels),
+				.data = std::vector<char>()
+			};
+			image.data.assign(data, data + size);
+			std::memcpy(image.data.data(), data, size);
 			stbi_image_free(data);
+			return image;
 		}
 		else
 		{
 			Logger::Error("Failed to load texture data from ", path);
+			return Image{
+				.width = 1, .height = 1, .channels = 1, .format = TextureFormat::R8, .data = std::vector<char>(1)
+			};
 		}
-		img.format = GetFormat(channels);
-        return img;
     }
 	std::array<Image, 6> LoadUtils::LoadCubemapImages(std::string dirPath, std::string extension)
 	{

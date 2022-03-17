@@ -33,7 +33,7 @@ struct TextureParams
 		return TextureParams {
 			.wrap = TextureWrap::ClampToEdge,
 			.filter = TextureFilter::Linear,
-			.magLinear = false,
+			.magLinear = true,
 			.genMipmap = false
 		};
 	}

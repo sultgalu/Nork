@@ -44,8 +44,9 @@ struct PointLight
 
 struct PointShadow
 {
-	float bias, biasMin, blur, radius,
-		far, near;
+	float bias, biasMin;
+	int blur;
+	float radius, far, near;
 	int idx;
 };
 
@@ -162,11 +163,11 @@ void main()
 	//		result += pLight(pLs[idx], material, worldPos, normal, viewDir);
 	//	}
 	//}
-	for (int i = 0; i < int(pShadowCount); i++)
+	for (uint i = uint(0); i < pShadowCount; i++)
 	{
 		result += pLightShadow(pLs[i], material, normal, viewDir, pLSs[i], worldPos);
 	}
-	for (int i = int(pShadowCount); i < int(pLightCount); i++)
+	for (uint i = pShadowCount; i < pLightCount; i++)
 	{
 		result += pLight(pLs[i], material, worldPos, normal, viewDir);
 	}
@@ -228,7 +229,7 @@ float CalcLuminosity(vec3 fromPos, vec3 toPos, float linear, float quadratic)
 {
 	float distance = length(toPos - fromPos);
 	float attenuation = 1.0f / (1.0f + linear * distance + quadratic * distance * distance);
-	if (attenuation <= 0.001f) attenuation = 0.0f;
+	//if (attenuation <= 0.001f) attenuation = 0.0f;
 	return attenuation;
 }
 
@@ -263,7 +264,7 @@ float pShadow(PointShadow shadow, float bias, vec3 worldPos, vec3 lightPos)
 
 	float shad = 0.0f;
 	bias *= shadow.far; // bias is given in [0;1] range, making it [0;far] 
-	for (int i = 0; i < int(shadow.blur); i++)
+	for (int i = 0; i < shadow.blur; i++)
 	{
 		float closestDepth = texture(pointShadowMaps[shadow.idx], direction + offs[i] * shadow.radius).r;
 		closestDepth *= shadow.far; // [0;1] -> [0;farPlane] (we divided it in shadowShader)

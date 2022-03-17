@@ -17,8 +17,8 @@ namespace Nork {
 	using namespace Components;
 	template<> JsonObject JsonComponentSerializer<Transform>::Serialize(const Transform& component)
 	{
-		glm::vec3 pos = component.Position(), scale = component.Scale();
-		glm::quat rot = component.Rotation();
+		glm::vec3 pos = component.GetPosition(), scale = component.GetScale();
+		glm::quat rot = component.GetRotation();
 		return JsonObject()
 			.Property("position", JsonArray().Elements((float*)&pos, 3))
 			.Property("scale", JsonArray().Elements((float*)&scale, 3))
@@ -31,7 +31,7 @@ namespace Nork {
 		json.Get<JsonArray>("position").Get<float>((float*)&pos, 3);
 		json.Get<JsonArray>("scale").Get<float>((float*)&scale, 3);
 		json.Get<JsonArray>("quaternion").Get<float>((float*)&rot, 4);
-		return Transform().Position(pos).Scale(scale).Rotation(rot);
+		return Transform().SetPosition(pos).SetScale(scale).SetRotation(rot);
 	}
 
 	template<> JsonObject JsonComponentSerializer<DirLight>::Serialize(const DirLight& component)
@@ -55,7 +55,7 @@ namespace Nork {
 			.Property("position", JsonArray().Elements((float*)&component.position, 3))
 			.Property("linear", component.linear)
 			.Property("quadratic", component.quadratic)
-			.Property("intensity", component.intensity);
+			.Property("intensity", component.GetIntensity());
 	}
 	template<> PointLight JsonComponentSerializer<PointLight>::Deserialize(const JsonObject& json)
 	{
@@ -64,7 +64,7 @@ namespace Nork {
 		json.Get<JsonArray>("position").Get<float>((float*)&comp.position, 3);
 		comp.linear = json.Get<float>("linear");
 		comp.quadratic = json.Get<float>("quadratic");
-		comp.intensity = json.Get<float>("intensity");
+		comp.SetIntensity(json.Get<float>("intensity"));
 		return comp;
 	}
 

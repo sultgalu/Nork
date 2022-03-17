@@ -12,7 +12,9 @@ namespace Nork::Renderer
 	};
 	struct PointShadow
 	{
-		float bias, biasMin, blur, radius, far, near;
+		float bias, biasMin;
+		int blur;
+		float radius, far, near;
 		int idx;
 		float dummies[1];
 	};

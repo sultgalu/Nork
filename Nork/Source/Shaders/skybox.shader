@@ -26,7 +26,7 @@ in vec3 texCoords;
 uniform samplerCube skyBox;
 uniform sampler2D gradient;
 //uniform vec3 tint = vec3(1, 1, 1);
-uniform vec3 texCoord;
+in vec3 texCoord;
 
 void main()
 {
@@ -36,5 +36,7 @@ void main()
 	//fColor = texture(skyBox, texCoords) * vec4(grad.rgb, 0.0f);
 	//fColor = vec4(grad.rgb, 1.0f);
 	fColor = texture(skyBox, texCoords);
+	//fColor = texture(gradient, texCoords.xy);
 	//fColor = vec4(1.0f, 0.0f, 1.0f, 1.0f);
+	gl_FragDepth = 1;  
 }

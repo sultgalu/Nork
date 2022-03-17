@@ -32,13 +32,6 @@ int main()
 			editor.Render();
 		});
 
-	auto dummyNode = engine.scene.CreateNode();
-	dummyNode->GetEntity().AddComponent<Components::Tag>().tag = "DUMMY";
-	auto dummyChildNode = engine.scene.CreateNode(*dummyNode);
-	dummyChildNode->GetEntity().AddComponent<Components::Drawable>();
-	dummyChildNode->GetEntity().AddComponent<Components::Tag>().tag = "CHILD";
-	dummyChildNode->GetEntity().AddComponent<Components::Transform>();
-
 	int dim = 4;
 	int sep = 3;
 	int start = -dim / 2;
@@ -52,7 +45,7 @@ int main()
 			{
 				auto ent = engine.scene.CreateNode()->GetEntity();
 				ent.AddComponent<Components::Drawable>();
-				ent.AddComponent<Components::Transform>().Position(glm::vec3(i * sep, j * sep, k * sep));
+				ent.AddComponent<Components::Transform>().SetPosition(glm::vec3(i * sep, j * sep, k * sep));
 				ent.AddComponent<Components::Kinematic>().mass = 0.1f;
 				ent.AddComponent<Polygon>();
 				ent.AddComponent<Components::Tag>().tag = std::to_string(i).append("-").append(std::to_string(j)).append("-").append(std::to_string(k));
@@ -69,8 +62,8 @@ int main()
 	auto ground = engine.scene.CreateNode()->GetEntity();
 	ground.AddComponent<Components::Drawable>();
 	auto& tr = ground.AddComponent<Components::Transform>()
-		.Position(glm::vec3(0, -10, 0))
-		.Scale(scale);
+		.SetPosition(glm::vec3(0, -10, 0))
+		.SetScale(scale);
 	ground.AddComponent<Polygon>().Scale(scale);
 	ground.AddComponent<Components::Tag>().tag = "GROUND";
 
@@ -91,6 +84,7 @@ int main()
 	auto sun = engine.scene.CreateNode()->GetEntity();
 	auto& l = sun.AddComponent<Components::DirLight>();
 	l.SetColor(glm::vec4(0.5f, 0.4f, 0.25, 1));
+	l.SetColor(glm::vec4(0.0f));
 	auto& shad = sun.AddComponent<Components::DirShadow>();
 	shad.far = 100; shad.near = -100; shad.left = -100; shad.right = 100; shad.bottom = -100; shad.top = 100;
 	shad.RecalcVP(l.GetView());
@@ -124,6 +118,13 @@ int main()
 			editor.SetDisplayTexture(engine.renderingSystem.dShadowFramebuffers[0].GetAttachments().depth.value());
 		});*/
 
+	auto pl = engine.scene.CreateNode()->GetEntity();
+	pl.AddComponent<Components::Transform>().SetPosition({-15.0f, 10.0f, 0.0f});
+	pl.AddComponent<Components::Drawable>();
+	pl.AddComponent<Components::PointLight>().SetIntensity(160);
+	pl.AddComponent<Components::PointShadow>();
+	pl.AddComponent<Components::Tag>().tag = "pointLight";
+	
 	Application::Get().window.SetupCallbacks();
 	//Application::Get().window.Resize(1280, 720);
 	engine.physicsUpdate = true;

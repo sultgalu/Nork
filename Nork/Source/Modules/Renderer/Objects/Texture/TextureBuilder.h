@@ -20,7 +20,7 @@ namespace Nork::Renderer {
 			data2D = data;
 			return Create2D();
 		}
-		std::shared_ptr<TextureCube> CreateCubeWithData(std::array<void*, 6> data)
+		std::shared_ptr<TextureCube> CreateCubeWithData(const std::array<void*, 6>& data)
 		{
 			dataCube = data;
 			return CreateCube();

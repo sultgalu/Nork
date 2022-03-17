@@ -48,10 +48,10 @@ namespace Nork::Renderer {
 	}
 	void TextureBuilder::SetParams(bool cube)
 	{
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, params.GetFilter());
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, params.magLinear ? GL_LINEAR : GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, params.GetWrap());
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, params.GetWrap());
+		glTexParameteri(cube ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, params.GetFilter());
+		glTexParameteri(cube ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, params.magLinear ? GL_LINEAR : GL_NEAREST);
+		glTexParameteri(cube ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, params.GetWrap());
+		glTexParameteri(cube ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, params.GetWrap());
 		if (cube)
 		{
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, params.GetWrap());

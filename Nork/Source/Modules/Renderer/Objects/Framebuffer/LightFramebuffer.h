@@ -8,11 +8,8 @@ namespace Nork::Renderer {
 	public:
 		LightFramebuffer(GLuint handle, int width, int height, FramebufferAttachments attachments)
 			: Framebuffer(handle, width, height, attachments)
-		{}
-		LightFramebuffer& CreateTextures(GeometryFramebuffer& gFb, TextureFormat color)
 		{
 			clearBits = GL_COLOR_BUFFER_BIT;
-			return *this;
 		}
 		std::shared_ptr<Texture2D> Color()
 		{

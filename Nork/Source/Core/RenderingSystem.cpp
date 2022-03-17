@@ -2,6 +2,10 @@
 #include "Modules/Renderer/Objects/Framebuffer/GeometryFramebufferBuilder.h"
 #include "Modules/Renderer/Objects/Framebuffer/LightFramebufferBuilder.h"
 #include "Modules/Renderer/Objects/Shader/ShaderBuilder.h"
+#include "Modules/Renderer/Pipeline/PostProcess/SkyRenderer.h"
+#include "Modules/Renderer/LoadUtils.h"
+#include "Modules/Renderer/Objects/Texture/TextureBuilder.h"
+#include "Modules/Renderer/Config.h"
 
 namespace Nork {
 	Renderer::ModelIterator ModelIterator(entt::registry& reg)
@@ -18,6 +22,8 @@ namespace Nork {
 	RenderingSystem::RenderingSystem()
 		: deferredPipeline(shaders.gPassShader, shaders.lPassShader, resolution.x, resolution.y)
 	{
+		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
 		using namespace Renderer;
 		for (auto& sm : dirShadowMaps)
 		{
@@ -27,6 +33,17 @@ namespace Nork {
 		{
 			sm = std::make_shared<PointShadowMap>(shaders.pShadowShader, 1000, TextureFormat::Depth16);
 		}
+
+		// auto image = Renderer::LoadUtils::LoadCubemapImages("Resources/Textures/skybox", ".jpg");
+		// std::array<void*, 6> data;
+		// for (size_t i = 0; i < data.size(); i++)
+		// {
+		// 	data[i] = image[i].data.data();
+		// }
+		// skybox = Renderer::TextureBuilder()
+		// 	.Attributes(TextureAttributes{ .width = image[0].width, .height = image[0].height, .format = image[0].format })
+		// 	.Params(TextureParams::CubeMapParams())
+		// 	.CreateCubeWithData(data);
 	}
 	void RenderingSystem::UpdateGlobalUniform()
 	{
@@ -92,7 +109,7 @@ namespace Nork {
 		using namespace Components;
 		for (auto [id, pl, tr] : reg.view<PointLight, Transform>().each())
 		{
-			pl.position = tr.Position();
+			pl.position = tr.GetPosition();
 		}
 		for (auto [id, dr, tr] : reg.view<Drawable, Transform>().each())
 		{
@@ -103,6 +120,8 @@ namespace Nork {
 	{
 		deferredPipeline.GeometryPass(ModelIterator(reg));
 		deferredPipeline.LightPass();
+		if (drawSky && skybox != nullptr)
+			Renderer::SkyRenderer::RenderSkybox(*skybox, *shaders.skyboxShader);
 	}
 	void RenderingSystem::Update(entt::registry& registry, Components::Camera& camera)
 	{
@@ -144,9 +163,9 @@ namespace Nork {
 			.SetInt("gSpec", 3);
 
 		for (int i = 0; i < 5; i++)
-			lPassShader->SetInt(("dirShadowMaps[" + std::to_string(i) + "]").c_str(), i + 10);
+			lPassShader->SetInt(("dirShadowMaps[" + std::to_string(i) + "]").c_str(), i + Renderer::Config::LightData::dirShadowBaseIndex);
 		for (int i = 0; i < 5; i++)
-			lPassShader->SetInt(("pointShadowMaps[" + std::to_string(i) + "]").c_str(), i + 15);
+			lPassShader->SetInt(("pointShadowMaps[" + std::to_string(i) + "]").c_str(), i + Renderer::Config::LightData::pointShadowBaseIndex);
 	}
 
 	void Shaders::SetGeometryPassShader(std::shared_ptr<Renderer::Shader> shader)

@@ -44,7 +44,7 @@ namespace Nork::Components {
 		}
 		return modelMatrix;
 	}
-	Transform& Transform::Position(const glm::vec3& v)
+	Transform& Transform::SetPosition(const glm::vec3& v)
 	{
 		if (position != v)
 		{
@@ -53,7 +53,7 @@ namespace Nork::Components {
 		}
 		return *this;
 	}
-	Transform& Transform::Scale(const glm::vec3& v)
+	Transform& Transform::SetScale(const glm::vec3& v)
 	{
 		if (scale != v)
 		{
@@ -62,7 +62,7 @@ namespace Nork::Components {
 		}
 		return *this;
 	}
-	Transform& Transform::Rotation(const glm::quat& v)
+	Transform& Transform::SetRotation(const glm::quat& v)
 	{
 		if (quaternion != v)
 		{

@@ -8,7 +8,7 @@ namespace Nork::Renderer
 {
 	struct Image
 	{
-		int width, height, channels;
+		uint32_t width, height, channels;
 		TextureFormat format;
 		std::vector<char> data;
 	};
