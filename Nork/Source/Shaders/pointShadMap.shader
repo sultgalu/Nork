@@ -3,10 +3,16 @@
 layout(location = 0) in vec3 vPos;
 
 uniform mat4 model;
+layout(std140, binding = 5) uniform asd5
+{
+	mat4 models[1000 * 1000];
+};
+
+uniform int instanced;
 
 void main()
 {
-	gl_Position = model * vec4(vPos, 1.0f);
+	gl_Position = (instanced > 0 ? models[gl_InstanceID] : model) * vec4(vPos, 1.0f);
 }
 
 #type geometry

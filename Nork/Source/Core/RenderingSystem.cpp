@@ -18,6 +18,36 @@ namespace Nork {
 		};
 		return iterator;
 	}
+	Renderer::DrawableIterator DrawableIterator(entt::registry& reg)
+	{
+		using namespace Renderer;
+		auto iterator = [&](auto func)
+		{
+			std::unordered_map<std::string, std::vector<Mesh>> meshMap;
+			std::unordered_map<std::string, std::vector<glm::mat4>> modelsMap;
+			for (auto [id, dr, tr] : reg.view<Components::Drawable, Components::Transform>().each())
+			{
+				meshMap[dr.resource.resource->id] = *dr.resource.resource->object;
+				modelsMap[dr.resource.resource->id].push_back(tr.ModelMatrix());
+			}
+			for (auto& pair : meshMap)
+			{
+				if (modelsMap[pair.first].size() > 10)
+				{
+					func(InstancedDrawable(pair.second, modelsMap[pair.first]));
+				}
+				else
+				{
+					for (auto& modelM : modelsMap[pair.first])
+					{
+						func(SingleDrawable(pair.second, modelM));
+					}
+				}
+			}
+
+		};
+		return iterator;
+	}
 	RenderingSystem::RenderingSystem()
 		: deferredPipeline(shaders.gPassShader, shaders.lPassShader, resolution.x, resolution.y)
 	{
@@ -68,7 +98,7 @@ namespace Nork {
 			lightState.dirLights.push_back(light);
 			lightState.dirShadows.push_back(shadow);
 
-			dirShadowMaps[shadow.idx]->Render(light, shadow, ModelIterator(reg));
+			dirShadowMaps[shadow.idx]->Render(light, shadow, DrawableIterator(reg));
 			dirShadowMaps[shadow.idx]->Bind(shadow);
 		}
 		for (auto [id, light] : reg.view<DirLight>(entt::exclude<DirShadow>).each())
@@ -83,7 +113,7 @@ namespace Nork {
 			lightState.pointLights.push_back(light);
 			lightState.pointShadows.push_back(shadow);
 
-			pointShadowMaps[shadow.idx]->Render(light, shadow, ModelIterator(reg));
+			pointShadowMaps[shadow.idx]->Render(light, shadow, DrawableIterator(reg));
 			pointShadowMaps[shadow.idx]->Bind(shadow);
 		}
 		for (auto [id, light] : reg.view<PointLight>(entt::exclude<PointShadow>).each())
@@ -117,7 +147,7 @@ namespace Nork {
 	}
 	void RenderingSystem::RenderScene(entt::registry& reg)
 	{
-		deferredPipeline.GeometryPass(ModelIterator(reg));
+		deferredPipeline.GeometryPass(DrawableIterator(reg));
 		deferredPipeline.LightPass();
 		if (drawSky && skybox != nullptr)
 			Renderer::SkyRenderer::RenderSkybox(*skybox, *shaders.skyboxShader);

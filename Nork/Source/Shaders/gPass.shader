@@ -17,17 +17,26 @@ out vec3 vNorm;
 uniform mat4 model;
 uniform mat4 VP;
 
+layout(std140, binding = 5) uniform asd5
+{
+	mat4 models[1000 * 1000];
+};
+
+uniform int instanced;
+
 void main()
 {
-	worldPos = (model * vec4(vPos, 1.0f)).xyz;
+	mat4 _model = instanced > 0 ? models[gl_InstanceID] : model;
+
+	worldPos = (_model * vec4(vPos, 1.0f)).xyz;
 	gl_Position = VP * vec4(worldPos, 1.0f);
 
 	texCoord = vTexCoord;
 	vNorm = vNormal;
 
-	vec3 T = normalize(vec3(model * vec4(vTangent, 0.0f)));
-	vec3 B = normalize(vec3(model * vec4(vBiTangent, 0.0f)));
-	vec3 N = normalize(vec3(model * vec4(vNormal, 0.0f)));
+	vec3 T = normalize(vec3(_model * vec4(vTangent, 0.0f)));
+	vec3 B = normalize(vec3(_model * vec4(vBiTangent, 0.0f)));
+	vec3 N = normalize(vec3(_model * vec4(vNormal, 0.0f)));
 
 #ifdef IDKWHATTOCALLTHISBUTITISHERE
 	// re-orthogonalize T with respect to N

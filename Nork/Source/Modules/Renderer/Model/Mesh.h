@@ -59,7 +59,7 @@ namespace Nork::Renderer {
 			return textureMaps[std::to_underlying(TextureMapType::Roughness)];
 		}
 
-		Mesh& BindTextures()
+		const Mesh& BindTextures() const
 		{
 			for (int i = 0; i < textureMaps.size(); i++)
 			{
@@ -67,9 +67,13 @@ namespace Nork::Renderer {
 			}
 			return *this;
 		}
-		void Draw()
+		void Draw() const
 		{
 			vao->Bind().DrawIndexed();
+		}
+		void DrawInstanced(uint32_t count) const
+		{
+			vao->Bind().DrawIndexedInstanced(count);
 		}
 		static Mesh Cube();
 	private:

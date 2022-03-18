@@ -167,6 +167,7 @@
     <ClCompile Include="Source\Components\Impl\Common.cpp" />
     <ClCompile Include="Source\Components\Impl\Lights.cpp" />
     <ClCompile Include="Source\Core\PhysicsSystem.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Model\Drawable.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Buffer\BufferBuilder.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Framebuffer\FramebufferBuilder.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Framebuffer\GeometryFramebufferBuilder.cpp" />

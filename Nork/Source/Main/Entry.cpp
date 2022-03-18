@@ -32,7 +32,7 @@ int main()
 			editor.Render();
 		});
 
-	int dim = 4;
+	int dim = 10;
 	int sep = 3;
 	int start = -dim / 2;
 	int end = dim / 2 + dim % 2;
@@ -84,14 +84,14 @@ int main()
 	auto sun = engine.scene.CreateNode()->GetEntity();
 	auto& l = sun.AddComponent<Components::DirLight>();
 	l.SetColor(glm::vec4(0.5f, 0.4f, 0.25, 1));
-	l.SetColor(glm::vec4(0.0f));
+	//l.SetColor(glm::vec4(0.0f));
 	auto& shad = sun.AddComponent<Components::DirShadow>();
 	shad.far = 100; shad.near = -100; shad.left = -100; shad.right = 100; shad.bottom = -100; shad.top = 100;
 	shad.RecalcVP(l.GetView());
 	sun.AddComponent<Components::Tag>().tag = "SUN";
 	
 	int offsX = 10;
-	int dimP = 2;
+	int dimP = 0;
 	int sepP = 3;
 	int startP = -dimP / 2;
 	int endP = dimP / 2 + dimP % 2;
@@ -121,7 +121,7 @@ int main()
 	
 	Application::Get().window.SetupCallbacks();
 	//Application::Get().window.Resize(1280, 720);
-	engine.physicsUpdate = true;
+	engine.physicsUpdate = false;
 	engine.scene.GetMainCamera().SetPosition(glm::vec3(-58, 16, -91));
 	engine.scene.GetMainCamera().SetRotation(-10, 60);
 	engine.Launch();

@@ -14,7 +14,7 @@ namespace Nork::Renderer {
 			: shader(shader), framebuffer(framebuffer)
 		{}
 		DirShadowMap(std::shared_ptr<Shader> shader, uint32_t width, uint32_t height, TextureFormat depthFormat);
-		void Render(const DirLight& light, const DirShadow& shadow, ModelIterator iterator);
+		void Render(const DirLight& light, const DirShadow& shadow, DrawableIterator iterator);
 		void Bind(const DirShadow& shadow);
 		std::shared_ptr<Texture2D> Get();
 	private:

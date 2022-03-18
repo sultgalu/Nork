@@ -2,6 +2,7 @@
 
 namespace Nork::Components
 {
+
 	struct Transform
 	{
 		Transform();
