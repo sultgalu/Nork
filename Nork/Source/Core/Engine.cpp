@@ -35,10 +35,10 @@ namespace Nork
 		pShadowIndices.pop_back();
 	}
 
-	static void OnDrawableAdded(entt::registry& reg, entt::entity id)
+	void Engine::OnDrawableAdded(entt::registry& reg, entt::entity id)
 	{
 		auto& dr = reg.get<Components::Drawable>(id);
-		dr.resource = Application::Get().resourceManager.GetMeshes("defaultCube");
+		dr.resource = resourceManager.GetMeshes("");
 	}
 
 	Engine::Engine(EngineConfig config)
@@ -47,7 +47,7 @@ namespace Nork
 		reg.on_construct<Components::DirShadow>().connect<&Engine::OnDShadowAdded>(this);
 		reg.on_destroy<Components::DirShadow>().connect<&Engine::OnDShadowRemoved>(this);
 		reg.on_construct<Components::PointShadow>().connect<OnPShadAdded>();
-		reg.on_construct<Components::Drawable>().connect<OnDrawableAdded>();
+		reg.on_construct<Components::Drawable>().connect<&Engine::OnDrawableAdded>(this);
 
 		for (int i = dShadIdxSize - 1; i > -1; i--)
 		{

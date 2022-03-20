@@ -19,6 +19,7 @@ namespace Nork::Renderer {
 	class Mesh
 	{
 	public:
+		Mesh(std::vector<Vertex>& vertices);
 		Mesh(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices);
 		Mesh& SetTexture(std::shared_ptr<Texture2D> texture, TextureMapType type)
 		{
@@ -69,11 +70,17 @@ namespace Nork::Renderer {
 		}
 		void Draw() const
 		{
-			vao->Bind().DrawIndexed();
+			if (vao->HasIbo())
+				vao->Bind().DrawIndexed();
+			else
+				vao->Bind().Draw();
 		}
 		void DrawInstanced(uint32_t count) const
 		{
-			vao->Bind().DrawIndexedInstanced(count);
+			if (vao->HasIbo())
+				vao->Bind().DrawIndexedInstanced(count);
+			else
+				vao->Bind().DrawInstanced(count);
 		}
 		static Mesh Cube();
 	private:

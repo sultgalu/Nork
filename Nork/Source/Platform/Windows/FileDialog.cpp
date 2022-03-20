@@ -13,9 +13,10 @@ namespace Nork::FileDialog
 
     const static COMDLG_FILTERSPEC _3DExtensions[]
     {
-        COMDLG_FILTERSPEC{L"3D as OBJ", L"*.obj"},
-        COMDLG_FILTERSPEC{L"3D as FBX", L"*.fbx"},
+        COMDLG_FILTERSPEC{L"3D as FBX", L"*.fbx;*.obj"},
+        //COMDLG_FILTERSPEC{L"3D as OBJ", L"*.obj"},
         COMDLG_FILTERSPEC{L"3D as COLLADA", L"*.dae"},
+        COMDLG_FILTERSPEC{L"3D as BLENDER", L"*.blend"},
     };
 
     static std::vector<COMDLG_FILTERSPEC> GetExtensions(EngineFileTypes types)

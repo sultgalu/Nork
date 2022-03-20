@@ -44,6 +44,10 @@ namespace Nork::Renderer {
 			ibo->Bind();
 			glDrawElementsInstanced(std::to_underlying(mode), ibo->GetSize() / sizeof(GLuint), GL_UNSIGNED_INT, 0, count);
 		}
+		void DrawInstanced(uint32_t count, DrawMode mode = DrawMode::Triangles)
+		{
+			glDrawArraysInstanced(std::to_underlying(mode), 0, ibo->GetSize() / sizeof(GLuint), count);
+		}
 		bool HasIbo()
 		{
 			return ibo != nullptr;

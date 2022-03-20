@@ -12,7 +12,6 @@ namespace Nork
 		Dispatcher dispatcher;
 		InputState inputState;
 		Engine engine;
-		ResourceManager resourceManager;
 	private:
 		Application();
 		~Application();

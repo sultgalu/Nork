@@ -287,4 +287,10 @@ namespace Nork::Renderer {
 		auto ibo = BufferBuilder().Target(BufferTarget::Index).Usage(BufferUsage::StaticDraw).Data(indices.data(), indices.size() * sizeof(GLuint)).Create();
 		vao = VertexArrayBuilder().VBO(vbo).IBO(ibo).Attributes({ 3, 3, 2, 3, 3 }).Create();
 	}
+	Mesh::Mesh(std::vector<Vertex>& vertices)
+	{
+		textureMaps = GetDefaultTextureMaps();
+		auto vbo = BufferBuilder().Target(BufferTarget::Vertex).Usage(BufferUsage::StaticDraw).Data(vertices.data(), vertices.size() * sizeof(Vertex)).Create();
+		vao = VertexArrayBuilder().VBO(vbo).Attributes({ 3, 3, 2, 3, 3 }).Create();
+	}
 }

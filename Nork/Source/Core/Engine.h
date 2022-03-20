@@ -7,6 +7,7 @@
 #include "Modules/Renderer/Objects/Shader/Shader.h"
 #include "RenderingSystem.h"
 #include "PhysicsSystem.h"
+#include "Core/ResourceManager.h"
 
 namespace Nork
 {
@@ -28,6 +29,7 @@ namespace Nork
 	private:
 		void OnDShadowAdded(entt::registry& reg, entt::entity ent);
 		void OnDShadowRemoved(entt::registry& reg, entt::entity ent);
+		void OnDrawableAdded(entt::registry& reg, entt::entity id);
 	public:
 		Scene scene;
 		GLuint idMap;
@@ -35,6 +37,7 @@ namespace Nork
 		RenderingSystem renderingSystem;
 		PhysicsSystem physicsSystem;
 		bool physicsUpdate = false;
+		ResourceManager resourceManager;
 	};
 
 	extern Engine& GetEngine();

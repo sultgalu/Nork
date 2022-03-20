@@ -7,17 +7,6 @@
 #include "Modules/Renderer/Objects/Texture/TextureBuilder.h"
 
 namespace Nork {
-	Renderer::ModelIterator ModelIterator(entt::registry& reg)
-	{
-		auto iterator = [&](auto func)
-		{
-			for (auto [id, dr] : reg.view<Components::Drawable>().each())
-			{
-				func(dr.model);
-			}
-		};
-		return iterator;
-	}
 	Renderer::DrawableIterator DrawableIterator(entt::registry& reg)
 	{
 		using namespace Renderer;
@@ -27,8 +16,8 @@ namespace Nork {
 			std::unordered_map<std::string, std::vector<glm::mat4>> modelsMap;
 			for (auto [id, dr, tr] : reg.view<Components::Drawable, Components::Transform>().each())
 			{
-				meshMap[dr.resource.resource->id] = *dr.resource.resource->object;
-				modelsMap[dr.resource.resource->id].push_back(tr.ModelMatrix());
+				meshMap[dr.resource->id] = *dr.resource->object;
+				modelsMap[dr.resource->id].push_back(tr.ModelMatrix());
 			}
 			for (auto& pair : meshMap)
 			{
@@ -139,10 +128,6 @@ namespace Nork {
 		for (auto [id, pl, tr] : reg.view<PointLight, Transform>().each())
 		{
 			pl.position = tr.GetPosition();
-		}
-		for (auto [id, dr, tr] : reg.view<Drawable, Transform>().each())
-		{
-			dr.model.SetModelMatrix(tr.ModelMatrix());
 		}
 	}
 	void RenderingSystem::RenderScene(entt::registry& reg)

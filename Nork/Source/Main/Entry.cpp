@@ -32,7 +32,7 @@ int main()
 			editor.Render();
 		});
 
-	int dim = 10;
+	int dim = 8;
 	int sep = 3;
 	int start = -dim / 2;
 	int end = dim / 2 + dim % 2;
@@ -44,7 +44,7 @@ int main()
 			for (int k = start; k < end; k++)
 			{
 				auto ent = engine.scene.CreateNode()->GetEntity();
-				ent.AddComponent<Components::Drawable>();
+				ent.AddComponent<Components::Drawable>(); //.resource = engine.resourceManager.GetMeshes("C:/Users/Norbi/Downloads/75-fbx/fbx/Handgun_fbx_6.1_ASCII.fbx");
 				ent.AddComponent<Components::Transform>().SetPosition(glm::vec3(i * sep, j * sep, k * sep));
 				ent.AddComponent<Components::Kinematic>().mass = 0.1f;
 				ent.AddComponent<Polygon>();

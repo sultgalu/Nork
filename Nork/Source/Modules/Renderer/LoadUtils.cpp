@@ -10,9 +10,8 @@
 #define STBI_NO_PNM
 #include <stb/stb_image.h>
 
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-#include <assimp/Importer.hpp>
+#define FBXSDK_SHARED
+#include <fbxsdk.h>
 
 namespace Nork::Renderer
 {
@@ -87,101 +86,106 @@ namespace Nork::Renderer
 		return buf.str();
     }
 
-	std::string relativePath;
-
-	static void LoadMaterialTextures(aiMaterial* mat, aiTextureType type, TextureMapType texType, std::vector<std::pair<TextureMapType, std::string>>& texs)
+	std::vector<MeshData> LoadUtils::LoadModel(std::string path)
 	{
-		for (unsigned int i = 0; i < mat->GetTextureCount(type); i++)
-		{
-			aiString src;
-			mat->GetTexture(type, i, &src);
-
-			auto endPos = relativePath.find_last_of('/');
-			if(endPos == std::string::npos)
-				endPos = relativePath.find_last_of('\\');
-			auto texPath = relativePath.substr(0, endPos + 1) + src.C_Str();
-
-			texs.push_back(std::pair(texType, texPath));
-		}
-	}
-	static MeshData ProcessMesh(aiMesh* mesh, const aiScene* scene)
-	{
-		MeshData data;
-
-		for (unsigned int i = 0; i < mesh->mNumVertices; i++)
-		{
-			Vertex vertex;
-			vertex.position.x = mesh->mVertices[i].x; vertex.position.y = mesh->mVertices[i].y; vertex.position.z = mesh->mVertices[i].z;
-			vertex.normal.x = mesh->mNormals[i].x; vertex.normal.y = mesh->mNormals[i].y; vertex.normal.z = mesh->mNormals[i].z;
-			if (mesh->mTextureCoords[0]) // can store up to 8, but not every vertex may have texCoords.
-			{
-				vertex.texCoords.x = mesh->mTextureCoords[0][i].x; vertex.texCoords.y = mesh->mTextureCoords[0][i].y;
-			}
-			else vertex.texCoords = glm::vec2(0.0f);
-			if (mesh->HasTangentsAndBitangents())
-			{
-				vertex.tangent.x = mesh->mTangents[i].x; vertex.tangent.y = mesh->mTangents[i].y; vertex.tangent.z = mesh->mTangents[i].z;
-				vertex.biTangent.x = mesh->mBitangents[i].x; vertex.biTangent.y = mesh->mBitangents[i].y; vertex.biTangent.z = mesh->mBitangents[i].z;
-			}
-			else
-			{
-				vertex.tangent = glm::vec3(0.0f); vertex.biTangent = glm::vec3(0.0f);
-			}
-			data.vertices.push_back(vertex);
-		}
-
-		for (unsigned int i = 0; i < mesh->mNumFaces; i++)
-		{
-			aiFace face = mesh->mFaces[i];
-			for (unsigned int j = 0; j < face.mNumIndices; j++)
-			{
-				data.indices.push_back(face.mIndices[j]);
-			}
-		}
-
-		if (mesh->mMaterialIndex > 0)
-		{
-			aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-
-			LoadMaterialTextures(material, aiTextureType_DIFFUSE, TextureMapType::Diffuse, data.textures);
-			LoadMaterialTextures(material, aiTextureType_HEIGHT, TextureMapType::Normal, data.textures); // map_Bump
-			LoadMaterialTextures(material, aiTextureType_SHININESS, TextureMapType::Roughness, data.textures);
-			LoadMaterialTextures(material, aiTextureType_AMBIENT, TextureMapType::Reflection, data.textures); // You have to change the ".mtl" file. "refl" -> "map_Ka"
-		}
-
-		return data;
-	}
-	static void ProcessNode(aiNode* node, const aiScene* scene, std::vector<MeshData>& meshes)
-	{
-		for (unsigned int i = 0; i < node->mNumMeshes; i++)
-		{
-			meshes.push_back(ProcessMesh(scene->mMeshes[node->mMeshes[i]], scene));
-		}
-		
-		for (unsigned int i = 0; i < node->mNumChildren; i++)
-		{
-			ProcessNode(node->mChildren[i], scene, meshes);
-		}
-	}
-    std::vector<MeshData> LoadUtils::LoadModel(std::string path)
-    {
-		relativePath = path;
-		Assimp::Importer importer;
-		const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate
-			| aiProcess_TransformUVCoords
-			| aiProcess_GenNormals
-			| aiProcess_FlipUVs
-			| aiProcess_CalcTangentSpace);
-
 		std::vector<MeshData> result;
+		FbxManager* lSdkManager = FbxManager::Create();
 
-		if (!scene || scene->mFlags && AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
+		FbxIOSettings* ios = FbxIOSettings::Create(lSdkManager, IOSROOT);
+		lSdkManager->SetIOSettings(ios);
+		FbxImporter* lImporter = FbxImporter::Create(lSdkManager, "");
+		bool lImportStatus = lImporter->Initialize(path.c_str(), -1, lSdkManager->GetIOSettings());
+
+		if (!lImportStatus)
 		{
-			MetaLogger().Error(importer.GetErrorString());
-            return result;
+			std::abort();
 		}
 
-		ProcessNode(scene->mRootNode, scene, result);
+		FbxScene* lScene = FbxScene::Create(lSdkManager, "myScene");
+		lImporter->Import(lScene);
+		FbxGeometryConverter(lSdkManager).Triangulate(lScene, true);
+
+		for (size_t i = 0; i < lScene->GetTextureCount(); i++)
+		{
+			auto obj = lScene->GetTexture(i);
+			std::cout << obj->GetName() << ", " << obj->GetTextureUse() << "\n";
+		}
+		std::cout << "\n";
+		for (size_t i = 0; i < lScene->GetNodeCount(); i++)
+		{
+			auto obj = lScene->GetNode(i);
+			auto attr = obj->GetNodeAttribute();
+			if (attr && attr->GetAttributeType() == fbxsdk::FbxNodeAttribute::eMesh)
+			{
+				result.push_back(MeshData());
+				uint32_t indCounter = 0;
+
+				auto mesh = obj->GetMesh();
+				std::cout << obj->GetName() << "," << mesh->GetControlPointsCount() << "\n";
+				auto loadTextures = [&](const char* type, TextureMapType mapType)
+				{
+					for (int j = 0; j < mesh->GetNode()->GetSrcObjectCount<fbxsdk::FbxSurfaceMaterial>(); j++)
+					{
+						fbxsdk::FbxSurfaceMaterial* material = mesh->GetNode()->GetSrcObject<fbxsdk::FbxSurfaceMaterial>(j);
+
+						if (material)
+						{
+							auto prop = material->FindProperty(type);
+							if (prop.IsValid())
+							{
+								auto texCount = prop.GetSrcObjectCount<fbxsdk::FbxTexture>();
+								for (size_t k = 0; k < texCount; k++)
+								{
+									fbxsdk::FbxTexture* tex = prop.GetSrcObject<fbxsdk::FbxTexture>(k);
+									if (tex)
+									{
+										result.back().textures.push_back({ mapType, ((FbxFileTexture*)tex)->GetFileName() });
+										return;
+									}
+								}
+							}
+						}
+
+					}
+				};
+				loadTextures(FbxSurfaceMaterial::sDiffuse, TextureMapType::Diffuse);
+				loadTextures(FbxSurfaceMaterial::sNormalMap, TextureMapType::Normal);
+				loadTextures(FbxSurfaceMaterial::sShininess, TextureMapType::Roughness);
+				loadTextures(FbxSurfaceMaterial::sReflection, TextureMapType::Reflection);
+				if (!mesh->GenerateTangentsDataForAllUVSets(true))
+				{
+					std::abort();
+				}
+				int succs[5] = { 0, 0, 0, 0, 0 };
+				for (size_t j = 0; j < mesh->GetControlPointsCount(); j++)
+				{
+					Vertex vertex;
+					auto vec4 = mesh->GetControlPointAt(j);
+					vertex.position = { vec4[0], vec4[1] , vec4[2] };
+					result.back().vertices.push_back(vertex);
+				}
+				for (size_t j = 0; j < mesh->GetPolygonVertexCount(); j++)
+				{
+					auto idx = mesh->GetPolygonVertices()[j];
+					result.back().indices.push_back(idx);
+
+					auto vec4 = mesh->GetElementNormal()->GetDirectArray().GetAt(j);
+					result.back().vertices[idx].normal = {vec4[0], vec4[1] , vec4[2]};
+
+					vec4 = mesh->GetElementTangent()->GetDirectArray().GetAt(j);
+					result.back().vertices[idx].tangent = { vec4[0], vec4[1] , vec4[2] };
+
+					vec4 = mesh->GetElementBinormal()->GetDirectArray().GetAt(j);
+					result.back().vertices[idx].biTangent = { vec4[0], vec4[1] , vec4[2] };
+
+					auto uvIdx = mesh->GetElementUV()->GetIndexArray().GetAt(j);
+					auto vec2 = mesh->GetElementUV()->GetDirectArray().GetAt(uvIdx);
+					result.back().vertices[idx].texCoords = { vec2[0], 1 - vec2[1] };
+				}
+			}
+		}
+
+		lImporter->Destroy();
 		return result;
-    }
+	}
 }

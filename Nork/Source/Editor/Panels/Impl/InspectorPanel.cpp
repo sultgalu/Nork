@@ -79,16 +79,18 @@ namespace Nork::Editor
 			{
 				tr->SetPosition(pos);
 			}
-			if (ImGui::DragFloat3("Scale", &(scale.x), 0.001f, 0.001f, 1000.0f, "%.3f", ImGuiSliderFlags_Logarithmic))
+			if (ImGui::DragFloat3("Scale", &(scale.x), 0.1f, 0.1f, 1000.0f, "%.3f"))
 			{
 				tr->SetScale(scale);
 			}
 			glm::vec3 rotationAxis = glm::axis(quat);
 			float angle = glm::angle(quat);
-			float rotateAmount = 0;
-			if (ImGui::DragFloat("Rotate", &rotateAmount, 0.01f))
+			glm::vec3 rotateAmount = {0, 0, 0};
+			if (ImGui::DragFloat3("Rotate", &rotateAmount.x, 0.01f))
 			{
-				tr->Rotate(rotationAxis, rotateAmount);
+				tr->Rotate(glm::vec3(1, 0, 0), rotateAmount.x);
+				tr->Rotate(glm::vec3(0, 1, 0), rotateAmount.y);
+				tr->Rotate(glm::vec3(0, 0, 1), rotateAmount.z);
 			}
 			if (ImGui::DragFloat("Set Rotation", &angle, 0.01f))
 			{
@@ -120,32 +122,33 @@ namespace Nork::Editor
 			{
 				ImGui::Unindent();
 				static int meshIdx = 0;
-				if (meshIdx >= dr->model.Meshes().size())
-					meshIdx = dr->model.Meshes().size() - 1;
-				ImGui::SliderInt("Mesh of model", &meshIdx, 0, dr->model.Meshes().size() - 1);
+				auto meshCount = (*dr->resource->object).size();
+				if (meshIdx >= meshCount)
+					meshIdx = meshCount - 1;
+				ImGui::SliderInt("Mesh of model", &meshIdx, 0, meshCount - 1);
 				if (ImGui::BeginTabBar("MaterialTexturesTab"))
 				{
 					if (ImGui::BeginTabItem("Diffuse"))
 					{
-						ImGui::Image((ImTextureID)dr->model.Meshes()[meshIdx].DiffuseMap()->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
+						ImGui::Image((ImTextureID)(*dr->resource->object)[meshIdx].DiffuseMap()->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
 							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
 						ImGui::EndTabItem();
 					}
 					if (ImGui::BeginTabItem("Normal"))
 					{
-						ImGui::Image((ImTextureID)dr->model.Meshes()[meshIdx].NormalMap()->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
+						ImGui::Image((ImTextureID)(*dr->resource->object)[meshIdx].NormalMap()->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
 							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
 						ImGui::EndTabItem();
 					}
 					if (ImGui::BeginTabItem("Roughness"))
 					{
-						ImGui::Image((ImTextureID)dr->model.Meshes()[meshIdx].RoughnessMap()->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
+						ImGui::Image((ImTextureID)(*dr->resource->object)[meshIdx].RoughnessMap()->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
 							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
 						ImGui::EndTabItem();
 					}
 					if (ImGui::BeginTabItem("Metalness"))
 					{
-						ImGui::Image((ImTextureID)dr->model.Meshes()[meshIdx].ReflectionMap()->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
+						ImGui::Image((ImTextureID)(*dr->resource->object)[meshIdx].ReflectionMap()->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
 							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
 						ImGui::EndTabItem();
 					}
@@ -159,13 +162,15 @@ namespace Nork::Editor
 
 			ImGui::Text("Path: ");
 			ImGui::SameLine();
-			ImGui::TextColored(ImVec4(0, 0.8f, 0.4f, 1.0f), "Showing source is not implemented yet");
+			ImGui::Text(dr->resource->id.c_str());
+			//ImGui::TextColored(ImVec4(0, 0.8f, 0.4f, 1.0f), "Showing source is not implemented yet");
 			if (ImGui::Button("LoadFromWin"))
 			{
 				std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::_3D, L"Load model", L"Load");
 				if (!p.empty())
 				{
-					MetaLogger().Error("implement this");
+					dr->resource = data.engine.resourceManager.GetMeshes(p);
+					//MetaLogger().Error("implement this");
 					//scene.RemoveComponent<Model>(data.selectedEnt);
 					//scene.AddModel(data.selectedEnt, p);
 				}
