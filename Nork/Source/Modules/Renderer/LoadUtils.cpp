@@ -10,9 +10,6 @@
 #define STBI_NO_PNM
 #include <stb/stb_image.h>
 
-#define FBXSDK_SHARED
-#include <fbxsdk.h>
-
 namespace Nork::Renderer
 {
 	static TextureFormat GetFormat(int channels)
@@ -88,104 +85,6 @@ namespace Nork::Renderer
 
 	std::vector<MeshData> LoadUtils::LoadModel(std::string path)
 	{
-		std::vector<MeshData> result;
-		FbxManager* lSdkManager = FbxManager::Create();
-
-		FbxIOSettings* ios = FbxIOSettings::Create(lSdkManager, IOSROOT);
-		lSdkManager->SetIOSettings(ios);
-		FbxImporter* lImporter = FbxImporter::Create(lSdkManager, "");
-		bool lImportStatus = lImporter->Initialize(path.c_str(), -1, lSdkManager->GetIOSettings());
-
-		if (!lImportStatus)
-		{
-			std::abort();
-		}
-
-		FbxScene* lScene = FbxScene::Create(lSdkManager, "myScene");
-		lImporter->Import(lScene);
-		FbxGeometryConverter(lSdkManager).Triangulate(lScene, true);
-
-		for (size_t i = 0; i < lScene->GetTextureCount(); i++)
-		{
-			auto obj = lScene->GetTexture(i);
-			std::cout << obj->GetName() << ", " << obj->GetTextureUse() << "\n";
-		}
-		std::cout << "\n";
-		for (size_t i = 0; i < lScene->GetNodeCount(); i++)
-		{
-			auto obj = lScene->GetNode(i);
-			auto attr = obj->GetNodeAttribute();
-			if (attr && attr->GetAttributeType() == fbxsdk::FbxNodeAttribute::eMesh)
-			{
-				result.push_back(MeshData());
-				uint32_t indCounter = 0;
-
-				auto mesh = obj->GetMesh();
-				std::cout << obj->GetName() << "," << mesh->GetControlPointsCount() << "\n";
-				auto loadTextures = [&](const char* type, TextureMapType mapType)
-				{
-					for (int j = 0; j < mesh->GetNode()->GetSrcObjectCount<fbxsdk::FbxSurfaceMaterial>(); j++)
-					{
-						fbxsdk::FbxSurfaceMaterial* material = mesh->GetNode()->GetSrcObject<fbxsdk::FbxSurfaceMaterial>(j);
-
-						if (material)
-						{
-							auto prop = material->FindProperty(type);
-							if (prop.IsValid())
-							{
-								auto texCount = prop.GetSrcObjectCount<fbxsdk::FbxTexture>();
-								for (size_t k = 0; k < texCount; k++)
-								{
-									fbxsdk::FbxTexture* tex = prop.GetSrcObject<fbxsdk::FbxTexture>(k);
-									if (tex)
-									{
-										result.back().textures.push_back({ mapType, ((FbxFileTexture*)tex)->GetFileName() });
-										return;
-									}
-								}
-							}
-						}
-
-					}
-				};
-				loadTextures(FbxSurfaceMaterial::sDiffuse, TextureMapType::Diffuse);
-				loadTextures(FbxSurfaceMaterial::sNormalMap, TextureMapType::Normal);
-				loadTextures(FbxSurfaceMaterial::sShininess, TextureMapType::Roughness);
-				loadTextures(FbxSurfaceMaterial::sReflection, TextureMapType::Reflection);
-				if (!mesh->GenerateTangentsDataForAllUVSets(true))
-				{
-					std::abort();
-				}
-				int succs[5] = { 0, 0, 0, 0, 0 };
-				for (size_t j = 0; j < mesh->GetControlPointsCount(); j++)
-				{
-					Vertex vertex;
-					auto vec4 = mesh->GetControlPointAt(j);
-					vertex.position = { vec4[0], vec4[1] , vec4[2] };
-					result.back().vertices.push_back(vertex);
-				}
-				for (size_t j = 0; j < mesh->GetPolygonVertexCount(); j++)
-				{
-					auto idx = mesh->GetPolygonVertices()[j];
-					result.back().indices.push_back(idx);
-
-					auto vec4 = mesh->GetElementNormal()->GetDirectArray().GetAt(j);
-					result.back().vertices[idx].normal = {vec4[0], vec4[1] , vec4[2]};
-
-					vec4 = mesh->GetElementTangent()->GetDirectArray().GetAt(j);
-					result.back().vertices[idx].tangent = { vec4[0], vec4[1] , vec4[2] };
-
-					vec4 = mesh->GetElementBinormal()->GetDirectArray().GetAt(j);
-					result.back().vertices[idx].biTangent = { vec4[0], vec4[1] , vec4[2] };
-
-					auto uvIdx = mesh->GetElementUV()->GetIndexArray().GetAt(j);
-					auto vec2 = mesh->GetElementUV()->GetDirectArray().GetAt(uvIdx);
-					result.back().vertices[idx].texCoords = { vec2[0], 1 - vec2[1] };
-				}
-			}
-		}
-
-		lImporter->Destroy();
-		return result;
+		return {};
 	}
 }
