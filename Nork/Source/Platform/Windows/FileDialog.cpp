@@ -18,6 +18,10 @@ namespace Nork::FileDialog
         COMDLG_FILTERSPEC{L"3D as COLLADA", L"*.dae"},
         COMDLG_FILTERSPEC{L"3D as BLENDER", L"*.blend"},
     };
+    const static COMDLG_FILTERSPEC ImageExtensions[]
+    {
+        COMDLG_FILTERSPEC{L"3D as FBX", L"*.png;*.jpg"},
+    };
 
     static std::vector<COMDLG_FILTERSPEC> GetExtensions(EngineFileTypes types)
     {
@@ -34,6 +38,13 @@ namespace Nork::FileDialog
             for (int i = 0; i < ARRAYSIZE(_3DExtensions); i++)
             {
                 result.push_back(_3DExtensions[i]);
+            }
+        }
+        if ((types & EngineFileTypes::Image) != EngineFileTypes::None)
+        {
+            for (int i = 0; i < ARRAYSIZE(ImageExtensions); i++)
+            {
+                result.push_back(ImageExtensions[i]);
             }
         }
 

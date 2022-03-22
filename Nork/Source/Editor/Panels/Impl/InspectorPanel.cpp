@@ -128,29 +128,63 @@ namespace Nork::Editor
 				ImGui::SliderInt("Mesh of model", &meshIdx, 0, meshCount - 1);
 				if (ImGui::BeginTabBar("MaterialTexturesTab"))
 				{
+					auto displayTex = [&](Renderer::TextureMapType type)
+					{
+						auto& tex = *(*dr->resource->object)[meshIdx].GetTexture(type);
+						ImGui::Image((ImTextureID)tex.GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
+							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
+						ImGui::Text("Width: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex.GetWidth()).c_str());
+						ImGui::Text("Height: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex.GetHeight()).c_str());
+						ImGui::Text("Format: "); ImGui::SameLine(); ImGui::Text(Renderer::TextureFormatToString(tex.GetAttributes().format));
+						
+						ImGui::EndTabItem();
+						if (ImGui::Button("Load texture"))
+						{
+							std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::Image, L"Load Texture", L"Load");
+							if (!p.empty())
+							{
+								auto tex = data.engine.resourceManager.GetTexture(p);
+								if (tex != nullptr)
+								{
+									(*dr->resource->object)[meshIdx].SetTexture(tex->object, type);
+								}
+							}
+						}
+					};
+					using enum Renderer::TextureMapType;
 					if (ImGui::BeginTabItem("Diffuse"))
 					{
-						ImGui::Image((ImTextureID)(*dr->resource->object)[meshIdx].DiffuseMap()->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
-							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
-						ImGui::EndTabItem();
+						displayTex(Diffuse);
 					}
 					if (ImGui::BeginTabItem("Normal"))
 					{
-						ImGui::Image((ImTextureID)(*dr->resource->object)[meshIdx].NormalMap()->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
-							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
-						ImGui::EndTabItem();
+						displayTex(Normal);
+						// ImGui::Image((ImTextureID)(*dr->resource->object)[meshIdx].NormalMap()->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
+						// 	ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
+						// ImGui::EndTabItem(); 
+						// if (ImGui::Button("Load texture"))
+						// {
+						// 	std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::Image, L"Load Texture", L"Load");
+						// 	if (!p.empty())
+						// 	{
+						// 		auto tex = data.engine.resourceManager.GetTexture(p);
+						// 		if (tex != nullptr)
+						// 		{
+						// 			(*dr->resource->object)[meshIdx].NormalMap(tex->object);
+						// 		}
+						// 		//MetaLogger().Error("implement this");
+						// 		//scene.RemoveComponent<Model>(data.selectedEnt);
+						// 		//scene.AddModel(data.selectedEnt, p);
+						// 	}
+						// }
 					}
 					if (ImGui::BeginTabItem("Roughness"))
 					{
-						ImGui::Image((ImTextureID)(*dr->resource->object)[meshIdx].RoughnessMap()->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
-							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
-						ImGui::EndTabItem();
+						displayTex(Roughness);
 					}
 					if (ImGui::BeginTabItem("Metalness"))
 					{
-						ImGui::Image((ImTextureID)(*dr->resource->object)[meshIdx].ReflectionMap()->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
-							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
-						ImGui::EndTabItem();
+						displayTex(Reflection);
 					}
 					ImGui::EndTabBar();
 				}
@@ -170,9 +204,6 @@ namespace Nork::Editor
 				if (!p.empty())
 				{
 					dr->resource = data.engine.resourceManager.GetMeshes(p);
-					//MetaLogger().Error("implement this");
-					//scene.RemoveComponent<Model>(data.selectedEnt);
-					//scene.AddModel(data.selectedEnt, p);
 				}
 			}
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));

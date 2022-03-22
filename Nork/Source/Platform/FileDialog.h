@@ -7,6 +7,7 @@ namespace Nork::FileDialog
 		None = 0,
 		Shader = 1 << 0,
 		_3D = 1 << 1,
+		Image = 1 << 2,
 	};
 
 	inline EngineFileTypes operator|(EngineFileTypes a, EngineFileTypes b)

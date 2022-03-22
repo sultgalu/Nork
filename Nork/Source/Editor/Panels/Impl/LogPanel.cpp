@@ -19,7 +19,7 @@ Nork::Editor::LogPanel::~LogPanel()
 
 void Nork::Editor::LogPanel::DrawContent()
 {
-	std::string str = stream.str();
+	std::string str = "no logs now sry"; //stream.str();
 	ImGui::InputTextMultiline("LOG", str.data(), str.size());
 	if (str.size() > maxStreamSize)
 	{

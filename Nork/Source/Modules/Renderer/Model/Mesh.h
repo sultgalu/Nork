@@ -43,6 +43,10 @@ namespace Nork::Renderer {
 			return SetTexture(texture, TextureMapType::Roughness);
 		}
 
+		std::shared_ptr<Texture2D> GetTexture(TextureMapType type)
+		{
+			return textureMaps[std::to_underlying(type)];
+		}
 		std::shared_ptr<Texture2D> DiffuseMap()
 		{
 			return textureMaps[std::to_underlying(TextureMapType::Diffuse)];

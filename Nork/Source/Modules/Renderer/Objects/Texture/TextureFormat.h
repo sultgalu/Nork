@@ -11,6 +11,37 @@ namespace Nork::Renderer {
 		None = GL_NONE
 	};
 
+	static const char* TextureFormatToString(TextureFormat format)
+	{
+		using enum TextureFormat;
+#define NORK_TEXTURE_FORMAT(f) case f: return #f
+		switch (format)
+		{
+			NORK_TEXTURE_FORMAT(RGB8);
+			NORK_TEXTURE_FORMAT(RGB16F);
+			NORK_TEXTURE_FORMAT(RGB32F);
+			NORK_TEXTURE_FORMAT(RGBA8);
+			NORK_TEXTURE_FORMAT(RGBA16F);
+			NORK_TEXTURE_FORMAT(RGBA32F);
+
+			NORK_TEXTURE_FORMAT(R8);
+			NORK_TEXTURE_FORMAT(R8I);
+			NORK_TEXTURE_FORMAT(R32I);
+			NORK_TEXTURE_FORMAT(R32UI);
+			NORK_TEXTURE_FORMAT(R32F);
+
+			NORK_TEXTURE_FORMAT(Depth16);
+			NORK_TEXTURE_FORMAT(Depth24);
+			NORK_TEXTURE_FORMAT(Depth32);
+			NORK_TEXTURE_FORMAT(Depth32F);
+
+			NORK_TEXTURE_FORMAT(Depth24Stencil8);
+			NORK_TEXTURE_FORMAT(Depth32FStencil8);
+
+			NORK_TEXTURE_FORMAT(None);
+		}
+	}
+
 	static GLenum GetTextureType(TextureFormat f)
 	{
 		using enum TextureFormat;

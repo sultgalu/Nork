@@ -30,7 +30,7 @@ namespace Nork::Renderer {
 
 		Capabilities()
 			.Enable().DepthTest().CullFace()
-			.Disable().Blend();
+			.Disable().Blend(); //.CullFace();
 
 		iterator([&](const IDrawable& drawable)
 			{

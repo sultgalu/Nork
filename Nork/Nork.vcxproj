@@ -198,6 +198,7 @@
     <ClCompile Include="Source\Modules\Renderer\Objects\VertexArray\VertexArray.cpp" />
     <ClInclude Include="Source\Core\PhysicsSystem.h" />
     <ClInclude Include="Source\Core\ResourceManager.h" />
+    <ClInclude Include="Source\Modules\Renderer\Model\Material.h" />
     <ClInclude Include="Source\Modules\Renderer\Objects\Buffer\BufferBuilder.h" />
     <ClInclude Include="Source\Modules\Renderer\Objects\Framebuffer\FramebufferBuilder.h" />
     <ClInclude Include="Source\Modules\Renderer\Objects\Framebuffer\GeometryFramebufferBuilder.h" />

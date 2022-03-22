@@ -4,16 +4,27 @@
 #include "Modules/Renderer/Objects/Texture/TextureBuilder.h"
 
 namespace Nork {
+	ResourceRef<std::vector<Renderer::Mesh>> ResourceManager::GetMeshes(const std::string& id)
+	{
+		auto opt = meshes.find(id);
+		if (opt == meshes.end())
+		{
+			auto shared = LoadMeshes(id);
+			meshes[id] = shared;
+			return shared;
+		}
+		return meshes[id];
+	}
 	ResourceRef<Renderer::Texture2D> ResourceManager::GetTexture(const std::string& id)
 	{
 		auto opt = textures.find(id);
-		if (opt == textures.end() || opt->second.expired())
+		if (opt == textures.end())
 		{
 			auto shared = LoadTexture(id);
 			textures[id] = shared;
 			return shared;
 		}
-		return textures[id].lock();
+		return textures[id];
 	}
 	std::shared_ptr<Resource<std::vector<Renderer::Mesh>>> ResourceManager::LoadMeshes(const std::string& id)
 	{
