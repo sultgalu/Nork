@@ -274,4 +274,18 @@ namespace Nork::Renderer {
 		auto vbo = BufferBuilder().Target(BufferTarget::Vertex).Usage(BufferUsage::StaticDraw).Data(vertices.data(), vertices.size() * sizeof(Vertex)).Create();
 		vao = VertexArrayBuilder().VBO(vbo).Attributes({ 3, 3, 2, 3 }).Create();
 	}
+	void Mesh::Draw() const
+	{
+		if (vao->HasIbo())
+			vao->Bind().DrawIndexed();
+		else
+			vao->Bind().Draw();
+	}
+	void Mesh::DrawInstanced(uint32_t count) const
+	{
+		if (vao->HasIbo())
+			vao->Bind().MultiDrawInstanced(count);
+		else
+			vao->Bind().DrawInstanced(count);
+	}
 }

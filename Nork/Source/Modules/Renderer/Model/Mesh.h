@@ -16,22 +16,10 @@ namespace Nork::Renderer {
 	public:
 		Mesh(std::vector<Vertex>& vertices);
 		Mesh(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices);
-		void Draw() const
-		{
-			if (vao->HasIbo())
-				vao->Bind().DrawIndexed();
-			else
-				vao->Bind().Draw();
-		}
-		void DrawInstanced(uint32_t count) const
-		{
-			if (vao->HasIbo())
-				vao->Bind().DrawIndexedInstanced(count);
-			else
-				vao->Bind().DrawInstanced(count);
-		}
+		void Draw() const;
+		void DrawInstanced(uint32_t count) const;
 		static Mesh Cube();
-	private:
 		std::shared_ptr<VertexArray> vao;
+	private:
 	};	
 }

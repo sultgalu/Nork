@@ -29,8 +29,8 @@ namespace Nork::Renderer {
 	class Buffer : public GLObject
 	{
 	public:
-		Buffer(GLuint handle, size_t size, BufferUsage usage, BufferTarget target)
-			: GLObject(handle), size(size), usage(usage), target(target)
+		Buffer(GLuint handle, size_t size, size_t capacity, BufferUsage usage, BufferTarget target)
+			: GLObject(handle), size(size), capacity(capacity), usage(usage), target(target)
 		{}
 		~Buffer();
 
@@ -47,6 +47,7 @@ namespace Nork::Renderer {
 		static void ResetBoundBufferState();
 	protected:
 		size_t size;
+		size_t capacity;
 		BufferTarget target;
 		const BufferUsage usage;
 	private:

@@ -28,10 +28,12 @@ namespace Nork::Renderer {
 	{
 		glBufferData(static_cast<GLenum>(target), size, data, static_cast<GLenum>(usage));
 		this->size = size;
+		this->capacity = data == nullptr ? 0 : size;
 	}
 	void Buffer::SetData(const void* data, size_t size, size_t offset)
 	{
 		glBufferSubData(static_cast<GLenum>(target), offset, size, data);
+		this->size = size;
 	}
 	void Buffer::GetData(void* data, size_t size, size_t offset)
 	{

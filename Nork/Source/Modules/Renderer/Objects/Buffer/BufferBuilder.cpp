@@ -7,12 +7,12 @@ namespace Nork::Renderer {
 		Validate();
 
 		glGenBuffers(1, &handle);
-		glBindBuffer(static_cast<GLenum>(target), handle);
-		glBufferData(static_cast<GLenum>(target), size, data, static_cast<GLenum>(usage));
+		auto buffer = std::make_shared<Buffer>(handle, 0, 0, usage, target);
 		Logger::Info("Created buffer ", handle);
-
-		auto buffer = std::make_shared<Buffer>(handle, size, usage, target);
 		GLManager::Get().buffers[buffer->GetHandle()] = buffer;
+
+		buffer->Bind().Allocate(size, data);
+
 		return buffer;
 	}
 

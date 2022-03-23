@@ -1,6 +1,8 @@
 #type vertex
 
 #version 330 core
+#extension ARB_bindless_texture : require
+#extension ARB_shader_draw_parameters : require
 
 layout(location = 0) in vec3 vPos;
 layout(location = 1) in vec3 vNormal;
@@ -21,10 +23,36 @@ layout(std140, binding = 5) uniform asd5
 	mat4 models[1000 * 1000];
 };
 
+struct Material
+{
+	sampler2D diffuseMap;
+	sampler2D normalsMap;
+	sampler2D roughnessMap;
+	sampler2D reflectMap;
+
+	vec3 diffuse;
+	float specular;
+	float specularExponent;
+};
+layout(std140, binding = 6) uniform asd6
+{
+	Material materials[1000];
+};
+
+layout(std140, binding = 7) uniform asd7
+{
+	int materialIndices[1000];
+};
+
+flat out Material material;
+
 uniform int instanced;
 
 void main()
 {
+	material = materials[materialIndices[gl_DrawID]];
+
+	// material = materials[materialIdx];
 	mat4 _model = instanced > 0 ? models[gl_InstanceID] : model;
 
 	worldPos = (_model * vec4(vPos, 1.0f)).xyz;
@@ -37,7 +65,7 @@ void main()
 	vec3 N = normalize(vec3(_model * vec4(vNormal, 0.0f)));
 	vec3 B = cross(N, T);
 
-#ifdef IDKWHATTOCALLTHISBUTITISHERE
+#ifdef REORTHOGONALIZE
 	// re-orthogonalize T with respect to N
 	T = normalize(T - dot(T, N) * N);
 	// then retrieve perpendicular vector B with the cross product of T and N
@@ -69,41 +97,19 @@ struct Material
 	float specularExponent;
 };
 
-layout(std140, binding = 6) uniform asd6
-{
-	Material materials[1000];
-};
-uniform int materialIdx;
-
-// uniform struct MaterialTex
-// {
-// 	sampler2D _diffuse; // passed
-// 	sampler2D _normals; // used
-// 	sampler2D _roughness; // passed
-// 	sampler2D _reflect; // set, not passed (metallic)
-// } materialTex;
-
+in Material material;
 in vec3 worldPos;
 in vec2 texCoord;
 in mat3 TBN; // could do with lights from vert. shader (linear interpolation would help -> less matrix multiplications)(inverse -> transpose)
 in vec3 vNorm;
 
-// layout(bindless_sampler) uniform sampler2D diffuse; // passed
-// layout(bindless_sampler) uniform sampler2D normals; // used
-// layout(bindless_sampler) uniform sampler2D roughness; // passed
-// layout(bindless_sampler) uniform sampler2D reflect; // set, not passed (metallic)
-
 void main()
 {
 	pos = worldPos;
-	diffuse_spec = texture(materials[materialIdx].diffuseMap, texCoord).rgb * materials[materialIdx].diffuse;
-	specular = vec2(1 - texture(materials[materialIdx].roughnessMap, texCoord).r * materials[materialIdx].specular, materials[materialIdx].specularExponent);
-	//diffuse_spec = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-
-	vec3 norm = texture(materials[materialIdx].normalsMap, texCoord).rgb;
+	diffuse_spec = texture(material.diffuseMap, texCoord).rgb * material.diffuse;
+	specular = vec2(1 - texture(material.roughnessMap, texCoord).r * material.specular, material.specularExponent);
+	
+	vec3 norm = texture(material.normalsMap, texCoord).rgb;
 	norm = norm * 2.0f - 1.0f; // [0;1] -> [-1;1]
 	normal = normalize(TBN * norm); // transforming from tangent-space -> world space
-
-	// normal = texture(materialTex.normals, texCoord).rgb;
-	// normal = normalize(vNorm);
 }
