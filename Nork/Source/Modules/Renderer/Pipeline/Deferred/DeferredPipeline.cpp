@@ -15,7 +15,7 @@ namespace Nork::Renderer {
 			.Position(RGB16F)
 			.Normal(RGB16F)
 			.Diffuse(RGB16F)
-			.Specular(RGBA16F)
+			.Specular(RGB16F)
 			.Depth(Depth16)
 			.Create();
 		lightFb = LightFramebufferBuilder()

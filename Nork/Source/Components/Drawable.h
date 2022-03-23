@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Modules/Renderer/Model/Mesh.h"
+#include "Modules/Renderer/Model/Material.h"
 
 namespace Nork {
 	template<class T>
@@ -16,13 +17,14 @@ namespace Nork {
 	template<class T>
 	using ResourceRef = std::shared_ptr<Resource<T>>;
 
-	using MeshResourceRef = ResourceRef<std::vector<Renderer::Mesh>>;
+	using MeshResourceRef = ResourceRef<std::vector<std::pair<Renderer::Mesh, Renderer::Material>>>;
 }
 
 namespace Nork::Components
 {
 	struct Drawable
 	{
-		MeshResourceRef resource;
+		MeshResourceRef mesh;
+		std::vector<int> materialIdxs;
 	};
 }

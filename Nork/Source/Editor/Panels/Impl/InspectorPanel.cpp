@@ -122,20 +122,19 @@ namespace Nork::Editor
 			{
 				ImGui::Unindent();
 				static int meshIdx = 0;
-				auto meshCount = (*dr->resource->object).size();
+				auto meshCount = (*dr->mesh->object).size();
 				if (meshIdx >= meshCount)
 					meshIdx = meshCount - 1;
 				ImGui::SliderInt("Mesh of model", &meshIdx, 0, meshCount - 1);
 				if (ImGui::BeginTabBar("MaterialTexturesTab"))
 				{
-					auto displayTex = [&](Renderer::TextureMapType type)
+					auto displayTex = [&](std::shared_ptr<Renderer::Texture2D>& tex)
 					{
-						auto& tex = *(*dr->resource->object)[meshIdx].GetTexture(type);
-						ImGui::Image((ImTextureID)tex.GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
+						ImGui::Image((ImTextureID)tex->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
 							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
-						ImGui::Text("Width: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex.GetWidth()).c_str());
-						ImGui::Text("Height: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex.GetHeight()).c_str());
-						ImGui::Text("Format: "); ImGui::SameLine(); ImGui::Text(Renderer::TextureFormatToString(tex.GetAttributes().format));
+						ImGui::Text("Width: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->GetWidth()).c_str());
+						ImGui::Text("Height: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->GetHeight()).c_str());
+						ImGui::Text("Format: "); ImGui::SameLine(); ImGui::Text(Renderer::TextureFormatToString(tex->GetAttributes().format));
 						
 						ImGui::EndTabItem();
 						if (ImGui::Button("Load texture"))
@@ -143,48 +142,29 @@ namespace Nork::Editor
 							std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::Image, L"Load Texture", L"Load");
 							if (!p.empty())
 							{
-								auto tex = data.engine.resourceManager.GetTexture(p);
-								if (tex != nullptr)
+								auto newTex = data.engine.resourceManager.GetTexture(p)->object;
+								if (newTex != nullptr)
 								{
-									(*dr->resource->object)[meshIdx].SetTexture(tex->object, type);
+									tex = newTex;
 								}
 							}
 						}
 					};
-					using enum Renderer::TextureMapType;
 					if (ImGui::BeginTabItem("Diffuse"))
 					{
-						displayTex(Diffuse);
+						displayTex((*dr->mesh->object)[meshIdx].second.diffuseMap);
 					}
 					if (ImGui::BeginTabItem("Normal"))
 					{
-						displayTex(Normal);
-						// ImGui::Image((ImTextureID)(*dr->resource->object)[meshIdx].NormalMap()->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
-						// 	ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
-						// ImGui::EndTabItem(); 
-						// if (ImGui::Button("Load texture"))
-						// {
-						// 	std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::Image, L"Load Texture", L"Load");
-						// 	if (!p.empty())
-						// 	{
-						// 		auto tex = data.engine.resourceManager.GetTexture(p);
-						// 		if (tex != nullptr)
-						// 		{
-						// 			(*dr->resource->object)[meshIdx].NormalMap(tex->object);
-						// 		}
-						// 		//MetaLogger().Error("implement this");
-						// 		//scene.RemoveComponent<Model>(data.selectedEnt);
-						// 		//scene.AddModel(data.selectedEnt, p);
-						// 	}
-						// }
+						displayTex((*dr->mesh->object)[meshIdx].second.normalsMap);
 					}
 					if (ImGui::BeginTabItem("Roughness"))
 					{
-						displayTex(Roughness);
+						displayTex((*dr->mesh->object)[meshIdx].second.roughnessMap);
 					}
 					if (ImGui::BeginTabItem("Metalness"))
 					{
-						displayTex(Reflection);
+						displayTex((*dr->mesh->object)[meshIdx].second.reflectMap);
 					}
 					ImGui::EndTabBar();
 				}
@@ -196,14 +176,14 @@ namespace Nork::Editor
 
 			ImGui::Text("Path: ");
 			ImGui::SameLine();
-			ImGui::Text(dr->resource->id.c_str());
+			ImGui::Text(dr->mesh->id.c_str());
 			//ImGui::TextColored(ImVec4(0, 0.8f, 0.4f, 1.0f), "Showing source is not implemented yet");
 			if (ImGui::Button("LoadFromWin"))
 			{
 				std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::_3D, L"Load model", L"Load");
 				if (!p.empty())
 				{
-					dr->resource = data.engine.resourceManager.GetMeshes(p);
+					dr->mesh = data.engine.resourceManager.GetMeshes(p);
 				}
 			}
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));

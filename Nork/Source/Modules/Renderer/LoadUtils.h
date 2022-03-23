@@ -13,13 +13,19 @@ namespace Nork::Renderer
 		TextureFormat format;
 		std::vector<char> data;
 	};
+	struct MaterialData
+	{
+		std::unordered_map<TextureMap, std::string> textureMaps;
+		glm::vec3 diffuse;
+		float specular;
+		float specularExponent;
+	};
 	struct MeshData
 	{
 		std::string name;
 		std::vector<Vertex> vertices;
 		std::vector<GLuint> indices;
-		std::vector<std::pair<TextureMapType, std::string>> textures;
-		Material material;
+		MaterialData material;
 	};
 	class LoadUtils
 	{

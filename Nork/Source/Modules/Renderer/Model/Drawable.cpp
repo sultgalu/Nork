@@ -16,46 +16,34 @@ namespace Nork::Renderer {
 
 	static std::shared_ptr<Buffer> GetModelUbo()
 	{
-		static auto ubo = CreateModelUbo(1001);
+		static auto ubo = CreateModelUbo(2000);
 		return ubo;
 	}
 
 	void InstancedDrawable::Draw(Shader& shader) const
 	{
-		//shader.Use();
-		// for (size_t i = 0; i < modelMatrices.size(); i++)
-		// {
-		// 	shader.SetMat4("model", modelMatrices[i]);
-		// 	for (size_t i = 0; i < meshes.size(); i++)
-		// 	{
-		// 		meshes[i].BindTextures().Draw();
-		// 	}
-		// }
-		
 		GetModelUbo()->Bind().SetData(modelMatrices.data(), modelMatrices.size() * sizeof(glm::mat4));
 		shader.Use().SetInt("instanced", 1);
 		for (size_t i = 0; i < meshes.size(); i++)
 		{
-			meshes[i].BindTextures().DrawInstanced(modelMatrices.size());
+			// shader.SetBindlessHandle("diffuse", meshes[i].DiffuseMap()->GetBindlessHandle());
+			// shader.SetBindlessHandle("normals", meshes[i].NormalMap()->GetBindlessHandle());
+			// shader.SetBindlessHandle("roughness", meshes[i].RoughnessMap()->GetBindlessHandle());
+			// shader.SetBindlessHandle("reflect", meshes[i].ReflectionMap()->GetBindlessHandle());
+
+			shader.SetInt("materialIdx", meshes[i].second);
+			meshes[i].first.DrawInstanced(modelMatrices.size());
+			//meshes[i].BindTextures().DrawInstanced(modelMatrices.size());
 		}
 	}
 	void InstancedDrawable::DrawTextureless(Shader& shader) const
 	{
-		//shader.Use();
-		// for (size_t i = 0; i < modelMatrices.size(); i++)
-		// {
-		// 	shader.SetMat4("model", modelMatrices[i]);
-		// 	for (size_t i = 0; i < meshes.size(); i++)
-		// 	{
-		// 		meshes[i].Draw();
-		// 	}
-		// }
-
 		GetModelUbo()->Bind().SetData(modelMatrices.data(), modelMatrices.size() * sizeof(glm::mat4));
 		shader.Use().SetInt("instanced", 1);
 		for (size_t i = 0; i < meshes.size(); i++)
 		{
-			meshes[i].DrawInstanced(modelMatrices.size());
+			shader.SetInt("materialIdx", meshes[i].second);
+			meshes[i].first.DrawInstanced(modelMatrices.size());
 		}
 	}
 	void SingleDrawable::Draw(Shader& shader) const
@@ -65,7 +53,13 @@ namespace Nork::Renderer {
 			.SetInt("instanced", 0);
 		for (size_t i = 0; i < meshes.size(); i++)
 		{
-			meshes[i].BindTextures().Draw();
+			shader.SetInt("materialIdx", meshes[i].second);
+			// shader.SetBindlessHandle("diffuse", meshes[i].DiffuseMap()->GetBindlessHandle());
+			// shader.SetBindlessHandle("normals", meshes[i].NormalMap()->GetBindlessHandle());
+			// shader.SetBindlessHandle("roughness", meshes[i].RoughnessMap()->GetBindlessHandle());
+			// shader.SetBindlessHandle("reflect", meshes[i].ReflectionMap()->GetBindlessHandle());
+			meshes[i].first.Draw();
+			// meshes[i].BindTextures().Draw();
 		}
 	}
 	void SingleDrawable::DrawTextureless(Shader& shader) const
@@ -75,7 +69,8 @@ namespace Nork::Renderer {
 			.SetInt("instanced", 0);
 		for (size_t i = 0; i < meshes.size(); i++)
 		{
-			meshes[i].Draw();
+			shader.SetInt("materialIdx", meshes[i].second);
+			meshes[i].first.Draw();
 		}
 	}
 }

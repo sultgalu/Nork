@@ -38,7 +38,7 @@ namespace Nork
 	void Engine::OnDrawableAdded(entt::registry& reg, entt::entity id)
 	{
 		auto& dr = reg.get<Components::Drawable>(id);
-		dr.resource = resourceManager.GetMeshes("");
+		dr.mesh = resourceManager.GetMeshes("");
 	}
 
 	Engine::Engine(EngineConfig config)

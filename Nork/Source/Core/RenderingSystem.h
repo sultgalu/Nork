@@ -116,6 +116,7 @@ namespace Nork {
 		std::array<std::shared_ptr<Renderer::DirShadowMap>, Renderer::Config::LightData::dirShadowsLimit> dirShadowMaps;
 		std::array<std::shared_ptr<Renderer::PointShadowMap>, Renderer::Config::LightData::pointShadowsLimit> pointShadowMaps;
 		std::shared_ptr<Renderer::TextureCube> skybox;
+		std::shared_ptr<Renderer::Buffer> materialsUbo;
 
 		Observed<GlobalShaderUniform> globalShaderUniform;
 		bool drawSky = true;

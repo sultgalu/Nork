@@ -4,7 +4,7 @@
 #include "Modules/Renderer/Objects/Texture/TextureBuilder.h"
 
 namespace Nork {
-	ResourceRef<std::vector<Renderer::Mesh>> ResourceManager::GetMeshes(const std::string& id)
+	ResourceRef<std::vector<std::pair<Renderer::Mesh, Renderer::Material>>> ResourceManager::GetMeshes(const std::string& id)
 	{
 		auto opt = meshes.find(id);
 		if (opt == meshes.end())
@@ -26,27 +26,58 @@ namespace Nork {
 		}
 		return textures[id];
 	}
-	std::shared_ptr<Resource<std::vector<Renderer::Mesh>>> ResourceManager::LoadMeshes(const std::string& id)
+	ResourceRef<Renderer::Material> ResourceManager::GetMaterial(const std::string& id)
+	{
+		auto opt = materials.find(id);
+		if (opt == materials.end())
+		{
+			auto shared = LoadMaterial(id);
+			materials[id] = shared;
+			return shared;
+		}
+		return materials[id];
+	}
+	ResourceRef<std::vector<std::pair<Renderer::Mesh, Renderer::Material>>> ResourceManager::LoadMeshes(const std::string& id)
 	{
 		if (id == "")
 		{
-			return std::make_shared<Resource<std::vector<Renderer::Mesh>>>(id, std::make_shared<std::vector<Renderer::Mesh>>(std::vector<Renderer::Mesh> {Renderer::Mesh::Cube()}));
+			return std::make_shared<Resource<std::vector<std::pair<Renderer::Mesh, Renderer::Material>>>>(id, std::make_shared<std::vector<std::pair<Renderer::Mesh, Renderer::Material>>>(std::vector<std::pair<Renderer::Mesh, Renderer::Material>> { { Renderer::Mesh::Cube(), Renderer::Material() } }));
 		}
 		auto meshDatas = Renderer::LoadUtils::LoadModel(id);
-		auto shared = std::make_shared<std::vector<Renderer::Mesh>>();
+		auto shared = std::make_shared<std::vector<std::pair<Renderer::Mesh, Renderer::Material>>>();
 		for (auto& meshData : meshDatas)
 		{
-			if (meshData.indices.size() > 0)
-				shared->push_back(Renderer::Mesh(meshData.vertices, meshData.indices));
-			else
-				shared->push_back(Renderer::Mesh(meshData.vertices));
-			for (auto& pair : meshData.textures)
+			Renderer::Material material;
+			material.diffuse = meshData.material.diffuse;
+			material.specular = meshData.material.specular;
+			material.specularExponent = meshData.material.specularExponent;
+			for (auto& pair : meshData.material.textureMaps)
 			{
-				shared->back().SetTexture(GetTexture(pair.second)->object, pair.first);
+				using enum Renderer::TextureMap;
+				switch (pair.first)
+				{
+				case Diffuse:
+					material.diffuseMap = GetTexture(pair.second)->object;
+					break;
+				case Normal:
+					material.normalsMap = GetTexture(pair.second)->object;
+					break;
+				case Roughness:
+					material.roughnessMap = GetTexture(pair.second)->object;
+					break;
+				case Reflection:
+					material.reflectMap = GetTexture(pair.second)->object;
+					break;
+				}
 			}
+
+			if (meshData.indices.size() > 0)
+				shared->push_back({ Renderer::Mesh(meshData.vertices, meshData.indices), material });
+			else
+				shared->push_back({ Renderer::Mesh(meshData.vertices), material });
 		}
 		Logger::Info("Loaded model: ", id);
-		return std::make_shared<Resource<std::vector<Renderer::Mesh>>>(id, shared);
+		return std::make_shared<Resource<std::vector<std::pair<Renderer::Mesh, Renderer::Material>>>>(id, shared);
 	}
 	std::shared_ptr<Resource<Renderer::Texture2D>> ResourceManager::LoadTexture(const std::string& id)
 	{
@@ -58,5 +89,13 @@ namespace Nork {
 			.Create2DWithData(image.data.data());
 		Logger::Info("Loaded texture: ", id);
 		return std::make_shared<Resource<Renderer::Texture2D>>(id, tex);
+	}
+	ResourceRef<Renderer::Material> ResourceManager::LoadMaterial(const std::string& id)
+	{
+		// if (id == "")
+		// {
+		// 	return std::make_shared<Resource<Renderer::Material>>(Renderer::Material());
+		// }
+		std::abort();
 	}
 }

@@ -24,7 +24,7 @@ namespace Nork::Renderer
 		case 1: [[ads]]
 			return R8;
 		default:
-			MetaLogger().Error("Unhandled number of channels");
+			MetaLogger().Error("Unhandled number of channels: ", channels);
 		}
 	}
     Image LoadUtils::LoadImage(std::string_view path)
@@ -398,10 +398,11 @@ namespace Nork::Renderer
 					}
 				}
 
-				for (auto& texMap : mtl.textureMaps)
-				{
-					meshData.textures.push_back({ (TextureMapType)texMap.first, texMap.second });
-				}
+				meshData.material.diffuse = mtl.Kd;
+				meshData.material.specular = (mtl.Ks.x + mtl.Ks.y + mtl.Ks.z) / 3.0f;
+				meshData.material.specularExponent = mtl.Ns;
+				meshData.material.textureMaps = mtl.textureMaps;
+
 				meshDatas.push_back(meshData);
 			}
 		}

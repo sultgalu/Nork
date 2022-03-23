@@ -57,6 +57,11 @@ namespace Nork::Renderer {
 			glUniform1i(GetOrQueryUniformLocation(name), value);
 			return *this;
 		}
+		Shader& SetBindlessHandle(const std::string& name, uint64_t value)
+		{
+			glUniformHandleui64ARB(GetOrQueryUniformLocation(name), value);
+			return *this;
+		}
 		GLint GetOrQueryUniformLocation(const std::string& name)
 		{
 			auto loc = uniformLocations.find(name);

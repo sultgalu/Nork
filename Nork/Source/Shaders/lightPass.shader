@@ -100,6 +100,7 @@ struct Materials
 	vec3 ambient;
 	vec3 diffuse;
 	vec3 specular;
+	float specularExponent;
 };
 
 in vec2 texCoord;
@@ -133,14 +134,15 @@ void main()
 	vec3 worldPos = texture(gPos, texCoord).rgb;
 	vec3 diff = texture(gDiff, texCoord).rgb;
 	vec3 normal = texture(gNorm, texCoord).rgb;
-	float spec = texture(gSpec, texCoord).r;
+	vec2 spec = texture(gSpec, texCoord).rg;
 
 	vec3 viewDir = normalize(viewPos - worldPos);
 
 	Materials material;
 	material.ambient = diff.rgb;
 	material.diffuse = diff.rgb;
-	material.specular = material.diffuse * spec;
+	material.specular = material.diffuse * spec.r;
+	material.specularExponent = spec.g;
 	
 	vec3 result = vec3(0.0f);
 	for (uint i = uint(0); i < dShadowCount; i++)
@@ -189,7 +191,7 @@ vec3 dLight(DirLight light, Materials material, vec3 normal, vec3 viewDir)
 	vec3 diffuse = light.color.rgb * diffAngle * material.diffuse;
 
 	vec3 halfwayDir = normalize(viewDir + lightDir);
-	float angle = pow(max(dot(halfwayDir, normal), 0.0f), 4 * 128);
+	float angle = pow(max(dot(halfwayDir, normal), 0.0f), material.specularExponent);
 	vec3 specular = light.color.rgb * angle * material.specular;
 
 	return 0.2f * ambient + diffuse + specular;
@@ -210,7 +212,7 @@ vec3 dLightShadow(DirLight light, Materials material, vec3 normal, vec3 viewDir,
 	vec3 diffuse = light.color.rgb * diffAngle * material.diffuse;
 
 	vec3 halfwayDir = normalize(viewDir + lightDir);
-	float angle = pow(max(dot(halfwayDir, normal), 0.0f), 4 * 128);
+	float angle = pow(max(dot(halfwayDir, normal), 0.0f), material.specularExponent);
 	vec3 specular = light.color.rgb * angle * material.specular;
 
 	vec4 lightView = shadow.VP * vec4(worldPos, 1.0f);
@@ -237,7 +239,7 @@ vec3 pLight(PointLight light, Materials material, vec3 worldPos, vec3 normal, ve
 	vec3 diffuse = light.color.rgb * diffAngle * material.diffuse;
 
 	vec3 halfwayDir = normalize(viewDir + lightDir);
-	float angle = pow(max(dot(halfwayDir, normal), 0.0f), 4 * 128);
+	float angle = pow(max(dot(halfwayDir, normal), 0.0f), material.specularExponent);
 	vec3 specular = light.color.rgb * angle * material.specular;
 
 	float attenuation = CalcLuminosity(light.position, worldPos, light.linear, light.quadratic);
@@ -257,7 +259,7 @@ vec3 pLightShadow(PointLight light, Materials material, vec3 normal, vec3 viewDi
 	vec3 diffuse = light.color.rgb * diffAngle * material.diffuse;
 
 	vec3 halfwayDir = normalize(viewDir + lightDir);
-	float angle = pow(max(dot(halfwayDir, normal), 0.0f), 4 * 128);
+	float angle = pow(max(dot(halfwayDir, normal), 0.0f), material.specularExponent);
 	vec3 specular = light.color.rgb * angle * material.specular;
 
 	float bias = max(shadow.bias * (1.0f - dot(normal, lightDir)), shadow.biasMin); // for huge angle, bias = 0.05f (perpendicular)

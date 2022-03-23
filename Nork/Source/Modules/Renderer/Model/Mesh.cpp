@@ -4,22 +4,6 @@
 #include "../Objects/VertexArray/VertexArrayBuilder.h"
 
 namespace Nork::Renderer {
-	static std::shared_ptr<Texture2D> CreateTexture2D(TextureFormat format, std::vector<float> data)
-	{
-		return TextureBuilder()
-			.Params(TextureParams::Tex2DParams())
-			.Attributes(TextureAttributes{ .width = 1, .height = 1, .format = format })
-			.Create2DWithData(data.data());
-	}
-	std::array<std::shared_ptr<Texture2D>, std::to_underlying(TextureMapType::COUNT)> Mesh::GetDefaultTextureMaps()
-	{
-		static auto diff = CreateTexture2D(TextureFormat::RGBA32F, { 1.0f, 1.0f, 1.0f, 1.0f });
-		static auto norm = CreateTexture2D(TextureFormat::RGB32F, { 0.5f, 0.5f, 1.0f });
-		static auto refl = CreateTexture2D(TextureFormat::R32F, { 0.5f });
-		static auto rough = CreateTexture2D(TextureFormat::R32F, { 0.5f });
-		return { diff, norm, refl, rough };
-	}
-
 	static std::vector<unsigned int> GetCubeIndices()
 	{
 		std::vector<unsigned int> indices;
@@ -282,14 +266,12 @@ namespace Nork::Renderer {
 	}
 	Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices)
 	{
-		textureMaps = GetDefaultTextureMaps();
 		auto vbo = BufferBuilder().Target(BufferTarget::Vertex).Usage(BufferUsage::StaticDraw).Data(vertices.data(), vertices.size() * sizeof(Vertex)).Create();
 		auto ibo = BufferBuilder().Target(BufferTarget::Index).Usage(BufferUsage::StaticDraw).Data(indices.data(), indices.size() * sizeof(GLuint)).Create();
 		vao = VertexArrayBuilder().VBO(vbo).IBO(ibo).Attributes({ 3, 3, 2, 3, 3 }).Create();
 	}
 	Mesh::Mesh(std::vector<Vertex>& vertices)
 	{
-		textureMaps = GetDefaultTextureMaps();
 		auto vbo = BufferBuilder().Target(BufferTarget::Vertex).Usage(BufferUsage::StaticDraw).Data(vertices.data(), vertices.size() * sizeof(Vertex)).Create();
 		vao = VertexArrayBuilder().VBO(vbo).Attributes({ 3, 3, 2, 3, 3 }).Create();
 	}

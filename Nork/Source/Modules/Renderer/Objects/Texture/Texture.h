@@ -9,8 +9,8 @@ namespace Nork::Renderer {
 	class Texture : public GLObject
 	{
 	public:
-		Texture(GLuint handle, TextureParams params, TextureAttributes attributes)
-			: GLObject(handle), params(params), attributes(attributes)
+		Texture(GLuint handle, GLuint64 bindlessHandle, TextureParams params, TextureAttributes attributes)
+			: GLObject(handle), bindlessHandle(bindlessHandle), params(params), attributes(attributes)
 		{}
 		~Texture()
 		{
@@ -19,6 +19,7 @@ namespace Nork::Renderer {
 		}
 		Texture& Bind2D(int idx = 0);
 		Texture& BindCube(int idx = 0);
+		GLuint64 GetBindlessHandle() { return bindlessHandle; }
 		const TextureAttributes& GetAttributes() { return attributes; }
 		const TextureParams& GetParams() { return params; }
 		uint32_t GetWidth() { return attributes.width; }
@@ -26,6 +27,7 @@ namespace Nork::Renderer {
 	protected:
 		const TextureParams params;
 		const TextureAttributes attributes;
+		const GLuint64 bindlessHandle;
 	private:
 		GLenum GetIdentifier() override
 		{

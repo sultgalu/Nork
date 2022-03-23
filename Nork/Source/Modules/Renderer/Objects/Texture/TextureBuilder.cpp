@@ -5,7 +5,7 @@ namespace Nork::Renderer {
 	std::shared_ptr<Texture2D> TextureBuilder::Create2D()
 	{
 		Create(false);
-		auto tex = std::make_shared<Texture2D>(handle, params, attributes);
+		auto tex = std::make_shared<Texture2D>(handle, bindlessHandle, params, attributes);
 		Logger::Info("Created texture 2D ", handle, ".");
 		GLManager::Get().texture2Ds[tex->GetHandle()] = tex;
 		return tex;
@@ -13,7 +13,7 @@ namespace Nork::Renderer {
 	std::shared_ptr<TextureCube> TextureBuilder::CreateCube()
 	{
 		Create(true);
-		auto tex = std::make_shared<TextureCube>(handle, params, attributes);
+		auto tex = std::make_shared<TextureCube>(handle, bindlessHandle, params, attributes);
 		Logger::Info("Created texture Cube ", handle, ".");
 		GLManager::Get().textureCubes[tex->GetHandle()] = tex;
 		return tex;
@@ -26,6 +26,8 @@ namespace Nork::Renderer {
 		glBindTexture(cube ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D, handle);
 		SetParams(cube);
 		SetData(cube);
+		bindlessHandle = glGetTextureHandleARB(handle);
+		glMakeTextureHandleResidentARB(bindlessHandle);
 	}
 	void TextureBuilder::SetData(bool cube)
 	{

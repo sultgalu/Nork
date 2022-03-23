@@ -51,6 +51,7 @@ namespace Nork::Renderer {
 		void SetParams(bool cube);
 	private:
 		GLuint handle;
+		GLuint64 bindlessHandle;
 		std::array<void*, 6> dataCube;
 		void* data2D = nullptr;
 		TextureParams params;

@@ -52,36 +52,57 @@ void main()
 #type fragment
 
 #version 330 core
+#extension ARB_bindless_texture : require
 
 layout(location = 0) out vec3 pos; // 3 used
 layout(location = 1) out vec3 diffuse_spec;
 layout(location = 2) out vec3 normal; // 3 used
-layout(location = 3) out float specular; // 1 used
+layout(location = 3) out vec2 specular; // 2 used
 
-uniform struct MaterialTex
+struct Material
 {
-	sampler2D diffuse; // passed
-	sampler2D normals; // used
-	sampler2D roughness; // passed
-	sampler2D reflect; // set, not passed (metallic)
-} materialTex;
+	sampler2D diffuseMap;
+	sampler2D normalsMap;
+	sampler2D roughnessMap;
+	sampler2D reflectMap;
+
+	vec3 diffuse;
+	float specular;
+	float specularExponent;
+};
+
+layout(std140, binding = 6) uniform asd6
+{
+	Material materials[1000];
+};
+uniform int materialIdx;
+
+// uniform struct MaterialTex
+// {
+// 	sampler2D _diffuse; // passed
+// 	sampler2D _normals; // used
+// 	sampler2D _roughness; // passed
+// 	sampler2D _reflect; // set, not passed (metallic)
+// } materialTex;
 
 in vec3 worldPos;
 in vec2 texCoord;
 in mat3 TBN; // could do with lights from vert. shader (linear interpolation would help -> less matrix multiplications)(inverse -> transpose)
 in vec3 vNorm;
 
-uniform int id;
-uniform int colliding;
+// layout(bindless_sampler) uniform sampler2D diffuse; // passed
+// layout(bindless_sampler) uniform sampler2D normals; // used
+// layout(bindless_sampler) uniform sampler2D roughness; // passed
+// layout(bindless_sampler) uniform sampler2D reflect; // set, not passed (metallic)
 
 void main()
 {
 	pos = worldPos;
-	diffuse_spec = colliding > 0 ? vec3(1.0f, 0.0f, 0.0f) : texture(materialTex.diffuse, texCoord).rgb;
-	specular = 1 - texture(materialTex.roughness, texCoord).r;
+	diffuse_spec = texture(materials[materialIdx].diffuseMap, texCoord).rgb * materials[materialIdx].diffuse;
+	specular = vec2(1 - texture(materials[materialIdx].roughnessMap, texCoord).r * materials[materialIdx].specular, materials[materialIdx].specularExponent);
 	//diffuse_spec = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
-	vec3 norm = texture(materialTex.normals, texCoord).rgb;
+	vec3 norm = texture(materials[materialIdx].normalsMap, texCoord).rgb;
 	norm = norm * 2.0f - 1.0f; // [0;1] -> [-1;1]
 	normal = normalize(TBN * norm); // transforming from tangent-space -> world space
 

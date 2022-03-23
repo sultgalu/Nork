@@ -5,6 +5,7 @@
 #include "Modules/Renderer/Pipeline/PostProcess/SkyRenderer.h"
 #include "Modules/Renderer/LoadUtils.h"
 #include "Modules/Renderer/Objects/Texture/TextureBuilder.h"
+#include "Modules/Renderer/Objects/Buffer/BufferBuilder.h"
 
 namespace Nork {
 	Renderer::DrawableIterator DrawableIterator(entt::registry& reg)
@@ -12,12 +13,18 @@ namespace Nork {
 		using namespace Renderer;
 		auto iterator = [&](auto func)
 		{
-			std::unordered_map<std::string, std::vector<Mesh>> meshMap;
+			std::unordered_map<std::string, std::vector<std::pair<Mesh, int>>> meshMap;
 			std::unordered_map<std::string, std::vector<glm::mat4>> modelsMap;
 			for (auto [id, dr, tr] : reg.view<Components::Drawable, Components::Transform>().each())
 			{
-				meshMap[dr.resource->id] = *dr.resource->object;
-				modelsMap[dr.resource->id].push_back(tr.ModelMatrix());
+				modelsMap[dr.mesh->id].push_back(tr.ModelMatrix());
+				if (meshMap.contains(dr.mesh->id))
+					continue;
+				for (size_t i = 0; i < dr.mesh->object->size(); i++)
+				{
+					auto& pair = (*dr.mesh->object)[i];
+					meshMap[dr.mesh->id].push_back({ pair.first, dr.materialIdxs[i] });
+				}
 			}
 			for (auto& pair : meshMap)
 			{
@@ -45,7 +52,7 @@ namespace Nork {
 		using namespace Renderer;
 		for (auto& sm : dirShadowMaps)
 		{
-			sm = std::make_shared<DirShadowMap>(shaders.dShadowShader, 400, 400, TextureFormat::Depth16);
+			sm = std::make_shared<DirShadowMap>(shaders.dShadowShader, 4000, 4000, TextureFormat::Depth16);
 		}
 		for (auto& sm : pointShadowMaps)
 		{
@@ -62,6 +69,13 @@ namespace Nork {
 		// 	.Attributes(TextureAttributes{ .width = image[0].width, .height = image[0].height, .format = image[0].format })
 		// 	.Params(TextureParams::CubeMapParams())
 		// 	.CreateCubeWithData(data);
+
+		materialsUbo = Renderer::BufferBuilder()
+			.Target(BufferTarget::UBO)
+			.Usage(BufferUsage::StaticDraw)
+			.Data(nullptr, 1000 * sizeof(Renderer::ShaderDefined::Material))
+			.Create();
+		materialsUbo->BindBase(6);
 	}
 	void RenderingSystem::UpdateGlobalUniform()
 	{
@@ -129,6 +143,18 @@ namespace Nork {
 		{
 			pl.position = tr.GetPosition();
 		}
+
+		std::vector<Renderer::ShaderDefined::Material> materials;
+		for (auto [id, dr] : reg.view<Drawable>().each())
+		{
+			dr.materialIdxs.clear();
+			for (auto& mesh : *dr.mesh->object)
+			{
+				materials.push_back(mesh.second.ToShaderDefined());
+				dr.materialIdxs.push_back(materials.size() - 1);
+			}
+		}
+		materialsUbo->SetData(materials.data(), materials.size());
 	}
 	void RenderingSystem::RenderScene(entt::registry& reg)
 	{
@@ -185,12 +211,12 @@ namespace Nork {
 	void Shaders::SetGeometryPassShader(std::shared_ptr<Renderer::Shader> shader)
 	{
 		gPassShader = shader;
-		using enum Renderer::TextureMapType;
-		gPassShader->Use()
-			.SetInt("materialTex.diffuse", (int)Diffuse)
-			.SetInt("materialTex.normals", (int)Normal)
-			.SetInt("materialTex.roughness", (int)Roughness)
-			.SetInt("materialTex.reflect", (int)Reflection);
+		// using enum Renderer::TextureMapType;
+		// gPassShader->Use()
+		// 	.SetInt("materialTex.diffuse", (int)Diffuse)
+		// 	.SetInt("materialTex.normals", (int)Normal)
+		// 	.SetInt("materialTex.roughness", (int)Roughness)
+		// 	.SetInt("materialTex.reflect", (int)Reflection);
 	}
 
 }
