@@ -8,7 +8,7 @@ namespace Nork::Renderer {
 	{
 		glm::vec3 position, normal;
 		glm::vec2 texCoords;
-		glm::vec3 tangent, biTangent;
+		glm::vec3 tangent;
 	};
 
 	class Mesh

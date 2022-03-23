@@ -250,7 +250,6 @@ namespace Nork::Renderer {
 			vertex.position = glm::vec3(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]);
 			vertex.normal = glm::vec3(normals[i * 3], normals[i * 3 + 1], normals[i * 3 + 2]);
 			vertex.tangent = glm::vec3(tangents[i * 3], tangents[i * 3 + 1], tangents[i * 3 + 2]);
-			vertex.biTangent = glm::vec3(bitangents[i * 3], bitangents[i * 3 + 1], bitangents[i * 3 + 2]);
 			vertex.texCoords = glm::vec2(texCoords[i * 2], texCoords[i * 2 + 1]);
 
 			vertices.push_back(vertex);
@@ -268,11 +267,11 @@ namespace Nork::Renderer {
 	{
 		auto vbo = BufferBuilder().Target(BufferTarget::Vertex).Usage(BufferUsage::StaticDraw).Data(vertices.data(), vertices.size() * sizeof(Vertex)).Create();
 		auto ibo = BufferBuilder().Target(BufferTarget::Index).Usage(BufferUsage::StaticDraw).Data(indices.data(), indices.size() * sizeof(GLuint)).Create();
-		vao = VertexArrayBuilder().VBO(vbo).IBO(ibo).Attributes({ 3, 3, 2, 3, 3 }).Create();
+		vao = VertexArrayBuilder().VBO(vbo).IBO(ibo).Attributes({ 3, 3, 2, 3 }).Create();
 	}
 	Mesh::Mesh(std::vector<Vertex>& vertices)
 	{
 		auto vbo = BufferBuilder().Target(BufferTarget::Vertex).Usage(BufferUsage::StaticDraw).Data(vertices.data(), vertices.size() * sizeof(Vertex)).Create();
-		vao = VertexArrayBuilder().VBO(vbo).Attributes({ 3, 3, 2, 3, 3 }).Create();
+		vao = VertexArrayBuilder().VBO(vbo).Attributes({ 3, 3, 2, 3 }).Create();
 	}
 }

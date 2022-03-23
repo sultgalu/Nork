@@ -6,7 +6,6 @@ layout(location = 0) in vec3 vPos;
 layout(location = 1) in vec3 vNormal;
 layout(location = 2) in vec2 vTexCoord;
 layout(location = 3) in vec3 vTangent;
-// layout(location = 4) in vec3 vBiTangent; // = cross(vNormal, vTangent)
 
 out vec3 worldPos;
 out vec2 texCoord;
@@ -35,7 +34,6 @@ void main()
 	vNorm = vNormal;
 
 	vec3 T = normalize(vec3(_model * vec4(vTangent, 0.0f)));
-	//vec3 B = normalize(vec3(_model * vec4(vBiTangent, 0.0f)));
 	vec3 N = normalize(vec3(_model * vec4(vNormal, 0.0f)));
 	vec3 B = cross(N, T);
 
