@@ -1,22 +1,28 @@
 #pragma once
 
 #include "Components/Drawable.h"
+#include "Modules/Renderer/Storage/MeshStorage.h"
+#include "Modules/Renderer/Storage/MaterialStorage.h"
 
 namespace Nork {
 	class ResourceManager
 	{
 	public:
-		ResourceRef<std::vector<std::pair<Renderer::Mesh, Renderer::Material>>> GetMeshes(const std::string& id);
+		std::vector<std::pair<ResourceRef<Renderer::Mesh>, ResourceRef<Renderer::Material>>> GetModel(const std::string& id);
+		ResourceRef<Renderer::Mesh> GetMesh(const std::string& id);
 		ResourceRef<Renderer::Texture2D> GetTexture(const std::string& id);
 		ResourceRef<Renderer::Material> GetMaterial(const std::string& id);
+
+		Renderer::MeshStorage meshStorage = Renderer::MeshStorage();
+		Renderer::MaterialStorage materialStorage = Renderer::MaterialStorage();
 	private:
-		ResourceRef<std::vector<std::pair<Renderer::Mesh, Renderer::Material>>> LoadMeshes(const std::string& id);
-		std::unordered_map<std::string, ResourceRef<std::vector<std::pair<Renderer::Mesh, Renderer::Material>>>> meshes;
+		void LoadModel(const std::string& id);
+		std::unordered_map<std::string, std::vector<std::pair<std::string, std::string>>> models;
+		std::unordered_map<std::string, ResourceRef<Renderer::Mesh>> meshes;
+		std::unordered_map<std::string, ResourceRef<Renderer::Material>> materials;
 
 		ResourceRef<Renderer::Texture2D> LoadTexture(const std::string& id);
-		std::unordered_map<std::string, std::shared_ptr<Resource<Renderer::Texture2D>>> textures;
+		std::unordered_map<std::string, ResourceRef<Renderer::Texture2D>> textures;
 
-		ResourceRef<Renderer::Material> LoadMaterial(const std::string& id);
-		std::unordered_map<std::string, std::shared_ptr<Resource<Renderer::Material>>> materials;
 	};
 }

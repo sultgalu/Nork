@@ -6,43 +6,44 @@
 #include "Modules/Renderer/LoadUtils.h"
 #include "Modules/Renderer/Objects/Texture/TextureBuilder.h"
 #include "Modules/Renderer/Objects/Buffer/BufferBuilder.h"
+#include "App/Application.h"
 
 namespace Nork {
-	Renderer::DrawableIterator DrawableIterator(entt::registry& reg)
+	std::vector<Renderer::MultiDrawCommand> MultiDrawCommand(entt::registry& reg)
 	{
-		using namespace Renderer;
-		auto iterator = [&](auto func)
-		{
-			std::unordered_map<std::string, std::vector<std::pair<Mesh, int>>> meshMap;
-			std::unordered_map<std::string, std::vector<glm::mat4>> modelsMap;
-			for (auto [id, dr, tr] : reg.view<Components::Drawable, Components::Transform>().each())
-			{
-				modelsMap[dr.mesh->id].push_back(tr.ModelMatrix());
-				if (meshMap.contains(dr.mesh->id))
-					continue;
-				for (size_t i = 0; i < dr.mesh->object->size(); i++)
-				{
-					auto& pair = (*dr.mesh->object)[i];
-					meshMap[dr.mesh->id].push_back({ pair.first, dr.materialIdxs[i] });
-				}
-			}
-			for (auto& pair : meshMap)
-			{
-				if (modelsMap[pair.first].size() > 10)
-				{
-					func(InstancedDrawable(pair.second, modelsMap[pair.first]));
-				}
-				else
-				{
-					for (auto& modelM : modelsMap[pair.first])
-					{
-						func(SingleDrawable(pair.second, modelM));
-					}
-				}
-			}
+		static std::unordered_map<std::string, Renderer::MultiDrawCommand::InstancedDraw> instancedDraws;
+		instancedDraws.clear();
 
-		};
-		return iterator;
+		for (auto [id, dr, tr] : reg.group<Components::Drawable, Components::Transform>().each())
+		{
+			if (dr.meshes.empty())
+				continue;
+			if (!instancedDraws.contains(dr.meshes.front().mesh->id))
+			{
+				auto& draw = instancedDraws[dr.meshes.front().mesh->id];
+				for (auto& mesh : dr.meshes)
+				{
+					draw.meshes.push_back({ mesh.mesh->object, mesh.material->object });
+				}
+			}
+			instancedDraws[dr.meshes.front().mesh->id].modelMatrices.push_back(tr.ModelMatrix());
+		}
+
+		static Renderer::MultiDrawCommand command(Application::Get().engine.resourceManager.meshStorage);
+		command.elements.clear();
+		for (auto [id, draw] : instancedDraws)
+		{
+			command.elements.push_back(draw);
+		}
+		// auto begin = *group.raw<Components::Transform>() + group.size();
+		// auto end = *group.raw<Components::Transform>() + reg.size<Components::Transform>();
+		// auto curr = begin;
+		// while (curr != end)
+		// {
+		// 	Logger::Info("tr without dr");
+		// 	curr++;
+		// }
+		return { command };
 	}
 	RenderingSystem::RenderingSystem()
 		: deferredPipeline(shaders.gPassShader, shaders.lPassShader, resolution.x, resolution.y)
@@ -70,12 +71,12 @@ namespace Nork {
 		// 	.Params(TextureParams::CubeMapParams())
 		// 	.CreateCubeWithData(data);
 
-		materialsUbo = Renderer::BufferBuilder()
+		/*materialsUbo = Renderer::BufferBuilder()
 			.Target(BufferTarget::UBO)
 			.Usage(BufferUsage::StaticDraw)
 			.Data(nullptr, 1000 * sizeof(Renderer::ShaderDefined::Material))
 			.Create();
-		materialsUbo->BindBase(6);
+		materialsUbo->BindBase(6);*/
 	}
 	void RenderingSystem::UpdateGlobalUniform()
 	{
@@ -101,7 +102,7 @@ namespace Nork {
 			lightState.dirLights.push_back(light);
 			lightState.dirShadows.push_back(shadow);
 
-			dirShadowMaps[shadow.idx]->Render(light, shadow, DrawableIterator(reg));
+			dirShadowMaps[shadow.idx]->Render(light, shadow, MultiDrawCommand(reg));
 			dirShadowMaps[shadow.idx]->Bind(shadow);
 		}
 		for (auto [id, light] : reg.view<DirLight>(entt::exclude<DirShadow>).each())
@@ -116,7 +117,7 @@ namespace Nork {
 			lightState.pointLights.push_back(light);
 			lightState.pointShadows.push_back(shadow);
 
-			pointShadowMaps[shadow.idx]->Render(light, shadow, DrawableIterator(reg));
+			pointShadowMaps[shadow.idx]->Render(light, shadow, MultiDrawCommand(reg));
 			pointShadowMaps[shadow.idx]->Bind(shadow);
 		}
 		for (auto [id, light] : reg.view<PointLight>(entt::exclude<PointShadow>).each())
@@ -143,22 +144,10 @@ namespace Nork {
 		{
 			pl.position = tr.GetPosition();
 		}
-
-		std::vector<Renderer::ShaderDefined::Material> materials;
-		for (auto [id, dr] : reg.view<Drawable>().each())
-		{
-			dr.materialIdxs.clear();
-			for (auto& mesh : *dr.mesh->object)
-			{
-				materials.push_back(mesh.second.ToShaderDefined());
-				dr.materialIdxs.push_back(materials.size() - 1);
-			}
-		}
-		materialsUbo->SetData(materials.data(), materials.size());
 	}
 	void RenderingSystem::RenderScene(entt::registry& reg)
 	{
-		deferredPipeline.GeometryPass(DrawableIterator(reg));
+		deferredPipeline.GeometryPass(MultiDrawCommand(reg));
 		deferredPipeline.LightPass();
 		if (drawSky && skybox != nullptr)
 			Renderer::SkyRenderer::RenderSkybox(*skybox, *shaders.skyboxShader);

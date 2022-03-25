@@ -189,8 +189,8 @@ namespace Nork {
 
 	template<> JsonObject JsonComponentSerializer<Drawable>::Serialize(const Drawable& component)
 	{
-		return JsonObject()
-			.Property("id", component.mesh->id);
+		return JsonObject();
+			//.Property("id", component.meshes->id);
 	}
 	template<> Drawable JsonComponentSerializer<Drawable>::Deserialize(const JsonObject& json)
 	{

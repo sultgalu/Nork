@@ -341,7 +341,6 @@ namespace Nork::Renderer
 				auto& idxFaces = a.second;
 
 				MeshData meshData;
-				//std::vector<Vertex> vertices;
 				std::vector<std::vector<uint32_t>> faces;
 				faces.reserve(idxFaces.size());
 
@@ -350,7 +349,7 @@ namespace Nork::Renderer
 					std::vector<uint32_t> face;
 					for (size_t j = 0; j < idxFaces[i].elements.size(); j++)
 					{
-						Vertex vertex;
+						Model::Vertex vertex;
 						vertex.position = verts[idxFaces[i].elements[j].vert - 1];
 						vertex.normal = norms[idxFaces[i].elements[j].norm - 1];
 						vertex.texCoords = texCoords[idxFaces[i].elements[j].texCoord - 1];
@@ -382,12 +381,8 @@ namespace Nork::Renderer
 						meshData.vertices[face[j]].tangent = tangent;
 					}
 					faces.push_back(face);
-
 				}
 
-				//std::vector<uint32_t> indices; // triangle indices
-
-				// face indices to triangle indices
 				for (auto face : faces)
 				{
 					for (size_t i = 0; i < face.size() - 2; i++)
@@ -403,6 +398,8 @@ namespace Nork::Renderer
 				meshData.material.specularExponent = mtl.Ns;
 				meshData.material.textureMaps = mtl.textureMaps;
 
+				meshData.meshName = o.name + "_withMat_" + mtl.name;
+				meshData.materialName = mtl.name;
 				meshDatas.push_back(meshData);
 			}
 		}

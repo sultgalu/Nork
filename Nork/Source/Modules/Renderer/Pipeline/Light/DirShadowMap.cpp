@@ -15,7 +15,7 @@ namespace Nork::Renderer {
 			.Create2DEmpty();
 		framebuffer = FramebufferBuilder().Attachments(FramebufferAttachments().Depth(depth)).Create();
 	}
-	void DirShadowMap::Render(const DirLight& light, const DirShadow& shadow, DrawableIterator iterator)
+	void DirShadowMap::Render(const DirLight& light, const DirShadow& shadow, const std::vector<MultiDrawCommand>& drawCommands)
 	{
 		framebuffer->Bind().SetViewport().Clear();
 		shader->Use().SetMat4("VP", shadow.VP);
@@ -23,10 +23,10 @@ namespace Nork::Renderer {
 		Capabilities()
 			.Enable().DepthTest().CullFace();
 
-		iterator([&](const IDrawable& drawable)
-			{
-				drawable.DrawTextureless(*shader);
-			});
+		for (auto& command : drawCommands)
+		{
+			command.Draw(*shader);
+		}
 	}
 
 	void DirShadowMap::Bind(const DirShadow& shadow)

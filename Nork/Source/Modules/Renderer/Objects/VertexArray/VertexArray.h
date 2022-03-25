@@ -39,7 +39,18 @@ namespace Nork::Renderer {
 			ibo->Bind();
 			glDrawElements(std::to_underlying(mode), ibo->GetSize() / sizeof(GLuint), GL_UNSIGNED_INT, 0);
 		}
-		void MultiDrawInstanced(uint32_t count, DrawMode mode = DrawMode::Triangles);
+		struct DrawElementsIndirectCommand
+		{
+			DrawElementsIndirectCommand(uint32_t firstIndex, uint32_t indexCount, uint32_t instanceCount, int baseVertex, uint32_t baseInstance)
+				: count(indexCount), instanceCount(instanceCount), firstIndex(firstIndex), baseVertex(baseVertex), baseInstance(baseInstance)
+			{}
+			uint32_t count; // IBO size (normally)
+			uint32_t instanceCount; // instances
+			uint32_t firstIndex; // IBO offset
+			int baseVertex; // VBO offset
+			uint32_t baseInstance = 0;
+		};
+		void MultiDrawInstanced(DrawElementsIndirectCommand* commands, uint32_t count, DrawMode mode = DrawMode::Triangles);
 		void DrawIndexedInstanced(uint32_t count, DrawMode mode = DrawMode::Triangles)
 		{
 			ibo->Bind();

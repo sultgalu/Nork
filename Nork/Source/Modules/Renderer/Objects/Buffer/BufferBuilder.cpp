@@ -11,7 +11,10 @@ namespace Nork::Renderer {
 		Logger::Info("Created buffer ", handle);
 		GLManager::Get().buffers[buffer->GetHandle()] = buffer;
 
-		buffer->Bind().Allocate(size, data);
+		if (size > 0)
+		{
+			buffer->Bind().Allocate(size, data);
+		}
 
 		return buffer;
 	}

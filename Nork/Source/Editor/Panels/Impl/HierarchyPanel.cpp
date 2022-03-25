@@ -11,7 +11,7 @@ namespace Nork::Editor {
 		if (name == nullptr)
 			str = std::string(("UNNAMED(ID=" + std::to_string(static_cast<int>(ent.Id())) + ")").c_str());
 		else
-			str = std::string(name->tag);
+			str = name->tag;
 
 		// if (ImGui::Selectable(str.c_str(), data.selectedNode == &node))
 		// {

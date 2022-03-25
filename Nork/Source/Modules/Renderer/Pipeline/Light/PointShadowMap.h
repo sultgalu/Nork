@@ -13,7 +13,7 @@ namespace Nork::Renderer {
 			: shader(shader), framebuffer(framebuffer)
 		{}
 		PointShadowMap(std::shared_ptr<Shader> shader, uint32_t size, TextureFormat depthFormat);
-		void Render(const PointLight& light, const PointShadow& shadow, DrawableIterator iterator);
+		void Render(const PointLight& light, const PointShadow& shadow, const std::vector<MultiDrawCommand>& drawCommands);
 		void Bind(const PointShadow& shadow);
 		std::shared_ptr<TextureCube> Get();
 	private:

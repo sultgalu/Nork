@@ -37,20 +37,41 @@ namespace Nork::Renderer {
 		Buffer& Bind(BufferTarget target);
 		Buffer& Bind();
 		Buffer& BindBase(GLuint index);
+
 		void Allocate(size_t size, const void* data = nullptr);
+		void ShrinkToFit();
+		void Reserve(size_t cap);
+		void Resize(size_t size);
 		void SetData(const void* data, size_t size, size_t offset = 0);
+		void Append(const void* data, size_t size);
 		void GetData(void* data, size_t size, size_t offset = 0);
+		void Erase(size_t offset, size_t length);
+		void Erase(std::vector<std::pair<size_t, size_t>> ranges); // offset, length
+		Buffer& Clear() { size = 0; return *this; }
+
+		template<class T>
+		size_t GetCount() { return size / sizeof(T); }
 		size_t GetSize() { return size; }
+		size_t GetCapacity() { return capacity; }
 		BufferTarget GetTarget() { return target; }
 		BufferUsage GetUsage() { return usage; }
 		static const std::unordered_map<BufferTarget, GLuint>& GetBoundBuffers();
 		static void ResetBoundBufferState();
+
+		// templated convinience
+		template<class T>
+		void Append(const std::vector<T>& data) { Append(data.data(), data.size() * sizeof(T)); }
+		// template<class T>
+		// void Append(const T& data) { Append(&data, sizeof(T)); }
+		// template<class T>
+		// void SetData(const T& data, size_t idx) { SetData(&data, sizeof(T), idx * sizeof(T)); }
 	protected:
 		size_t size;
 		size_t capacity;
 		BufferTarget target;
 		const BufferUsage usage;
 	private:
+		void ResizeBuffer(size_t newSize);
 		GLenum GetIdentifier() override
 		{
 			return GL_BUFFER;

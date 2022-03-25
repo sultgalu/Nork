@@ -22,9 +22,14 @@ namespace Nork {
 
 namespace Nork::Components
 {
+	struct Mesh
+	{
+		ResourceRef<Renderer::Mesh> mesh;
+		ResourceRef<Renderer::Material> material;
+	};
+
 	struct Drawable
 	{
-		MeshResourceRef mesh;
-		std::vector<int> materialIdxs;
+		std::vector<Mesh> meshes;
 	};
 }

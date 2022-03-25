@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Mesh.h"
 #include "Material.h"
 #include "../Objects/Shader/Shader.h"
+#include "../Storage/MeshStorage.h"
 
 namespace Nork::Renderer {
-	struct IDrawable
+	/*struct IDrawable
 	{
 		virtual void Draw(Shader&) const = 0;
 		virtual void DrawTextureless(Shader&) const = 0;
@@ -37,5 +37,28 @@ namespace Nork::Renderer {
 		void DrawTextureless(Shader& shader) const override;
 	};
 
-	using DrawableIterator = std::function<void(std::function<void(const IDrawable&)>)>;
+	using DrawableIterator = std::function<void(std::function<void(const IDrawable&)>)>;*/
+
+	struct IDrawCommand
+	{
+		virtual void Draw(Shader&) const = 0;
+	};
+
+	struct MultiDrawCommand : public IDrawCommand
+	{
+		MultiDrawCommand(MeshStorage& meshStorage)
+			: meshStorage(meshStorage)
+		{}
+
+		struct InstancedDraw
+		{// all meshes will be drawn modelMatrices.size() times
+			std::vector<std::pair<std::shared_ptr<Mesh>, std::shared_ptr<Material>>> meshes;
+			std::vector<glm::mat4> modelMatrices;
+		};
+
+		void Draw(Shader&) const override;
+
+		std::vector<InstancedDraw> elements;
+		MeshStorage& meshStorage;
+	};
 }

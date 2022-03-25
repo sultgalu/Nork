@@ -23,7 +23,7 @@ namespace Nork::Renderer {
 			.ColorFormat(Renderer::TextureFormat::RGBA16F)
 			.Create();
 	}
-	void DeferredPipeline::GeometryPass(DrawableIterator iterator)
+	void DeferredPipeline::GeometryPass(const std::vector<MultiDrawCommand>& drawCommands)
 	{
 		geometryFb->Bind().SetViewport().Clear();
 		geomatryShader->Use();
@@ -32,10 +32,10 @@ namespace Nork::Renderer {
 			.Enable().DepthTest().CullFace()
 			.Disable().Blend(); //.CullFace();
 
-		iterator([&](const IDrawable& drawable)
-			{
-				drawable.Draw(*geomatryShader);
-			});
+		for (auto& command : drawCommands)
+		{
+			command.Draw(*geomatryShader);
+		}
 	}
 	void DeferredPipeline::LightPass()
 	{

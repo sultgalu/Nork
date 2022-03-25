@@ -9,7 +9,8 @@ namespace Nork::Renderer {
 			.Attributes(TextureAttributes{ .width = 1, .height = 1, .format = format })
 			.Create2DWithData(data.data());
 	}
-	Material::Material()
+	Material::Material(uint32_t storageIdx)
+		: storageIdx(storageIdx)
 	{
 		diffuseMap = GetDefaultTextureMaps()[std::to_underlying(TextureMap::Diffuse)];
 		normalsMap = GetDefaultTextureMaps()[std::to_underlying(TextureMap::Normal)];

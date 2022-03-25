@@ -16,7 +16,7 @@ namespace Nork::Renderer {
 		{}
 		DeferredPipeline(std::shared_ptr<Shader> geomatryShader, std::shared_ptr<Shader> lightShader,
 			uint32_t width, uint32_t height);
-		void GeometryPass(DrawableIterator iterator);
+		void GeometryPass(const std::vector<MultiDrawCommand>&);
 		void LightPass();
 	public:
 		std::shared_ptr<GeometryFramebuffer> geometryFb;

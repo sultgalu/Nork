@@ -122,10 +122,18 @@ namespace Nork::Editor
 			{
 				ImGui::Unindent();
 				static int meshIdx = 0;
-				auto meshCount = (*dr->mesh->object).size();
+				auto meshCount = dr->meshes.size();
 				if (meshIdx >= meshCount)
 					meshIdx = meshCount - 1;
 				ImGui::SliderInt("Mesh of model", &meshIdx, 0, meshCount - 1);
+
+				ImGui::Text("Mesh ID:");
+				ImGui::SameLine();
+				ImGui::Text(dr->meshes[meshIdx].mesh->id.c_str());
+				ImGui::Text("Material ID:");
+				ImGui::SameLine();
+				ImGui::Text(dr->meshes[meshIdx].material->id.c_str());
+
 				if (ImGui::BeginTabBar("MaterialTexturesTab"))
 				{
 					auto displayTex = [&](std::shared_ptr<Renderer::Texture2D>& tex)
@@ -146,25 +154,26 @@ namespace Nork::Editor
 								if (newTex != nullptr)
 								{
 									tex = newTex;
+									data.engine.resourceManager.materialStorage.Update(dr->meshes[meshIdx].material->object);
 								}
 							}
 						}
 					};
 					if (ImGui::BeginTabItem("Diffuse"))
 					{
-						displayTex((*dr->mesh->object)[meshIdx].second.diffuseMap);
+						displayTex(dr->meshes[meshIdx].material->object->diffuseMap);
 					}
 					if (ImGui::BeginTabItem("Normal"))
 					{
-						displayTex((*dr->mesh->object)[meshIdx].second.normalsMap);
+						displayTex(dr->meshes[meshIdx].material->object->normalsMap);
 					}
 					if (ImGui::BeginTabItem("Roughness"))
 					{
-						displayTex((*dr->mesh->object)[meshIdx].second.roughnessMap);
+						displayTex(dr->meshes[meshIdx].material->object->roughnessMap);
 					}
 					if (ImGui::BeginTabItem("Metalness"))
 					{
-						displayTex((*dr->mesh->object)[meshIdx].second.reflectMap);
+						displayTex(dr->meshes[meshIdx].material->object->reflectMap);
 					}
 					ImGui::EndTabBar();
 				}
@@ -174,16 +183,18 @@ namespace Nork::Editor
 				ImGui::TreePop();
 			}
 
-			ImGui::Text("Path: ");
-			ImGui::SameLine();
-			ImGui::Text(dr->mesh->id.c_str());
 			//ImGui::TextColored(ImVec4(0, 0.8f, 0.4f, 1.0f), "Showing source is not implemented yet");
 			if (ImGui::Button("LoadFromWin"))
 			{
 				std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::_3D, L"Load model", L"Load");
 				if (!p.empty())
 				{
-					dr->mesh = data.engine.resourceManager.GetMeshes(p);
+					dr->meshes.clear();
+					auto model = data.engine.resourceManager.GetModel(p);
+					for (auto& [mesh, material] : model)
+					{
+						dr->meshes.push_back(Mesh{ .mesh = mesh, .material = material });
+					}
 				}
 			}
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));

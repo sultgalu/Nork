@@ -20,7 +20,7 @@ uniform mat4 VP;
 
 layout(std140, binding = 5) uniform asd5
 {
-	mat4 models[1000 * 1000];
+	mat4 models[1];
 };
 
 struct Material
@@ -36,24 +36,24 @@ struct Material
 };
 layout(std140, binding = 6) uniform asd6
 {
-	Material materials[1000];
+	Material materials[1];
 };
 
 layout(std140, binding = 7) uniform asd7
 {
-	int materialIndices[1000];
+	uvec4 materialIndices[1];
 };
-
 flat out Material material;
 
 uniform int instanced;
 
 void main()
 {
-	material = materials[materialIndices[gl_DrawID]];
+	uint matIdx = materialIndices[gl_DrawID / 4][gl_DrawID % 4]; // needed because of int[] padding (pads it up to a vec4)
+	material = materials[matIdx];
+	//material = materials[1];
 
-	// material = materials[materialIdx];
-	mat4 _model = instanced > 0 ? models[gl_InstanceID] : model;
+	mat4 _model = models[gl_BaseInstance + gl_InstanceID];
 
 	worldPos = (_model * vec4(vPos, 1.0f)).xyz;
 	gl_Position = VP * vec4(worldPos, 1.0f);
@@ -79,6 +79,7 @@ void main()
 
 #version 330 core
 #extension ARB_bindless_texture : require
+//#extension ARB_shader_draw_parameters : require
 
 layout(location = 0) out vec3 pos; // 3 used
 layout(location = 1) out vec3 diffuse_spec;
@@ -97,14 +98,25 @@ struct Material
 	float specularExponent;
 };
 
-in Material material;
+flat in Material material;
 in vec3 worldPos;
 in vec2 texCoord;
 in mat3 TBN; // could do with lights from vert. shader (linear interpolation would help -> less matrix multiplications)(inverse -> transpose)
 in vec3 vNorm;
 
+// layout(std140, binding = 6) uniform asd6
+// {
+// 	Material materials[1];
+// };
+// 
+// layout(std140, binding = 7) uniform asd7
+// {
+// 	uint materialIndices[1];
+// };
 void main()
 {
+	//Material material = materials[0]; // problme is here
+	
 	pos = worldPos;
 	diffuse_spec = texture(material.diffuseMap, texCoord).rgb * material.diffuse;
 	specular = vec2(1 - texture(material.roughnessMap, texCoord).r * material.specular, material.specularExponent);

@@ -166,6 +166,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Modules\Renderer\Storage\MaterialStorage.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Storage\MeshStorage.cpp" />
     <ClCompile Include="Source\Components\Impl\Common.cpp" />
     <ClCompile Include="Source\Components\Impl\Lights.cpp" />
     <ClCompile Include="Source\Core\PhysicsSystem.cpp" />
@@ -197,6 +199,8 @@
     <ClCompile Include="Source\Modules\Renderer\Window\Window.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Texture\Texture.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\VertexArray\VertexArray.cpp" />
+    <ClInclude Include="Source\Modules\Renderer\Storage\MaterialStorage.h" />
+    <ClInclude Include="Source\Modules\Renderer\Storage\MeshStorage.h" />
     <ClInclude Include="Source\Core\PhysicsSystem.h" />
     <ClInclude Include="Source\Core\ResourceManager.h" />
     <ClInclude Include="Source\Modules\Renderer\Model\Material.h" />
@@ -232,6 +236,7 @@
     <ClInclude Include="Source\Modules\Renderer\Pipeline\Light\LightState.h" />
     <ClInclude Include="Source\Modules\Renderer\Pipeline\PostProcess\SkyRenderer.h" />
     <ClInclude Include="Source\Modules\Renderer\State\Capabilities.h" />
+    <ClInclude Include="Source\Modules\Renderer\Storage\StorageElement.h" />
     <ClInclude Include="Source\Modules\Renderer\Window\Window.h" />
     <ClInclude Include="Source\Modules\Serialization\Json.h" />
     <ClInclude Include="Source\Scene\Entity.h" />

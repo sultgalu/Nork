@@ -25,17 +25,17 @@ namespace Nork::Renderer {
 
 	static std::shared_ptr<Buffer> GetModelUbo()
 	{
-		static auto ubo = CreateModelUbo(1001);
+		static auto ubo = CreateModelUbo(0);
 		return ubo;
 	}
 
 	static std::shared_ptr<Buffer> GetMaterialLayoutUbo()
 	{
-		static auto ubo = CreateMaterialLayoutUbo(1000);
+		static auto ubo = CreateMaterialLayoutUbo(0);
 		return ubo;
 	}
 
-	void InstancedDrawable::Draw(Shader& shader) const
+	/*void InstancedDrawable::Draw(Shader& shader) const
 	{
 		GetModelUbo()->Bind().SetData(modelMatrices.data(), modelMatrices.size() * sizeof(glm::mat4));
 		GetMaterialLayoutUbo()->Bind();
@@ -80,5 +80,37 @@ namespace Nork::Renderer {
 		{
 			meshes[i].first.Draw();
 		}
+	}*/
+	void MultiDrawCommand::Draw(Shader& shader) const
+	{
+		std::vector<uint32_t> materialIdxs;
+		std::vector<glm::mat4> models;
+		std::vector<VertexArray::DrawElementsIndirectCommand> indirectCommands;
+
+		uint32_t baseInstance = 0;
+		for (auto& element : elements)
+		{
+			// assume no instancing now
+			for (auto& mesh : element.meshes)
+			{
+				materialIdxs.push_back(mesh.second->storageIdx);
+				auto& meshRange = meshStorage.ranges[mesh.first->storageIdx];
+				indirectCommands.push_back(VertexArray::DrawElementsIndirectCommand(
+					meshRange.indexOffs, meshRange.indexCount, element.modelMatrices.size(), meshRange.vertexOffs, baseInstance));
+
+				// modelMatrices for instances
+				models.insert(models.end(), element.modelMatrices.begin(), element.modelMatrices.end());
+				baseInstance += element.modelMatrices.size();
+			}
+		}
+		// for (size_t i = 0; i < 120; i++)
+		// {
+		// 	materialIdxs.push_back(0);
+		// }
+		GetMaterialLayoutUbo()->Bind().Clear().Append(materialIdxs);
+		GetModelUbo()->Bind().Clear().Append(models);
+
+		shader.SetInt("instanced", 0);
+		meshStorage.vao->Bind().MultiDrawInstanced(indirectCommands.data(), indirectCommands.size());
 	}
 }

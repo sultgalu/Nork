@@ -15,7 +15,7 @@ namespace Nork::Renderer {
 			.CreateCubeEmpty();
 		framebuffer = FramebufferBuilder().Attachments(FramebufferAttachments().Depth(depth)).Create();
 	}
-	void PointShadowMap::Render(const PointLight& light, const PointShadow& shadow, DrawableIterator iterator)
+	void PointShadowMap::Render(const PointLight& light, const PointShadow& shadow, const std::vector<MultiDrawCommand>& drawCommands)
 	{
 		framebuffer->Bind().SetViewport().Clear();
 		shader->Use();
@@ -44,10 +44,10 @@ namespace Nork::Renderer {
 		Capabilities()
 			.Enable().DepthTest().CullFace();
 
-		iterator([&](const IDrawable& drawable)
-			{
-				drawable.DrawTextureless(*shader);
-			});
+		for (auto& command : drawCommands)
+		{
+			command.Draw(*shader);
+		}
 	}
 
 	void PointShadowMap::Bind(const PointShadow& shadow)

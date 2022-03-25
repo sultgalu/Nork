@@ -21,7 +21,7 @@ namespace Nork::Renderer {
 			this->attrLens = attrLens;
 			return *this;
 		}
-		std::shared_ptr<VertexArray> Create();
+		std::shared_ptr<VertexArray> Create(std::source_location loc = std::source_location::current());
 	private:
 		void SetAttribs();
 		void Validate()

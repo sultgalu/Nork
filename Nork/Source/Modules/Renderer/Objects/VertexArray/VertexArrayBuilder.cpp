@@ -2,14 +2,15 @@
 #include "../GLManager.h"
 
 namespace Nork::Renderer {
-	std::shared_ptr<VertexArray> VertexArrayBuilder::Create()
+	std::shared_ptr<VertexArray> VertexArrayBuilder::Create(std::source_location loc)
 	{
-		Logger::Info("Creating vertex array ", handle, ".");
+		Logger::Info("Creating vertex array ", loc.function_name(), ".");
 		Validate();
 		glGenVertexArrays(1, &handle);
 		SetAttribs();
 		auto vao = std::make_shared<VertexArray>(handle, attrLens, stride, vbo, ibo);
 		GLManager::Get().vaos[vao->GetHandle()] = vao;
+		Logger::Info("Created vertex array ", handle, ".");
 		return vao;
 	}
 	void VertexArrayBuilder::SetAttribs()

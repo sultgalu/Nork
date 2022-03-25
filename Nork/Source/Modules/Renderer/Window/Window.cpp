@@ -146,7 +146,7 @@ namespace Nork::Renderer
 	}
 	void Window::Refresh()
 	{
-		glfwSwapBuffers(context.glfwWinPtr);
+ 		glfwSwapBuffers(context.glfwWinPtr);
 		glClear(GL_COLOR_BUFFER_BIT);
 	}
 	void Window::OnResize(int newX, int newY)
