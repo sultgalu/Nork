@@ -15,7 +15,7 @@ namespace Nork::Renderer {
 			.Create2DEmpty();
 		framebuffer = FramebufferBuilder().Attachments(FramebufferAttachments().Depth(depth)).Create();
 	}
-	void DirShadowMap::Render(const DirLight& light, const DirShadow& shadow, const std::vector<MultiDrawCommand>& drawCommands)
+	void DirShadowMap::Render(const DirLight& light, const DirShadow& shadow, const std::vector<DrawCommandMultiIndirect>& drawCommands)
 	{
 		framebuffer->Bind().SetViewport().Clear();
 		shader->Use().SetMat4("VP", shadow.VP);

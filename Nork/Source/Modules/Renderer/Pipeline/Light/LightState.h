@@ -1,5 +1,5 @@
 #pragma 
-#include "../../Model/Lights.h"
+#include "../../Data/Lights.h"
 #include "../../Objects/Buffer/Buffer.h"
 
 namespace Nork::Renderer {

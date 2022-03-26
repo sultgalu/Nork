@@ -2,12 +2,12 @@
 
 #include "Scene/Scene.h"
 #include "Modules/Renderer/Objects/Shader/Shader.h"
-#include "Modules/Renderer/Model/Model.h"
 #include "Modules/Renderer/Pipeline/Light/LightState.h"
 #include "Modules/Renderer/Pipeline/Light/DirShadowMap.h"
 #include "Modules/Renderer/Pipeline/Light/PointShadowMap.h"
 #include "Modules/Renderer/Pipeline/Deferred/DeferredPipeline.h"
 #include "Modules/Renderer/Config.h"
+#include "Modules/Renderer/Model/DrawBatch.h"
 
 namespace Nork {
 	
@@ -96,7 +96,7 @@ namespace Nork {
 	class RenderingSystem
 	{
 	public:
-		RenderingSystem();
+		RenderingSystem(std::shared_ptr<Renderer::VertexArray>);
 
 		void UpdateGlobalUniform();
 		void UpdateLights(entt::registry& reg);
@@ -104,6 +104,7 @@ namespace Nork {
 		void SyncComponents(entt::registry& reg);
 		void RenderScene(entt::registry& reg);
 		void Update(entt::registry& registry, Components::Camera& camera);
+		void DrawBatchUpdate(entt::registry& reg);
 
 		GlobalShaderUniform GetGlobalShaderUniform() { return globalShaderUniform; }
 	
@@ -116,7 +117,7 @@ namespace Nork {
 		std::array<std::shared_ptr<Renderer::DirShadowMap>, Renderer::Config::LightData::dirShadowsLimit> dirShadowMaps;
 		std::array<std::shared_ptr<Renderer::PointShadowMap>, Renderer::Config::LightData::pointShadowsLimit> pointShadowMaps;
 		std::shared_ptr<Renderer::TextureCube> skybox;
-		std::shared_ptr<Renderer::Buffer> materialsUbo;
+		Renderer::DrawBatch drawBatch;
 
 		Observed<GlobalShaderUniform> globalShaderUniform;
 		bool drawSky = true;

@@ -45,15 +45,14 @@ layout(std140, binding = 7) uniform asd7
 };
 flat out Material material;
 
-uniform int instanced;
-
 void main()
 {
-	uint matIdx = materialIndices[gl_DrawID / 4][gl_DrawID % 4]; // needed because of int[] padding (pads it up to a vec4)
+	uint drawIdx = gl_BaseInstance + gl_InstanceID;
+	uint matIdx = materialIndices[drawIdx / 4][drawIdx % 4]; // needed because of int[] padding (pads it up to a vec4)
 	material = materials[matIdx];
 	//material = materials[1];
 
-	mat4 _model = models[gl_BaseInstance + gl_InstanceID];
+	mat4 _model = models[drawIdx];
 
 	worldPos = (_model * vec4(vPos, 1.0f)).xyz;
 	gl_Position = VP * vec4(worldPos, 1.0f);

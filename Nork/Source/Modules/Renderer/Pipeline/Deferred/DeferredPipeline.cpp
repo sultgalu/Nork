@@ -23,7 +23,7 @@ namespace Nork::Renderer {
 			.ColorFormat(Renderer::TextureFormat::RGBA16F)
 			.Create();
 	}
-	void DeferredPipeline::GeometryPass(const std::vector<MultiDrawCommand>& drawCommands)
+	void DeferredPipeline::GeometryPass(const std::vector<DrawCommandMultiIndirect>& drawCommands)
 	{
 		geometryFb->Bind().SetViewport().Clear();
 		geomatryShader->Use();

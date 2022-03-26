@@ -11,6 +11,12 @@ namespace Nork::Renderer {
 	Buffer& Buffer::BindBase(GLuint index)
 	{
 		glBindBufferBase(static_cast<GLenum>(target), index, handle);
+		base = index;
+		return *this;
+	}
+	Buffer& Buffer::BindBase()
+	{
+		BindBase(base);
 		return *this;
 	}
 	Buffer& Buffer::Bind()

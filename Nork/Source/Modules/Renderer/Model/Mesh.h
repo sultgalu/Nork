@@ -1,41 +1,31 @@
 #pragma once
 
+#include "../Storage/VertexArrayWrapper.h"
+
 namespace Nork::Renderer {
-	namespace Model {
-		struct Vertex
-		{
-			glm::vec3 position, normal;
-			glm::vec2 texCoords;
-			glm::vec3 tangent;
-		};
-	}
 	class Mesh
 	{
 	public:
-		Mesh(uint32_t idx)
-			: storageIdx(idx)
+		Mesh(VertexArrayWrapper& vaoWrapper,
+			std::shared_ptr<size_t> vertexIdx, std::shared_ptr<size_t> indexIdx,
+			size_t vertexCount, size_t indexCount)
+			: vaoWrapper(vaoWrapper),
+			vertexIdx(vertexIdx), indexIdx(indexIdx),
+			vertexCount(vertexCount), indexCount(indexCount)
 		{}
-		uint32_t storageIdx;
-	};
-	// struct SubMesh
-	// {
-	// 	uint32_t vertOffs, vertCount;
-	// 	uint32_t indexOffs, indexCount;
-	// 	int materialIdx;
-	// };
+		Mesh(Mesh&&) = delete;
 
-	// class Mesh
-	// {
-	// public:
-	// 	Mesh(size_t initialVboSize = 0, size_t initialIboSize = 0);
-	// 	void Draw() const;
-	// 	void DrawInstanced(uint32_t count) const;
-	// 	static Mesh Cube();
-	// 
-	// 	SubMesh& AddSubMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices);
-	// 
-	// 	std::shared_ptr<VertexArray> vao;
-	// 	std::vector<SubMesh> subMeshes;
-	// private:
-	// };	
+		size_t GetVertexOffset() { return *vertexIdx; }
+		size_t GetIndexOffset() { return *indexIdx; }
+		size_t GetVertexCount() { return vertexCount; }
+		size_t GetIndexCount() { return indexCount; }
+
+		VertexArrayWrapper& GetVaoWrapper() { return vaoWrapper; }
+	private:
+		std::shared_ptr<size_t> vertexIdx;
+		std::shared_ptr<size_t> indexIdx;
+		size_t vertexCount;
+		size_t indexCount;
+		VertexArrayWrapper& vaoWrapper;
+	};
 }

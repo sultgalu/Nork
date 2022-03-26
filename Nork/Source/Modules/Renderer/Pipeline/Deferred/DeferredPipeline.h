@@ -3,7 +3,7 @@
 #include "../../Objects/Framebuffer/GeometryFramebuffer.h"
 #include "../../Objects/Framebuffer/LightFramebuffer.h"
 #include "../../Objects/Shader/Shader.h"
-#include "../../Model/Model.h"
+#include "../../Model/DrawBatch.h"
 
 namespace Nork::Renderer {
 
@@ -16,7 +16,7 @@ namespace Nork::Renderer {
 		{}
 		DeferredPipeline(std::shared_ptr<Shader> geomatryShader, std::shared_ptr<Shader> lightShader,
 			uint32_t width, uint32_t height);
-		void GeometryPass(const std::vector<MultiDrawCommand>&);
+		void GeometryPass(const std::vector<DrawCommandMultiIndirect>&);
 		void LightPass();
 	public:
 		std::shared_ptr<GeometryFramebuffer> geometryFb;

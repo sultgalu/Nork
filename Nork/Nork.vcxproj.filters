@@ -159,9 +159,6 @@
     <ClCompile Include="Source\Core\RenderingSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Model\Mesh.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Scene\SceneNode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -213,19 +210,22 @@
     <ClCompile Include="Source\Components\Impl\Lights.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Model\Drawable.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Core\ResourceManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Model\Material.cpp">
+    <ClCompile Include="Source\Modules\Renderer\Model\MaterialBuilder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Storage\MeshStorage.cpp">
+    <ClCompile Include="Source\Modules\Renderer\Storage\BufferWrapper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Storage\MaterialStorage.cpp">
+    <ClCompile Include="Source\Modules\Renderer\Model\MeshFactory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Modules\Renderer\Storage\VertexArrayWrapper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Modules\Renderer\Model\DrawBatch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -401,9 +401,6 @@
     <ClInclude Include="Source\Modules\Renderer\Model\Mesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Model\Model.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Modules\Renderer\DrawUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -413,7 +410,7 @@
     <ClInclude Include="Source\Modules\Renderer\Pipeline\Light\LightState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Model\Lights.h">
+    <ClInclude Include="Source\Modules\Renderer\Data\Lights.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Modules\Renderer\Pipeline\PostProcess\SkyRenderer.h">
@@ -488,13 +485,28 @@
     <ClInclude Include="Source\Modules\Renderer\Model\Material.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Storage\MeshStorage.h">
+    <ClInclude Include="Source\Modules\Renderer\Data\Vertex.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Storage\MaterialStorage.h">
+    <ClInclude Include="Source\Modules\Renderer\Data\Material.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Storage\StorageElement.h">
+    <ClInclude Include="Source\Modules\Renderer\Model\MeshFactory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Storage\BufferWrapper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Storage\TypedBufferWrapper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Model\MaterialBuilder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Storage\VertexArrayWrapper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Model\DrawBatch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

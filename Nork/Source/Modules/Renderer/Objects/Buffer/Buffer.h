@@ -37,6 +37,7 @@ namespace Nork::Renderer {
 		Buffer& Bind(BufferTarget target);
 		Buffer& Bind();
 		Buffer& BindBase(GLuint index);
+		Buffer& BindBase();
 
 		void Allocate(size_t size, const void* data = nullptr);
 		void ShrinkToFit();
@@ -58,17 +59,13 @@ namespace Nork::Renderer {
 		static const std::unordered_map<BufferTarget, GLuint>& GetBoundBuffers();
 		static void ResetBoundBufferState();
 
-		// templated convinience
 		template<class T>
 		void Append(const std::vector<T>& data) { Append(data.data(), data.size() * sizeof(T)); }
-		// template<class T>
-		// void Append(const T& data) { Append(&data, sizeof(T)); }
-		// template<class T>
-		// void SetData(const T& data, size_t idx) { SetData(&data, sizeof(T), idx * sizeof(T)); }
 	protected:
 		size_t size;
 		size_t capacity;
 		BufferTarget target;
+		GLuint base = std::numeric_limits<GLuint>::max();
 		const BufferUsage usage;
 	private:
 		void ResizeBuffer(size_t newSize);

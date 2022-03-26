@@ -6,47 +6,29 @@
 #include "Modules/Renderer/LoadUtils.h"
 #include "Modules/Renderer/Objects/Texture/TextureBuilder.h"
 #include "Modules/Renderer/Objects/Buffer/BufferBuilder.h"
-#include "App/Application.h"
 
 namespace Nork {
-	std::vector<Renderer::MultiDrawCommand> MultiDrawCommand(entt::registry& reg)
+	void RenderingSystem::DrawBatchUpdate(entt::registry& reg)
 	{
-		static std::unordered_map<std::string, Renderer::MultiDrawCommand::InstancedDraw> instancedDraws;
-		instancedDraws.clear();
+		drawBatch.Clear();
 
 		for (auto [id, dr, tr] : reg.group<Components::Drawable, Components::Transform>().each())
 		{
-			if (dr.meshes.empty())
-				continue;
-			if (!instancedDraws.contains(dr.meshes.front().mesh->id))
+			for (auto& mesh : dr.meshes)
 			{
-				auto& draw = instancedDraws[dr.meshes.front().mesh->id];
-				for (auto& mesh : dr.meshes)
-				{
-					draw.meshes.push_back({ mesh.mesh->object, mesh.material->object });
-				}
+				drawBatch.AddElement(Renderer::BatchElement{
+					.mesh = mesh.mesh->object,
+					.material = mesh.material->object,
+					.model = tr.ModelMatrix()
+					});
 			}
-			instancedDraws[dr.meshes.front().mesh->id].modelMatrices.push_back(tr.ModelMatrix());
 		}
 
-		static Renderer::MultiDrawCommand command(Application::Get().engine.resourceManager.meshStorage);
-		command.elements.clear();
-		for (auto [id, draw] : instancedDraws)
-		{
-			command.elements.push_back(draw);
-		}
-		// auto begin = *group.raw<Components::Transform>() + group.size();
-		// auto end = *group.raw<Components::Transform>() + reg.size<Components::Transform>();
-		// auto curr = begin;
-		// while (curr != end)
-		// {
-		// 	Logger::Info("tr without dr");
-		// 	curr++;
-		// }
-		return { command };
+		drawBatch.GenerateDrawCommand();
 	}
-	RenderingSystem::RenderingSystem()
-		: deferredPipeline(shaders.gPassShader, shaders.lPassShader, resolution.x, resolution.y)
+	RenderingSystem::RenderingSystem(std::shared_ptr<Renderer::VertexArray> vao)
+		: deferredPipeline(shaders.gPassShader, shaders.lPassShader, resolution.x, resolution.y),
+		drawBatch(vao)
 	{
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
@@ -102,7 +84,7 @@ namespace Nork {
 			lightState.dirLights.push_back(light);
 			lightState.dirShadows.push_back(shadow);
 
-			dirShadowMaps[shadow.idx]->Render(light, shadow, MultiDrawCommand(reg));
+			dirShadowMaps[shadow.idx]->Render(light, shadow, { drawBatch.GetDrawCommand() });
 			dirShadowMaps[shadow.idx]->Bind(shadow);
 		}
 		for (auto [id, light] : reg.view<DirLight>(entt::exclude<DirShadow>).each())
@@ -117,7 +99,7 @@ namespace Nork {
 			lightState.pointLights.push_back(light);
 			lightState.pointShadows.push_back(shadow);
 
-			pointShadowMaps[shadow.idx]->Render(light, shadow, MultiDrawCommand(reg));
+			pointShadowMaps[shadow.idx]->Render(light, shadow, { drawBatch.GetDrawCommand() });
 			pointShadowMaps[shadow.idx]->Bind(shadow);
 		}
 		for (auto [id, light] : reg.view<PointLight>(entt::exclude<PointShadow>).each())
@@ -147,7 +129,7 @@ namespace Nork {
 	}
 	void RenderingSystem::RenderScene(entt::registry& reg)
 	{
-		deferredPipeline.GeometryPass(MultiDrawCommand(reg));
+		deferredPipeline.GeometryPass({ drawBatch.GetDrawCommand() });
 		deferredPipeline.LightPass();
 		if (drawSky && skybox != nullptr)
 			Renderer::SkyRenderer::RenderSkybox(*skybox, *shaders.skyboxShader);
@@ -162,6 +144,7 @@ namespace Nork {
 		}
 		ViewProjectionUpdate(camera);
 		UpdateLights(registry);
+		DrawBatchUpdate(registry);
 		RenderScene(registry);
 
 		Renderer::Framebuffer::BindDefault();
@@ -200,12 +183,6 @@ namespace Nork {
 	void Shaders::SetGeometryPassShader(std::shared_ptr<Renderer::Shader> shader)
 	{
 		gPassShader = shader;
-		// using enum Renderer::TextureMapType;
-		// gPassShader->Use()
-		// 	.SetInt("materialTex.diffuse", (int)Diffuse)
-		// 	.SetInt("materialTex.normals", (int)Normal)
-		// 	.SetInt("materialTex.roughness", (int)Roughness)
-		// 	.SetInt("materialTex.reflect", (int)Reflection);
 	}
 
 }

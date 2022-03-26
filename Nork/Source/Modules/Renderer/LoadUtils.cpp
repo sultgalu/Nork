@@ -349,7 +349,7 @@ namespace Nork::Renderer
 					std::vector<uint32_t> face;
 					for (size_t j = 0; j < idxFaces[i].elements.size(); j++)
 					{
-						Model::Vertex vertex;
+						Data::Vertex vertex;
 						vertex.position = verts[idxFaces[i].elements[j].vert - 1];
 						vertex.normal = norms[idxFaces[i].elements[j].norm - 1];
 						vertex.texCoords = texCoords[idxFaces[i].elements[j].texCoord - 1];

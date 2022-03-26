@@ -14,6 +14,14 @@ namespace Nork::Renderer {
 	class VertexArray: public GLObject
 	{
 	public:
+		VertexArray(GLuint handle, std::vector<int> attrLens, int stride, std::shared_ptr<Buffer> vbo, std::shared_ptr<Buffer> ibo)
+			: VertexArray(handle, attrLens, stride, vbo)
+		{
+			this->ibo = ibo;
+		}
+		VertexArray(GLuint handle, std::vector<int> attrLens, int stride, std::shared_ptr<Buffer> vbo)
+			: GLObject(handle), attrLens(attrLens), stride(stride), vbo(vbo)
+		{}
 		~VertexArray()
 		{
 			Logger::Info("Deleting vertex array ", handle, ".");
@@ -50,7 +58,7 @@ namespace Nork::Renderer {
 			int baseVertex; // VBO offset
 			uint32_t baseInstance = 0;
 		};
-		void MultiDrawInstanced(DrawElementsIndirectCommand* commands, uint32_t count, DrawMode mode = DrawMode::Triangles);
+		void MultiDrawInstanced(const DrawElementsIndirectCommand* commands, uint32_t count, DrawMode mode = DrawMode::Triangles);
 		void DrawIndexedInstanced(uint32_t count, DrawMode mode = DrawMode::Triangles)
 		{
 			ibo->Bind();
@@ -64,14 +72,6 @@ namespace Nork::Renderer {
 		{
 			return ibo != nullptr;
 		}
-		VertexArray(GLuint handle, std::vector<int> attrLens, int stride, std::shared_ptr<Buffer> vbo, std::shared_ptr<Buffer> ibo)
-			: VertexArray(handle, attrLens, stride, vbo)
-		{
-			this->ibo = ibo;
-		}
-		VertexArray(GLuint handle, std::vector<int> attrLens, int stride, std::shared_ptr<Buffer> vbo)
-			: GLObject(handle), attrLens(attrLens), stride(stride), vbo(vbo) 
-		{}
 	private:
 		const std::vector<int> attrLens;
 		const int stride;

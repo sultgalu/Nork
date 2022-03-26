@@ -23,7 +23,7 @@ namespace Nork::Renderer
 	struct MeshData
 	{
 		std::string meshName, materialName;
-		std::vector<Model::Vertex> vertices;
+		std::vector<Data::Vertex> vertices;
 		std::vector<GLuint> indices;
 		MaterialData material;
 	};

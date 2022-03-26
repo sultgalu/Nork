@@ -34,10 +34,10 @@ namespace Nork
 		Scene scene;
 		GLuint idMap;
 
-		RenderingSystem renderingSystem;
+		ResourceManager resourceManager;
+		RenderingSystem renderingSystem = RenderingSystem(resourceManager.vaoWrapper.GetVertexArray());
 		PhysicsSystem physicsSystem;
 		bool physicsUpdate = false;
-		ResourceManager resourceManager;
 	};
 
 	extern Engine& GetEngine();

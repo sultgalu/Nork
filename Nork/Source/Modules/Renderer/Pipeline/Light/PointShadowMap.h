@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../Model/Lights.h"
-#include "../../Model/Model.h"
+#include "../../Data/Lights.h"
+#include "../../Model/DrawBatch.h"
 #include "../../Objects/Shader/Shader.h"
 #include "../../Objects/Framebuffer/Framebuffer.h"
 
@@ -13,7 +13,7 @@ namespace Nork::Renderer {
 			: shader(shader), framebuffer(framebuffer)
 		{}
 		PointShadowMap(std::shared_ptr<Shader> shader, uint32_t size, TextureFormat depthFormat);
-		void Render(const PointLight& light, const PointShadow& shadow, const std::vector<MultiDrawCommand>& drawCommands);
+		void Render(const PointLight& light, const PointShadow& shadow, const std::vector<DrawCommandMultiIndirect>& drawCommands);
 		void Bind(const PointShadow& shadow);
 		std::shared_ptr<TextureCube> Get();
 	private:

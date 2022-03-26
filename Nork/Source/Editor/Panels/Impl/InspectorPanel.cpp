@@ -154,7 +154,7 @@ namespace Nork::Editor
 								if (newTex != nullptr)
 								{
 									tex = newTex;
-									data.engine.resourceManager.materialStorage.Update(dr->meshes[meshIdx].material->object);
+									dr->meshes[meshIdx].material->object->Update();
 								}
 							}
 						}

@@ -2,8 +2,14 @@
 #include "ResourceManager.h"
 #include "Modules/Renderer/LoadUtils.h"
 #include "Modules/Renderer/Objects/Texture/TextureBuilder.h"
+#include "Modules/Renderer/Model/MaterialBuilder.h"
 
 namespace Nork {
+	ResourceManager::ResourceManager()
+		: meshFactory(vaoWrapper)
+	{
+		materialBuffer.GetBuffer()->BindBase(6);
+	}
 	std::vector<std::pair<ResourceRef<Renderer::Mesh>, ResourceRef<Renderer::Material>>> ResourceManager::GetModel(const std::string& id)
 	{
 		auto opt = models.find(id);
@@ -57,8 +63,8 @@ namespace Nork {
 	{
 		if (id == "")
 		{
-			auto defaultMesh = std::make_shared<Resource<Renderer::Mesh>>(id, meshStorage.AddCube());
-			auto defaultMaterial = std::make_shared<Resource<Renderer::Material>>(id, materialStorage.Add());
+			auto defaultMesh = std::make_shared<Resource<Renderer::Mesh>>(id, meshFactory.CreateCube());
+			auto defaultMaterial = std::make_shared<Resource<Renderer::Material>>(id, Renderer::MaterialBuilder(materialBuffer).Build());
 			meshes[""] = defaultMesh;
 			materials[""] = defaultMaterial;
 			models[""] = { { "", "" } };
@@ -68,47 +74,24 @@ namespace Nork {
 		std::vector<std::pair<std::string, std::string>> modelStrings;
 		std::vector<std::pair<ResourceRef<Renderer::Mesh>, ResourceRef<Renderer::Material>>> model;
 		auto meshDatas = Renderer::LoadUtils::LoadModel(id);
-		std::vector<std::pair<const std::vector<Renderer::Model::Vertex>&, const std::vector<uint32_t>&>> verticiesIndicies;
 		for (auto& meshData : meshDatas)
 		{
-			verticiesIndicies.push_back({ meshData.vertices, meshData.indices });
 		}
-		auto newMeshes = meshStorage.Add(verticiesIndicies);
-		auto newMaterials = materialStorage.Add(meshDatas.size());
 
-		int count = -1;
 		for (auto& meshData : meshDatas)
 		{
-			count++;
-			auto mesh = newMeshes[count]; //meshStorage.Add(meshData.vertices, meshData.indices);
-			auto material = newMaterials[count]; //materialStorage.Add();
-
-			material->diffuse = meshData.material.diffuse;
-			material->specular = meshData.material.specular;
-			material->specularExponent = meshData.material.specularExponent;
+			auto mesh = meshFactory.Create(meshData.vertices, meshData.indices);
+			auto materialBuilder = Renderer::MaterialBuilder(materialBuffer)
+				.Diffuse(meshData.material.diffuse)
+				.Specular(meshData.material.specular)
+				.SpecularExponent(meshData.material.specularExponent);
 			for (auto& pair : meshData.material.textureMaps)
 			{
-				using enum Renderer::TextureMap;
-				switch (pair.first)
-				{
-				case Diffuse:
-					material->diffuseMap = GetTexture(pair.second)->object;
-					break;
-				case Normal:
-					material->normalsMap = GetTexture(pair.second)->object;
-					break;
-				case Roughness:
-					material->roughnessMap = GetTexture(pair.second)->object;
-					break;
-				case Reflection:
-					material->reflectMap = GetTexture(pair.second)->object;
-					break;
-				}
+				materialBuilder.TextureMap(GetTexture(pair.second)->object, pair.first);
 			}
-			materialStorage.Update(material);
 
 			auto meshResRef = std::make_shared<Resource<Renderer::Mesh>>(id + "_" + meshData.meshName, mesh);
-			auto materialResRef = std::make_shared<Resource<Renderer::Material>>(id + "_" + meshData.materialName, material);
+			auto materialResRef = std::make_shared<Resource<Renderer::Material>>(id + "_" + meshData.materialName, materialBuilder.Build());
 			meshes[meshResRef->id] = meshResRef;
 			materials[materialResRef->id] = materialResRef;
 			modelStrings.push_back({ meshResRef->id, materialResRef->id });

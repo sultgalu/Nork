@@ -1,21 +1,12 @@
 #pragma once
 
 #include "../Objects/Texture/Texture.h"
+#include "../Data/Material.h"
+#include "../Storage/TypedBufferWrapper.h"
 
-namespace Nork::Renderer::Model {
-	struct Material
-	{
-		uint64_t diffuseMap;
-		uint64_t normalsMap;
-		uint64_t roughnessMap;
-		uint64_t reflectMap;
-		glm::vec3 diffuse;
-		float specular;
-		float specularExponent;
-		float padding[3];
-	};
-}
 namespace Nork::Renderer {
+	using MaterialBufferWrapper = TypedBufferWrapper<Data::Material, BufferTarget::UBO>;
+
 	enum class TextureMap: uint8_t
 	{
 		Diffuse = 0, Normal, Roughness, Reflection, COUNT
@@ -23,8 +14,16 @@ namespace Nork::Renderer {
 
 	struct Material
 	{
-		Material(uint32_t storageIdx);
-	
+		Material(MaterialBufferWrapper& buffer, std::shared_ptr<size_t> bufferIdx, std::array<std::shared_ptr<Texture2D>, std::to_underlying(TextureMap::COUNT)>
+			textureMaps, glm::vec3 diffuse,	float specular, float specularExponent)
+			: buffer(buffer), bufferIdx(bufferIdx),
+			diffuseMap(textureMaps[std::to_underlying(TextureMap::Diffuse)]),
+			normalsMap(textureMaps[std::to_underlying(TextureMap::Normal)]),
+			roughnessMap(textureMaps[std::to_underlying(TextureMap::Roughness)]),
+			reflectMap(textureMaps[std::to_underlying(TextureMap::Reflection)]),
+			diffuse(diffuse), specular(specular), specularExponent(specularExponent)
+		{}
+
 		std::shared_ptr<Texture2D> diffuseMap;
 		std::shared_ptr<Texture2D> normalsMap;
 		std::shared_ptr<Texture2D> roughnessMap;
@@ -33,9 +32,9 @@ namespace Nork::Renderer {
 		float specular;
 		float specularExponent;
 	
-		Model::Material ToModel()
+		Data::Material ToData()
 		{
-			return Model::Material{
+			return Data::Material{
 				.diffuseMap = diffuseMap->GetBindlessHandle(),
 				.normalsMap = normalsMap->GetBindlessHandle(),
 				.roughnessMap = roughnessMap->GetBindlessHandle(),
@@ -45,8 +44,14 @@ namespace Nork::Renderer {
 				.specularExponent = specularExponent
 			};
 		}
-		uint32_t storageIdx;
-		static std::array<std::shared_ptr<Texture2D>, std::to_underlying(TextureMap::COUNT)> GetDefaultTextureMaps();
+		size_t GetBufferIndex() { return *bufferIdx; }
+		void Update()
+		{
+			buffer.Update(bufferIdx, ToData());
+		}
+	private:
+		std::shared_ptr<size_t> bufferIdx;
+		MaterialBufferWrapper& buffer;
 	};
 
 }
