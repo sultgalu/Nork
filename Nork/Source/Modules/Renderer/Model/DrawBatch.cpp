@@ -3,10 +3,12 @@
 namespace Nork::Renderer {
 	DrawBatch::DrawBatch(std::shared_ptr<VertexArray> vao)
 	{
-		modelUbo = BufferBuilder().Usage(BufferUsage::StreamDraw).Target(BufferTarget::UBO).Data(nullptr, 0).Create();
-		materialUbo = BufferBuilder().Usage(BufferUsage::StreamDraw).Target(BufferTarget::UBO).Data(nullptr, 0).Create();
-		modelUbo->BindBase(5);
-		materialUbo->BindBase(7);
+		using enum BufferStorageFlags;
+		auto flags = WriteAccess | Persistent | Coherent;
+		modelUbo = BufferBuilder().Flags(flags).Target(BufferTarget::UBO).Data(nullptr, std::pow(15, 3) * 2 * sizeof(uint32_t)).Create();
+		materialUbo = BufferBuilder().Flags(flags).Target(BufferTarget::UBO).Data(nullptr, std::pow(15, 3) * 2 * sizeof(uint32_t)).Create();
+		modelUbo->BindBase(8).Map(BufferAccess::Write);
+		materialUbo->BindBase(7).Map(BufferAccess::Write);
 
 		drawCommand.vao = vao;
 		drawCommand.ubos.push_back(modelUbo);
@@ -15,22 +17,24 @@ namespace Nork::Renderer {
 
 	void DrawBatch::GenerateIndirectCommands()
 	{
+		if (elements.size() == 0)
+			return;
 		drawCommand.indirects.clear();
 		std::sort(elements.begin(), elements.end(), [](const BatchElement& left, const BatchElement& right)
 			{
 				return left.mesh->GetVertexOffset() < right.mesh->GetVertexOffset();
 			});
 
-		std::vector<uint32_t> materialIdxs;
-		std::vector<glm::mat4> models;
-		materialIdxs.reserve(elements.size());
-		models.reserve(elements.size());
+		auto materialIdxs = (uint32_t*)materialUbo->GetPersistentPtr();
+		auto models = (uint32_t*)modelUbo->GetPersistentPtr();
+		size_t count = 0;
 
 		uint32_t baseInstance = 0;
 		for (auto& element : elements)
 		{
-			materialIdxs.push_back(element.material->GetBufferIndex());
-			models.push_back(element.model);
+			materialIdxs[count] = element.material->GetBufferIndex();
+			models[count++] = *element.modelMatrix;
+
 			auto mesh = element.mesh;
 
 			if (!drawCommand.indirects.empty() && drawCommand.indirects.back().baseVertex == mesh->GetVertexOffset()
@@ -48,11 +52,10 @@ namespace Nork::Renderer {
 					mesh->GetIndexOffset(), mesh->GetIndexCount(), 1, mesh->GetVertexOffset(), baseInstance));
 			}
 		}
-		while (materialIdxs.size() % 4 != 0)
+		while (count % 4 != 0)
 		{ // padding up to a uvec4
-			materialIdxs.push_back(0);
+			materialIdxs[count] = 0;
+			models[count++] = 0;
 		}
-		materialUbo->Bind().Clear().Append(materialIdxs);
-		modelUbo->Bind().Clear().Append(models);
 	}
 }

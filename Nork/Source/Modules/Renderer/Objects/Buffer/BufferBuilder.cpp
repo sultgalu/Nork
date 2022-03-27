@@ -7,7 +7,21 @@ namespace Nork::Renderer {
 		Validate();
 
 		glGenBuffers(1, &handle);
-		auto buffer = std::make_shared<Buffer>(handle, 0, 0, usage, target);
+		auto buffer = std::make_shared<Buffer>(handle, size, target, flags);
+		Logger::Info("Created buffer ", handle);
+		GLManager::Get().buffers[buffer->GetHandle()] = buffer;
+
+		buffer->Bind();
+		glBufferStorage(static_cast<GLenum>(target), size, data, static_cast<GLenum>(flags));
+
+		return buffer;
+	}
+	std::shared_ptr<MutableBuffer> BufferBuilder::CreateMutable(BufferUsage usage)
+	{
+		ValidateMutable();
+
+		glGenBuffers(1, &handle);
+		auto buffer = std::make_shared<MutableBuffer>(handle, 0, usage, target);
 		Logger::Info("Created buffer ", handle);
 		GLManager::Get().buffers[buffer->GetHandle()] = buffer;
 
@@ -18,5 +32,4 @@ namespace Nork::Renderer {
 
 		return buffer;
 	}
-
 }

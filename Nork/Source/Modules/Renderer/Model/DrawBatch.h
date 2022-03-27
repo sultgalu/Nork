@@ -27,8 +27,11 @@ namespace Nork::Renderer {
 		std::vector<VertexArray::DrawElementsIndirectCommand> indirects;
 		void Draw(Shader& shader) const override
 		{
-			BindUbos();
-			vao->Bind().MultiDrawInstanced(indirects.data(), indirects.size());
+			if (indirects.size() > 0)
+			{
+				BindUbos();
+				vao->Bind().MultiDrawInstanced(indirects.data(), indirects.size());
+			}
 		}
 	};
 
@@ -36,7 +39,7 @@ namespace Nork::Renderer {
 	{
 		std::shared_ptr<Mesh> mesh;
 		std::shared_ptr<Material> material;
-		glm::mat4 model;
+		std::shared_ptr<size_t> modelMatrix;
 	};
 	struct DrawBatch
 	{

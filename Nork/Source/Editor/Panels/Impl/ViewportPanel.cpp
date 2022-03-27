@@ -29,13 +29,13 @@ namespace Nork::Editor
 
 				if (data.idQueryMode.test(IdQueryMode::Click))
 				{
-					data.engine.ReadId(mouseState.mousePosX, mouseState.mousePosY);
+					//data.engine.ReadId(mouseState.mousePosX, mouseState.mousePosY);
 				}
 				else if (data.idQueryMode.test(IdQueryMode::DoubleClick))
 				{
 					if (timer.Elapsed() < 500)
 					{
-						data.engine.ReadId(mouseState.mousePosX, mouseState.mousePosY);
+						//data.engine.ReadId(mouseState.mousePosX, mouseState.mousePosY);
 					}
 				}
 				timer.Restart();
@@ -46,12 +46,12 @@ namespace Nork::Editor
 				if (data.idQueryMode.test(IdQueryMode::MouseMoveClicked) &&
 					Application::Get().inputState.Is<MouseButtonState::Down>(MouseButton::Left))
 				{
-					data.engine.ReadId(mouseState.mousePosX, mouseState.mousePosY);
+					//data.engine.ReadId(mouseState.mousePosX, mouseState.mousePosY);
 				}
 				else if (data.idQueryMode.test(IdQueryMode::MouseMoveReleased) &&
 					Application::Get().inputState.Is<MouseButtonState::Up>(MouseButton::Left))
 				{
-					data.engine.ReadId(mouseState.mousePosX, mouseState.mousePosY);
+					//data.engine.ReadId(mouseState.mousePosX, mouseState.mousePosY);
 				}
 			});
 	}

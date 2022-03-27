@@ -2,11 +2,6 @@
 
 namespace Nork
 {
-	static EngineConfig GetEngineConfig()
-	{
-		return EngineConfig().SetResolution(1920, 1080);
-	}
-
 	Application& Application::Get()
 	{
 		static Application app;
@@ -17,7 +12,7 @@ namespace Nork
 		window(),
 		dispatcher(Dispatcher()),
 		inputState(dispatcher.GetReceiver()),
-		engine(Engine(GetEngineConfig()))
+		engine()
 	{
 	}
 	Application::~Application()

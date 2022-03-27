@@ -239,6 +239,7 @@
     <ClInclude Include="Source\Modules\Renderer\Pipeline\Light\LightState.h" />
     <ClInclude Include="Source\Modules\Renderer\Pipeline\PostProcess\SkyRenderer.h" />
     <ClInclude Include="Source\Modules\Renderer\State\Capabilities.h" />
+    <ClInclude Include="Source\Modules\Renderer\Storage\DrawState.h" />
     <ClInclude Include="Source\Modules\Renderer\Storage\VertexArrayWrapper.h" />
     <ClInclude Include="Source\Modules\Renderer\Storage\TypedBufferWrapper.h" />
     <ClInclude Include="Source\Modules\Renderer\Window\Window.h" />

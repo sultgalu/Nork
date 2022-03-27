@@ -8,7 +8,7 @@ namespace Nork::Renderer {
 	class TypedBufferWrapper : BufferWrapper
 	{
 	public:
-		TypedBufferWrapper(size_t initialCount = 0, std::source_location loc = std::source_location::current())
+		TypedBufferWrapper(size_t initialCount = 1000, std::source_location loc = std::source_location::current())
 			: BufferWrapper(_Target, sizeof(T), initialCount)
 		{
 			Logger::Info("Created buffer wrapper from ", loc.file_name());
@@ -29,8 +29,13 @@ namespace Nork::Renderer {
 		{
 			BufferWrapper::Update(idx, &data, 1);
 		}
+		std::span<T> GetDirectData()
+		{
+			return std::span<T>((T*)BufferWrapper::GetPtr(), GetCount());
+		}
 		using BufferWrapper::FreeSpace;
-		using BufferWrapper::Prepare;
 		using BufferWrapper::GetBuffer;
+		using BufferWrapper::GetSize;
+		using BufferWrapper::GetCount;
 	};
 }

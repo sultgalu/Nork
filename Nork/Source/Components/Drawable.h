@@ -31,5 +31,6 @@ namespace Nork::Components
 	struct Drawable
 	{
 		std::vector<Mesh> meshes;
+		std::shared_ptr<size_t> modelMatrix;
 	};
 }

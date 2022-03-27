@@ -5,13 +5,13 @@
 #include "../Data/Vertex.h"
 
 namespace Nork::Renderer {
-	using VertexBufferWrapper = TypedBufferWrapper<Data::Vertex, BufferTarget::Index>;
+	using VertexBufferWrapper = TypedBufferWrapper<Data::Vertex, BufferTarget::Vertex>;
 	using IndexBufferWrapper = TypedBufferWrapper<uint32_t, BufferTarget::Index>;
 
 	class VertexArrayWrapper
 	{
 	public:
-		VertexArrayWrapper(); 
+		VertexArrayWrapper(size_t vertexLimit = 1000 * 1000, size_t indexLimit = 1000 * 1000);
 		VertexBufferWrapper& GetVertexWrapper() { return vertexBufferWrapper; }
 		IndexBufferWrapper& GetIndexWrapper() { return indexBufferWrapper; }
 		std::shared_ptr<VertexArray> GetVertexArray() { return vao; }

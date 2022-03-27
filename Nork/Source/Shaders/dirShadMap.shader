@@ -11,11 +11,19 @@ layout(std140, binding = 5) uniform asd5
 {
 	mat4 models[1];
 };
+layout(std140, binding = 8) uniform asd8
+{
+	uvec4 modelIndexes[1];
+};
 uniform int instanced;
 
 void main()
 {
-	gl_Position = VP * models[gl_BaseInstance + gl_InstanceID] * vec4(vPos, 1.0f);
+	uint drawIdx = gl_BaseInstance + gl_InstanceID;
+	uint modelIdx = modelIndexes[drawIdx / 4][drawIdx % 4];
+	mat4 _model = models[modelIdx];
+
+	gl_Position = VP * _model * vec4(vPos, 1.0f);
 }
 
 #type fragment

@@ -118,7 +118,7 @@ namespace Nork::Editor
 		if (ImGui::TreeNodeEx("Model", ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			static int imgSize = 100;
-			if (ImGui::TreeNode("Material Textures"))
+			if (dr->meshes.size() > 0 && ImGui::TreeNode("Material Textures"))
 			{
 				ImGui::Unindent();
 				static int meshIdx = 0;

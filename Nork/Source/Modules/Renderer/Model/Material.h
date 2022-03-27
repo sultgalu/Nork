@@ -6,7 +6,7 @@
 
 namespace Nork::Renderer {
 	using MaterialBufferWrapper = TypedBufferWrapper<Data::Material, BufferTarget::UBO>;
-
+	
 	enum class TextureMap: uint8_t
 	{
 		Diffuse = 0, Normal, Roughness, Reflection, COUNT

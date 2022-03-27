@@ -5,8 +5,8 @@
 #include "Modules/Renderer/Model/MaterialBuilder.h"
 
 namespace Nork {
-	ResourceManager::ResourceManager()
-		: meshFactory(vaoWrapper)
+	ResourceManager::ResourceManager(Renderer::MaterialBufferWrapper& materialBuffer, Renderer::VertexArrayWrapper& vaoWrapper)
+		: materialBuffer(materialBuffer), vaoWrapper(vaoWrapper)
 	{
 		materialBuffer.GetBuffer()->BindBase(6);
 	}
@@ -63,7 +63,7 @@ namespace Nork {
 	{
 		if (id == "")
 		{
-			auto defaultMesh = std::make_shared<Resource<Renderer::Mesh>>(id, meshFactory.CreateCube());
+			auto defaultMesh = std::make_shared<Resource<Renderer::Mesh>>(id, Renderer::MeshFactory(vaoWrapper).CreateCube());
 			auto defaultMaterial = std::make_shared<Resource<Renderer::Material>>(id, Renderer::MaterialBuilder(materialBuffer).Build());
 			meshes[""] = defaultMesh;
 			materials[""] = defaultMaterial;
@@ -80,7 +80,7 @@ namespace Nork {
 
 		for (auto& meshData : meshDatas)
 		{
-			auto mesh = meshFactory.Create(meshData.vertices, meshData.indices);
+			auto mesh = Renderer::MeshFactory(vaoWrapper).Create(meshData.vertices, meshData.indices);
 			auto materialBuilder = Renderer::MaterialBuilder(materialBuffer)
 				.Diffuse(meshData.material.diffuse)
 				.Specular(meshData.material.specular)

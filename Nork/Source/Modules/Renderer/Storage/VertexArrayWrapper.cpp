@@ -3,7 +3,8 @@
 #include "../Objects/VertexArray/VertexArrayBuilder.h"
 
 namespace Nork::Renderer {
-	VertexArrayWrapper::VertexArrayWrapper()
+	VertexArrayWrapper::VertexArrayWrapper(size_t vertexLimit, size_t indexLimit)
+		: vertexBufferWrapper(vertexLimit), indexBufferWrapper(indexLimit)
 	{
 		vao = VertexArrayBuilder()
 			.VBO(vertexBufferWrapper.GetBuffer())

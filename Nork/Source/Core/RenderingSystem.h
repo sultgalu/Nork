@@ -8,6 +8,7 @@
 #include "Modules/Renderer/Pipeline/Deferred/DeferredPipeline.h"
 #include "Modules/Renderer/Config.h"
 #include "Modules/Renderer/Model/DrawBatch.h"
+#include "Modules/Renderer/Storage/DrawState.h"
 
 namespace Nork {
 	
@@ -96,30 +97,36 @@ namespace Nork {
 	class RenderingSystem
 	{
 	public:
-		RenderingSystem(std::shared_ptr<Renderer::VertexArray>);
+		RenderingSystem(entt::registry& registry);
 
 		void UpdateGlobalUniform();
-		void UpdateLights(entt::registry& reg);
+		void UpdateLights();
 		void ViewProjectionUpdate(Components::Camera& camera);
-		void SyncComponents(entt::registry& reg);
-		void RenderScene(entt::registry& reg);
-		void Update(entt::registry& registry, Components::Camera& camera);
-		void DrawBatchUpdate(entt::registry& reg);
+		void SyncComponents();
+		void RenderScene();
+		void Update(Components::Camera& camera);
+		void DrawBatchUpdate();
 
 		GlobalShaderUniform GetGlobalShaderUniform() { return globalShaderUniform; }
 	
 	private:
 		glm::uvec2 resolution = { 1920, 1080 };
 	public:
+		entt::registry& registry;
 		Shaders shaders;
 		Renderer::DeferredPipeline deferredPipeline;
 		Renderer::LightState lightState;
 		std::array<std::shared_ptr<Renderer::DirShadowMap>, Renderer::Config::LightData::dirShadowsLimit> dirShadowMaps;
 		std::array<std::shared_ptr<Renderer::PointShadowMap>, Renderer::Config::LightData::pointShadowsLimit> pointShadowMaps;
 		std::shared_ptr<Renderer::TextureCube> skybox;
+		Renderer::DrawState drawState;
 		Renderer::DrawBatch drawBatch;
 
 		Observed<GlobalShaderUniform> globalShaderUniform;
 		bool drawSky = true;
+	private:
+		void OnDShadowAdded(entt::registry& reg, entt::entity id);
+		void OnDShadowRemoved(entt::registry& reg, entt::entity id);
+		void OnPShadAdded(entt::registry& reg, entt::entity id);
 	};
 }

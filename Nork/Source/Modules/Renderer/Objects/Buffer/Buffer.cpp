@@ -31,62 +31,46 @@ namespace Nork::Renderer {
 		return Bind();
 	}
 
-	void Buffer::Allocate(size_t capacitiy, const void* data)
+	void Buffer::CopyData(void* data, size_t size, size_t offset)
+	{
+		glGetBufferSubData(static_cast<GLenum>(target), offset, size, data);
+	}
+	void* Buffer::Map(BufferAccess access)
+	{
+		if ((access & static_cast<BufferAccess>(this->flags)) != access)
+		{ // storage was created with more restrictive access levels
+			std::abort();
+		}
+		this->access = access;
+		persistent = glMapBufferRange(static_cast<GLenum>(target), 0, size, static_cast<GLenum>(access) | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+		return persistent;
+	}
+	void Buffer::Unmap()
+	{
+		glUnmapBuffer(static_cast<GLenum>(target));
+		persistent = nullptr;
+		this->access = BufferAccess::None;
+	}
+	const std::unordered_map<BufferTarget, GLuint>& Buffer::GetBoundBuffers()
+	{
+		return boundBuffers;
+	}
+	void Buffer::ResetBoundBufferState()
+	{
+		boundBuffers.clear();
+	}
+
+	void MutableBuffer::Allocate(size_t capacitiy, const void* data, BufferUsage usage)
 	{
 		Logger::Debug("alloc");
 		glBufferData(static_cast<GLenum>(target), capacitiy, data, static_cast<GLenum>(usage));
-		this->size = data == nullptr ? 0 : capacitiy;
-		this->capacity = capacitiy;
+		this->size = capacitiy;
 	}
-	void Buffer::ShrinkToFit()
+	void MutableBuffer::Allocate(size_t capacitiy, const void* data)
 	{
-		if (capacity > size)
-		{
-			ResizeBuffer(size);
-		}
+		Allocate(capacitiy, data, usage);
 	}
-	void Buffer::Reserve(size_t cap)
-	{
-		if (this->capacity < cap)
-		{
-			ResizeBuffer(cap);
-		}
-	}
-	void Buffer::Resize(size_t newSize)
-	{
-		if (newSize <= capacity)
-		{
-			size = newSize;
-		}
-		else
-		{
-			ResizeBuffer(newSize);
-		}
-	}
-	void Buffer::SetData(const void* data, size_t size, size_t offset)
-	{
-		if (offset + size > this->capacity)
-		{
-			ResizeBuffer(offset + size);
-		}
-		glBufferSubData(static_cast<GLenum>(target), offset, size, data);
-		if (offset + size > this->size)
-		{
-			this->size = offset + size;
-		}
-	}
-	void Buffer::Append(const void* data, size_t size)
-	{
-		if (this->capacity == 0)
-		{ // glBufferData(data) instead of glBufferData(0)->glBufferSubData(data)
-			Allocate(size, data);
-		}
-		else
-		{
-			SetData(data, size, this->size);
-		}
-	}
-	void Buffer::ResizeBuffer(size_t newSize)
+	void MutableBuffer::Resize(size_t newSize)
 	{
 		Logger::Debug("resize");
 		if (size == 0)
@@ -95,59 +79,28 @@ namespace Nork::Renderer {
 		}
 		else
 		{ // there is data to be copied over to new buffer
+			size_t copySize = std::min(newSize, size);
 			GLuint tempHandle;
 			glGenBuffers(1, &tempHandle);
 			glBindBuffer(GL_COPY_WRITE_BUFFER, tempHandle);
-			glBufferData(GL_COPY_WRITE_BUFFER, size, nullptr, static_cast<GLenum>(BufferUsage::StreamCopy));
+			glBufferData(GL_COPY_WRITE_BUFFER, copySize, nullptr, static_cast<GLenum>(BufferUsage::StreamCopy));
 
 			glBindBuffer(GL_COPY_READ_BUFFER, handle);
-			glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, size);
+			glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, copySize);
 
 			glBufferData(GL_COPY_READ_BUFFER, newSize, nullptr, static_cast<GLenum>(usage));
-			glCopyBufferSubData(GL_COPY_WRITE_BUFFER, GL_COPY_READ_BUFFER, 0, 0, size);
+			glCopyBufferSubData(GL_COPY_WRITE_BUFFER, GL_COPY_READ_BUFFER, 0, 0, copySize);
 
 			glDeleteBuffers(1, &tempHandle);
 		}
-		capacity = newSize;
+		size = newSize;
 	}
-	void Buffer::GetData(void* data, size_t size, size_t offset)
+	void MutableBuffer::SetData(const void* data, size_t size, size_t offset)
 	{
-		glGetBufferSubData(static_cast<GLenum>(target), offset, size, data);
-	}
-	void Buffer::Erase(size_t offset, size_t length)
-	{
-		Logger::Debug("erase");
-		char* data = (char*)glMapBufferRange(static_cast<GLenum>(target), offset, size - offset, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT);
-		std::memmove(data, data + length, size - (offset + length));
-		glUnmapBuffer(static_cast<GLenum>(target));
-		size -= length;
-	}
-	void Buffer::Erase(std::vector<std::pair<size_t, size_t>> ranges)
-	{
-		Logger::Debug("erase");
-		using _Range = std::pair<size_t, size_t>;
-		std::sort(ranges.begin(), ranges.end(), [](const _Range& r1, const _Range& r2)
-			{ // decreasing order
-				return r1 > r2;
-			});
-
-		size_t firstOffset = ranges.back().first;
-		char* data = (char*)glMapBufferRange(static_cast<GLenum>(target), firstOffset, size - firstOffset, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT);
-		for (auto& range : ranges)
+		if (offset + size > this->size)
 		{
-			auto dst = data + (range.first - firstOffset);
-			std::memmove(dst, dst + range.second, size - (range.first + range.second));
-			size -= range.second;
+			Resize(offset + size);
 		}
-		glUnmapBuffer(static_cast<GLenum>(target));
-	}
-
-	const std::unordered_map<BufferTarget, GLuint>& Buffer::GetBoundBuffers()
-	{
-		return boundBuffers;
-	}
-	void Buffer::ResetBoundBufferState()
-	{
-		boundBuffers.clear();
+		glBufferSubData(static_cast<GLenum>(target), offset, size, data);
 	}
 }

@@ -2,34 +2,49 @@
 #include "../Objects/Buffer/BufferBuilder.h"
 
 namespace Nork::Renderer {
+	std::shared_ptr<Buffer> BufferWrapper::CreateBuffer(size_t count, BufferTarget target)
+	{
+		using enum BufferStorageFlags;
+		auto buffer = BufferBuilder()
+			.Flags(WriteAccess | Persistent | Coherent)
+			.Target(target)
+			.Data(nullptr, count * stride)
+			.Create();
+		buffer->Bind().Map(BufferAccess::Write);
+		return buffer;
+	}
 	BufferWrapper::BufferWrapper(BufferTarget target, uint32_t stride, size_t initialCount)
 		: stride(stride)
 	{
-		buffer = BufferBuilder()
-			.Usage(BufferUsage::DynamicDraw)
-			.Target(target)
-			.Data(nullptr, initialCount * stride)
-			.Create();
-		Logger::Info("YEP CREATED ");
+		buffer = CreateBuffer(initialCount, target);
 	}
 	std::shared_ptr<size_t> BufferWrapper::Add(const void* data, size_t count)
 	{
-		auto index = std::make_shared<size_t>(buffer->GetSize() / stride);
+		if ((this->count + count) * stride > buffer->GetSize())
+		{
+			auto newBuffer = CreateBuffer((this->count + count) * stride * 2, buffer->GetTarget());
+			std::memcpy(newBuffer->GetPersistentPtr(), buffer->GetPersistentPtr(), GetSize());
+			// sync
+			buffer = newBuffer;
+		}
+		auto index = std::make_shared<size_t>(GetCount());
 		indexes.push_back(index);
-		buffer->Bind().Append(data, count * stride);
+		std::memcpy((char*)buffer->GetPersistentPtr() + GetSize(), data, count * stride);
+		this->count += count;
 		return index;
 	}
 	void BufferWrapper::Update(std::shared_ptr<size_t> idx, const void* data, size_t count)
 	{
-		buffer->Bind().SetData(data, stride * count, *idx * stride);
+		std::memcpy((char*)buffer->GetPersistentPtr() + *idx * stride, data, count * stride);
 	}
-	void BufferWrapper::Prepare(size_t count)
+	void* BufferWrapper::GetPtr()
 	{
-		buffer->Bind().Reserve(buffer->GetSize() + count * stride);
+		return buffer->GetPersistentPtr();
 	}
 	size_t BufferWrapper::FreeSpace(bool shrinkToFit)
 	{
-		std::vector<std::pair<size_t, size_t>> eraseRanges;
+		std::abort();
+		/*std::vector<std::pair<size_t, size_t>> eraseRanges;
 		size_t freedSpace = 0;
 
 		for (size_t i = 0; i < indexes.size(); i++)
@@ -72,7 +87,7 @@ namespace Nork::Renderer {
 			}
 		}
 
-		return freedSpace;
+		return freedSpace;*/
 	}
 }
 

@@ -8,28 +8,51 @@
 #include "Modules/Renderer/Objects/Buffer/BufferBuilder.h"
 
 namespace Nork {
-	void RenderingSystem::DrawBatchUpdate(entt::registry& reg)
-	{
-		drawBatch.Clear();
+	static std::vector<uint8_t> dShadowIndices;
+	static std::vector<uint8_t> pShadowIndices;
+	static constexpr auto dShadIdxSize = Renderer::Config::LightData::dirShadowsLimit;
+	static constexpr auto pShadIdxSize = Renderer::Config::LightData::pointShadowsLimit;
 
-		for (auto [id, dr, tr] : reg.group<Components::Drawable, Components::Transform>().each())
+	void RenderingSystem::OnDShadowAdded(entt::registry& reg, entt::entity id)
+	{
+		auto& shad = reg.get<Components::DirShadow>(id);
+		shad.idx = dShadowIndices.back();
+		dShadowIndices.pop_back();
+
+		// should handle it elsewhere
+		auto light = reg.try_get<Components::DirLight>(id);
+		if (light != nullptr)
+			shad.RecalcVP(light->GetView());
+	}
+	void RenderingSystem::OnDShadowRemoved(entt::registry& reg, entt::entity id)
+	{
+		auto& shad = reg.get<Components::DirShadow>(id);
+		dShadowIndices.push_back(shad.idx);
+	}
+	void RenderingSystem::OnPShadAdded(entt::registry& reg, entt::entity id)
+	{
+		auto& shad = reg.get<Components::PointShadow>(id);
+		shad.idx = pShadowIndices.back();
+		pShadowIndices.pop_back();
+	}
+	RenderingSystem::RenderingSystem(entt::registry& registry)
+		: registry(registry),
+		deferredPipeline(shaders.gPassShader, shaders.lPassShader, resolution.x, resolution.y),
+		drawBatch(drawState.vaoWrapper.GetVertexArray())
+	{
+		registry.on_construct<Components::DirShadow>().connect<&RenderingSystem::OnDShadowAdded>(this);
+		registry.on_destroy<Components::DirShadow>().connect<&RenderingSystem::OnDShadowRemoved>(this);
+		registry.on_construct<Components::PointShadow>().connect<&RenderingSystem::OnPShadAdded>(this);
+
+		for (int i = dShadIdxSize - 1; i > -1; i--)
 		{
-			for (auto& mesh : dr.meshes)
-			{
-				drawBatch.AddElement(Renderer::BatchElement{
-					.mesh = mesh.mesh->object,
-					.material = mesh.material->object,
-					.model = tr.ModelMatrix()
-					});
-			}
+			dShadowIndices.push_back(i);
+		}
+		for (int i = pShadIdxSize - 1; i > -1; i--)
+		{
+			pShadowIndices.push_back(i);
 		}
 
-		drawBatch.GenerateDrawCommand();
-	}
-	RenderingSystem::RenderingSystem(std::shared_ptr<Renderer::VertexArray> vao)
-		: deferredPipeline(shaders.gPassShader, shaders.lPassShader, resolution.x, resolution.y),
-		drawBatch(vao)
-	{
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
 		using namespace Renderer;
@@ -60,6 +83,26 @@ namespace Nork {
 			.Create();
 		materialsUbo->BindBase(6);*/
 	}
+	void RenderingSystem::DrawBatchUpdate()
+	{
+		drawBatch.Clear();
+		auto group = registry.group<Components::Drawable, Components::Transform>();
+
+		for (auto [id, dr, tr] : registry.group<Components::Drawable, Components::Transform>().each())
+		{
+			drawState.modelMatrixBuffer.Update(dr.modelMatrix, tr.ModelMatrix());
+			for (auto& mesh : dr.meshes)
+			{
+				drawBatch.AddElement(Renderer::BatchElement{
+					.mesh = mesh.mesh->object,
+					.material = mesh.material->object,
+					.modelMatrix = dr.modelMatrix
+					});
+			}
+		}
+
+		drawBatch.GenerateDrawCommand();
+	}
 	void RenderingSystem::UpdateGlobalUniform()
 	{
 		shaders.pointShader->Use()
@@ -73,13 +116,13 @@ namespace Nork {
 			.SetVec4("colorDefault", globalShaderUniform.lineColor)
 			.SetVec4("colorSelected", glm::vec4(globalShaderUniform.selectedColor, globalShaderUniform.lineAlpha));
 	}
-	void RenderingSystem::UpdateLights(entt::registry& reg)
+	void RenderingSystem::UpdateLights()
 	{
 		using namespace Components;
 
 		lightState.dirLights.clear();
 		lightState.dirShadows.clear();
-		for (auto [id, light, shadow] : reg.view<DirLight, DirShadow>().each())
+		for (auto [id, light, shadow] : registry.view<DirLight, DirShadow>().each())
 		{
 			lightState.dirLights.push_back(light);
 			lightState.dirShadows.push_back(shadow);
@@ -87,14 +130,14 @@ namespace Nork {
 			dirShadowMaps[shadow.idx]->Render(light, shadow, { drawBatch.GetDrawCommand() });
 			dirShadowMaps[shadow.idx]->Bind(shadow);
 		}
-		for (auto [id, light] : reg.view<DirLight>(entt::exclude<DirShadow>).each())
+		for (auto [id, light] : registry.view<DirLight>(entt::exclude<DirShadow>).each())
 		{
 			lightState.dirLights.push_back(light);
 		}
 
 		lightState.pointLights.clear();
 		lightState.pointShadows.clear();
-		for (auto [id, light, shadow] : reg.view<PointLight, PointShadow>().each())
+		for (auto [id, light, shadow] : registry.view<PointLight, PointShadow>().each())
 		{
 			lightState.pointLights.push_back(light);
 			lightState.pointShadows.push_back(shadow);
@@ -102,7 +145,7 @@ namespace Nork {
 			pointShadowMaps[shadow.idx]->Render(light, shadow, { drawBatch.GetDrawCommand() });
 			pointShadowMaps[shadow.idx]->Bind(shadow);
 		}
-		for (auto [id, light] : reg.view<PointLight>(entt::exclude<PointShadow>).each())
+		for (auto [id, light] : registry.view<PointLight>(entt::exclude<PointShadow>).each())
 		{
 			lightState.pointLights.push_back(light);
 		}
@@ -119,33 +162,33 @@ namespace Nork {
 		auto vp = camera.projection * glm::mat4(glm::mat3(camera.view));
 		shaders.skyboxShader->Use().SetMat4("VP", vp);
 	}
-	void RenderingSystem::SyncComponents(entt::registry& reg)
+	void RenderingSystem::SyncComponents()
 	{
 		using namespace Components;
-		for (auto [id, pl, tr] : reg.view<PointLight, Transform>().each())
+		for (auto [id, pl, tr] : registry.view<PointLight, Transform>().each())
 		{
 			pl.position = tr.GetPosition();
 		}
 	}
-	void RenderingSystem::RenderScene(entt::registry& reg)
+	void RenderingSystem::RenderScene()
 	{
 		deferredPipeline.GeometryPass({ drawBatch.GetDrawCommand() });
 		deferredPipeline.LightPass();
 		if (drawSky && skybox != nullptr)
 			Renderer::SkyRenderer::RenderSkybox(*skybox, *shaders.skyboxShader);
 	}
-	void RenderingSystem::Update(entt::registry& registry, Components::Camera& camera)
+	void RenderingSystem::Update(Components::Camera& camera)
 	{
-		SyncComponents(registry);
+		SyncComponents();
 		if (globalShaderUniform.IsChanged())
 		{
 			UpdateGlobalUniform();
 			Logger::Info("Updating");
 		}
 		ViewProjectionUpdate(camera);
-		UpdateLights(registry);
-		DrawBatchUpdate(registry);
-		RenderScene(registry);
+		UpdateLights();
+		DrawBatchUpdate();
+		RenderScene();
 
 		Renderer::Framebuffer::BindDefault();
 	}

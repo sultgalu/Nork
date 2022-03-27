@@ -11,34 +11,21 @@
 
 namespace Nork
 {
-	struct EngineConfig
-	{
-		EngineConfig() = default;
-
-		uint32_t width = 1280, height = 720;
-		inline EngineConfig& SetResolution(uint32_t w, uint32_t h) { width = w; height = h; return *this; }
-	};
-
-	class Engine: Template::Types::OnlyConstruct
+	class Engine
 	{
 	public:
-		Engine(EngineConfig config);
-		~Engine();
+		Engine();
+		Engine(Engine&&) = delete;
 		void Launch();
-		void ReadId(int x, int y);
-	private:
-		void OnDShadowAdded(entt::registry& reg, entt::entity ent);
-		void OnDShadowRemoved(entt::registry& reg, entt::entity ent);
-		void OnDrawableAdded(entt::registry& reg, entt::entity id);
 	public:
 		Scene scene;
-		GLuint idMap;
 
-		ResourceManager resourceManager;
-		RenderingSystem renderingSystem = RenderingSystem(resourceManager.vaoWrapper.GetVertexArray());
+		RenderingSystem renderingSystem = RenderingSystem(scene.registry);
+		ResourceManager resourceManager = ResourceManager(renderingSystem.drawState.materialBuffer, renderingSystem.drawState.vaoWrapper);
+		
 		PhysicsSystem physicsSystem;
 		bool physicsUpdate = false;
+	private:
+		void OnDrawableAdded(entt::registry& reg, entt::entity id);
 	};
-
-	extern Engine& GetEngine();
 }

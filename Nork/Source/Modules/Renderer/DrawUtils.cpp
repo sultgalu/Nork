@@ -107,8 +107,9 @@ namespace Nork::Renderer {
 	{
 		auto verts = DrawUtils::GetQuadVertices();
 		auto inds = DrawUtils::GetQuadIndices();
-		auto vbo = BufferBuilder().Target(BufferTarget::Vertex).Usage(BufferUsage::StaticDraw).Data(verts.data(), verts.size() * sizeof(float)).Create();
-		auto ibo = BufferBuilder().Target(BufferTarget::Index).Usage(BufferUsage::StaticDraw).Data(inds.data(), inds.size() * sizeof(GLuint)).Create();
+		auto flags = BufferStorageFlags::None;
+		auto vbo = BufferBuilder().Target(BufferTarget::Vertex).Flags(flags).Data(verts.data(), verts.size() * sizeof(float)).Create();
+		auto ibo = BufferBuilder().Target(BufferTarget::Index).Flags(flags).Data(inds.data(), inds.size() * sizeof(GLuint)).Create();
 		auto vao = VertexArrayBuilder().VBO(vbo).IBO(ibo).Attributes({ 2, 2 }).Create();
 		return vao;
 	}
@@ -117,8 +118,9 @@ namespace Nork::Renderer {
 	{
 		auto verts = DrawUtils::GetCubeVertices();
 		auto inds = DrawUtils::GetCubeIndices();
-		auto vbo = BufferBuilder().Target(BufferTarget::Vertex).Usage(BufferUsage::StaticDraw).Data(verts.data(), verts.size() * sizeof(float)).Create();
-		auto ibo = BufferBuilder().Target(BufferTarget::Index).Usage(BufferUsage::StaticDraw).Data(inds.data(), inds.size() * sizeof(GLuint)).Create();
+		auto flags = BufferStorageFlags::None;
+		auto vbo = BufferBuilder().Target(BufferTarget::Vertex).Flags(flags).Data(verts.data(), verts.size() * sizeof(float)).Create();
+		auto ibo = BufferBuilder().Target(BufferTarget::Index).Flags(flags).Data(inds.data(), inds.size() * sizeof(GLuint)).Create();
 		auto vao = VertexArrayBuilder().VBO(vbo).IBO(ibo).Attributes({ 3 }).Create();
 		return vao;
 	}

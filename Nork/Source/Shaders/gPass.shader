@@ -21,6 +21,10 @@ uniform mat4 VP;
 layout(std140, binding = 5) uniform asd5
 {
 	mat4 models[1];
+}; 
+layout(std140, binding = 8) uniform asd8
+{
+	uvec4 modelIndexes[1];
 };
 
 struct Material
@@ -38,7 +42,6 @@ layout(std140, binding = 6) uniform asd6
 {
 	Material materials[1];
 };
-
 layout(std140, binding = 7) uniform asd7
 {
 	uvec4 materialIndices[1];
@@ -49,10 +52,9 @@ void main()
 {
 	uint drawIdx = gl_BaseInstance + gl_InstanceID;
 	uint matIdx = materialIndices[drawIdx / 4][drawIdx % 4]; // needed because of int[] padding (pads it up to a vec4)
+	uint modelIdx = modelIndexes[drawIdx / 4][drawIdx % 4];
 	material = materials[matIdx];
-	//material = materials[1];
-
-	mat4 _model = models[drawIdx];
+	mat4 _model = models[modelIdx];
 
 	worldPos = (_model * vec4(vPos, 1.0f)).xyz;
 	gl_Position = VP * vec4(worldPos, 1.0f);

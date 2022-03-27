@@ -13,22 +13,35 @@ namespace Nork::Renderer {
 			this->size = size;
 			return *this;
 		}
-		BufferBuilder& Usage(BufferUsage usage)
-		{
-			this->usage = usage;
-			return *this;
-		}
 		BufferBuilder& Target(BufferTarget target)
 		{
 			this->target = target;
 			return *this;
 		}
+		BufferBuilder& Flags(BufferStorageFlags flags)
+		{
+			this->flags |= flags;
+			return *this;
+		}
 		std::shared_ptr<Buffer> Create();
+		std::shared_ptr<MutableBuffer> CreateMutable(BufferUsage);
 	private:
 		void Validate()
 		{
-			if (usage == BufferUsage::None
-				|| target == BufferTarget::None)
+			if (flags & BufferStorageFlags::Persistent &&
+				((static_cast<BufferAccess>(flags) & BufferAccess::ReadWrite) == BufferAccess::None))
+			{
+				std::abort();
+			}
+			if (target == BufferTarget::None
+				|| size == 0)
+			{
+				std::abort();
+			}
+		}
+		void ValidateMutable()
+		{
+			if (target == BufferTarget::None)
 			{
 				std::abort();
 			}
@@ -37,7 +50,7 @@ namespace Nork::Renderer {
 		GLuint handle;
 		void* data;
 		size_t size;
-		BufferUsage usage = BufferUsage::None;
 		BufferTarget target = BufferTarget::None;
+		BufferStorageFlags flags = BufferStorageFlags::None;
 	};
 }

@@ -4,23 +4,25 @@
 namespace Nork::Renderer {
 	LightState::LightState()
 	{
-		mainUbo = BufferBuilder().Usage(BufferUsage::StaticDraw).Target(BufferTarget::UBO).Data(nullptr, 4 * sizeof(uint32_t)).Create();
-		mainUbo->BindBase(0);
-		dlUbo = BufferBuilder().Usage(BufferUsage::StaticDraw).Target(BufferTarget::UBO).Data(nullptr, 10 * sizeof(DirLight)).Create();
-		dlUbo->BindBase(1);
-		dsUbo = BufferBuilder().Usage(BufferUsage::StaticDraw).Target(BufferTarget::UBO).Data(nullptr, 10 * sizeof(DirShadow)).Create();
-		dsUbo->BindBase(2);
-		plUbo = BufferBuilder().Usage(BufferUsage::StaticDraw).Target(BufferTarget::UBO).Data(nullptr, 1024 * sizeof(PointLight)).Create();
-		psUbo = BufferBuilder().Usage(BufferUsage::StaticDraw).Target(BufferTarget::UBO).Data(nullptr, 10 * sizeof(PointShadow)).Create();
-		plUbo->BindBase(3);
-		psUbo->BindBase(4);
+		using enum BufferStorageFlags;
+		auto flags = WriteAccess | Persistent | Coherent;
+		mainUbo = BufferBuilder().Flags(flags).Target(BufferTarget::UBO).Data(nullptr, 4 * sizeof(uint32_t)).Create();
+		dlUbo =	BufferBuilder().Flags(flags).Target(BufferTarget::UBO).Data(nullptr, 10 * sizeof(DirLight)).Create();
+		dsUbo = BufferBuilder().Flags(flags).Target(BufferTarget::UBO).Data(nullptr, 10 * sizeof(DirShadow)).Create();
+		plUbo = BufferBuilder().Flags(flags).Target(BufferTarget::UBO).Data(nullptr, 1024 * sizeof(PointLight)).Create();
+		psUbo = BufferBuilder().Flags(flags).Target(BufferTarget::UBO).Data(nullptr, 10 * sizeof(PointShadow)).Create();
+		mainUbo->BindBase(0).Map(BufferAccess::Write);
+		dlUbo->BindBase(1).Map(BufferAccess::Write);
+		dsUbo->BindBase(2).Map(BufferAccess::Write);
+		plUbo->BindBase(3).Map(BufferAccess::Write);
+		psUbo->BindBase(4).Map(BufferAccess::Write);
 	}
 	void LightState::Upload()
 	{
-		dlUbo->Bind().SetData(dirLights.data(), dirLights.size() * sizeof(DirLight));
-		dsUbo->Bind().SetData(dirShadows.data(), dirShadows.size() * sizeof(DirShadow));
-		plUbo->Bind().SetData(pointLights.data(), pointLights.size() * sizeof(PointLight));
-		psUbo->Bind().SetData(pointShadows.data(), pointShadows.size() * sizeof(PointShadow));
+		std::memcpy(dlUbo->GetPersistentPtr(), dirLights.data(), dirLights.size() * sizeof(DirLight));
+		std::memcpy(dsUbo->GetPersistentPtr(), dirShadows.data(), dirShadows.size() * sizeof(DirShadow));
+		std::memcpy(plUbo->GetPersistentPtr(), pointLights.data(), pointLights.size() * sizeof(PointLight));
+		std::memcpy(psUbo->GetPersistentPtr(), pointShadows.data(), pointShadows.size() * sizeof(PointShadow));
 
 		uint32_t counts[4];
 		counts[0] = dirLights.size();
@@ -28,6 +30,6 @@ namespace Nork::Renderer {
 		counts[2] = pointLights.size();
 		counts[3] = pointShadows.size();
 
-		mainUbo->Bind().SetData(counts, sizeof(counts));
+		std::memcpy(mainUbo->GetPersistentPtr(), counts, sizeof(counts));
 	}
 }
