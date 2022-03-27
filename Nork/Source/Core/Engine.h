@@ -21,7 +21,7 @@ namespace Nork
 		Scene scene;
 
 		RenderingSystem renderingSystem = RenderingSystem(scene.registry);
-		ResourceManager resourceManager = ResourceManager(renderingSystem.drawState.materialBuffer, renderingSystem.drawState.vaoWrapper);
+		ResourceManager resourceManager = ResourceManager(renderingSystem.drawState);
 		
 		PhysicsSystem physicsSystem;
 		bool physicsUpdate = false;

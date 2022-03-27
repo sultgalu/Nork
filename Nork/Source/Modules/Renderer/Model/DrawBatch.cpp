@@ -1,7 +1,8 @@
 #include "DrawBatch.h"
 
 namespace Nork::Renderer {
-	DrawBatch::DrawBatch(std::shared_ptr<VertexArray> vao)
+	DrawBatch::DrawBatch(MatrixUBO& modelUBO, MaterialUBO& materialUBO, VAO& vao)
+		: modelUBO(modelUBO), materialUBO(materialUBO), vao(vao)
 	{
 		using enum BufferStorageFlags;
 		auto flags = WriteAccess | Persistent | Coherent;
@@ -10,7 +11,7 @@ namespace Nork::Renderer {
 		modelUbo->BindBase(8).Map(BufferAccess::Write);
 		materialUbo->BindBase(7).Map(BufferAccess::Write);
 
-		drawCommand.vao = vao;
+		drawCommand.vao = vao.GetVertexArray();
 		drawCommand.ubos.push_back(modelUbo);
 		drawCommand.ubos.push_back(materialUbo);
 	}
@@ -22,7 +23,7 @@ namespace Nork::Renderer {
 		drawCommand.indirects.clear();
 		std::sort(elements.begin(), elements.end(), [](const BatchElement& left, const BatchElement& right)
 			{
-				return left.mesh->GetVertexOffset() < right.mesh->GetVertexOffset();
+				return *left.mesh->GetVertexPtr() < *right.mesh->GetVertexPtr();
 			});
 
 		auto materialIdxs = (uint32_t*)materialUbo->GetPersistentPtr();
@@ -32,13 +33,13 @@ namespace Nork::Renderer {
 		uint32_t baseInstance = 0;
 		for (auto& element : elements)
 		{
-			materialIdxs[count] = element.material->GetBufferIndex();
-			models[count++] = *element.modelMatrix;
+			materialIdxs[count] = materialUBO.GetIdxFor(element.material->GetPtr());
+			models[count++] = modelUBO.GetIdxFor(element.modelMatrix);
 
 			auto mesh = element.mesh;
 
-			if (!drawCommand.indirects.empty() && drawCommand.indirects.back().baseVertex == mesh->GetVertexOffset()
-				&& drawCommand.indirects.back().firstIndex == mesh->GetIndexOffset()) // test if it is same mesh reference (could expand it to vertex/index counts)
+			if (!drawCommand.indirects.empty() && drawCommand.indirects.back().baseVertex == vao.GetVertexWrapper().GetIdxFor(mesh->GetVertexPtr())
+				&& drawCommand.indirects.back().firstIndex == vao.GetIndexWrapper().GetIdxFor(mesh->GetIndexPtr())) // test if it is same mesh reference (could expand it to vertex/index counts)
 			{
 				drawCommand.indirects.back().instanceCount++;
 			}
@@ -49,7 +50,7 @@ namespace Nork::Renderer {
 					baseInstance += drawCommand.indirects.back().instanceCount;
 				}
 				drawCommand.indirects.push_back(VertexArray::DrawElementsIndirectCommand(
-					mesh->GetIndexOffset(), mesh->GetIndexCount(), 1, mesh->GetVertexOffset(), baseInstance));
+					vao.GetIndexWrapper().GetIdxFor(mesh->GetIndexPtr()), mesh->GetIndexCount(), 1, vao.GetVertexWrapper().GetIdxFor(mesh->GetVertexPtr()), baseInstance));
 			}
 		}
 		while (count % 4 != 0)

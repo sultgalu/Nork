@@ -134,10 +134,23 @@ namespace Nork::Editor
 				ImGui::SameLine();
 				ImGui::Text(dr->meshes[meshIdx].material->id.c_str());
 
+				if (ImGui::SliderFloat3("diffuse", &dr->meshes[meshIdx].material->object->diffuse.r, 0, 1))
+				{
+					dr->meshes[meshIdx].material->object->Update();
+				}
+				if (ImGui::SliderFloat("specular", &dr->meshes[meshIdx].material->object->specular, 0, 10))
+				{
+					dr->meshes[meshIdx].material->object->Update();
+				}
+				if (ImGui::SliderFloat("spec-exp", &dr->meshes[meshIdx].material->object->specularExponent, 0, 1024, "%.0f", ImGuiSliderFlags_Logarithmic))
+				{
+					dr->meshes[meshIdx].material->object->Update();
+				}
 				if (ImGui::BeginTabBar("MaterialTexturesTab"))
 				{
-					auto displayTex = [&](std::shared_ptr<Renderer::Texture2D>& tex)
+					auto displayTex = [&](Renderer::TextureMap type)
 					{
+						auto tex = dr->meshes[meshIdx].material->object->GetTextureMap(type);
 						ImGui::Image((ImTextureID)tex->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
 							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
 						ImGui::Text("Width: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->GetWidth()).c_str());
@@ -153,7 +166,7 @@ namespace Nork::Editor
 								auto newTex = data.engine.resourceManager.GetTexture(p)->object;
 								if (newTex != nullptr)
 								{
-									tex = newTex;
+									dr->meshes[meshIdx].material->object->SetTextureMap(newTex, type);
 									dr->meshes[meshIdx].material->object->Update();
 								}
 							}
@@ -161,19 +174,19 @@ namespace Nork::Editor
 					};
 					if (ImGui::BeginTabItem("Diffuse"))
 					{
-						displayTex(dr->meshes[meshIdx].material->object->diffuseMap);
+						displayTex(Renderer::TextureMap::Diffuse);
 					}
 					if (ImGui::BeginTabItem("Normal"))
 					{
-						displayTex(dr->meshes[meshIdx].material->object->normalsMap);
+						displayTex(Renderer::TextureMap::Normal);
 					}
 					if (ImGui::BeginTabItem("Roughness"))
 					{
-						displayTex(dr->meshes[meshIdx].material->object->roughnessMap);
+						displayTex(Renderer::TextureMap::Roughness);
 					}
 					if (ImGui::BeginTabItem("Metalness"))
 					{
-						displayTex(dr->meshes[meshIdx].material->object->reflectMap);
+						displayTex(Renderer::TextureMap::Reflection);
 					}
 					ImGui::EndTabBar();
 				}
@@ -207,11 +220,12 @@ namespace Nork::Editor
 			ImGui::TreePop();
 		}
 	}
-	void InspectorPanel::PointLighComp(PointLight* pL, PointShadow* shad)
+	void InspectorPanel::PointLighComp(PointLight* pL)
 	{
 		if (ImGui::TreeNodeEx("PLight", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			if (ImGui::ColorEdit4("Color##PlIght", (float*)&(pL->color.r))) {}
+			if (ImGui::ColorEdit4("Color##PlIght", (float*)&(pL->light->color.r)))
+				pL->light->Update();
 			int pow = pL->GetIntensity();
 			if (ImGui::DragInt("Intensity", &(pow), 1, 0, 10000))
 				pL->SetIntensity(pow);
@@ -226,7 +240,7 @@ namespace Nork::Editor
 			ImGui::TreePop();
 		}
 	}
-	void InspectorPanel::PointShadowComp(PointShadow* comp, PointLight* light)
+	/*void InspectorPanel::PointShadowComp(PointShadow* comp, PointLight* light)
 	{
 		if (ImGui::TreeNodeEx("Point shadow", ImGuiTreeNodeFlags_DefaultOpen))
 		{
@@ -257,18 +271,53 @@ namespace Nork::Editor
 
 			ImGui::TreePop();
 		}
-	}
-	void InspectorPanel::DirLightComp(DirLight* dL, DirShadow* ds)
+	}*/
+	void InspectorPanel::DirLightComp(DirLight* dL)
 	{
 		if (ImGui::TreeNodeEx("Directional light", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			if (ImGui::SliderFloat3("Direction", (float*)&(dL->direction.x), -1, 1))
+			if (ImGui::SliderFloat3("Direction", (float*)&(dL->light->direction.x), -1, 1))
 			{
-				if (ds != nullptr)
-					ds->RecalcVP(dL->GetView());
+				dL->RecalcVP(dL->GetView());
 				// dL->SetDirection(std::forward<glm::vec3&>(glm::normalize(dL->GetData().direction)));
 			}
-			if (ImGui::ColorEdit4("Color", &(dL->color.r))) {}
+			if (ImGui::ColorEdit4("Color", &(dL->light->color.r)))
+				dL->light->Update();
+
+			if (dL->shadow == nullptr)
+			{
+				if (ImGui::Button("Add shadow"))
+				{
+					data.selectedNode->GetEntity().AddComponent<DirShadowRequest>();
+				}
+			}
+			else if (ImGui::TreeNode("Shadow"))
+			{
+				if (ImGui::SliderFloat("Bias", (float*)&(dL->shadow->bias), 0, 1))
+					dL->shadow->Update();
+				if (ImGui::SliderFloat("min Bias", (float*)&(dL->shadow->biasMin), 0, 1))
+					dL->shadow->Update();
+
+				static auto imgSize = 100;
+				auto tex = dL->shadow->shadowMap.Get();
+				ImGui::Image((ImTextureID)tex->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
+					ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
+				ImGui::DragInt("Image Size", &imgSize, 1, 50, 500);
+				ImGui::Text("Width: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->GetWidth()).c_str());
+				ImGui::Text("Height: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->GetHeight()).c_str());
+				ImGui::Text("Format: "); ImGui::SameLine(); ImGui::Text(Renderer::TextureFormatToString(tex->GetAttributes().format));
+				
+				ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
+				if (ImGui::Button("Delete"))
+				{
+					dL->shadow = nullptr;
+				}
+				ImGui::PopStyleColor();
+				
+				ImGui::TreePop();
+			}
+			
+
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 			if (ImGui::Button("Delete"))
 			{
@@ -279,7 +328,7 @@ namespace Nork::Editor
 			ImGui::TreePop();
 		}
 	}
-	void InspectorPanel::DirShadowComp(DirShadow* comp, DirLight* dl)
+	/*void InspectorPanel::DirShadowComp(DirShadow* comp, DirLight* dl)
 	{
 		if (ImGui::TreeNodeEx("Directional shadow", ImGuiTreeNodeFlags_DefaultOpen))
 		{
@@ -320,7 +369,7 @@ namespace Nork::Editor
 
 			ImGui::TreePop();
 		}
-	}
+	}*/
 	void InspectorPanel::KinematicComp(Kinematic* comp)
 	{
 		if (ImGui::TreeNodeEx("Kinematic", ImGuiTreeNodeFlags_DefaultOpen))
@@ -417,9 +466,7 @@ namespace Nork::Editor
 			this->CompSelector<Tag>();
 			this->CompSelector<Transform>();
 			this->CompSelector<PointLight>();
-			this->CompSelector<PointShadow>();
 			this->CompSelector<DirLight>();
-			this->CompSelector<DirShadow>();
 			this->CompSelector<Camera>();
 			this->CompSelector<Drawable>();
 			this->CompSelector<Kinematic>();
@@ -441,9 +488,7 @@ namespace Nork::Editor
 			auto& ent = selected->GetEntity();
 			auto* tr = ent.TryGetComponent<Transform>();
 			auto* pL = ent.TryGetComponent<PointLight>();
-			auto* pS = ent.TryGetComponent<PointShadow>();
 			auto* dL = ent.TryGetComponent<DirLight>();
-			auto* dS = ent.TryGetComponent<DirShadow>();
 			auto* name = ent.TryGetComponent<Tag>();
 			auto* dr = ent.TryGetComponent<Drawable>();
 			auto* cam = ent.TryGetComponent<Camera>();
@@ -467,12 +512,7 @@ namespace Nork::Editor
 			}
 			if (pL != nullptr)
 			{
-				PointLighComp(pL, pS);
-				ImGui::Separator();
-			}
-			if (pS != nullptr)
-			{
-				PointShadowComp(pS, pL);
+				PointLighComp(pL);
 				ImGui::Separator();
 			}
 			if (dr != nullptr)
@@ -482,12 +522,7 @@ namespace Nork::Editor
 			}
 			if (dL != nullptr)
 			{
-				DirLightComp(dL, dS);
-				ImGui::Separator();
-			}
-			if (dS != nullptr && dL != nullptr)
-			{
-				DirShadowComp(dS, dL);
+				DirLightComp(dL);
 				ImGui::Separator();
 			}
 			if (name != nullptr)

@@ -15,7 +15,7 @@ namespace Nork::Renderer {
 			.CreateCubeEmpty();
 		framebuffer = FramebufferBuilder().Attachments(FramebufferAttachments().Depth(depth)).Create();
 	}
-	void PointShadowMap::Render(const PointLight& light, const PointShadow& shadow, const std::vector<DrawCommandMultiIndirect>& drawCommands)
+	void PointShadowMap::Render(const Data::PointLight& light, const Data::PointShadow& shadow, const std::vector<DrawCommandMultiIndirect>& drawCommands)
 	{
 		framebuffer->Bind().SetViewport().Clear();
 		shader->Use();
@@ -48,11 +48,6 @@ namespace Nork::Renderer {
 		{
 			command.Draw(*shader);
 		}
-	}
-
-	void PointShadowMap::Bind(const PointShadow& shadow)
-	{
-		framebuffer->GetAttachments().depth->BindCube(shadow.idx + Config::LightData::pointShadowBaseIndex);
 	}
 	std::shared_ptr<TextureCube> PointShadowMap::Get()
 	{

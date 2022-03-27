@@ -31,9 +31,29 @@ namespace Nork::Renderer {
 		return Bind();
 	}
 
+	void Buffer::SubData(void* data, size_t size, size_t offset)
+	{
+		if (flags & BufferStorageFlags::DynamicStorage)
+		{
+			glBufferSubData(static_cast<GLenum>(target), offset, size, data);
+		}
+		else
+		{
+			Logger::Error("Can't call glBufferSubData, DynamicStorage flag not set");
+		}
+	}
+
 	void Buffer::CopyData(void* data, size_t size, size_t offset)
 	{
 		glGetBufferSubData(static_cast<GLenum>(target), offset, size, data);
+	}
+	void Buffer::CopyDataFrom(Buffer& other)
+	{
+		size_t copySize = std::min(other.GetSize(), size);
+
+		glBindBuffer(GL_COPY_READ_BUFFER, other.GetHandle());
+		glBindBuffer(GL_COPY_WRITE_BUFFER, GetHandle());
+		glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, copySize);
 	}
 	void* Buffer::Map(BufferAccess access)
 	{
@@ -51,6 +71,7 @@ namespace Nork::Renderer {
 		persistent = nullptr;
 		this->access = BufferAccess::None;
 	}
+	
 	const std::unordered_map<BufferTarget, GLuint>& Buffer::GetBoundBuffers()
 	{
 		return boundBuffers;

@@ -2,56 +2,51 @@
 
 #include "../Objects/Texture/Texture.h"
 #include "../Data/Material.h"
-#include "../Storage/TypedBufferWrapper.h"
+#include "../Storage/TypedBuffers.h"
 
 namespace Nork::Renderer {
-	using MaterialBufferWrapper = TypedBufferWrapper<Data::Material, BufferTarget::UBO>;
-	
 	enum class TextureMap: uint8_t
 	{
 		Diffuse = 0, Normal, Roughness, Reflection, COUNT
 	};
 
-	struct Material
+	struct Material : Data::Material
 	{
-		Material(MaterialBufferWrapper& buffer, std::shared_ptr<size_t> bufferIdx, std::array<std::shared_ptr<Texture2D>, std::to_underlying(TextureMap::COUNT)>
-			textureMaps, glm::vec3 diffuse,	float specular, float specularExponent)
-			: buffer(buffer), bufferIdx(bufferIdx),
-			diffuseMap(textureMaps[std::to_underlying(TextureMap::Diffuse)]),
-			normalsMap(textureMaps[std::to_underlying(TextureMap::Normal)]),
-			roughnessMap(textureMaps[std::to_underlying(TextureMap::Roughness)]),
-			reflectMap(textureMaps[std::to_underlying(TextureMap::Reflection)]),
-			diffuse(diffuse), specular(specular), specularExponent(specularExponent)
-		{}
-
-		std::shared_ptr<Texture2D> diffuseMap;
-		std::shared_ptr<Texture2D> normalsMap;
-		std::shared_ptr<Texture2D> roughnessMap;
-		std::shared_ptr<Texture2D> reflectMap;
-		glm::vec3 diffuse;
-		float specular;
-		float specularExponent;
-	
-		Data::Material ToData()
-		{
-			return Data::Material{
-				.diffuseMap = diffuseMap->GetBindlessHandle(),
-				.normalsMap = normalsMap->GetBindlessHandle(),
-				.roughnessMap = roughnessMap->GetBindlessHandle(),
-				.reflectMap = reflectMap->GetBindlessHandle(),
-				.diffuse = diffuse,
-				.specular = specular,
-				.specularExponent = specularExponent
-			};
-		}
-		size_t GetBufferIndex() { return *bufferIdx; }
+		Material(std::shared_ptr<Data::Material*> ptr);
 		void Update()
 		{
-			buffer.Update(bufferIdx, ToData());
+			**ptr = *(Data::Material*)this;
 		}
+		std::shared_ptr<Texture2D> GetTextureMap(TextureMap type)
+		{
+			return textureMaps[std::to_underlying(type)];
+		}
+		void SetTextureMap(std::shared_ptr<Texture2D> tex, TextureMap type)
+		{
+			textureMaps[std::to_underlying(type)] = tex;
+			using enum Nork::Renderer::TextureMap;
+			switch (type)
+			{
+			case Diffuse:
+				diffuseMap = tex->GetBindlessHandle();
+				break;
+			case Normal:
+				normalsMap = tex->GetBindlessHandle();
+				break;
+			case Roughness:
+				roughnessMap = tex->GetBindlessHandle();
+				break;
+			case Reflection:
+				reflectMap = tex->GetBindlessHandle();
+				break;
+			case COUNT:
+				break;
+			}
+		}
+		std::shared_ptr<Data::Material*> GetPtr() { return ptr; }
 	private:
-		std::shared_ptr<size_t> bufferIdx;
-		MaterialBufferWrapper& buffer;
+		std::shared_ptr<Data::Material*> ptr;
+		std::array<std::shared_ptr<Texture2D>, std::to_underlying(TextureMap::COUNT)> textureMaps;
 	};
 
 }

@@ -13,8 +13,8 @@ namespace Nork::Components {
 			{
 				if (val == ranges[i])
 				{
-					linear = linears[i];
-					quadratic = quadratics[i];
+					light->linear = linears[i];
+					light->quadratic = quadratics[i];
 				}
 				else
 				{
@@ -24,12 +24,13 @@ namespace Nork::Components {
 					float linearRange = linears[i - 1] - linears[i];
 					float quadraticRange = quadratics[i - 1] - quadratics[i];
 
-					quadratic = quadratics[i - 1] - portion * quadraticRange;
-					linear = linears[i - 1] - portion * linearRange;
+					light->quadratic = quadratics[i - 1] - portion * quadraticRange;
+					light->linear = linears[i - 1] - portion * linearRange;
 				}
 				break;
 			}
 		}
 		intensity = val;
+		light->Update();
 	}
 }

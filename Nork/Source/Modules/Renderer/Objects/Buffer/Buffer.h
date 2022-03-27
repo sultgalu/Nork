@@ -38,7 +38,8 @@ namespace Nork::Renderer {
 		Coherent = GL_MAP_COHERENT_BIT,
 		ClientStorage = GL_CLIENT_STORAGE_BIT,
 		ReadAccess = BufferAccess::Read, WriteAccess = BufferAccess::Write,
-		Persistent = GL_MAP_PERSISTENT_BIT
+		Persistent = GL_MAP_PERSISTENT_BIT,
+		DynamicStorage = GL_DYNAMIC_STORAGE_BIT
 	};
 
 	inline BufferStorageFlags operator|(const BufferStorageFlags& l, const BufferStorageFlags& r)
@@ -71,7 +72,9 @@ namespace Nork::Renderer {
 		Buffer& BindBase(GLuint index);
 		Buffer& BindBase();
 
+		void SubData(void* data, size_t size, size_t offset = 0);
 		void CopyData(void* data, size_t size, size_t offset = 0);
+		void CopyDataFrom(Buffer&);
 
 		void* Map(BufferAccess);
 		void Unmap();
@@ -82,17 +85,20 @@ namespace Nork::Renderer {
 
 		size_t GetSize() { return size; }
 		BufferTarget GetTarget() { return target; }
+		BufferAccess GetAccess() { return access; }
+		uint32_t GetBase() { return base; }
 		BufferStorageFlags GetFlags() { return flags; }
 		static const std::unordered_map<BufferTarget, GLuint>& GetBoundBuffers();
 		static void ResetBoundBufferState();
 
+		inline static constexpr GLuint invalidBase = std::numeric_limits<GLuint>::max();
 	protected:
 		size_t size;
 		void* persistent = nullptr;
 		BufferAccess access = BufferAccess::None;
 
 		BufferTarget target;
-		GLuint base = std::numeric_limits<GLuint>::max();
+		GLuint base = invalidBase;
 		const BufferStorageFlags flags;
 	private:
 		GLenum GetIdentifier() override

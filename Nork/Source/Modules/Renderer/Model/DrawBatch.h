@@ -3,8 +3,9 @@
 #include "../Objects/Shader/Shader.h"
 #include "../Objects/VertexArray/VertexArray.h"
 #include "../Objects/Buffer/BufferBuilder.h"
-#include "Material.h"
+#include "../Storage/TypedBuffers.h"
 #include "Mesh.h"
+#include "Material.h"
 
 namespace Nork::Renderer {
 	struct DrawCommandBase
@@ -39,11 +40,11 @@ namespace Nork::Renderer {
 	{
 		std::shared_ptr<Mesh> mesh;
 		std::shared_ptr<Material> material;
-		std::shared_ptr<size_t> modelMatrix;
+		std::shared_ptr<glm::mat4*> modelMatrix;
 	};
 	struct DrawBatch
 	{
-		DrawBatch(std::shared_ptr<VertexArray> vao);
+		DrawBatch(MatrixUBO& modelUBO, MaterialUBO& materialUBO, VAO& vao);
 		void Clear() { elements.clear(); drawCommand.indirects.clear(); }
 		void AddElement(const BatchElement& element) { elements.push_back(element); }
 		std::vector<BatchElement>& GetElements() { return elements; }
@@ -61,5 +62,9 @@ namespace Nork::Renderer {
 		std::vector<BatchElement> elements;
 		std::shared_ptr<Buffer> modelUbo;
 		std::shared_ptr<Buffer> materialUbo;
+
+		MatrixUBO& modelUBO;
+		MaterialUBO& materialUBO;
+		VAO& vao;
 	};
 }

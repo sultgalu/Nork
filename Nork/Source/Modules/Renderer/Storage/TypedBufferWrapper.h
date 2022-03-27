@@ -13,21 +13,21 @@ namespace Nork::Renderer {
 		{
 			Logger::Info("Created buffer wrapper from ", loc.file_name());
 		}
-		std::shared_ptr<size_t> Add(T* data, size_t count)
+		std::shared_ptr<T*> Add(T* data, size_t count)
 		{
-			return BufferWrapper::Add(data, count);
+			return std::reinterpret_pointer_cast<T*>(BufferWrapper::Add(data, count));
 		}
-		std::shared_ptr<size_t> Add(const T& data)
+		std::shared_ptr<T*> Add(const std::vector<T>& data)
 		{
-			return BufferWrapper::Add(&data, 1);
+			return std::reinterpret_pointer_cast<T*>(BufferWrapper::Add(data.data(), data.size()));
 		}
-		std::shared_ptr<size_t> Add(const std::vector<T>& data)
+		std::shared_ptr<T*> Add(const T& data)
 		{
-			return BufferWrapper::Add(data.data(), data.size());
+			return std::reinterpret_pointer_cast<T*>(BufferWrapper::Add(&data, 1));
 		}
-		void Update(std::shared_ptr<size_t> idx, const T& data)
+		size_t GetIdxFor(std::shared_ptr<T*> ptr)
 		{
-			BufferWrapper::Update(idx, &data, 1);
+			return *ptr - (T*)BufferWrapper::GetPtr();
 		}
 		std::span<T> GetDirectData()
 		{
@@ -38,4 +38,12 @@ namespace Nork::Renderer {
 		using BufferWrapper::GetSize;
 		using BufferWrapper::GetCount;
 	};
+
+	template<class T>
+	using UBO = TypedBufferWrapper<T, BufferTarget::UBO>;
+	template<class T>
+	using SSBO = TypedBufferWrapper<T, BufferTarget::SSBO>;
+	template<class T>
+	using VBO = TypedBufferWrapper<T, BufferTarget::Vertex>;
+	using IBO = TypedBufferWrapper<uint32_t, BufferTarget::Index>;
 }

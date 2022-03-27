@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Nork::Renderer
+namespace Nork::Renderer::Data
 {
 	struct PointLight
 	{
@@ -15,19 +15,18 @@ namespace Nork::Renderer
 		float bias, biasMin;
 		int blur;
 		float radius, far, near;
-		int idx;
-		float dummies[1];
+		uint64_t shadMap;
 	};
 	struct DirLight
 	{
 		glm::vec3 direction;
 		float dummy;
 		glm::vec4 color;
+		glm::mat4 VP;
 	};
 	struct DirShadow
 	{
-		glm::mat4 VP;
-		float bias, biasMin, pcfSize;
-		int idx;
+		float bias, biasMin;
+		uint64_t shadMap;
 	};
 }

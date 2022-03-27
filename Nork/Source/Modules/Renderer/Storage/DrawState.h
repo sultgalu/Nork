@@ -1,23 +1,38 @@
 #pragma once
 
+#include "TypedBuffers.h"
 #include "VertexArrayWrapper.h"
-#include "TypedBufferWrapper.h"
+#include "../Model/Material.h"
+#include "../Model/Light.h"
 
 namespace Nork::Renderer {
-	using MatrixBufferWrapper = TypedBufferWrapper<glm::mat4, BufferTarget::UBO>;
-
 	struct DrawState
 	{
 	public:
-		DrawState()
-		{
-			modelMatrixBuffer.GetBuffer()->BindBase(5);
-			materialBuffer.GetBuffer()->BindBase(6);
-		}
-		MatrixBufferWrapper modelMatrixBuffer = MatrixBufferWrapper(std::pow(15, 3) * 2);
-		MaterialBufferWrapper materialBuffer = MaterialBufferWrapper(1000);
-		VertexArrayWrapper vaoWrapper = VertexArrayWrapper(1000*1000, 1000*1000);
-	private:
+		DrawState();
+		std::shared_ptr<Material> AddMaterial();
+		std::shared_ptr<DirLight> AddDirLight();
+		std::shared_ptr<DirShadow> AddDirShadow(std::shared_ptr<Shader>, glm::uvec2 res, TextureFormat);
+		std::shared_ptr<PointLight> AddPointLight();
+		std::shared_ptr<PointShadow> AddPointShadow(std::shared_ptr<Shader>, uint32_t res, TextureFormat);
+	public:
+		MatrixUBO modelMatrixBuffer;
+		MaterialUBO materialBuffer;
 
+		DirLightUBO dirLightUBO;
+		DirShadowUBO dirShadowUBO;
+		PointLightUBO pointLightUBO;
+		PointShadowUBO pointShadowUBO;
+
+		VAO vaoWrapper;
+		
+	private:
+		struct LightCount
+		{
+			uint32_t dirLight = 0, dirShadow = 0;
+			uint32_t pointLight = 0, pointShadow = 0;
+		};
+		LightCount lightCount;
+		std::shared_ptr<Buffer> lightCountUBO;
 	};
 }

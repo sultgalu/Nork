@@ -8,62 +8,41 @@
 #include "Modules/Renderer/Objects/Buffer/BufferBuilder.h"
 
 namespace Nork {
-	static std::vector<uint8_t> dShadowIndices;
-	static std::vector<uint8_t> pShadowIndices;
-	static constexpr auto dShadIdxSize = Renderer::Config::LightData::dirShadowsLimit;
-	static constexpr auto pShadIdxSize = Renderer::Config::LightData::pointShadowsLimit;
-
 	void RenderingSystem::OnDShadowAdded(entt::registry& reg, entt::entity id)
 	{
-		auto& shad = reg.get<Components::DirShadow>(id);
-		shad.idx = dShadowIndices.back();
-		dShadowIndices.pop_back();
-
-		// should handle it elsewhere
-		auto light = reg.try_get<Components::DirLight>(id);
-		if (light != nullptr)
-			shad.RecalcVP(light->GetView());
-	}
-	void RenderingSystem::OnDShadowRemoved(entt::registry& reg, entt::entity id)
-	{
-		auto& shad = reg.get<Components::DirShadow>(id);
-		dShadowIndices.push_back(shad.idx);
+		auto& light = reg.get<Components::DirLight>(id);
+		light.shadow = drawState.AddDirShadow(shaders.dShadowShader, { 4000, 4000 }, Renderer::TextureFormat::Depth16);
+		//reg.remove<Components::DirShadowRequest>(id);
 	}
 	void RenderingSystem::OnPShadAdded(entt::registry& reg, entt::entity id)
 	{
-		auto& shad = reg.get<Components::PointShadow>(id);
-		shad.idx = pShadowIndices.back();
-		pShadowIndices.pop_back();
+		auto& light = reg.get<Components::PointLight>(id);
+		light.shadow = drawState.AddPointShadow(shaders.pShadowShader, 100, Renderer::TextureFormat::Depth16);
+		//reg.remove<Components::PointShadowRequest>(id);
+	}
+	void RenderingSystem::OnDLightAdded(entt::registry& reg, entt::entity id)
+	{
+		auto& light = reg.get<Components::DirLight>(id);
+		light.light = drawState.AddDirLight();
+	}
+	void RenderingSystem::OnPLightAdded(entt::registry& reg, entt::entity id)
+	{
+		auto& light = reg.get<Components::PointLight>(id);
+		light.light = drawState.AddPointLight();
+		Logger::Error("asd");
 	}
 	RenderingSystem::RenderingSystem(entt::registry& registry)
 		: registry(registry),
 		deferredPipeline(shaders.gPassShader, shaders.lPassShader, resolution.x, resolution.y),
-		drawBatch(drawState.vaoWrapper.GetVertexArray())
+		drawBatch(drawState.modelMatrixBuffer, drawState.materialBuffer, drawState.vaoWrapper)
 	{
-		registry.on_construct<Components::DirShadow>().connect<&RenderingSystem::OnDShadowAdded>(this);
-		registry.on_destroy<Components::DirShadow>().connect<&RenderingSystem::OnDShadowRemoved>(this);
-		registry.on_construct<Components::PointShadow>().connect<&RenderingSystem::OnPShadAdded>(this);
+		registry.on_construct<Components::DirShadowRequest>().connect<&RenderingSystem::OnDShadowAdded>(this);
+		registry.on_construct<Components::PointShadowRequest>().connect<&RenderingSystem::OnPShadAdded>(this);
 
-		for (int i = dShadIdxSize - 1; i > -1; i--)
-		{
-			dShadowIndices.push_back(i);
-		}
-		for (int i = pShadIdxSize - 1; i > -1; i--)
-		{
-			pShadowIndices.push_back(i);
-		}
+		registry.on_construct<Components::DirLight>().connect<&RenderingSystem::OnDLightAdded>(this);
+		registry.on_construct<Components::PointLight>().connect<&RenderingSystem::OnPLightAdded>(this);
 
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-
-		using namespace Renderer;
-		for (auto& sm : dirShadowMaps)
-		{
-			sm = std::make_shared<DirShadowMap>(shaders.dShadowShader, 4000, 4000, TextureFormat::Depth16);
-		}
-		for (auto& sm : pointShadowMaps)
-		{
-			sm = std::make_shared<PointShadowMap>(shaders.pShadowShader, 100, TextureFormat::Depth16);
-		}
 
 		// auto image = Renderer::LoadUtils::LoadCubemapImages("Resources/Textures/skybox", ".jpg");
 		// std::array<void*, 6> data;
@@ -75,13 +54,6 @@ namespace Nork {
 		// 	.Attributes(TextureAttributes{ .width = image[0].width, .height = image[0].height, .format = image[0].format })
 		// 	.Params(TextureParams::CubeMapParams())
 		// 	.CreateCubeWithData(data);
-
-		/*materialsUbo = Renderer::BufferBuilder()
-			.Target(BufferTarget::UBO)
-			.Usage(BufferUsage::StaticDraw)
-			.Data(nullptr, 1000 * sizeof(Renderer::ShaderDefined::Material))
-			.Create();
-		materialsUbo->BindBase(6);*/
 	}
 	void RenderingSystem::DrawBatchUpdate()
 	{
@@ -90,7 +62,7 @@ namespace Nork {
 
 		for (auto [id, dr, tr] : registry.group<Components::Drawable, Components::Transform>().each())
 		{
-			drawState.modelMatrixBuffer.Update(dr.modelMatrix, tr.ModelMatrix());
+			**dr.modelMatrix = tr.ModelMatrix();
 			for (auto& mesh : dr.meshes)
 			{
 				drawBatch.AddElement(Renderer::BatchElement{
@@ -120,7 +92,21 @@ namespace Nork {
 	{
 		using namespace Components;
 
-		lightState.dirLights.clear();
+		for (auto [id, light] : registry.view<DirLight>().each())
+		{
+			if (light.shadow != nullptr)
+			{
+				light.shadow->shadowMap.Render(*light.light, *light.shadow, { drawBatch.GetDrawCommand() });
+			}
+		}
+		for (auto [id, light] : registry.view<PointLight>().each())
+		{
+			if (light.shadow != nullptr)
+			{
+				light.shadow->shadowMap.Render(*light.light, *light.shadow, { drawBatch.GetDrawCommand() });
+			}
+		}
+		/*lightState.dirLights.clear();
 		lightState.dirShadows.clear();
 		for (auto [id, light, shadow] : registry.view<DirLight, DirShadow>().each())
 		{
@@ -149,7 +135,7 @@ namespace Nork {
 		{
 			lightState.pointLights.push_back(light);
 		}
-		lightState.Upload();
+		lightState.Upload();*/
 	}
 	void RenderingSystem::ViewProjectionUpdate(Components::Camera& camera)
 	{
@@ -167,7 +153,8 @@ namespace Nork {
 		using namespace Components;
 		for (auto [id, pl, tr] : registry.view<PointLight, Transform>().each())
 		{
-			pl.position = tr.GetPosition();
+			pl.light->position = tr.GetPosition();
+			pl.light->Update();
 		}
 	}
 	void RenderingSystem::RenderScene()

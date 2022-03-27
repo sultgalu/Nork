@@ -83,11 +83,11 @@ int main()
 
 	auto sun = engine.scene.CreateNode()->GetEntity();
 	auto& l = sun.AddComponent<Components::DirLight>();
-	l.SetColor(glm::vec4(0.5f, 0.4f, 0.25, 1));
+	l.light->color = glm::vec4(0.5f, 0.4f, 0.25, 1);
 	//l.SetColor(glm::vec4(0.0f));
-	auto& shad = sun.AddComponent<Components::DirShadow>();
-	shad.far = 100; shad.near = -100; shad.left = -100; shad.right = 100; shad.bottom = -100; shad.top = 100;
-	shad.RecalcVP(l.GetView());
+	sun.AddComponent<Components::DirShadowRequest>();
+	l.far = 100; l.near = -100; l.left = -100; l.right = 100; l.bottom = -100; l.top = 100;
+	l.RecalcVP(l.GetView());
 	sun.AddComponent<Components::Tag>().tag = "SUN";
 	
 	int offsX = 10;
@@ -108,7 +108,7 @@ int main()
 				pl.AddComponent<Components::Drawable>();
 				pl.AddComponent<Components::PointLight>().SetIntensity(10);
 				if (shadows-- > 0)
-					pl.AddComponent<Components::PointShadow>().blur = 6;
+					pl.AddComponent<Components::PointShadowRequest>();
 				pl.AddComponent<Components::Tag>().tag = "pointLight" + std::to_string((k-startP) + j * dimP + (i-startP) * dimP * dimP);
 			}
 		}

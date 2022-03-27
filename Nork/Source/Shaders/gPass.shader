@@ -105,22 +105,11 @@ in vec2 texCoord;
 in mat3 TBN; // could do with lights from vert. shader (linear interpolation would help -> less matrix multiplications)(inverse -> transpose)
 in vec3 vNorm;
 
-// layout(std140, binding = 6) uniform asd6
-// {
-// 	Material materials[1];
-// };
-// 
-// layout(std140, binding = 7) uniform asd7
-// {
-// 	uint materialIndices[1];
-// };
 void main()
 {
-	//Material material = materials[0]; // problme is here
-	
 	pos = worldPos;
 	diffuse_spec = texture(material.diffuseMap, texCoord).rgb * material.diffuse;
-	specular = vec2(1 - texture(material.roughnessMap, texCoord).r * material.specular, material.specularExponent);
+	specular = vec2((1 - texture(material.roughnessMap, texCoord).r) * material.specular, material.specularExponent);
 	
 	vec3 norm = texture(material.normalsMap, texCoord).rgb;
 	norm = norm * 2.0f - 1.0f; // [0;1] -> [-1;1]

@@ -21,10 +21,8 @@ namespace Nork::Editor
 		void CameraComp(Camera*);
 		void TransformComp(Transform*);
 		void ModelComp(Drawable*);
-		void PointLighComp(PointLight*, PointShadow*);
-		void PointShadowComp(PointShadow*, PointLight*);
-		void DirLightComp(DirLight*, DirShadow*);
-		void DirShadowComp(DirShadow*, DirLight*);
+		void PointLighComp(PointLight*);
+		void DirLightComp(DirLight*);
 		void KinematicComp(Kinematic*);
 		void PolyComp(Polygon*);
 		//void asd(Polygon*);

@@ -25,6 +25,7 @@ namespace Nork::Renderer {
 		}
 		std::shared_ptr<Buffer> Create();
 		std::shared_ptr<MutableBuffer> CreateMutable(BufferUsage);
+		std::shared_ptr<Buffer> CreateCopy(std::shared_ptr<Buffer>, size_t size);
 	private:
 		void Validate()
 		{

@@ -1,23 +1,19 @@
 #pragma once
 
-#include "TypedBufferWrapper.h"
+#include "TypedBuffers.h"
 #include "../Objects/VertexArray/VertexArray.h"
-#include "../Data/Vertex.h"
 
 namespace Nork::Renderer {
-	using VertexBufferWrapper = TypedBufferWrapper<Data::Vertex, BufferTarget::Vertex>;
-	using IndexBufferWrapper = TypedBufferWrapper<uint32_t, BufferTarget::Index>;
-
-	class VertexArrayWrapper
+	class VAO
 	{
 	public:
-		VertexArrayWrapper(size_t vertexLimit = 1000 * 1000, size_t indexLimit = 1000 * 1000);
-		VertexBufferWrapper& GetVertexWrapper() { return vertexBufferWrapper; }
-		IndexBufferWrapper& GetIndexWrapper() { return indexBufferWrapper; }
+		VAO(size_t vertexLimit = 1000 * 1000, size_t indexLimit = 1000 * 1000);
+		DefaultVBO& GetVertexWrapper() { return vertexBufferWrapper; }
+		IBO& GetIndexWrapper() { return ibo; }
 		std::shared_ptr<VertexArray> GetVertexArray() { return vao; }
 	private:
-		VertexBufferWrapper vertexBufferWrapper;
-		IndexBufferWrapper indexBufferWrapper;
+		DefaultVBO vertexBufferWrapper;
+		IBO ibo;
 		std::shared_ptr<VertexArray> vao;
 	};
 }

@@ -1,4 +1,4 @@
-#include "MaterialBuilder.h"
+#include "Material.h"
 #include "../Objects/Texture/TextureBuilder.h"
 
 namespace Nork::Renderer {
@@ -17,27 +17,18 @@ namespace Nork::Renderer {
 		static auto rough = CreateTexture2D(TextureFormat::R32F, { 0.5f });
 		return { diff, norm, rough, refl };
 	}
-	
-	MaterialBuilder::MaterialBuilder(MaterialBufferWrapper& buffer)
-		: buffer(buffer)
+	Material::Material(std::shared_ptr<Data::Material*> ptr)
+		: ptr(ptr)
 	{
 		textureMaps = GetDefaultTextureMaps();
+
+		diffuseMap = textureMaps[std::to_underlying(TextureMap::Diffuse)]->GetBindlessHandle();
+		normalsMap = textureMaps[std::to_underlying(TextureMap::Normal)]->GetBindlessHandle();
+		roughnessMap = textureMaps[std::to_underlying(TextureMap::Roughness)]->GetBindlessHandle();
+		reflectMap = textureMaps[std::to_underlying(TextureMap::Reflection)]->GetBindlessHandle();
 		diffuse = { 1, 1, 1 };
 		specular = 1;
 		specularExponent = 128;
-	}
-	std::shared_ptr<Material> MaterialBuilder::Build()
-	{
-		auto data = Data::Material{
-			.diffuseMap = textureMaps[std::to_underlying(TextureMap::Diffuse)]->GetBindlessHandle(),
-			.normalsMap = textureMaps[std::to_underlying(TextureMap::Normal)]->GetBindlessHandle(),
-			.roughnessMap = textureMaps[std::to_underlying(TextureMap::Roughness)]->GetBindlessHandle(),
-			.reflectMap = textureMaps[std::to_underlying(TextureMap::Reflection)]->GetBindlessHandle(),
-			.diffuse = diffuse,
-			.specular = specular,
-			.specularExponent = specularExponent
-		};
-		auto bufferIdx = buffer.Add(data);
-		return std::make_shared<Material>(buffer, bufferIdx, textureMaps, diffuse, specular, specularExponent);
+		Update();
 	}
 }

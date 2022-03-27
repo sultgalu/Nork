@@ -115,7 +115,6 @@ namespace Nork {
 		entt::registry& registry;
 		Shaders shaders;
 		Renderer::DeferredPipeline deferredPipeline;
-		Renderer::LightState lightState;
 		std::array<std::shared_ptr<Renderer::DirShadowMap>, Renderer::Config::LightData::dirShadowsLimit> dirShadowMaps;
 		std::array<std::shared_ptr<Renderer::PointShadowMap>, Renderer::Config::LightData::pointShadowsLimit> pointShadowMaps;
 		std::shared_ptr<Renderer::TextureCube> skybox;
@@ -126,7 +125,8 @@ namespace Nork {
 		bool drawSky = true;
 	private:
 		void OnDShadowAdded(entt::registry& reg, entt::entity id);
-		void OnDShadowRemoved(entt::registry& reg, entt::entity id);
 		void OnPShadAdded(entt::registry& reg, entt::entity id);
+		void OnDLightAdded(entt::registry& reg, entt::entity id);
+		void OnPLightAdded(entt::registry& reg, entt::entity id);
 	};
 }

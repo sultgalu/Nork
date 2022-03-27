@@ -42,6 +42,7 @@ namespace Nork::Renderer {
 				Logger::Error("SHADER::COMPILATION_FAILED");
 				glGetShaderInfoLog(handle, 512, NULL, infoLog);
 				Logger::Error(infoLog);
+				std::abort();
 			}
 			handles[type] = handle;
 		}

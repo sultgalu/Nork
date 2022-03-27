@@ -16,6 +16,7 @@ void main()
 #type fragment
 
 #version 430 core
+#extension ARB_bindless_texture : require
 
 layout(location = 0) out vec4 fColor;
 
@@ -25,13 +26,13 @@ struct DirLight
 {
 	vec3 direction;
 	vec4 color;
+	mat4 VP;
 };
 
 struct DirShadow
 {
-	mat4 VP;
-	float bias, biasMin, pcfSize;
-	int idx;
+	float bias, biasMin;
+	sampler2DShadow shadMap;
 };
 
 struct PointLight
@@ -47,8 +48,7 @@ struct PointShadow
 	float bias, biasMin;
 	int blur;
 	float radius, far, near;
-	int idx;
-	float dummy;
+	samplerCubeShadow shadMap;
 };
 
 struct CullConfig
@@ -112,8 +112,8 @@ uniform sampler2D gDiff;
 uniform sampler2D gNorm;
 uniform sampler2D gSpec;
 
-uniform sampler2DShadow dirShadowMaps[5];
-uniform samplerCubeShadow pointShadowMaps[15];
+// uniform sampler2DShadow dirShadowMaps[5];
+// uniform samplerCubeShadow pointShadowMaps[15];
 
 vec3 dLight(DirLight light, Materials material, vec3 normal, vec3 viewDir);
 vec3 dLightShadow(DirLight light, Materials material, vec3 normal, vec3 viewDir, DirShadow shadow, vec3 worldPos);
@@ -201,7 +201,8 @@ float dShadow(DirShadow shadow, float bias, vec4 lightView)
 	vec3 fragPos = lightView.xyz / lightView.w; // clipping
 	fragPos = (fragPos + 1.0f) / 2.0f; // [-1;1] -> [0;1]
 	fragPos.z -= bias;
-	return texture(dirShadowMaps[shadow.idx], fragPos.xyz);
+	return texture(shadow.shadMap, fragPos.xyz);
+	// return texture(shadow.shadMap, vec3(0, 0, 0));
 }
 vec3 dLightShadow(DirLight light, Materials material, vec3 normal, vec3 viewDir, DirShadow shadow, vec3 worldPos)
 {
@@ -215,7 +216,7 @@ vec3 dLightShadow(DirLight light, Materials material, vec3 normal, vec3 viewDir,
 	float angle = pow(max(dot(halfwayDir, normal), 0.0f), material.specularExponent);
 	vec3 specular = light.color.rgb * angle * material.specular;
 
-	vec4 lightView = shadow.VP * vec4(worldPos, 1.0f);
+	vec4 lightView = light.VP * vec4(worldPos, 1.0f);
 	float bias = max(shadow.bias * (1.0f - dot(normal, lightDir)), shadow.biasMin); // for huge angle, bias = 0.05f (perpendicular)
 	float shad = dShadow(shadow, bias, lightView);
 
@@ -248,7 +249,7 @@ vec3 pLight(PointLight light, Materials material, vec3 worldPos, vec3 normal, ve
 float pShadow(PointShadow shadow, float bias, vec3 worldPos, vec3 lightPos)
 {
 	vec3 direction = worldPos - lightPos;
-	return texture(pointShadowMaps[shadow.idx], vec4(direction.xyz, length(direction) / shadow.far - bias));
+	return texture(shadow.shadMap, vec4(direction.xyz, length(direction) / shadow.far - bias));
 }
 vec3 pLightShadow(PointLight light, Materials material, vec3 normal, vec3 viewDir, PointShadow shadow, vec3 worldPos)
 {

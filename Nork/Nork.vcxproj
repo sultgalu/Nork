@@ -173,7 +173,7 @@
     <ClCompile Include="Source\Components\Impl\Lights.cpp" />
     <ClCompile Include="Source\Core\PhysicsSystem.cpp" />
     <ClCompile Include="Source\Core\ResourceManager.cpp" />
-    <ClCompile Include="Source\Modules\Renderer\Model\MaterialBuilder.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Model\Material.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Buffer\BufferBuilder.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Framebuffer\FramebufferBuilder.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Framebuffer\GeometryFramebufferBuilder.cpp" />
@@ -195,12 +195,13 @@
     <ClCompile Include="Source\App\Application.cpp" />
     <ClCompile Include="Source\Core\NorkWindow.cpp" />
     <ClCompile Include="Source\Modules\Renderer\State\Capabilities.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Storage\DrawState.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Storage\VertexArrayWrapper.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Window\Window.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Texture\Texture.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\VertexArray\VertexArray.cpp" />
     <ClInclude Include="Source\Modules\Renderer\Model\DrawBatch.h" />
-    <ClInclude Include="Source\Modules\Renderer\Model\MaterialBuilder.h" />
+    <ClInclude Include="Source\Modules\Renderer\Model\Light.h" />
     <ClInclude Include="Source\Modules\Renderer\Storage\BufferWrapper.h" />
     <ClInclude Include="Source\Modules\Renderer\Model\MeshFactory.h" />
     <ClInclude Include="Source\Modules\Renderer\Data\Material.h" />
@@ -239,6 +240,7 @@
     <ClInclude Include="Source\Modules\Renderer\Pipeline\Light\LightState.h" />
     <ClInclude Include="Source\Modules\Renderer\Pipeline\PostProcess\SkyRenderer.h" />
     <ClInclude Include="Source\Modules\Renderer\State\Capabilities.h" />
+    <ClInclude Include="Source\Modules\Renderer\Storage\TypedBuffers.h" />
     <ClInclude Include="Source\Modules\Renderer\Storage\DrawState.h" />
     <ClInclude Include="Source\Modules\Renderer\Storage\VertexArrayWrapper.h" />
     <ClInclude Include="Source\Modules\Renderer\Storage\TypedBufferWrapper.h" />

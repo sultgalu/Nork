@@ -6,12 +6,12 @@ namespace Nork::Renderer {
 	class MeshFactory
 	{
 	public:
-		MeshFactory(VertexArrayWrapper& vaoWrapper)
+		MeshFactory(VAO& vaoWrapper)
 			: vaoWrapper(vaoWrapper)
 		{}
 		std::shared_ptr<Mesh> Create(const std::vector<Data::Vertex>& vertices, const std::vector<uint32_t>& indices);
 		std::shared_ptr<Mesh> CreateCube();
 	private:
-		VertexArrayWrapper& vaoWrapper;
+		VAO& vaoWrapper;
 	};
 }

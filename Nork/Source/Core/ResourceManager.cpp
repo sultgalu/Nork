@@ -2,14 +2,11 @@
 #include "ResourceManager.h"
 #include "Modules/Renderer/LoadUtils.h"
 #include "Modules/Renderer/Objects/Texture/TextureBuilder.h"
-#include "Modules/Renderer/Model/MaterialBuilder.h"
 
 namespace Nork {
-	ResourceManager::ResourceManager(Renderer::MaterialBufferWrapper& materialBuffer, Renderer::VertexArrayWrapper& vaoWrapper)
-		: materialBuffer(materialBuffer), vaoWrapper(vaoWrapper)
-	{
-		materialBuffer.GetBuffer()->BindBase(6);
-	}
+	ResourceManager::ResourceManager(Renderer::DrawState& drawState)
+		: drawState(drawState)
+	{}
 	std::vector<std::pair<ResourceRef<Renderer::Mesh>, ResourceRef<Renderer::Material>>> ResourceManager::GetModel(const std::string& id)
 	{
 		auto opt = models.find(id);
@@ -63,8 +60,8 @@ namespace Nork {
 	{
 		if (id == "")
 		{
-			auto defaultMesh = std::make_shared<Resource<Renderer::Mesh>>(id, Renderer::MeshFactory(vaoWrapper).CreateCube());
-			auto defaultMaterial = std::make_shared<Resource<Renderer::Material>>(id, Renderer::MaterialBuilder(materialBuffer).Build());
+			auto defaultMesh = std::make_shared<Resource<Renderer::Mesh>>(id, Renderer::MeshFactory(drawState.vaoWrapper).CreateCube());
+			auto defaultMaterial = std::make_shared<Resource<Renderer::Material>>(id, drawState.AddMaterial());
 			meshes[""] = defaultMesh;
 			materials[""] = defaultMaterial;
 			models[""] = { { "", "" } };
@@ -80,18 +77,20 @@ namespace Nork {
 
 		for (auto& meshData : meshDatas)
 		{
-			auto mesh = Renderer::MeshFactory(vaoWrapper).Create(meshData.vertices, meshData.indices);
-			auto materialBuilder = Renderer::MaterialBuilder(materialBuffer)
-				.Diffuse(meshData.material.diffuse)
-				.Specular(meshData.material.specular)
-				.SpecularExponent(meshData.material.specularExponent);
+			auto mesh = Renderer::MeshFactory(drawState.vaoWrapper).Create(meshData.vertices, meshData.indices);
+			auto material = drawState.AddMaterial();
+			
+			material->diffuse = meshData.material.diffuse;
+			material->specular = meshData.material.specular;
+			material->specularExponent = meshData.material.specularExponent;
 			for (auto& pair : meshData.material.textureMaps)
 			{
-				materialBuilder.TextureMap(GetTexture(pair.second)->object, pair.first);
+				material->SetTextureMap(GetTexture(pair.second)->object, pair.first);
 			}
+			material->Update();
 
 			auto meshResRef = std::make_shared<Resource<Renderer::Mesh>>(id + "_" + meshData.meshName, mesh);
-			auto materialResRef = std::make_shared<Resource<Renderer::Material>>(id + "_" + meshData.materialName, materialBuilder.Build());
+			auto materialResRef = std::make_shared<Resource<Renderer::Material>>(id + "_" + meshData.materialName, material);
 			meshes[meshResRef->id] = meshResRef;
 			materials[materialResRef->id] = materialResRef;
 			modelStrings.push_back({ meshResRef->id, materialResRef->id });

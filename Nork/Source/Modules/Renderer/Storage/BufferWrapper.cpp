@@ -2,46 +2,41 @@
 #include "../Objects/Buffer/BufferBuilder.h"
 
 namespace Nork::Renderer {
-	std::shared_ptr<Buffer> BufferWrapper::CreateBuffer(size_t count, BufferTarget target)
-	{
-		using enum BufferStorageFlags;
-		auto buffer = BufferBuilder()
-			.Flags(WriteAccess | Persistent | Coherent)
-			.Target(target)
-			.Data(nullptr, count * stride)
-			.Create();
-		buffer->Bind().Map(BufferAccess::Write);
-		return buffer;
-	}
 	BufferWrapper::BufferWrapper(BufferTarget target, uint32_t stride, size_t initialCount)
 		: stride(stride)
 	{
-		buffer = CreateBuffer(initialCount, target);
+		using enum BufferStorageFlags;
+		buffer = BufferBuilder()
+			.Flags(ReadAccess | WriteAccess | Persistent | Coherent)
+			.Target(target)
+			.Data(nullptr, initialCount * stride)
+			.Create();
+		buffer->Bind().Map(BufferAccess::ReadWrite);
 	}
-	std::shared_ptr<size_t> BufferWrapper::Add(const void* data, size_t count)
+	std::shared_ptr<void*> BufferWrapper::Add(const void* data, size_t count)
 	{
 		if ((this->count + count) * stride > buffer->GetSize())
 		{
-			auto newBuffer = CreateBuffer((this->count + count) * stride * 2, buffer->GetTarget());
-			std::memcpy(newBuffer->GetPersistentPtr(), buffer->GetPersistentPtr(), GetSize());
-			// sync
-			buffer = newBuffer;
+			auto oldBasePtr = buffer->GetPersistentPtr();
+			buffer = BufferBuilder().CreateCopy(buffer, (this->count + count) * 2 * stride); 
+			auto newBasePtr = buffer->GetPersistentPtr();
+			for (auto& ptr : pointers)
+			{
+				auto offset = (char*)*ptr - (char*)oldBasePtr;
+				*ptr = (char*)newBasePtr + offset;
+			}
 		}
-		auto index = std::make_shared<size_t>(GetCount());
-		indexes.push_back(index);
+		auto ptr = std::make_shared<void*>((void*)((char*)buffer->GetPersistentPtr() + GetSize()));
+		pointers.push_back(ptr);
 		std::memcpy((char*)buffer->GetPersistentPtr() + GetSize(), data, count * stride);
 		this->count += count;
-		return index;
-	}
-	void BufferWrapper::Update(std::shared_ptr<size_t> idx, const void* data, size_t count)
-	{
-		std::memcpy((char*)buffer->GetPersistentPtr() + *idx * stride, data, count * stride);
+		return ptr;
 	}
 	void* BufferWrapper::GetPtr()
 	{
 		return buffer->GetPersistentPtr();
 	}
-	size_t BufferWrapper::FreeSpace(bool shrinkToFit)
+	size_t BufferWrapper::FreeSpaceKeepOrder()
 	{
 		std::abort();
 		/*std::vector<std::pair<size_t, size_t>> eraseRanges;
@@ -88,6 +83,10 @@ namespace Nork::Renderer {
 		}
 
 		return freedSpace;*/
+	}
+	size_t BufferWrapper::FreeSpace()
+	{
+		std::abort();
 	}
 }
 

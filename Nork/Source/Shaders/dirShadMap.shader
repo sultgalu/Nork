@@ -6,7 +6,6 @@
 layout(location = 0) in vec3 vPos;
 
 uniform mat4 VP;
-uniform mat4 model;
 layout(std140, binding = 5) uniform asd5
 {
 	mat4 models[1];

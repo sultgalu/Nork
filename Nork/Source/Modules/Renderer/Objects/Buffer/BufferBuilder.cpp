@@ -32,4 +32,21 @@ namespace Nork::Renderer {
 
 		return buffer;
 	}
+	std::shared_ptr<Buffer> BufferBuilder::CreateCopy(std::shared_ptr<Buffer> prot, size_t size)
+	{
+		target = prot->GetTarget();
+		flags = prot->GetFlags();
+		this->size = size;
+		auto buffer = Create();
+		if (prot->GetBase() != Buffer::invalidBase)
+		{
+			buffer->BindBase(prot->GetBase());
+		}
+		if (prot->GetPersistentPtr() != nullptr)
+		{
+			buffer->Map(prot->GetAccess());
+		}
+		buffer->CopyDataFrom(*prot);
+		return buffer;
+	}
 }

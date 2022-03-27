@@ -213,7 +213,7 @@
     <ClCompile Include="Source\Core\ResourceManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Model\MaterialBuilder.cpp">
+    <ClCompile Include="Source\Modules\Renderer\Model\Material.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Modules\Renderer\Storage\BufferWrapper.cpp">
@@ -226,6 +226,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Modules\Renderer\Model\DrawBatch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Modules\Renderer\Storage\DrawState.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -500,9 +503,6 @@
     <ClInclude Include="Source\Modules\Renderer\Storage\TypedBufferWrapper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Model\MaterialBuilder.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Modules\Renderer\Storage\VertexArrayWrapper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -510,6 +510,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Modules\Renderer\Storage\DrawState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Model\Light.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Storage\TypedBuffers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
