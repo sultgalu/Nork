@@ -3,17 +3,20 @@
 layout(location = 0) in vec3 vPos;
 #extension ARB_shader_draw_parameters : require
 
-uniform mat4 model;
 layout(std140, binding = 5) uniform asd5
 {
-	mat4 models[1000 * 1000];
+	mat4 models[1];
 };
-
-uniform int instanced;
+layout(std140, binding = 7) uniform asd8
+{
+	uvec4 modelMatIndexes[1];
+};
 
 void main()
 {
-	gl_Position = models[gl_DrawID] * vec4(vPos, 1.0f);
+	uint drawIdx = gl_BaseInstance + gl_InstanceID;
+	uint modelIdx = modelMatIndexes[drawIdx / 2][(drawIdx % 2) * 2];
+	gl_Position = models[modelIdx] * vec4(vPos, 1.0f);
 }
 
 #type geometry

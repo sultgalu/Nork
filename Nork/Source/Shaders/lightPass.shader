@@ -25,6 +25,7 @@ layout(location = 0) out vec4 fColor;
 struct DirLight
 {
 	vec3 direction;
+	float outOfProj;
 	vec4 color;
 	mat4 VP;
 };
@@ -46,8 +47,7 @@ struct PointLight
 struct PointShadow
 {
 	float bias, biasMin;
-	int blur;
-	float radius, far, near;
+	float near, far;
 	samplerCubeShadow shadMap;
 };
 
@@ -115,7 +115,7 @@ uniform sampler2D gSpec;
 // uniform sampler2DShadow dirShadowMaps[5];
 // uniform samplerCubeShadow pointShadowMaps[15];
 
-vec3 dLight(DirLight light, Materials material, vec3 normal, vec3 viewDir);
+vec3 dLight(DirLight light, Materials material, vec3 normal, vec3 viewDir, vec3 worldPos);
 vec3 dLightShadow(DirLight light, Materials material, vec3 normal, vec3 viewDir, DirShadow shadow, vec3 worldPos);
 
 vec3 pLight(PointLight light, Materials material, vec3 worldPos, vec3 normal, vec3 viewDir);
@@ -151,7 +151,7 @@ void main()
 	}
 	for (uint i = dShadowCount; i < dLightCount; i++)
 	{
-		result += dLight(dLs[i], material, normal, viewDir);
+		result += dLight(dLs[i], material, normal, viewDir, worldPos);
 	}
 	
 	//for (uint i = range.x; i < range.x + range.y; i++)
@@ -182,29 +182,11 @@ void main()
 	// fColor = vec4(diff, 1);
 }
 
-vec3 dLight(DirLight light, Materials material, vec3 normal, vec3 viewDir)
+float clip(vec3 fragPos, float clippedVal)
 {
-	vec3 ambient = light.color.rgb * material.ambient;
-
-	vec3 lightDir = -normalize(light.direction); // acts now as a position pointing towards the origin (otherwise should * (-1)) 
-	float diffAngle = max(dot(lightDir, normal), 0.0f);
-	vec3 diffuse = light.color.rgb * diffAngle * material.diffuse;
-
-	vec3 halfwayDir = normalize(viewDir + lightDir);
-	float angle = pow(max(dot(halfwayDir, normal), 0.0f), material.specularExponent);
-	vec3 specular = light.color.rgb * angle * material.specular;
-
-	return 0.2f * ambient + diffuse + specular;
+	return (pow(fragPos.x, 2.0) > 1 || pow(fragPos.y, 2.0) > 1 || pow(fragPos.z, 2.0) > 1) ? clippedVal : 1;
 }
-float dShadow(DirShadow shadow, float bias, vec4 lightView)
-{
-	vec3 fragPos = lightView.xyz / lightView.w; // clipping
-	fragPos = (fragPos + 1.0f) / 2.0f; // [-1;1] -> [0;1]
-	fragPos.z -= bias;
-	return texture(shadow.shadMap, fragPos.xyz);
-	// return texture(shadow.shadMap, vec3(0, 0, 0));
-}
-vec3 dLightShadow(DirLight light, Materials material, vec3 normal, vec3 viewDir, DirShadow shadow, vec3 worldPos)
+vec3 dLight(DirLight light, Materials material, vec3 normal, vec3 viewDir, vec3 worldPos)
 {
 	vec3 ambient = light.color.rgb * material.ambient;
 
@@ -217,10 +199,34 @@ vec3 dLightShadow(DirLight light, Materials material, vec3 normal, vec3 viewDir,
 	vec3 specular = light.color.rgb * angle * material.specular;
 
 	vec4 lightView = light.VP * vec4(worldPos, 1.0f);
-	float bias = max(shadow.bias * (1.0f - dot(normal, lightDir)), shadow.biasMin); // for huge angle, bias = 0.05f (perpendicular)
-	float shad = dShadow(shadow, bias, lightView);
+	vec3 fragPos = lightView.xyz / lightView.w; // clipping
 
-	return 0.2f * ambient + shad * (diffuse + specular);
+	return clip(fragPos, light.outOfProj) * (0.2f * ambient + diffuse + specular);
+}
+float dShadow(DirShadow shadow, float bias, vec3 fragPos)
+{
+	fragPos = (fragPos + 1.0f) / 2.0f; // [-1;1] -> [0;1]
+	fragPos.z -= bias;
+	return texture(shadow.shadMap, fragPos.xyz);
+}
+vec3 dLightShadow(DirLight light, Materials material, vec3 normal, vec3 viewDir, DirShadow shadow, vec3 worldPos)
+{
+	vec3 ambient = light.color.rgb * material.ambient;
+
+	vec3 lightDir = normalize(light.direction); // acts now as a position pointing towards the origin (otherwise should * (-1)) 
+	float diffAngle = max(dot(-lightDir, normal), 0.0f);
+	vec3 diffuse = light.color.rgb * diffAngle * material.diffuse;
+
+	vec3 halfwayDir = normalize(viewDir - lightDir);
+	float angle = pow(max(dot(halfwayDir, normal), 0.0f), material.specularExponent);
+	vec3 specular = light.color.rgb * angle * material.specular;
+
+	vec4 lightView = light.VP * vec4(worldPos, 1.0f);
+	vec3 fragPos = lightView.xyz / lightView.w; // clipping
+	float bias = max(shadow.bias * (1.0f - dot(normal, -lightDir)), shadow.biasMin); // for huge angle, bias = 0.05f (perpendicular)
+	float shad = dShadow(shadow, bias, fragPos);
+
+	return clip(fragPos, light.outOfProj) * (0.2f * ambient + shad * (diffuse + specular));
 }
 
 float CalcLuminosity(vec3 fromPos, vec3 toPos, float linear, float quadratic)

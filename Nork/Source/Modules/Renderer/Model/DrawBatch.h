@@ -60,8 +60,7 @@ namespace Nork::Renderer {
 	private:
 		DrawCommandMultiIndirect drawCommand;
 		std::vector<BatchElement> elements;
-		std::shared_ptr<Buffer> modelUbo;
-		std::shared_ptr<Buffer> materialUbo;
+		std::shared_ptr<Buffer> modelMatIdxUBO;
 
 		MatrixUBO& modelUBO;
 		MaterialUBO& materialUBO;

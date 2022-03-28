@@ -2,7 +2,6 @@
 
 #include "Scene/Scene.h"
 #include "Modules/Renderer/Objects/Shader/Shader.h"
-#include "Modules/Renderer/Pipeline/Light/LightState.h"
 #include "Modules/Renderer/Pipeline/Light/DirShadowMap.h"
 #include "Modules/Renderer/Pipeline/Light/PointShadowMap.h"
 #include "Modules/Renderer/Pipeline/Deferred/DeferredPipeline.h"

@@ -230,6 +230,39 @@ namespace Nork::Editor
 			if (ImGui::DragInt("Intensity", &(pow), 1, 0, 10000))
 				pL->SetIntensity(pow);
 
+			if (pL->shadow == nullptr)
+			{
+				if (ImGui::Button("Add shadow"))
+				{
+					data.selectedNode->GetEntity().AddComponent<PointShadowRequest>();
+				}
+			}
+			else if (ImGui::TreeNode("Shadow"))
+			{
+				if (ImGui::SliderFloat("Bias", (float*)&(pL->shadow->bias), 0, 1))
+					pL->shadow->Update();
+				if (ImGui::SliderFloat("min Bias", (float*)&(pL->shadow->biasMin), 0, 1))
+					pL->shadow->Update();
+				if (ImGui::SliderFloat("Near", (float*)&(pL->shadow->near), 0, 1))
+					pL->shadow->Update();
+				if (ImGui::SliderFloat("Far", (float*)&(pL->shadow->far), 0, 1000, "%.1f", ImGuiSliderFlags_Logarithmic))
+					pL->shadow->Update();
+
+				auto tex = pL->shadow->shadowMap.Get();
+				ImGui::Text("Width: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->GetWidth()).c_str());
+				ImGui::Text("Height: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->GetHeight()).c_str());
+				ImGui::Text("Format: "); ImGui::SameLine(); ImGui::Text(Renderer::TextureFormatToString(tex->GetAttributes().format));
+
+				ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
+				if (ImGui::Button("Delete"))
+				{
+					pL->shadow = nullptr;
+				}
+				ImGui::PopStyleColor();
+
+				ImGui::TreePop();
+			}
+
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 			if (ImGui::Button("Delete"))
 			{
@@ -276,13 +309,24 @@ namespace Nork::Editor
 	{
 		if (ImGui::TreeNodeEx("Directional light", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			if (ImGui::SliderFloat3("Direction", (float*)&(dL->light->direction.x), -1, 1))
+			auto dir = dL->light->direction;
+			if (ImGui::SliderFloat3("Direction", &dir.x, -1.01, 1.01))
 			{
+				dL->light->direction = dir;
+				//if (dir * dir != glm::zero<glm::vec3>()) // this logic should go into light
+					//dL->light->direction = glm::normalize(dir);
 				dL->RecalcVP(dL->GetView());
-				// dL->SetDirection(std::forward<glm::vec3&>(glm::normalize(dL->GetData().direction)));
 			}
+			if (ImGui::SliderFloat("outOfProjValue", &dL->light->outOfProjValue, 0, 1))
+				dL->light->Update();
 			if (ImGui::ColorEdit4("Color", &(dL->light->color.r)))
 				dL->light->Update();
+			if (ImGui::DragFloat2("Left, Right", &dL->left))
+				dL->RecalcVP(dL->GetView());
+			if (ImGui::DragFloat2("Bottom, Top", &dL->bottom))
+				dL->RecalcVP(dL->GetView());
+			if (ImGui::DragFloat2("Near, Far", &dL->near))
+				dL->RecalcVP(dL->GetView());
 
 			if (dL->shadow == nullptr)
 			{

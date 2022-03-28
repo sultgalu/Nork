@@ -36,7 +36,7 @@ namespace Nork::Renderer {
 			for (size_t i = 0; i < 6; i++)
 			{
 				Logger::Debug("Creating Cubemap face #", i);
-				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, attributes.GetInternalFormat(), attributes.width, attributes.height, false, attributes.GetFormat(), attributes.GetType(), dataCube[i]);
+				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, attributes.GetInternalFormat(), attributes.width, attributes.height, params.border, attributes.GetFormat(), attributes.GetType(), dataCube[i]);
 			}
 		}
 		else
@@ -63,6 +63,11 @@ namespace Nork::Renderer {
 		{
 			glTexParameteri(cube ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 			glTexParameteri(cube ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
+		}
+		if (params.border)
+		{
+			glm::vec4 border(1, 1, 1, 1);
+			glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, &border.x);
 		}
 	}
 }

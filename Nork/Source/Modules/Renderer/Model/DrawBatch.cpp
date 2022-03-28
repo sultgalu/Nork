@@ -6,14 +6,11 @@ namespace Nork::Renderer {
 	{
 		using enum BufferStorageFlags;
 		auto flags = WriteAccess | Persistent | Coherent;
-		modelUbo = BufferBuilder().Flags(flags).Target(BufferTarget::UBO).Data(nullptr, std::pow(15, 3) * 2 * sizeof(uint32_t)).Create();
-		materialUbo = BufferBuilder().Flags(flags).Target(BufferTarget::UBO).Data(nullptr, std::pow(15, 3) * 2 * sizeof(uint32_t)).Create();
-		modelUbo->BindBase(8).Map(BufferAccess::Write);
-		materialUbo->BindBase(7).Map(BufferAccess::Write);
+		modelMatIdxUBO = BufferBuilder().Flags(flags).Target(BufferTarget::UBO).Data(nullptr, std::pow(15, 3) * 4 * sizeof(uint32_t)).Create();
+		modelMatIdxUBO->BindBase(7).Map(BufferAccess::Write);
 
 		drawCommand.vao = vao.GetVertexArray();
-		drawCommand.ubos.push_back(modelUbo);
-		drawCommand.ubos.push_back(materialUbo);
+		drawCommand.ubos.push_back(modelMatIdxUBO);
 	}
 
 	void DrawBatch::GenerateIndirectCommands()
@@ -26,15 +23,14 @@ namespace Nork::Renderer {
 				return *left.mesh->GetVertexPtr() < *right.mesh->GetVertexPtr();
 			});
 
-		auto materialIdxs = (uint32_t*)materialUbo->GetPersistentPtr();
-		auto models = (uint32_t*)modelUbo->GetPersistentPtr();
+		auto modelMatIdxs = (uint32_t*)modelMatIdxUBO->GetPersistentPtr();
 		size_t count = 0;
 
 		uint32_t baseInstance = 0;
 		for (auto& element : elements)
 		{
-			materialIdxs[count] = materialUBO.GetIdxFor(element.material->GetPtr());
-			models[count++] = modelUBO.GetIdxFor(element.modelMatrix);
+			modelMatIdxs[count++] = modelUBO.GetIdxFor(element.modelMatrix);
+			modelMatIdxs[count++] = materialUBO.GetIdxFor(element.material->GetPtr());
 
 			auto mesh = element.mesh;
 
@@ -55,8 +51,8 @@ namespace Nork::Renderer {
 		}
 		while (count % 4 != 0)
 		{ // padding up to a uvec4
-			materialIdxs[count] = 0;
-			models[count++] = 0;
+			modelMatIdxs[count++] = 0;
+			modelMatIdxs[count++] = 0;
 		}
 	}
 }

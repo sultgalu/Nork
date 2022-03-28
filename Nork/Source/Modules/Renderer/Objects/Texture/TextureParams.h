@@ -29,6 +29,7 @@ struct TextureParams
 	bool magLinear = true;
 	bool genMipmap = false;
 	bool shadow = false;
+	bool border = false;
 
 	static consteval TextureParams CubeMapParams()
 	{
@@ -54,14 +55,25 @@ struct TextureParams
 			.genMipmap = false
 		};
 	}
-	static consteval TextureParams ShadowMapParams()
+	static consteval TextureParams ShadowMapParams2D()
 	{
 		return TextureParams{
-			.wrap = TextureWrap::ClampToEdge,
+			.wrap = TextureWrap::ClampToBorder,
 			.filter = TextureFilter::Linear,
 			.magLinear = true, // shadow anti-aliasing
 			.genMipmap = false,
-			.shadow = true
+			.shadow = true,
+			.border = true,
+		};
+	}
+	static consteval TextureParams ShadowMapParamsCube()
+	{
+		return TextureParams{
+			.wrap = TextureWrap::ClampToBorder,
+			.filter = TextureFilter::Linear,
+			.magLinear = true, // shadow anti-aliasing
+			.genMipmap = false,
+			.shadow = true,
 		};
 	}
 

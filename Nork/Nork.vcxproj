@@ -183,7 +183,6 @@
     <ClCompile Include="Source\Modules\Renderer\Objects\Texture\TextureBuilder.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\VertexArray\VertexArrayBuilder.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Pipeline\Light\DirShadowMap.cpp" />
-    <ClCompile Include="Source\Modules\Renderer\Pipeline\Light\LightState.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Pipeline\Light\PointShadowMap.cpp" />
     <ClCompile Include="Source\Core\RenderingSystem.cpp" />
     <ClCompile Include="Source\Modules\Renderer\DrawUtils.cpp" />
@@ -237,7 +236,6 @@
     <ClInclude Include="Source\Modules\Renderer\Objects\Texture\TextureAttributes.h" />
     <ClInclude Include="Source\Modules\Renderer\Objects\Texture\TextureFormat.h" />
     <ClInclude Include="Source\Modules\Renderer\Objects\Texture\TextureParams.h" />
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\Light\LightState.h" />
     <ClInclude Include="Source\Modules\Renderer\Pipeline\PostProcess\SkyRenderer.h" />
     <ClInclude Include="Source\Modules\Renderer\State\Capabilities.h" />
     <ClInclude Include="Source\Modules\Renderer\Storage\TypedBuffers.h" />

@@ -10,7 +10,7 @@ namespace Nork::Renderer {
 		: shader(shader)
 	{
 		auto depth = TextureBuilder()
-			.Params(TextureParams::ShadowMapParams())
+			.Params(TextureParams::ShadowMapParamsCube())
 			.Attributes(TextureAttributes{ .width = size, .height = size, .format = depthFormat })
 			.CreateCubeEmpty();
 		framebuffer = FramebufferBuilder().Attachments(FramebufferAttachments().Depth(depth)).Create();

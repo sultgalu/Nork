@@ -22,10 +22,6 @@ layout(std140, binding = 5) uniform asd5
 {
 	mat4 models[1];
 }; 
-layout(std140, binding = 8) uniform asd8
-{
-	uvec4 modelIndexes[1];
-};
 
 struct Material
 {
@@ -42,17 +38,20 @@ layout(std140, binding = 6) uniform asd6
 {
 	Material materials[1];
 };
-layout(std140, binding = 7) uniform asd7
+layout(std140, binding = 7) uniform asd8
 {
-	uvec4 materialIndices[1];
+	uvec4 modelMatIndexes[1];
 };
 flat out Material material;
 
 void main()
 {
 	uint drawIdx = gl_BaseInstance + gl_InstanceID;
-	uint matIdx = materialIndices[drawIdx / 4][drawIdx % 4]; // needed because of int[] padding (pads it up to a vec4)
-	uint modelIdx = modelIndexes[drawIdx / 4][drawIdx % 4];
+	// uint matIdx = materialIndices[drawIdx / 4][drawIdx % 4]; // needed because of int[] padding (pads it up to a vec4)
+	// uint modelIdx = modelIndexes[drawIdx / 4][drawIdx % 4];
+	uint modelIdx = modelMatIndexes[drawIdx / 2][(drawIdx % 2) * 2];
+	uint matIdx =   modelMatIndexes[drawIdx / 2][(drawIdx % 2) * 2 + 1];
+	//uint matIdx = modelMatIndexes[drawIdx].y;
 	material = materials[matIdx];
 	mat4 _model = models[modelIdx];
 

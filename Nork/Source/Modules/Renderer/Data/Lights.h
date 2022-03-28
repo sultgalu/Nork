@@ -4,23 +4,23 @@ namespace Nork::Renderer::Data
 {
 	struct PointLight
 	{
-		glm::vec3 position;
+		glm::vec3 position = { 0, 0, 0 };
 		float dummy;
-		glm::vec4 color;
+		glm::vec4 color = { 1, 1, 1, 1 };
 		float linear, quadratic;
-		float dummy2[2];
+		float padding[2];
 	};
 	struct PointShadow
 	{
-		float bias, biasMin;
-		int blur;
-		float radius, far, near;
+		float bias = 0.0057, biasMin = 0.0004,
+			near = 1, far = 50;
 		uint64_t shadMap;
+		uint64_t padding;
 	};
 	struct DirLight
 	{
 		glm::vec3 direction;
-		float dummy;
+		float outOfProjValue = 1;
 		glm::vec4 color;
 		glm::mat4 VP;
 	};

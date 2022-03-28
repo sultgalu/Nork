@@ -29,7 +29,7 @@ namespace Nork {
 	{
 		auto& light = reg.get<Components::PointLight>(id);
 		light.light = drawState.AddPointLight();
-		Logger::Error("asd");
+		light.SetIntensity(50);
 	}
 	RenderingSystem::RenderingSystem(entt::registry& registry)
 		: registry(registry),
@@ -106,36 +106,6 @@ namespace Nork {
 				light.shadow->shadowMap.Render(*light.light, *light.shadow, { drawBatch.GetDrawCommand() });
 			}
 		}
-		/*lightState.dirLights.clear();
-		lightState.dirShadows.clear();
-		for (auto [id, light, shadow] : registry.view<DirLight, DirShadow>().each())
-		{
-			lightState.dirLights.push_back(light);
-			lightState.dirShadows.push_back(shadow);
-
-			dirShadowMaps[shadow.idx]->Render(light, shadow, { drawBatch.GetDrawCommand() });
-			dirShadowMaps[shadow.idx]->Bind(shadow);
-		}
-		for (auto [id, light] : registry.view<DirLight>(entt::exclude<DirShadow>).each())
-		{
-			lightState.dirLights.push_back(light);
-		}
-
-		lightState.pointLights.clear();
-		lightState.pointShadows.clear();
-		for (auto [id, light, shadow] : registry.view<PointLight, PointShadow>().each())
-		{
-			lightState.pointLights.push_back(light);
-			lightState.pointShadows.push_back(shadow);
-
-			pointShadowMaps[shadow.idx]->Render(light, shadow, { drawBatch.GetDrawCommand() });
-			pointShadowMaps[shadow.idx]->Bind(shadow);
-		}
-		for (auto [id, light] : registry.view<PointLight>(entt::exclude<PointShadow>).each())
-		{
-			lightState.pointLights.push_back(light);
-		}
-		lightState.Upload();*/
 	}
 	void RenderingSystem::ViewProjectionUpdate(Components::Camera& camera)
 	{
