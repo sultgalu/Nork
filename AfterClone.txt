@@ -1,2 +1,0 @@
-// pull submodules (git submodule update?)
-// build needed modules (assimp->build.bat)
