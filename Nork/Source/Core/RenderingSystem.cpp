@@ -8,18 +8,6 @@
 #include "Modules/Renderer/Objects/Buffer/BufferBuilder.h"
 
 namespace Nork {
-	void RenderingSystem::OnDShadowAdded(entt::registry& reg, entt::entity id)
-	{
-		auto& light = reg.get<Components::DirLight>(id);
-		light.shadow = drawState.AddDirShadow(shaders.dShadowShader, { 4000, 4000 }, Renderer::TextureFormat::Depth16);
-		//reg.remove<Components::DirShadowRequest>(id);
-	}
-	void RenderingSystem::OnPShadAdded(entt::registry& reg, entt::entity id)
-	{
-		auto& light = reg.get<Components::PointLight>(id);
-		light.shadow = drawState.AddPointShadow(shaders.pShadowShader, 100, Renderer::TextureFormat::Depth16);
-		//reg.remove<Components::PointShadowRequest>(id);
-	}
 	void RenderingSystem::OnDLightAdded(entt::registry& reg, entt::entity id)
 	{
 		auto& light = reg.get<Components::DirLight>(id);
@@ -31,16 +19,59 @@ namespace Nork {
 		light.light = drawState.AddPointLight();
 		light.SetIntensity(50);
 	}
+	void RenderingSystem::OnDShadAdded(entt::registry& reg, entt::entity id)
+	{
+		auto& light = reg.get<Components::DirLight>(id);
+		light.shadow = drawState.AddDirShadow(light.light, shaders.dShadowShader, { 4000, 4000 }, Renderer::TextureFormat::Depth16);
+		//reg.remove<Components::DirShadowRequest>(id);
+	}
+	void RenderingSystem::OnPShadAdded(entt::registry& reg, entt::entity id)
+	{
+		auto& light = reg.get<Components::PointLight>(id);
+		light.shadow = drawState.AddPointShadow(light.light, shaders.pShadowShader, 100, Renderer::TextureFormat::Depth16);
+		reg.remove<Components::PointShadowRequest>(id);
+	}
+
+	void RenderingSystem::OnDShadRemoved(entt::registry& reg, entt::entity id)
+	{
+		auto& light = reg.get<Components::DirLight>(id);
+		drawState.RemoveDirShadow(light.shadow);
+		light.shadow = nullptr;
+	}
+	void RenderingSystem::OnPShadRemoved(entt::registry& reg, entt::entity id)
+	{
+		auto& light = reg.get<Components::PointLight>(id);
+		drawState.RemovePointShadow(light.shadow);
+		light.shadow = nullptr;
+	}
+	void RenderingSystem::OnDLightRemoved(entt::registry& reg, entt::entity id)
+	{
+		auto& light = reg.get<Components::DirLight>(id);
+		drawState.RemoveDirLight(light.light);
+		light.shadow = nullptr;
+	}
+	void RenderingSystem::OnPLightRemoved(entt::registry & reg, entt::entity id)
+	{
+		auto& light = reg.get<Components::DirLight>(id);
+		drawState.RemoveDirLight(light.light);
+		light.shadow = nullptr;
+	}
 	RenderingSystem::RenderingSystem(entt::registry& registry)
 		: registry(registry),
 		deferredPipeline(shaders.gPassShader, shaders.lPassShader, resolution.x, resolution.y),
 		drawBatch(drawState.modelMatrixBuffer, drawState.materialBuffer, drawState.vaoWrapper)
 	{
-		registry.on_construct<Components::DirShadowRequest>().connect<&RenderingSystem::OnDShadowAdded>(this);
+		registry.on_construct<Components::DirShadowRequest>().connect<&RenderingSystem::OnDShadAdded>(this);
 		registry.on_construct<Components::PointShadowRequest>().connect<&RenderingSystem::OnPShadAdded>(this);
 
 		registry.on_construct<Components::DirLight>().connect<&RenderingSystem::OnDLightAdded>(this);
 		registry.on_construct<Components::PointLight>().connect<&RenderingSystem::OnPLightAdded>(this);
+
+		registry.on_destroy<Components::DirShadowRequest>().connect<&RenderingSystem::OnDShadRemoved>(this);
+		registry.on_destroy<Components::PointShadowRequest>().connect<&RenderingSystem::OnPShadRemoved>(this);
+
+		registry.on_destroy<Components::DirLight>().connect<&RenderingSystem::OnDLightRemoved>(this);
+		registry.on_destroy<Components::PointLight>().connect<&RenderingSystem::OnPLightRemoved>(this);
 
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 

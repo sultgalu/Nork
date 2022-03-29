@@ -12,9 +12,13 @@ namespace Nork::Renderer {
 		DrawState();
 		std::shared_ptr<Material> AddMaterial();
 		std::shared_ptr<DirLight> AddDirLight();
-		std::shared_ptr<DirShadow> AddDirShadow(std::shared_ptr<Shader>, glm::uvec2 res, TextureFormat);
 		std::shared_ptr<PointLight> AddPointLight();
-		std::shared_ptr<PointShadow> AddPointShadow(std::shared_ptr<Shader>, uint32_t res, TextureFormat);
+		std::shared_ptr<DirShadow> AddDirShadow(std::shared_ptr<DirLight>, std::shared_ptr<Shader>, glm::uvec2 res, TextureFormat);
+		std::shared_ptr<PointShadow> AddPointShadow(std::shared_ptr<PointLight>, std::shared_ptr<Shader>, uint32_t res, TextureFormat);
+		void RemoveDirShadow(std::shared_ptr<DirShadow>);
+		void RemoveDirLight(std::shared_ptr<DirLight>);
+		void RemovePointShadow(std::shared_ptr<PointShadow>);
+		void RemovePointLight(std::shared_ptr<PointLight>);
 	public:
 		MatrixUBO modelMatrixBuffer;
 		MaterialUBO materialBuffer;

@@ -33,6 +33,29 @@ namespace Nork::Renderer {
 		{
 			return std::span<T>((T*)BufferWrapper::GetPtr(), GetCount());
 		}
+		void MoveToBack(std::shared_ptr<T*> ptr)
+		{
+			return BufferWrapper::MoveToBack(GetIdxFor(ptr));
+		}
+		void Swap(std::shared_ptr<T*> ptr1, std::shared_ptr<T*> ptr2)
+		{
+			return BufferWrapper::Swap(GetIdxFor(ptr1), GetIdxFor(ptr2));
+		}
+		void Erase(std::shared_ptr<T*> ptr)
+		{
+			return BufferWrapper::Erase(GetIdxFor(ptr));
+		}
+		std::shared_ptr<T*> Back()
+		{
+			return std::reinterpret_pointer_cast<T*>(BufferWrapper::Back());
+		}
+		std::shared_ptr<T*> Front()
+		{
+			return std::reinterpret_pointer_cast<T*>(BufferWrapper::Front());
+		}
+
+		using BufferWrapper::Swap;
+		using BufferWrapper::Erase;
 		using BufferWrapper::FreeSpace;
 		using BufferWrapper::GetBuffer;
 		using BufferWrapper::GetSize;

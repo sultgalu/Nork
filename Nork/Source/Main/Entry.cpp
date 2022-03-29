@@ -81,17 +81,17 @@ int main()
 	engine.scene.AddComponent<Poly>(node2);
 	engine.scene.AddComponent<Components::Tag>(node2).tag = "NODE 2";*/
 
-	// auto sun = engine.scene.CreateNode()->GetEntity();
-	// auto& l = sun.AddComponent<Components::DirLight>();
-	// l.light->color = glm::vec4(0.5f, 0.4f, 0.25, 1);
-	// //l.SetColor(glm::vec4(0.0f));
-	// sun.AddComponent<Components::DirShadowRequest>();
-	// l.far = 100; l.near = -100; l.left = -100; l.right = 100; l.bottom = -100; l.top = 100;
-	// l.RecalcVP(l.GetView());
-	// sun.AddComponent<Components::Tag>().tag = "SUN";
+	auto sun = engine.scene.CreateNode()->GetEntity();
+	auto& l = sun.AddComponent<Components::DirLight>();
+	l.light->color = glm::vec4(0.5f, 0.4f, 0.25, 1);
+	//l.SetColor(glm::vec4(0.0f));
+	sun.AddComponent<Components::DirShadowRequest>();
+	l.far = 100; l.near = -100; l.left = -100; l.right = 100; l.bottom = -100; l.top = 100;
+	l.RecalcVP(l.GetView());
+	sun.AddComponent<Components::Tag>().tag = "SUN";
 	
 	int offsX = 10;
-	int dimP = 4;
+	int dimP = 0;
 	int sepP = 3;
 	int startP = -dimP / 2;
 	int endP = dimP / 2 + dimP % 2;

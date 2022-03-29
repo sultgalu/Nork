@@ -354,7 +354,7 @@ namespace Nork::Editor
 				ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 				if (ImGui::Button("Delete"))
 				{
-					dL->shadow = nullptr;
+					data.selectedNode->GetEntity().RemoveComponent<DirShadowRequest>();
 				}
 				ImGui::PopStyleColor();
 				

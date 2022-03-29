@@ -123,9 +123,14 @@ namespace Nork {
 		Observed<GlobalShaderUniform> globalShaderUniform;
 		bool drawSky = true;
 	private:
-		void OnDShadowAdded(entt::registry& reg, entt::entity id);
+		void OnDShadAdded(entt::registry& reg, entt::entity id);
 		void OnPShadAdded(entt::registry& reg, entt::entity id);
+		void OnDShadRemoved(entt::registry& reg, entt::entity id);
+		void OnPShadRemoved(entt::registry& reg, entt::entity id);
+
 		void OnDLightAdded(entt::registry& reg, entt::entity id);
 		void OnPLightAdded(entt::registry& reg, entt::entity id);
+		void OnDLightRemoved(entt::registry& reg, entt::entity id);
+		void OnPLightRemoved(entt::registry& reg, entt::entity id);
 	};
 }

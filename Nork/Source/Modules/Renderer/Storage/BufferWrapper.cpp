@@ -38,8 +38,8 @@ namespace Nork::Renderer {
 	}
 	size_t BufferWrapper::FreeSpaceKeepOrder()
 	{
-		std::abort();
-		/*std::vector<std::pair<size_t, size_t>> eraseRanges;
+		/*std::abort();
+		std::vector<std::pair<size_t, size_t>> eraseRanges;
 		size_t freedSpace = 0;
 
 		for (size_t i = 0; i < indexes.size(); i++)
@@ -83,10 +83,68 @@ namespace Nork::Renderer {
 		}
 
 		return freedSpace;*/
+		std::abort();
 	}
 	size_t BufferWrapper::FreeSpace()
 	{
 		std::abort();
+		/*char* ptr = (char*)buffer->GetPersistentPtr();
+		uint32_t idx = 0;
+		while (idx < count - 1)
+		{
+			if (pointers[idx].use_count() == 1)
+			{
+				auto copyTo = *pointers[idx];
+				auto copyFrom = (count - 1) * stride;
+				std::memcpy(ptr + copyTo, ptr + copyFrom, stride);
+				count--;
+			}
+			idx++;
+		}
+
+		for (int i = pointers.size() - 1; i >= 0; i--)
+		{
+			if (pointers[i].use_count() == 1)
+			{
+				pointers.erase(pointers.begin() + i);
+			}
+		}*/
+	}
+	void BufferWrapper::Erase(size_t idx)
+	{
+		auto ptr = (char*)buffer->GetPersistentPtr();
+		std::vector<char> copy(stride, 0);
+		std::memcpy(copy.data(), *pointers[idx], stride);
+
+		std::memmove(ptr + idx * stride, ptr + (idx + 1) * stride, stride);
+		for (size_t i = idx + 1; i < pointers.size(); i++)
+		{
+			*((char*)*pointers[i]) -= stride;
+		}
+
+		*pointers[idx] = *pointers.back();
+		std::memcpy(*pointers[idx], copy.data(), stride);
+
+		auto temp = pointers[idx];
+		pointers[idx] = pointers.back();
+		pointers.back() = temp;
+		count--;
+		pointers.erase(pointers.end() - 1);
+	}
+	void BufferWrapper::Swap(size_t idx1, size_t idx2)
+	{
+		std::vector<char> copy(stride, 0);
+		std::memcpy(copy.data(), *pointers[idx1], stride);
+		std::memcpy(*pointers[idx1], *pointers[idx2], stride);
+		std::memcpy(*pointers[idx2], copy.data(), stride);
+
+		auto temp = *pointers[idx1];
+		*pointers[idx1] = *pointers[idx2];
+		*pointers[idx2] = temp;
+
+		auto temp2 = pointers[idx1];
+		pointers[idx1] = pointers[idx2];
+		pointers[idx2] = temp2;
 	}
 }
 
