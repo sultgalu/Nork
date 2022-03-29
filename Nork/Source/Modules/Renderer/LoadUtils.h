@@ -31,6 +31,7 @@ namespace Nork::Renderer
 	{
 	public:
 		static Image LoadImage(std::string_view path);
+		static void WriteImage(const Image&, const std::string& path);
 		static std::array<Image, 6> LoadCubemapImages(std::string dirPath, std::string extension);
 		static std::string LoadShader(std::string_view path);
 		static std::vector<MeshData> LoadModel(const std::string& path);

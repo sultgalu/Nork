@@ -24,5 +24,8 @@ namespace Nork {
 		ResourceRef<Renderer::Texture2D> LoadTexture(const std::string& id);
 		std::unordered_map<std::string, ResourceRef<Renderer::Texture2D>> textures;
 
+		std::filesystem::path TexturePathToAssetPath(std::string);
+
+		std::filesystem::path assetsPath;
 	};
 }
