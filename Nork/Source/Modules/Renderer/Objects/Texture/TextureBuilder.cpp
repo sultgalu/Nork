@@ -2,6 +2,35 @@
 #include "../GLManager.h"
 
 namespace Nork::Renderer {
+	static std::vector<int> QuerySupportedCompressedFormats()
+	{
+		int count = 0;
+		glGetIntegerv(GL_NUM_COMPRESSED_TEXTURE_FORMATS, &count);
+		std::vector<int> list(count, 0);
+
+		glGetIntegerv(GL_COMPRESSED_TEXTURE_FORMATS, list.data());
+		Logger::Info("List of supported texture formats for compressed storage:");
+		for (auto& iFormat : list)
+		{
+			auto format = static_cast<TextureFormat>((GLenum)iFormat);
+			Logger::Info(TextureFormatToString(format));
+		}
+		return list;
+	}
+	static std::vector<int> GetSupportedCompressedFormats()
+	{
+		static auto list = QuerySupportedCompressedFormats();
+		return list;
+	}
+	static bool IsSupportedForCompression(GLenum internalFormat)
+	{
+		for (auto& supported : GetSupportedCompressedFormats())
+		{
+			if (supported == internalFormat)
+				return true;
+		}
+		return false;
+	}
 	std::shared_ptr<Texture2D> TextureBuilder::Create2D()
 	{
 		Create(false);
@@ -36,12 +65,20 @@ namespace Nork::Renderer {
 			for (size_t i = 0; i < 6; i++)
 			{
 				Logger::Debug("Creating Cubemap face #", i);
-				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, attributes.GetInternalFormat(), attributes.width, attributes.height, params.border, attributes.GetFormat(), attributes.GetType(), dataCube[i]);
+				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, attributes.GetInternalFormat(), attributes.width, attributes.height, 0, attributes.GetFormat(), attributes.GetType(), dataCube[i]);
 			}
 		}
 		else
 		{
-			glTexImage2D(GL_TEXTURE_2D, 0, attributes.GetInternalFormat(), attributes.width, attributes.height, false, attributes.GetFormat(), attributes.GetType(), data2D);
+			if (IsSupportedForCompression(attributes.GetInternalFormat()))
+			{
+				Logger::Warning("Compressed formats are not supported yet. This will probably fail");
+				glTexImage2D(GL_TEXTURE_2D, 0, attributes.GetInternalFormat(), attributes.width, attributes.height, 0, attributes.GetFormat(), attributes.GetType(), data2D);
+			}
+			else
+			{
+				glTexImage2D(GL_TEXTURE_2D, 0, attributes.GetInternalFormat(), attributes.width, attributes.height, 0, attributes.GetFormat(), attributes.GetType(), data2D);
+			}
 		}
 		if (params.genMipmap)
 		{

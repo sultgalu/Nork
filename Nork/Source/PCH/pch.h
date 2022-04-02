@@ -57,6 +57,10 @@
 
 #include <filesystem>
 
+//-----------THREADING-----------
+
+#include <thread>
+
 ////-----------------OPENGL-----------------------
 
 #include <glad/glad.h>

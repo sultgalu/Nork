@@ -10,12 +10,6 @@
 #include "App/Application.h"
 using namespace Nork;
 
-static Engine* enginePtr;
-Engine& GetEngine()
-{
-	return *enginePtr;
-}
-
 int main()
 {
 	Logger::PushStream(std::cout);
@@ -23,12 +17,12 @@ int main()
 	auto& engine = Application::Get().engine;
 	auto& dispatcher = Application::Get().dispatcher;
 
-	enginePtr = &engine;
 	Editor::Editor editor(engine);
 
 	editor.SetDisplayTexture(engine.renderingSystem.deferredPipeline.lightFb->Color());
 	dispatcher.GetReceiver().Subscribe<RenderUpdatedEvent>([&](const RenderUpdatedEvent& ev)
 		{
+			//engine.renderingSystem.DrawOnScreen();
 			editor.Render();
 		});
 

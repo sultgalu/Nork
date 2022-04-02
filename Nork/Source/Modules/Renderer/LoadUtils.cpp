@@ -133,6 +133,9 @@ namespace Nork::Renderer
 
 			std::string type;
 			ifs >> type;
+			while (ifs.peek() == ' ')
+				ifs.get();
+
 			if (type == "Ka")
 				parseVec3(mtl.Ka);
 			else if (type == "Kd")
@@ -146,24 +149,38 @@ namespace Nork::Renderer
 				ifs >> mtl.Ns;
 
 			else if (type == "map_Kd")
-				ifs >> mtl.textureMaps[TextureMap::Diffuse];
+			{
+				char buf[1000];
+				ifs.getline(buf, sizeof(buf), '\n');
+				mtl.textureMaps[TextureMap::Diffuse] = buf;
+			}
 			else if (type == "map_Bump")
 			{
 				std::string next;
-				ifs >> next;
-				if (next == "-bm")
+				if (ifs.peek() == '-')
 				{
-					ifs >> next;
-					ifs >> mtl.textureMaps[TextureMap::Normal];
+					ifs >> next; // -bm
+					ifs >> next; // num
+					while (ifs.peek() == ' ')
+						ifs.get();
 				}
-				else
-					mtl.textureMaps[TextureMap::Normal] = next;
+
+				char buf[1000];
+				ifs.getline(buf, sizeof(buf), '\n');
+				mtl.textureMaps[TextureMap::Normal] = buf;
 			}
 			else if (type == "refl")
-				ifs >> mtl.textureMaps[TextureMap::Reflection];
+			{
+				char buf[1000];
+				ifs.getline(buf, sizeof(buf), '\n');
+				mtl.textureMaps[TextureMap::Reflection] = buf;
+			}
 			else if (type == "map_Ks")
-				ifs >> mtl.textureMaps[TextureMap::Roughness];
-
+			{
+				char buf[1000];
+				ifs.getline(buf, sizeof(buf), '\n');
+				mtl.textureMaps[TextureMap::Roughness] = buf;
+			}
 			else if (type == "newmtl")
 				return type;
 			else if (ifs.eof())

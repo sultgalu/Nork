@@ -19,5 +19,9 @@ namespace Nork::Renderer {
 		{
 			return static_cast<GLenum>(format);
 		}
+		uint32_t GetPixelSize()
+		{
+			return GetTexturePixelSize(format);
+		}
 	};
 }

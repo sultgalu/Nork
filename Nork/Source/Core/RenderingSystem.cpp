@@ -46,12 +46,14 @@ namespace Nork {
 	}
 	void RenderingSystem::OnDLightRemoved(entt::registry& reg, entt::entity id)
 	{
+		reg.remove<Components::DirShadowRequest>(id); // remove shadow first from UBO
 		auto& light = reg.get<Components::DirLight>(id);
 		drawState.RemoveDirLight(light.light);
 		light.shadow = nullptr;
 	}
 	void RenderingSystem::OnPLightRemoved(entt::registry & reg, entt::entity id)
 	{
+		reg.remove<Components::PointShadowRequest>(id); // remove shadow first from UBO
 		auto& light = reg.get<Components::DirLight>(id);
 		drawState.RemoveDirLight(light.light);
 		light.shadow = nullptr;
@@ -176,6 +178,7 @@ namespace Nork {
 		ViewProjectionUpdate(camera);
 		UpdateLights();
 		DrawBatchUpdate();
+
 		RenderScene();
 
 		Renderer::Framebuffer::BindDefault();
