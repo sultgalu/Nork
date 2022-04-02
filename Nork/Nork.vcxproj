@@ -166,6 +166,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Core\InputState.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Model\DrawBatch.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Model\MeshFactory.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Storage\BufferWrapper.cpp" />
@@ -386,7 +387,6 @@
     <ClInclude Include="Source\Editor\Panels\AssetsPanel.h" />
     <ClInclude Include="Source\Editor\Panels\Base\Panel.h" />
     <ClInclude Include="Source\Editor\Editor.h" />
-    <ClInclude Include="Source\Core\Event.h" />
     <ClInclude Include="Source\Utils\Logger.h" />
     <ClInclude Include="Source\Utils\Observed.h" />
     <ClInclude Include="Source\Utils\Profiler.h" />

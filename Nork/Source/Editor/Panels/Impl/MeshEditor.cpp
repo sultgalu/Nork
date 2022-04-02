@@ -9,69 +9,9 @@ namespace Nork::Editor
 	static uint32_t activeMesh;
 	MeshEditorPanel::MeshEditorPanel(EditorData& d)
 		:Panel("Mesh Editor", d)
-	{
-		Application::Get().dispatcher.GetReceiver().Subscribe<IdQueryResultEvent>([&](const IdQueryResultEvent& e)
-			{
-				if (data.selectedPoly != nullptr)
-				{
-					auto& verts = data.selectedPoly->vertices;
-					for (size_t i = 0; i < verts.size(); i++)
-					{
-						/*if (verts[i].id == e.id)
-						{
-							SelectVertex(i);
-							return;
-						}*/
-					}
-				}
-			});
-	}
-	void MeshEditorPanel::SelectVertex(uint32_t i)
-	{
-		//auto& input = data.engine.window.GetInputState();
-		/*if (input.Is(KeyType::Shift, KeyState::Down))
-		{
-			auto start = current > i ? i : current;
-			auto end = current > i ? current : i;
-			while (start <= end)
-			{
-				data.selectedPoly->vertices[start].selected = 1;
-				selected.insert(start++);
-			}
-		}
-		else if (input.Is(KeyType::Ctrl, KeyState::Down))
-		{
-			if (selected.contains(i))
-			{
-				data.selectedPoly->vertices[i].selected = 0;
-				selected.erase(i);
-			}
-			else
-			{
-				data.selectedPoly->vertices[i].selected = 1;
-				selected.insert(i);
-			}
-		}
-		else
-		{
-			for (uint32_t j : selected)
-			{
-				data.selectedPoly->vertices[j].selected = 0;
-			}
-			selected.clear();
-			data.selectedPoly->vertices[i].selected = 1;
-			selected.insert(i);
-		}*/
-		current = i;
-	}
+	{}
 	void MeshEditorPanel::DrawContent()
 	{
-		/*int val = data.engine.lightMan.cullQ;
-		if (ImGui::DragInt("Point Anti-Aliasing", &val, 1, 1, 32))
-		{
-			data.engine.lightMan.cullQ = val;
-		}*/
-		
 		if (data.selectedPoly == nullptr)
 		{
 			ImGui::Text("Select a Poly from the inspector");
@@ -192,12 +132,12 @@ namespace Nork::Editor
 					ImGui::TableNextRow();
 					ImGui::TableSetColumnIndex(0);
 					if (ImGui::Selectable(std::to_string(i).c_str(), selected.contains(i)))
-						SelectVertex(i);
+						; //SelectVertex(i);
 					ImGui::TableSetColumnIndex(1);
 					for (uint32_t n : data.selectedPoly->neighbours[i])
 					{
 						if (ImGui::SmallButton(std::to_string(n).append("##").append(rowName).c_str()))
-							SelectVertex(n);
+							;//SelectVertex(n);
 						ImGui::SameLine();
 					}
 					ImGui::Text(""); // cause of sameline
@@ -221,22 +161,14 @@ namespace Nork::Editor
 		if (data.engine.physicsSystem.satRes) ImGui::TextColored(ImVec4(0, 1, 0, 1), "  COLLISION!!");
 		else ImGui::TextColored(ImVec4(1, 0, 0, 1), "  no collision");
 
-		static bool setBack = false;
-		if (setBack)
+		bool physicsUpdate = data.engine.physicsUpdate;
+		if (ImGui::Checkbox("Physics Update##LongPeriod", &physicsUpdate))
 		{
-			data.engine.physicsUpdate = false;
-			setBack = false;
+			if (physicsUpdate)
+				data.engine.StartPhysics();
+			else
+				data.engine.StopPhysics();
 		}
-		if (data.engine.physicsSystem.satRes)
-		{
-			if(ImGui::Button("Physics Update"))
-			{
-				data.engine.physicsUpdate = true;
-				setBack = true;
-			}
-		}
-
-		ImGui::Checkbox("Physics Update##LongPeriod", &data.engine.physicsUpdate);
 
 		bool g = data.engine.physicsSystem.pipeline.g != 0;
 		static float savedG = 0;
@@ -253,26 +185,6 @@ namespace Nork::Editor
 		ImGui::SliderFloat("Coefficient", &data.engine.physicsSystem.pipeline.coefficient, 0, 1);
 
 		ImGui::Separator();
-		auto Enginedeltas = data.engine.physicsSystem.deltas;
-		for (size_t i = 0; i < Enginedeltas.size(); i++)
-		{
-			auto pair = Enginedeltas[i];
-			ImGui::Text(pair.first.append(": ").append(std::to_string(pair.second)).c_str());
-		}
-		ImGui::Separator();
-		auto SAPdeltas = Physics::SAP::GetDeltas();
-		for (size_t i = 0; i < SAPdeltas.size(); i++)
-		{
-			auto pair = SAPdeltas[i];
-			ImGui::Text(pair.first.append(": ").append(std::to_string(pair.second)).c_str());
-		}
-		ImGui::Separator();
-		auto pDeltas = data.engine.physicsSystem.pipeline.deltas;
-		for (size_t i = 0; i < pDeltas.size(); i++)
-		{
-			auto pair = pDeltas[i];
-			ImGui::Text(pair.first.append(": ").append(std::to_string(pair.second)).c_str());
-		}
 
 		ImGui::DragFloat("Physics speed", &data.engine.physicsSystem.physicsSpeed, 0.001f, 0, 10, "%.3f", ImGuiSliderFlags_Logarithmic);
 		ImGui::Checkbox("Update polies", &data.engine.physicsSystem.updatePoliesForPhysics);

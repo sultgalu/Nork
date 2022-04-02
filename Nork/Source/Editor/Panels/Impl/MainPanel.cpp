@@ -7,17 +7,6 @@ namespace Nork::Editor
 {
 	MainPanel::MainPanel(EditorData& d) : Panel("MainPanel", d)
 	{
-		this->events.Subscribe<KeyDownEvent>([&](const KeyDownEvent& ev)
-			{
-				if (ev.key == Key::S && Application::Get().inputState.Is<KeyState::Down>(Key::Ctrl))
-				{
-					SaveScene();
-				}
-				else if (ev.key == Key::Q && Application::Get().inputState.Is<KeyState::Down>(Key::Ctrl))
-				{
-					LoadScene();
-				}
-			});
 	}
 	void MainPanel::Begin()
 	{
@@ -25,6 +14,18 @@ namespace Nork::Editor
 	
 	void MainPanel::DrawContent()
 	{
+		auto& input = Application::Get().window.Input();
+		if (input.IsDown(Key::Ctrl))
+		{
+			if (input.IsDown(Key::O))
+			{
+				LoadScene();
+			}
+			else if (input.IsDown(Key::S))
+			{
+				SaveScene();
+			}
+		}
 		if (ImGui::BeginMainMenuBar())
 		{
 			if (ImGui::BeginMenu("Menu"))

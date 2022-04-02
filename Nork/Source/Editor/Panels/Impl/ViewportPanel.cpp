@@ -10,9 +10,7 @@ namespace Nork::Editor
 
 	ViewportPanel::ViewportPanel(EditorData& d)
 		: Nork::Editor::Panel(std::format("Viewport#{}", viewportCounter++), d),
-		mouseState(MouseState{}), image(ImageConfig{}),
-		camContr(CameraController(events, 
-			data.engine.scene))
+		mouseState(MouseState{}), image(ImageConfig{})
 	{
 		uint8_t texData[3] = { 128, 228 , 0 }; 
 		defaultTex = Renderer::TextureBuilder()
@@ -20,40 +18,6 @@ namespace Nork::Editor
 			.Attributes(Renderer::TextureAttributes{ .width = 1, .height = 1, .format = Renderer::TextureFormat::RGB })
 			.Create2DWithData(texData);
 		image.texture = defaultTex;
-
-		static Timer timer;
-		events.Subscribe<MouseDownEvent>([&](const MouseDownEvent& e)
-			{
-				if (e.button != MouseButton::Left)
-					return;
-
-				if (data.idQueryMode.test(IdQueryMode::Click))
-				{
-					//data.engine.ReadId(mouseState.mousePosX, mouseState.mousePosY);
-				}
-				else if (data.idQueryMode.test(IdQueryMode::DoubleClick))
-				{
-					if (timer.Elapsed() < 500)
-					{
-						//data.engine.ReadId(mouseState.mousePosX, mouseState.mousePosY);
-					}
-				}
-				timer.Restart();
-			});
-		events.Subscribe<MouseMoveEvent>([&](const MouseMoveEvent& e)
-			{
-				
-				if (data.idQueryMode.test(IdQueryMode::MouseMoveClicked) &&
-					Application::Get().inputState.Is<MouseButtonState::Down>(MouseButton::Left))
-				{
-					//data.engine.ReadId(mouseState.mousePosX, mouseState.mousePosY);
-				}
-				else if (data.idQueryMode.test(IdQueryMode::MouseMoveReleased) &&
-					Application::Get().inputState.Is<MouseButtonState::Up>(MouseButton::Left))
-				{
-					//data.engine.ReadId(mouseState.mousePosX, mouseState.mousePosY);
-				}
-			});
 	}
 
 	ViewportPanel::~ViewportPanel()
@@ -78,7 +42,8 @@ namespace Nork::Editor
 
 	void ViewportPanel::Begin()
 	{
-		camContr.Update(ImGui::GetIO().DeltaTime * 500);
+		if (state.isHovered)
+			camContr.Update(data.engine.scene.GetMainCamera(), ImGui::GetIO().DeltaTime * 500);
 		ImGui::Begin(this->GetName().data(), 0, ImGuiWindowFlags_NoScrollbar);
 	}
 

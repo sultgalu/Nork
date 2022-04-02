@@ -31,11 +31,12 @@ namespace Nork
 		R = GLFW_KEY_R,
 		T = GLFW_KEY_T,
 		M = GLFW_KEY_M,
+		O = GLFW_KEY_O,
 
 		Max = GLFW_KEY_LAST
 	};
 
-	enum class MouseButton
+	enum class Button
 	{
 		Left = GLFW_MOUSE_BUTTON_LEFT,
 		Right = GLFW_MOUSE_BUTTON_RIGHT,
@@ -45,10 +46,10 @@ namespace Nork
 	};
 
 	inline std::string ToString(Key key) { return std::to_string(std::to_underlying(key)); }
-	inline std::string ToString(MouseButton button) { return std::to_string(std::to_underlying(button)); }
+	inline std::string ToString(Button button) { return std::to_string(std::to_underlying(button)); }
 	inline constexpr int ToInt(Key key) { return std::to_underlying(key); }
-	inline constexpr int ToInt(MouseButton button) { return std::to_underlying(button); }
+	inline constexpr int ToInt(Button button) { return std::to_underlying(button); }
 
 	static_assert(ToInt(Key::Max) < 1024);
-	static_assert(ToInt(MouseButton::Max) < 16);
+	static_assert(ToInt(Button::Max) < 16);
 }

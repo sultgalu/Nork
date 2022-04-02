@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Modules/Renderer/Window/Window.h"
-#include "Core/Event.h"
+#include "Core/InputState.h"
 
 namespace Nork
 {
@@ -11,13 +11,16 @@ namespace Nork
 		Window();
 		void Close();
 		void SetupCallbacks();
-		inline bool IsRunning() { return running; }
+		bool ShouldClose() { return input.ShouldWindowClose(); }
+		//inline bool IsRunning() { return running; }
 		inline void Resize(int w, int h) { win.Resize(w, h); }
-		inline void Refresh() { win.Refresh(); win.PollEvents(); }
+		inline void Refresh() { win.Refresh(); input.Update(); win.PollEvents(); }
 		inline Renderer::Window& Underlying() { return win; }
+		inline const Nork::Input& Input() { return input; }
 	private:
 		Renderer::Window win;
-		bool running = false;
+		Nork::Input input;
+		//bool running = false;
 		bool refresh = true;
 		int maxFps = 1000;
 	};

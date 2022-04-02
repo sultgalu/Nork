@@ -60,6 +60,8 @@
 //-----------THREADING-----------
 
 #include <thread>
+#include <mutex>
+#include <semaphore>
 
 ////-----------------OPENGL-----------------------
 

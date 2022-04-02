@@ -11,6 +11,8 @@ namespace Nork::Editor
 		Editor(Engine& engine);
 		void Render();
 		void SetDisplayTexture(std::shared_ptr<Renderer::Texture> tex);
+		void Update();
+		void UpdateImguiInputs();
 	private:
 		EditorData data;
 	};

@@ -4,59 +4,43 @@
 
 namespace Nork
 {
-	void CameraController::Update(float delta)
+	void CameraController::Update(Components::Camera& camera, float delta)
 	{
 		using enum Components::Camera::Direction;
 
-		auto& input = Application::Get().inputState;
-		auto& camera = scene.GetMainCamera();
+		auto& input = Application::Get().window.Input();
 
-		if (input.Is(Key::W, KeyState::Down))
+		if (input.IsDown(Key::W))
 		{
-			auto dir = input.Is(Key::Shift, KeyState::Down) ? Up : Forward;
+			auto dir = input.IsDown(Key::Shift) ? Up : Forward;
 			camera.Move(dir, delta);
 		}
-		if (input.Is(Key::S, KeyState::Down))
+		if (input.IsDown(Key::S))
 		{
-			auto dir = input.Is(Key::Shift, KeyState::Down) ? Down : Backward;
+			auto dir = input.IsDown(Key::Shift) ? Down : Backward;
 			camera.Move(dir, delta);
 		}
-		if (input.Is(Key::A, KeyState::Down))
+		if (input.IsDown(Key::A))
 		{
 			camera.Move(Left, delta);
 		}
-		if (input.Is(Key::D, KeyState::Down))
+		if (input.IsDown(Key::D))
 		{
 			camera.Move(Rigth, delta);
 		}
 
 		static float baseSpeed = camera.moveSpeed;
-		camera.moveSpeed = input.Is(Key::Space, KeyState::Down) ? baseSpeed * 10.0f : baseSpeed;
-	}
-	void CameraController::SetupInputHandling(Receiver& receiver)
-	{
-		receiver.Subscribe<MouseScrollEvent>(&CameraController::HandleScroll, this);
-		receiver.Subscribe<MouseMoveEvent>(&CameraController::HandleMouseMove, this);
-	}
-	void CameraController::HandleScroll(const MouseScrollEvent& event)
-	{
-		scene.GetMainCamera().Zoom(event.offset);
-	}
-	void CameraController::HandleMouseMove(const MouseMoveEvent& event)
-	{
-		static double x = 0;
-		static double y = 0;
+		camera.moveSpeed = input.IsDown(Key::Space) ? baseSpeed * 10.0f : baseSpeed;
 
-		double offsX = x - event.offsetX;
-		double offsY = y - event.offsetY;
-
-		auto& input = Application::Get().inputState;
-		if (input.Is(MouseButton::Left, MouseButtonState::Down))
+		if (input.DidScroll())
 		{
-			scene.GetMainCamera().Rotate(-offsY, offsX);
+			camera.Zoom(input.ScrollOffs());
 		}
-		x = event.offsetX;
-		y = event.offsetY;
+
+		if (input.IsDown(Button::Left))
+		{
+			camera.Rotate(input.CursorYOffs(), -input.CursorXOffs());
+		}
 	}
 }
 

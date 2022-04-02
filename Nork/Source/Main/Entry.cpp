@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Event.h"
 #include "Core/CameraController.h"
 #include "Utils/Logger.h"
 #include "Utils/Timer.h"
@@ -15,16 +14,10 @@ int main()
 	Logger::PushStream(std::cout);
 
 	auto& engine = Application::Get().engine;
-	auto& dispatcher = Application::Get().dispatcher;
 
 	Editor::Editor editor(engine);
 
 	editor.SetDisplayTexture(engine.renderingSystem.deferredPipeline.lightFb->Color());
-	dispatcher.GetReceiver().Subscribe<RenderUpdatedEvent>([&](const RenderUpdatedEvent& ev)
-		{
-			//engine.renderingSystem.DrawOnScreen();
-			editor.Render();
-		});
 
 	int dim = 8;
 	int sep = 3;
@@ -118,5 +111,9 @@ int main()
 	engine.physicsUpdate = false;
 	engine.scene.GetMainCamera().SetPosition(glm::vec3(-58, 16, -91));
 	engine.scene.GetMainCamera().SetRotation(-10, 60);
-	engine.Launch();
+	//engine.Launch();
+	while (!Application::Get().window.ShouldClose())
+	{
+		editor.Update();
+	}
 }

@@ -10,8 +10,6 @@ namespace Nork
 
 	Application::Application():	
 		window(),
-		dispatcher(Dispatcher()),
-		inputState(dispatcher.GetReceiver()),
 		engine()
 	{
 	}

@@ -17,6 +17,9 @@ namespace Nork
 		Engine();
 		Engine(Engine&&) = delete;
 		void Launch();
+		void Update();
+		void StartPhysics();
+		void StopPhysics();
 	public:
 		Scene scene;
 
@@ -24,8 +27,21 @@ namespace Nork
 		ResourceManager resourceManager = ResourceManager(renderingSystem.drawState);
 		
 		PhysicsSystem physicsSystem;
+		std::thread* physicsThread;
 		bool physicsUpdate = false;
+		std::mutex physicsDownloadLock;
+		std::mutex physicsUploadLock;
+
+		std::counting_semaphore<10> downloadSem;
+		std::counting_semaphore<10> uploadSem;
+		std::counting_semaphore<10> phxSem;
+		bool waitingForUpload = false;
+		bool phxCalc = false;
+		bool phxCalcDone = false;
+		bool downloading = false;
+		bool uploading = false;
 	private:
 		void OnDrawableAdded(entt::registry& reg, entt::entity id);
+		std::thread* LaunchPhysicsThread();
 	};
 }

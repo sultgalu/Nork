@@ -5,8 +5,8 @@
 namespace Nork::Editor
 {
 	Panel::Panel(std::string name, EditorData& data)
-		: data(data), name(name),
-		events(Application::Get().dispatcher.GetReceiver().Map<BaseEvent>([&]() { return this->state.isHovered; }))
+		: data(data), name(name)
+		//events(Application::Get().dispatcher.GetReceiver().Map<BaseEvent>([&]() { return this->state.isHovered; }))
 	{
 	}
 	void Panel::Draw()
