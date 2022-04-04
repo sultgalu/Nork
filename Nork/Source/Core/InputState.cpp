@@ -14,59 +14,31 @@ namespace Nork {
 			{
 				if (action == GLFW_PRESS)
 				{
-					if (!Self(winPtr).keys.test(key))
-					{
-						Self(winPtr).keyChanged.set(key, true);
-						Self(winPtr).keys.set(key, true);
-					}
-					else if (Self(winPtr).keyChanged.test(key))
-					{
-						Self(winPtr).keyChanged.set(key, false);
-					}
+					Self(winPtr).keyChanged.set(key);
+					Self(winPtr).keys.set(key);
 				}
 				else if (action == GLFW_RELEASE)
 				{
-					if (Self(winPtr).keys.test(key))
-					{
-						Self(winPtr).keyChanged.set(key, true);
-						Self(winPtr).keys.set(key, false);
-						Self(winPtr).keysRepeated.set(key, false);
-					}
-					else if (Self(winPtr).keyChanged.test(key))
-					{
-						Self(winPtr).keyChanged.set(key, false);
-					}
+					Self(winPtr).keyChanged.set(key);
+					Self(winPtr).keys.reset(key);
+					Self(winPtr).keysRepeated.reset(key);
 				}
 				else if (action == GLFW_REPEAT) [[unlikely]]
 				{
-					Self(winPtr).keysRepeated.set(key, true);
+					Self(winPtr).keysRepeated.set(key);
 				}
 			});
 		glfwSetMouseButtonCallback(windowPtr, [](GLFWwindow* winPtr, int button, int action, int mods)
 			{
 				if (action == GLFW_PRESS)
 				{
-					if (!Self(winPtr).buttons.test(button))
-					{
-						Self(winPtr).buttonChanged.set(button, true);
-						Self(winPtr).buttons.set(button, true);
-					}
-					else if (Self(winPtr).buttonChanged.test(button))
-					{
-						Self(winPtr).buttonChanged.set(button, false);
-					}
+					Self(winPtr).buttonChanged.set(button);
+					Self(winPtr).buttons.set(button);
 				}
 				else if (action == GLFW_RELEASE)
 				{
-					if (Self(winPtr).buttons.test(button))
-					{
-						Self(winPtr).buttonChanged.set(button, true);
-						Self(winPtr).buttons.set(button, false);
-					}
-					else if (Self(winPtr).buttonChanged.test(button))
-					{
-						Self(winPtr).buttonChanged.set(button, false);
-					}
+					Self(winPtr).buttonChanged.set(button);
+					Self(winPtr).buttons.reset(button);
 				}
 			});
 		glfwSetCursorPosCallback(windowPtr, [](GLFWwindow* winPtr, double xPos, double yPos)
@@ -102,7 +74,10 @@ namespace Nork {
 		scrollOffset = 0;
 		cursorEntered = false;
 		cursorLeft = false;
+
 		typedChars.clear();
+		keyChanged.reset();
+		buttonChanged.reset();
 	}
 }
 

@@ -98,6 +98,10 @@ public:
 			throw JsonException("Failed to parse \"" + name + "\":" + properties.at(name) + " to " + typeid(T).name() + ". (" + e.what() + ")");
 		}
 	}
+	bool Contains(const std::string& key) const
+	{
+		return properties.contains(key);
+	}
 	std::string ToString() const;
 	static JsonObject Parse(std::string json);
 private:
@@ -116,6 +120,15 @@ public:
 	}
 	template<JsonDataType T>
 	JsonArray& Elements(const std::span<T> array)
+	{
+		for (size_t i = 0; i < array.size(); i++)
+		{
+			elements.push_back(JsonParser::Parse(array[i]));
+		}
+		return *this;
+	}
+	template<JsonDataType T>
+	JsonArray& Elements(const std::vector<T>& array)
 	{
 		for (size_t i = 0; i < array.size(); i++)
 		{

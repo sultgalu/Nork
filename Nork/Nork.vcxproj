@@ -245,6 +245,7 @@
     <ClInclude Include="Source\Modules\Renderer\Storage\VertexArrayWrapper.h" />
     <ClInclude Include="Source\Modules\Renderer\Storage\TypedBufferWrapper.h" />
     <ClInclude Include="Source\Modules\Renderer\Window\Window.h" />
+    <ClInclude Include="Source\Modules\Serialization\gltf\gltf.h" />
     <ClInclude Include="Source\Modules\Serialization\Json.h" />
     <ClInclude Include="Source\Scene\Entity.h" />
     <ClInclude Include="Source\Scene\SceneNode.h" />
@@ -377,6 +378,7 @@
     <ClInclude Include="Source\Core\Engine.h" />
     <ClInclude Include="Source\Core\CameraController.h" />
     <ClInclude Include="Source\Core\InputState.h" />
+    <ClInclude Include="Source\Scene\Serialization\GLTFSerializer.h" />
     <ClInclude Include="Source\Scene\Serialization\JsonSerializer.h" />
     <ClInclude Include="Source\Utils\Input.h" />
     <ClInclude Include="Source\Components\Camera.h" />

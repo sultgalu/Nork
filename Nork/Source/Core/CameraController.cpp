@@ -4,10 +4,9 @@
 
 namespace Nork
 {
-	void CameraController::Update(Components::Camera& camera, float delta)
+	void CameraController::UpdateByKeyInput(Components::Camera& camera, float delta)
 	{
 		using enum Components::Camera::Direction;
-
 		auto& input = Application::Get().window.Input();
 
 		if (input.IsDown(Key::W))
@@ -28,6 +27,10 @@ namespace Nork
 		{
 			camera.Move(Rigth, delta);
 		}
+	}
+	void CameraController::UpdateByMouseInput(Components::Camera& camera, float delta)
+	{
+		auto& input = Application::Get().window.Input();
 
 		static float baseSpeed = camera.moveSpeed;
 		camera.moveSpeed = input.IsDown(Key::Space) ? baseSpeed * 10.0f : baseSpeed;

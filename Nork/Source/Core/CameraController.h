@@ -11,6 +11,7 @@ namespace Nork
 	public:
 		CameraController()
 		{}
-		void Update(Components::Camera&, float delta);
+		void UpdateByKeyInput(Components::Camera&, float delta);
+		void UpdateByMouseInput(Components::Camera&, float delta);
 	};
 }
