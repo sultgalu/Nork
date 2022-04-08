@@ -19,6 +19,8 @@ JsonArray JsonParser::GetArray(const std::string& str)
 
 std::string JsonObject::ToString() const
 {
+	if (properties.empty())
+		return "{}";
 	std::stringstream ss;
 
 	ss << "{";

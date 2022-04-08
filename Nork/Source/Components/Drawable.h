@@ -4,33 +4,24 @@
 #include "Modules/Renderer/Model/Material.h"
 
 namespace Nork {
-	template<class T>
-	struct Resource
-	{
-		Resource(const std::string& id, std::shared_ptr<T> object)
-			: id(id), object(object)
-		{}
-		std::string id;
-		std::shared_ptr<T> object;
-	};
-
-	template<class T>
-	using ResourceRef = std::shared_ptr<Resource<T>>;
-
-	using MeshResourceRef = ResourceRef<std::vector<std::pair<Renderer::Mesh, Renderer::Material>>>;
 }
 
 namespace Nork::Components
 {
 	struct Mesh
 	{
-		ResourceRef<Renderer::Mesh> mesh;
-		ResourceRef<Renderer::Material> material;
+		std::shared_ptr<Renderer::Mesh> mesh;
+		std::shared_ptr<Renderer::Material> material;
+	};
+
+	struct Model
+	{
+		std::vector<Mesh> meshes;
 	};
 
 	struct Drawable
 	{
-		std::vector<Mesh> meshes;
+		Model model;
 		std::shared_ptr<glm::mat4*> modelMatrix;
 	};
 }

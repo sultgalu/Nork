@@ -215,4 +215,59 @@ namespace Nork::Renderer {
 			return GL_NONE;
 		}
 	}
+	static uint32_t GetTextureChannelCount(TextureFormat f)
+	{
+		using enum TextureFormat;
+		switch (f)
+		{
+		case RGBA8:
+			return 4;
+		case RGBA16F:
+			return 4;
+		case RGBA32F:
+			return 4;
+
+		case RGB8:
+			return 3;
+		case RGB16F:
+			return 3;
+		case RGB32F:
+			return 3;
+
+		case R32I:
+			return 1;
+		case R32UI:
+			return 1;
+		case R8:
+			return 1;
+		case R8I:
+			return 1;
+		case R32F:
+			return 1;
+
+		case Depth32F:
+			return 1;
+		case Depth32:
+			return 1;
+		case Depth24:
+			return 1;
+		case Depth16:
+			return 1;
+
+		case Depth24Stencil8:
+			return 2;
+		case Depth32FStencil8:
+			return 2;
+
+		case CompressedRGB8:
+			return 3;
+
+		case None:
+			MetaLogger().Error("Texture format \"None\" is an INVALID format.");
+
+		default:
+			Logger::Error("Unrecognized TextureFormat: ", (int)f);
+			return GL_NONE;
+		}
+	}
 }

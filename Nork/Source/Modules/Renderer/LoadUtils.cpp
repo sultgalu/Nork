@@ -325,8 +325,10 @@ namespace Nork::Renderer
 			else if (str == "o")
 			{
 				std::cout << "o";
+				char buf[1000];
 				objects.push_back(ObjObject());
-				obj >> objects.back().name;
+				obj.getline(buf, sizeof(buf));
+				objects.back().name = buf;
 			}
 			else if (str == "mtllib")
 			{
@@ -349,6 +351,12 @@ namespace Nork::Renderer
 			else if (obj.eof())
 			{
 				break;
+			}
+			else
+			{
+				char buf[1000];
+				obj.getline(buf, sizeof(buf));
+				std::cout << "failed to parse line:\n \"" << buf << "\"\n";
 			}
 			str.clear();
 			obj >> str;
@@ -425,7 +433,7 @@ namespace Nork::Renderer
 				meshData.material.specularExponent = mtl.Ns;
 				meshData.material.textureMaps = mtl.textureMaps;
 
-				meshData.meshName = o.name + "_withMat_" + mtl.name;
+				meshData.meshName = o.name;
 				meshData.materialName = mtl.name;
 				meshDatas.push_back(meshData);
 			}

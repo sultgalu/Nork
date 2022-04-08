@@ -1,7 +1,5 @@
 #include "JsonSerializer.h"
 
-#include "Modules/Serialization/Json.h"
-
 namespace Nork {
 
 	// --------------COMPONENT SERIALIZATION--------------

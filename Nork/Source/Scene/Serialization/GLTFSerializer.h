@@ -4,5 +4,8 @@
 #include "Modules/Serialization/gltf/gltf.h"
 
 namespace Nork {
-
+	class GLTFSerializer
+	{
+	public:
+	};
 }

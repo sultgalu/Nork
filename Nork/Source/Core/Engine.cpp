@@ -14,9 +14,8 @@ namespace Nork
 	void Engine::OnDrawableAdded(entt::registry& reg, entt::entity id)
 	{
 		auto& dr = reg.get<Components::Drawable>(id);
-		auto model = resourceManager.GetModel("");
-		dr.meshes.push_back(Components::Mesh{ .mesh = model.front().first, .material = model.front().second });
-
+		dr.model = resourceManager.GetModel("");
+	
 		auto* tr = reg.try_get<Components::Transform>(id);
 		dr.modelMatrix = renderingSystem.drawState.modelMatrixBuffer.Add(glm::identity<glm::mat4>());
 	}

@@ -118,39 +118,39 @@ namespace Nork::Editor
 		if (ImGui::TreeNodeEx("Model", ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			static int imgSize = 100;
-			if (dr->meshes.size() > 0 && ImGui::TreeNode("Material Textures"))
+			if (dr->model.meshes.size() > 0 && ImGui::TreeNode("Material Textures"))
 			{
 				ImGui::Unindent();
 				static int meshIdx = 0;
-				auto meshCount = dr->meshes.size();
+				auto meshCount = dr->model.meshes.size();
 				if (meshIdx >= meshCount)
 					meshIdx = meshCount - 1;
 				ImGui::SliderInt("Mesh of model", &meshIdx, 0, meshCount - 1);
 
-				ImGui::Text("Mesh ID:");
-				ImGui::SameLine();
-				ImGui::Text(dr->meshes[meshIdx].mesh->id.c_str());
-				ImGui::Text("Material ID:");
-				ImGui::SameLine();
-				ImGui::Text(dr->meshes[meshIdx].material->id.c_str());
+				auto meshPath = data.engine.resourceManager.PathFor(dr->model.meshes[meshIdx].mesh);
+				auto matPath = data.engine.resourceManager.PathFor(dr->model.meshes[meshIdx].material);
+				ImGui::Text("Mesh ID:"); ImGui::SameLine();
+				ImGui::Text(meshPath.has_value() ? (*meshPath).c_str() : "unkown");
+				ImGui::Text("Material ID:"); ImGui::SameLine();
+				ImGui::Text(matPath.has_value() ? (*matPath).c_str() : "unkown");
 
-				if (ImGui::SliderFloat3("diffuse", &dr->meshes[meshIdx].material->object->diffuse.r, 0, 1))
+				if (ImGui::SliderFloat3("diffuse", &dr->model.meshes[meshIdx].material->diffuse.r, 0, 1))
 				{
-					dr->meshes[meshIdx].material->object->Update();
+					dr->model.meshes[meshIdx].material->Update();
 				}
-				if (ImGui::SliderFloat("specular", &dr->meshes[meshIdx].material->object->specular, 0, 10))
+				if (ImGui::SliderFloat("specular", &dr->model.meshes[meshIdx].material->specular, 0, 10))
 				{
-					dr->meshes[meshIdx].material->object->Update();
+					dr->model.meshes[meshIdx].material->Update();
 				}
-				if (ImGui::SliderFloat("spec-exp", &dr->meshes[meshIdx].material->object->specularExponent, 0, 1024, "%.0f", ImGuiSliderFlags_Logarithmic))
+				if (ImGui::SliderFloat("spec-exp", &dr->model.meshes[meshIdx].material->specularExponent, 0, 1024, "%.0f", ImGuiSliderFlags_Logarithmic))
 				{
-					dr->meshes[meshIdx].material->object->Update();
+					dr->model.meshes[meshIdx].material->Update();
 				}
 				if (ImGui::BeginTabBar("MaterialTexturesTab"))
 				{
 					auto displayTex = [&](Renderer::TextureMap type)
 					{
-						auto tex = dr->meshes[meshIdx].material->object->GetTextureMap(type);
+						auto tex = dr->model.meshes[meshIdx].material->GetTextureMap(type);
 						ImGui::Image((ImTextureID)tex->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
 							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
 						ImGui::Text("Width: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->GetWidth()).c_str());
@@ -163,11 +163,25 @@ namespace Nork::Editor
 							std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::Image, L"Load Texture", L"Load");
 							if (!p.empty())
 							{
-								auto newTex = data.engine.resourceManager.GetTexture(p)->object;
+								auto newTex = data.engine.resourceManager.GetTextureByPath(p);
 								if (newTex != nullptr)
 								{
-									dr->meshes[meshIdx].material->object->SetTextureMap(newTex, type);
-									dr->meshes[meshIdx].material->object->Update();
+									dr->model.meshes[meshIdx].material->SetTextureMap(newTex, type);
+									dr->model.meshes[meshIdx].material->Update();
+								}
+							}
+						}
+						if (ImGui::Button("Import texture"))
+						{
+							std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::Image, L"Load Texture", L"Load");
+							if (!p.empty())
+							{
+								data.engine.resourceManager.ImportTexture(p);
+								auto newTex = data.engine.resourceManager.GetTexture(p);
+								if (newTex != nullptr)
+								{
+									dr->model.meshes[meshIdx].material->SetTextureMap(newTex, type);
+									dr->model.meshes[meshIdx].material->Update();
 								}
 							}
 						}
@@ -196,19 +210,28 @@ namespace Nork::Editor
 				ImGui::TreePop();
 			}
 
-			//ImGui::TextColored(ImVec4(0, 0.8f, 0.4f, 1.0f), "Showing source is not implemented yet");
-			if (ImGui::Button("LoadFromWin"))
+			auto src = data.engine.resourceManager.PathForModel(dr->model.meshes.back().mesh);
+			
+			ImGui::Text(src.has_value() ? (*src).c_str() : "unkown");
+			if (ImGui::Button("Load Model"))
+			{
+				std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::Json, L"Load model", L"Load");
+				if (!p.empty())
+				{
+					dr->model = data.engine.resourceManager.GetModelByPath(p);
+				}
+			}
+			if (ImGui::Button("Import Model"))
 			{
 				std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::_3D, L"Load model", L"Load");
 				if (!p.empty())
 				{
-					dr->meshes.clear();
-					auto model = data.engine.resourceManager.GetModel(p);
-					for (auto& [mesh, material] : model)
-					{
-						dr->meshes.push_back(Mesh{ .mesh = mesh, .material = material });
-					}
+					dr->model = data.engine.resourceManager.ImportModel(p);
 				}
+			}
+			if (ImGui::Button("Export Model"))
+			{
+				data.engine.resourceManager.ExportModel(dr->model);
 			}
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 			if (ImGui::Button("Delete"))

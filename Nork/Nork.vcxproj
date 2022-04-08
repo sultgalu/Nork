@@ -167,6 +167,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Core\InputState.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\gltf\GLTFBuilder.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Model\DrawBatch.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Model\MeshFactory.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Storage\BufferWrapper.cpp" />
@@ -201,6 +202,7 @@
     <ClCompile Include="Source\Modules\Renderer\Objects\Texture\Texture.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\VertexArray\VertexArray.cpp" />
     <ClInclude Include="Source\Main\GameLoop.h" />
+    <ClInclude Include="Source\Modules\Renderer\GLTF\GLTFBuilder.h" />
     <ClInclude Include="Source\Modules\Renderer\Model\DrawBatch.h" />
     <ClInclude Include="Source\Modules\Renderer\Model\Light.h" />
     <ClInclude Include="Source\Modules\Renderer\Storage\BufferWrapper.h" />
@@ -245,11 +247,13 @@
     <ClInclude Include="Source\Modules\Renderer\Storage\VertexArrayWrapper.h" />
     <ClInclude Include="Source\Modules\Renderer\Storage\TypedBufferWrapper.h" />
     <ClInclude Include="Source\Modules\Renderer\Window\Window.h" />
-    <ClInclude Include="Source\Modules\Serialization\gltf\gltf.h" />
-    <ClInclude Include="Source\Modules\Serialization\Json.h" />
+    <ClInclude Include="Source\Modules\Renderer\GLTF\gltf.h" />
+    <ClInclude Include="Source\Utils\FileUtils.h" />
+    <ClInclude Include="Source\Utils\Json.h" />
     <ClInclude Include="Source\Scene\Entity.h" />
     <ClInclude Include="Source\Scene\SceneNode.h" />
-    <ClCompile Include="Source\Modules\Serialization\Json.cpp" />
+    <ClCompile Include="Source\Utils\FileUtils.cpp" />
+    <ClCompile Include="Source\Utils\Json.cpp" />
     <ClCompile Include="Source\Scene\SceneNode.cpp" />
     <ClCompile Include="Source\Scene\Serialization\JsonSerializer.cpp" />
     <ClCompile Include="Source\Utils\Profiler.cpp" />

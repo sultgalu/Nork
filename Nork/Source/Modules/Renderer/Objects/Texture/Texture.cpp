@@ -26,6 +26,11 @@ namespace Nork::Renderer {
 		return *this;
 	}
 
+	void Texture::GetData2D(void* ptr)
+	{
+		glGetTexImage(GL_TEXTURE_2D, 0, GetTextureFormat(attributes.format), GetTextureType(attributes.format), ptr);
+	}
+
 	Texture2D& Texture2D::Bind(int idx)
 	{
 		Bind2D(idx);

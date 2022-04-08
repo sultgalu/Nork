@@ -267,7 +267,4 @@ namespace Nork::Renderer {
 		}
 		return vertices;
 	}
-
-
-
 }

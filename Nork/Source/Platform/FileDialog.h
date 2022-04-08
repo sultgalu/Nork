@@ -8,6 +8,7 @@ namespace Nork::FileDialog
 		Shader = 1 << 0,
 		_3D = 1 << 1,
 		Image = 1 << 2,
+		Json = 1 << 3,
 	};
 
 	inline EngineFileTypes operator|(EngineFileTypes a, EngineFileTypes b)

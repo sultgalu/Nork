@@ -13,14 +13,18 @@ namespace Nork::FileDialog
 
     const static COMDLG_FILTERSPEC _3DExtensions[]
     {
-        COMDLG_FILTERSPEC{L"3D as FBX", L"*.fbx;*.obj"},
+        COMDLG_FILTERSPEC{L"Common 3D", L"*.fbx;*.obj;*.gltf"},
         //COMDLG_FILTERSPEC{L"3D as OBJ", L"*.obj"},
         COMDLG_FILTERSPEC{L"3D as COLLADA", L"*.dae"},
         COMDLG_FILTERSPEC{L"3D as BLENDER", L"*.blend"},
     };
     const static COMDLG_FILTERSPEC ImageExtensions[]
     {
-        COMDLG_FILTERSPEC{L"3D as FBX", L"*.png;*.jpg"},
+        COMDLG_FILTERSPEC{L"Image formats", L"*.png;*.jpg;*.bmp"},
+    };
+    const static COMDLG_FILTERSPEC JsonExtensions[]
+    {
+        COMDLG_FILTERSPEC{L"JSON", L"*.json"},
     };
 
     static std::vector<COMDLG_FILTERSPEC> GetExtensions(EngineFileTypes types)
@@ -45,6 +49,13 @@ namespace Nork::FileDialog
             for (int i = 0; i < ARRAYSIZE(ImageExtensions); i++)
             {
                 result.push_back(ImageExtensions[i]);
+            }
+        }
+        if ((types & EngineFileTypes::Json) != EngineFileTypes::None)
+        {
+            for (int i = 0; i < ARRAYSIZE(ImageExtensions); i++)
+            {
+                result.push_back(JsonExtensions[i]);
             }
         }
 
