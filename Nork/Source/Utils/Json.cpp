@@ -14,8 +14,17 @@ static std::string FormatJsonString(const std::string& json)
 		}
 	};
 
-	for (auto c: json)
+	bool insideString = false;
+	for (size_t i = 0; i < json.size(); i++)
 	{
+		char c = json[i];
+		if (insideString)
+		{
+			formatted += c; // append every character as is
+			if (json[i] == '\"' && json[i - 1] != '\\')
+				insideString = false;
+			continue;
+		}
 		switch (c)
 		{
 		case ',':
@@ -37,6 +46,10 @@ static std::string FormatJsonString(const std::string& json)
 			newLine();
 			formatted += c;
 			break;
+		case '\"': // skip strings
+			insideString = true;
+			formatted += '\"';
+			break;
 		default:
 			formatted += c;
 		}
@@ -48,14 +61,27 @@ static std::string UnformatJsonString(const std::string& formatted)
 	std::string json;
 	json.reserve(formatted.size());
 
-	for (auto c : formatted)
+	bool insideString = false;
+	for (size_t i = 0; i < formatted.size(); i++)
 	{
+		char c = formatted[i];
+		if (insideString)
+		{
+			json += c; // append every character as is
+			if (formatted[i] == '\"' && formatted[i - 1] != '\\')
+				insideString = false;
+			continue;
+		}
 		switch (c)
 		{
 		case '\n':
 		case '\r':
 		case '\t':
 		case ' ':
+			break;
+		case '\"': // skip strings
+			insideString = true;
+			json += '\"';
 			break;
 		default:
 			json += c;

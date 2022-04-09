@@ -31,7 +31,7 @@ int main()
 			for (int k = start; k < end; k++)
 			{
 				auto ent = engine.scene.CreateNode()->GetEntity();
-				ent.AddComponent<Components::Drawable>().model.meshes[0].material = engine.resourceManager.GetMaterial("a");
+				ent.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
 				ent.AddComponent<Components::Transform>().SetPosition(glm::vec3(i * sep, j * sep, k * sep));
 				ent.AddComponent<Components::Kinematic>().mass = 0.1f;
 				ent.AddComponent<Polygon>();
@@ -47,7 +47,7 @@ int main()
 
 	glm::vec3 scale = glm::vec3(100, 1, 100);
 	auto ground = engine.scene.CreateNode()->GetEntity();
-	ground.AddComponent<Components::Drawable>().model.meshes[0].material = engine.resourceManager.GetMaterial("a");;
+	ground.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");;
 	auto& tr = ground.AddComponent<Components::Transform>()
 		.SetPosition(glm::vec3(0, -10, 0))
 		.SetScale(scale);

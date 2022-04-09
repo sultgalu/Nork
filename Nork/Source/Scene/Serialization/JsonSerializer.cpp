@@ -13,8 +13,24 @@ namespace Nork {
 	class JsonComponentSerializer
 	{
 	public:
-		static JsonObject Serialize(const T& component);
-		static T Deserialize(const JsonObject& json);
+		JsonComponentSerializer(const Entity& entity)
+			:entity(entity)
+		{}
+		JsonObject Serialize(const T& component);
+	private:
+		const Entity& entity;
+	};
+
+	template<class T>
+	class JsonComponentDeserializer
+	{
+	public:
+		JsonComponentDeserializer(Entity& entity)
+			:entity(entity)
+		{}
+		T& Deserialize(const JsonObject& json);
+	private:
+		Entity& entity;
 	};
 
 	using namespace Components;
@@ -27,14 +43,14 @@ namespace Nork {
 			.Property("scale", JsonArray().Elements(&scale.x, 3))
 			.Property("quaternion", JsonArray().Elements(&rot.x, 4));
 	}
-	template<> Transform JsonComponentSerializer<Transform>::Deserialize(const JsonObject& json)
+	template<> Transform& JsonComponentDeserializer<Transform>::Deserialize(const JsonObject& json)
 	{
 		glm::vec3 pos, scale;
 		glm::quat rot;
 		json.Get<JsonArray>("position").Get(&pos.x, 3);
 		json.Get<JsonArray>("scale").Get(&scale.x, 3);
 		json.Get<JsonArray>("quaternion").Get(&rot.x, 4);
-		return Transform().SetPosition(pos).SetScale(scale).SetRotation(rot);
+		return entity.AddComponent<Transform>().SetPosition(pos).SetScale(scale).SetRotation(rot);
 	}
 
 	template<> JsonObject JsonComponentSerializer<DirLight>::Serialize(const DirLight& component)
@@ -46,20 +62,26 @@ namespace Nork {
 		if (component.shadow != nullptr)
 		{
 			json.Property("shadow", JsonObject()
-				.Property("", component.shadow->bias)
-				.Property("", component.shadow->biasMin));
+				.Property("bias", component.shadow->bias)
+				.Property("biasMin", component.shadow->biasMin));
 		}
 		return json;
 	}
-	template<> DirLight JsonComponentSerializer<DirLight>::Deserialize(const JsonObject& json)
+	template<> DirLight& JsonComponentDeserializer<DirLight>::Deserialize(const JsonObject& json)
 	{
-		DirLight comp;
+		auto& comp = entity.AddComponent<DirLight>();
 		json.Get<JsonArray>("color").Get(&comp.light->color.x, 3);
 		json.Get<JsonArray>("direction").Get(&comp.light->direction.x, 3);
 		json.Get("outOfProj", comp.light->outOfProjValue);
+		comp.light->Update();
+		comp.RecalcVP(comp.GetView());
 		if (json.Contains("shadow"))
 		{
-			Logger::Error("Deserializing Shadows is not implemented yet");
+			entity.AddComponent<DirShadowRequest>();
+			json.Get<JsonObject>("shadow")
+				.Get("bias", comp.shadow->bias)
+				.Get("biasMin", comp.shadow->biasMin);
+			comp.shadow->Update();
 		}
 		return comp;
 	}
@@ -75,24 +97,31 @@ namespace Nork {
 		if (component.shadow != nullptr)
 		{
 			json.Property("shadow", JsonObject()
-				.Property("", component.shadow->bias)
-				.Property("", component.shadow->biasMin)
-				.Property("", component.shadow->far)
-				.Property("", component.shadow->near));
+				.Property("bias", component.shadow->bias)
+				.Property("biasMin", component.shadow->biasMin)
+				.Property("far", component.shadow->far)
+				.Property("near", component.shadow->near));
 		}
 		return json;
 	}
-	template<> PointLight JsonComponentSerializer<PointLight>::Deserialize(const JsonObject& json)
+	template<> PointLight& JsonComponentDeserializer<PointLight>::Deserialize(const JsonObject& json)
 	{
-		PointLight comp;
+		auto& comp = entity.AddComponent<PointLight>();
 		json.Get<JsonArray>("color").Get(&comp.light->color.x, 3);
 		json.Get<JsonArray>("position").Get(&comp.light->position.x, 3);
 		json.Get("linear", comp.light->linear);
 		json.Get<float>("quadratic", comp.light->quadratic);
 		comp.SetIntensity(json.Get<float>("intensity"));
+		comp.light->Update();
 		if (json.Contains("shadow"))
 		{
-			Logger::Error("Deserializing Shadows is not implemented yet");
+			entity.AddComponent<PointShadowRequest>();
+			json.Get<JsonObject>("shadow")
+				.Get("bias", comp.shadow->bias)
+				.Get("biasMin", comp.shadow->biasMin)
+				.Get("far", comp.shadow->far)
+				.Get("near", comp.shadow->near);
+			comp.shadow->Update();
 		}
 		return comp;
 	}
@@ -104,9 +133,9 @@ namespace Nork {
 			.Property("w", JsonArray().Elements(&component.w.x, 3))
 			.Property("mass", component.mass);
 	}
-	template<> Kinematic JsonComponentSerializer<Kinematic>::Deserialize(const JsonObject& json)
+	template<> Kinematic& JsonComponentDeserializer<Kinematic>::Deserialize(const JsonObject& json)
 	{
-		Kinematic comp;
+		auto& comp = entity.AddComponent<Kinematic>();
 		json.Get<JsonArray>("forces").Get(&comp.forces.x, 3);
 		json.Get<JsonArray>("velocity").Get(&comp.velocity.x, 3);
 		json.Get<JsonArray>("w").Get(&comp.w.x, 3);
@@ -129,9 +158,9 @@ namespace Nork {
 			.Property("yaw", component.yaw)
 			.Property("zoomSpeed", component.zoomSpeed);
 	}
-	template<> Camera JsonComponentSerializer<Camera>::Deserialize(const JsonObject& json)
+	template<> Camera& JsonComponentDeserializer<Camera>::Deserialize(const JsonObject& json)
 	{
-		Camera comp;
+		auto& comp = entity.AddComponent<Camera>();
 		json.Get<JsonArray>("position").Get(&comp.position.x, 3);
 		json.Get<JsonArray>("up").Get(&comp.up.x, 3);
 		json.Get("farClip", comp.farClip);
@@ -152,23 +181,23 @@ namespace Nork {
 		return JsonObject()
 			.Property("tag", component.tag);
 	}
-	template<> Tag JsonComponentSerializer<Tag>::Deserialize(const JsonObject& json)
+	template<> Tag& JsonComponentDeserializer<Tag>::Deserialize(const JsonObject& json)
 	{
-		Tag comp;
+		auto& comp = entity.AddComponent<Tag>();
 		json.Get("tag", comp.tag);
 		return comp;
 	}
 	template<> JsonObject JsonComponentSerializer<Drawable>::Serialize(const Drawable& component)
 	{
 		return JsonObject()
-			.Property("id", *GetResMan().PathForModel(component.model.meshes[0].mesh));
+			.Property("id", *GetResMan().IdFor(component.model));
 	}
-	template<> Drawable JsonComponentSerializer<Drawable>::Deserialize(const JsonObject& json)
+	template<> Drawable& JsonComponentDeserializer<Drawable>::Deserialize(const JsonObject& json)
 	{
+		auto& comp = entity.AddComponent<Drawable>();
 		auto id = json.Get<std::string>("id");
-		Drawable dr;
-		dr.model = GetResMan().GetModel(id);
-		return dr;
+		comp.model = GetResMan().GetModel(id);
+		return comp;
 	}
 
 	template<class T>
@@ -189,7 +218,7 @@ namespace Nork {
 			auto* component = entity.TryGetComponent<T>();
 			if (component)
 			{
-				array.Element(JsonComponentSerializer<T>::Serialize(*component).Property("type", typeid(T).name()));
+				array.Element(JsonComponentSerializer<T>(entity).Serialize(*component).Property("type", typeid(T).name()));
 			}
 		}
 		JsonArray& Get() { return array; }
@@ -203,7 +232,7 @@ namespace Nork {
 	{
 		if (json.Get<std::string>("type") == typeid(T).name())
 		{
-			entity.AddComponent<T>() = JsonComponentSerializer<T>::Deserialize(json);
+			JsonComponentDeserializer<T>(entity).Deserialize(json);
 			return;
 		}
 		if constexpr (sizeof...(Rest) > 0)

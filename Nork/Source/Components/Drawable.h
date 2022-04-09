@@ -21,7 +21,7 @@ namespace Nork::Components
 
 	struct Drawable
 	{
-		Model model;
+		std::shared_ptr<Model> model;
 		std::shared_ptr<glm::mat4*> modelMatrix;
 	};
 }

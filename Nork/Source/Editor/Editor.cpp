@@ -13,7 +13,7 @@ namespace Nork::Editor
 		ImGui::StyleColorsClassic();
 
 		ImGuiIO& io = ImGui::GetIO();
-		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking	
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 		//io.ConfigViewportsNoAutoMerge = true;
@@ -100,7 +100,11 @@ namespace Nork::Editor
 		imIO.KeyCtrl = input.IsDown(Key::Ctrl);
 		imIO.KeyAlt = input.IsDown(Key::Alt);
 		imIO.KeySuper = input.IsDown(Key::Super);
-		
+		for (size_t i = 0; i < input.KeysDown().size(); i++)
+		{
+			imIO.KeysDown[i] = input.KeysDown()[i];
+		}
+
 		for (auto c : input.TypedCharacters())
 		{
 			imIO.AddInputCharacter(c);

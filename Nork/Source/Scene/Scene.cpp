@@ -20,8 +20,8 @@ namespace Nork
 	}
 	void Scene::Load(std::string path)
 	{
-		registry = entt::registry();
-
+		//registry = entt::registry();
+		registry.clear();	
 		std::ifstream ifs(path, std::ios::in);
 		try
 		{

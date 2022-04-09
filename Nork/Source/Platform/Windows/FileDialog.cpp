@@ -18,6 +18,10 @@ namespace Nork::FileDialog
         COMDLG_FILTERSPEC{L"3D as COLLADA", L"*.dae"},
         COMDLG_FILTERSPEC{L"3D as BLENDER", L"*.blend"},
     };
+    const static COMDLG_FILTERSPEC glTFExtension[]
+    {
+        COMDLG_FILTERSPEC{L"Common 3D", L"*.gltf"},
+    };
     const static COMDLG_FILTERSPEC ImageExtensions[]
     {
         COMDLG_FILTERSPEC{L"Image formats", L"*.png;*.jpg;*.bmp"},
@@ -56,6 +60,13 @@ namespace Nork::FileDialog
             for (int i = 0; i < ARRAYSIZE(ImageExtensions); i++)
             {
                 result.push_back(JsonExtensions[i]);
+            }
+        }
+        if ((types & EngineFileTypes::glTF) != EngineFileTypes::None)
+        {
+            for (int i = 0; i < ARRAYSIZE(glTFExtension); i++)
+            {
+                result.push_back(glTFExtension[i]);
             }
         }
 

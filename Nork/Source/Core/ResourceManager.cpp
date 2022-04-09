@@ -37,7 +37,7 @@ namespace Nork {
 		Logger::Info("Imported texture: ", path.string(), " from ", extPath);
 		return id;
 	}
-	Components::Model ResourceManager::ImportModel(const std::string& extPath)
+	std::shared_ptr<Components::Model> ResourceManager::ImportModel(const std::string& extPath)
 	{
 		auto id = ExternalPathToAssetId(extPath);
 		auto path = AssetIdToModelPath(id);
@@ -73,24 +73,24 @@ namespace Nork {
 			modelResource.meshes.push_back(meshResource);
 		}
 
-		Logger::Info("Loaded model: ", extPath);
-		models[id] = modelResource;
-		SaveModel(modelResource, id);
-
-		Components::Model model;
-		for (auto& meshResource : models[id].meshes)
+		auto model = std::make_shared<Components::Model>();
+		for (auto& meshResource : modelResource.meshes)
 		{
-			model.meshes.push_back(Components::Mesh{ .mesh = meshes[meshResource.mesh], .material = materials[meshResource.material] });
+			model->meshes.push_back(Components::Mesh{ .mesh = meshes[meshResource.mesh], .material = materials[meshResource.material] });
 		}
+		Logger::Info("Loaded model: ", extPath);
+		models[id] = model;
+		SaveModel(model);
 		return model;
 	}
 
-	void ResourceManager::ExportModel(const Components::Model& model)
+	void ResourceManager::ExportModel(std::shared_ptr<Components::Model> model)
 	{
-		Renderer::GLTFBuilder builder(ExportPath());
+		auto dir = ExportPath().append(*IdFor(model));
+		Renderer::GLTFBuilder builder(dir);
 		int idx = 0;
 		std::vector<int> nodes;
-		for (auto& meshMat : model.meshes)
+		for (auto& meshMat : model->meshes)
 		{
 			builder.AddNode(idx);
 			nodes.push_back(idx);
@@ -103,7 +103,7 @@ namespace Nork {
 				auto texId = IdFor(meshMat.material->GetTextureMap(type));
 				if (texId.has_value())
 				{
-					SaveImage(meshMat.material->GetTextureMap(type), ExportPath().append(*texId).string());
+					SaveImage(meshMat.material->GetTextureMap(type), fs::path(dir).append(*texId).string());
 					imageUris.push_back({ type, *texId });
 				}
 			};
@@ -116,26 +116,22 @@ namespace Nork {
 			builder.AddMaterial(meshMat.material, *IdFor(meshMat.material), imageUris);
 		}
 		builder.AddScene(nodes, true);
-		SaveGLTF(builder.Get(), ExportPath().append(*IdForModel(model.meshes[0].mesh)).replace_extension("gltf").string());
+		fs::create_directory(dir);
+		SaveGLTF(builder.Get(), dir.append("model").replace_extension("gltf").string());
 	}
 
-	Components::Model ResourceManager::GetModelByPath(const std::string& path)
+	std::shared_ptr<Components::Model> ResourceManager::GetModelByPath(const std::string& path)
 	{
 		return GetModel(fs::path(path).filename().string());
 	}
-	Components::Model ResourceManager::GetModel(const std::string& id)
+	std::shared_ptr<Components::Model> ResourceManager::GetModel(const std::string& id)
 	{
 		auto opt = models.find(id);
 		if (opt == models.end())
 		{
 			LoadModel(id);
 		}
-		Components::Model model;
-		for (auto& meshResource : models[id].meshes)
-		{
-			model.meshes.push_back(Components::Mesh{ .mesh = meshes[meshResource.mesh], .material = materials[meshResource.material] });
-		}
-		return model;
+		return models[id];
 	}
 	std::shared_ptr<Renderer::Mesh> ResourceManager::GetMesh(const std::string& id)
 	{
@@ -167,6 +163,11 @@ namespace Nork {
 			LoadTexture(id);
 		}
 		return textures[id];
+	}
+
+	std::shared_ptr<Renderer::Material> ResourceManager::GetMaterialByPath(const std::string& path)
+	{
+		return GetMaterial(fs::path(path).filename().string());
 	}
 
 	void ResourceManager::LoadTexture(const std::string& id)
@@ -262,7 +263,8 @@ namespace Nork {
 			auto defaultMaterial = drawState.AddMaterial();
 			meshes[""] = defaultMesh;
 			materials[""] = defaultMaterial;
-			models[""].meshes = { MeshResource {.mesh = "", .material = "" } };
+			models[""] = std::make_shared<Components::Model>();
+			models[""]->meshes.push_back(Components::Mesh{ .mesh = defaultMesh, .material = defaultMaterial });
 			return;
 		}
 
@@ -272,34 +274,68 @@ namespace Nork {
 			Logger::Error("Path ", path, " does not exist for Asset ", id);
 			return;
 		}
-		ModelResource model;
+		auto model = std::make_shared<Components::Model>();
 		auto json = JsonObject::ParseFormatted(FileUtils::ReadAsString(path.string()));
 		for (auto& obj : json.Get<JsonArray>("meshes").Get<JsonObject>())
 		{
-			auto meshResource = MeshResource{
-				.mesh = obj.Get<std::string>("mesh"),
-				.material = obj.Get<std::string>("material")
-			};
-			model.meshes.push_back(meshResource);
-			GetMaterial(meshResource.material); // ensure is loaded
-			GetMesh(meshResource.mesh);
+			model->meshes.push_back(Components::Mesh{
+				.mesh = GetMesh(obj.Get<std::string>("mesh")),
+				.material = GetMaterial(obj.Get<std::string>("material"))
+				});
 		}
 		models[id] = model;
 		Logger::Info("Loaded model ", id);
 	}
 
-	void ResourceManager::SaveModel(const ModelResource& model, const std::string& id)
+	std::shared_ptr<Components::Model> Nork::ResourceManager::CloneModel(std::shared_ptr<Components::Model> model, const std::string& id)
+	{
+		auto path = AssetIdToModelPath(id);
+		if (models.contains(id) || fs::exists(path))
+		{
+			Logger::Error("Model Asset with the same id already exists at \"", path, "\"");
+			return nullptr;
+		}
+		auto clone = std::make_shared<Components::Model>(*model);
+		models[id] = clone;
+		SaveModel(clone);
+		return clone;
+	}
+	void ResourceManager::SaveModel(std::shared_ptr<Components::Model> model)
 	{
 		JsonArray array;
-		for (auto& mesh : model.meshes)
+		for (auto& mesh : model->meshes)
 		{
 			array.Element<JsonObject>(JsonObject()
-				.Property("mesh", mesh.mesh)
-				.Property("material", mesh.material));
+				.Property("mesh", *IdFor(mesh.mesh))
+				.Property("material", *IdFor(mesh.material)));
 		}
 		auto json = JsonObject().Property("meshes", array);
-		std::ofstream file(AssetIdToModelPath(id).string());
-		file << json.ToStringFormatted();
+		auto path = AssetIdToModelPath(*IdFor(model)).string();
+		Logger::Info("Saving Model to ", path);
+		FileUtils::WriteString(json.ToStringFormatted(), path);
+	}
+	std::shared_ptr<Renderer::Material> Nork::ResourceManager::CloneMaterial(std::shared_ptr<Renderer::Material> source, const std::string& id)
+	{
+		auto path = AssetIdToMaterialPath(id);
+		if (materials.contains(id) || fs::exists(path))
+		{
+			Logger::Error("Material Asset with the same id already exists at \"", path, "\"");
+			return nullptr;
+		}
+		auto clone = drawState.AddMaterial();
+		clone->diffuse = source->diffuse;
+		clone->specular = source->specular;
+		clone->specularExponent = source->specularExponent;
+		using enum Renderer::TextureMap;
+		clone->SetTextureMap(source->GetTextureMap(Diffuse), Diffuse);
+		clone->SetTextureMap(source->GetTextureMap(Normal), Normal);
+		clone->SetTextureMap(source->GetTextureMap(Roughness), Roughness);
+		clone->SetTextureMap(source->GetTextureMap(Reflection), Reflection);
+		clone->Update();
+
+		materials[id] = clone;
+		SaveMaterial(clone);
+		return clone;
 	}
 	void ResourceManager::SaveMaterial(std::shared_ptr<Renderer::Material> material)
 	{
@@ -398,11 +434,11 @@ namespace Nork {
 		}
 		return std::nullopt;
 	}
-	std::optional<std::string> ResourceManager::PathForModel(std::shared_ptr<Renderer::Mesh> meshPtr)
+	std::optional<std::string> ResourceManager::PathFor(std::shared_ptr<Components::Model> ptr)
 	{
 		for (auto [id, model] : models)
 		{
-			if (meshes[model.meshes.back().mesh] == meshPtr)
+			if (model == ptr)
 			{
 				return AssetIdToModelPath(id).string();
 			}
@@ -442,11 +478,11 @@ namespace Nork {
 		}
 		return std::nullopt;
 	}
-	std::optional<std::string> ResourceManager::IdForModel(std::shared_ptr<Renderer::Mesh> meshPtr)
+	std::optional<std::string> ResourceManager::IdFor(std::shared_ptr<Components::Model> ptr)
 	{
 		for (auto [id, model] : models)
 		{
-			if (meshes[model.meshes.back().mesh] == meshPtr)
+			if (model == ptr)
 			{
 				return id;
 			}

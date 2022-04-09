@@ -102,9 +102,10 @@ public:
 		}
 	}
 	template<class T>
-	void Get(const std::string& key, T& val) const
+	const JsonObject& Get(const std::string& key, T& val) const
 	{
 		val = Get<T>(key);
+		return *this;
 	}
 	template<class T>
 	bool GetIfContains(const std::string& key, T& val) const

@@ -36,7 +36,8 @@ namespace Nork
 		bool ShouldWindowClose() const { return windowShouldClose; }
 
 		const std::vector<unsigned int>& TypedCharacters() const { return typedChars; }
-	private:
+		const std::bitset<ToInt(Key::Max)>& KeysDown() const { return keys; }
+ 	private:
 		std::bitset<ToInt(Key::Max)> keys;
 		std::bitset<ToInt(Key::Max)> keyChanged;
 		std::bitset<ToInt(Key::Max)> keysRepeated;

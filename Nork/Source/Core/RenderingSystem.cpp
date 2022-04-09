@@ -96,7 +96,7 @@ namespace Nork {
 		for (auto [id, dr, tr] : registry.group<Components::Drawable, Components::Transform>().each())
 		{
 			**dr.modelMatrix = tr.ModelMatrix();
-			for (auto& mesh : dr.model.meshes)
+			for (auto& mesh : dr.model->meshes)
 			{
 				drawBatch.AddElement(Renderer::BatchElement{
 					.mesh = mesh.mesh,
