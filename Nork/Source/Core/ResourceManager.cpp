@@ -273,7 +273,7 @@ namespace Nork {
 			return;
 		}
 		ModelResource model;
-		auto json = JsonObject::Parse(FileUtils::ReadAsString(path.string()));
+		auto json = JsonObject::ParseFormatted(FileUtils::ReadAsString(path.string()));
 		for (auto& obj : json.Get<JsonArray>("meshes").Get<JsonObject>())
 		{
 			auto meshResource = MeshResource{
@@ -362,7 +362,7 @@ namespace Nork {
 
 	Renderer::GLTF::GLTF ResourceManager::LoadGLTF(const std::string& path)
 	{
-		return Renderer::GLTF::GLTF::FromJson(JsonObject::Parse(FileUtils::ReadAsString(path)));
+		return Renderer::GLTF::GLTF::FromJson(JsonObject::ParseFormatted(FileUtils::ReadAsString(path)));
 	}
 
 	std::optional<std::string> ResourceManager::PathFor(std::shared_ptr<Renderer::Texture2D> texturePtr)

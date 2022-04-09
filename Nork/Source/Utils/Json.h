@@ -32,9 +32,9 @@ public:
 	template<std::convertible_to<std::string> T>
 	static std::string Parse(const T& value)
 	{
-		if constexpr (std::is_same<T, std::string>::value)
-			return "\"" + value + "\"";
-		return "\"" + std::string(value) + "\"";
+		// if constexpr (std::is_same<T, std::string>::value)
+		// 	return "\"" + FormatString(value) + "\"";
+		return "\"" + FormatString(value) + "\"";
 	}
 	static std::string Parse(bool value)
 	{
@@ -61,13 +61,16 @@ public:
 			return std::stoll(str);
 		else if constexpr (std::is_convertible<T, std::string>::value)
 		{
-			return str.substr(1, str.size() - 2);
+			return UnformatString(str.substr(1, str.size() - 2));
 		}
 		else
 			_ASSERT(false);
 	}
 	static JsonObject GetObject(const std::string& str);
 	static JsonArray GetArray(const std::string& str);
+private:
+	static std::string FormatString(const std::string&);
+	static std::string UnformatString(const std::string& formatted);
 };
 
 class JsonObject
@@ -119,7 +122,8 @@ public:
 	}
 	std::string ToString() const;
 	std::string ToStringFormatted() const;
-	static JsonObject Parse(std::string json);
+	static JsonObject Parse(const std::string& json);
+	static JsonObject ParseFormatted(const std::string& json);
 private:
 	std::unordered_map<std::string, std::string> properties;
 	std::vector<std::string> order;
@@ -251,7 +255,7 @@ public:
 	{
 		return elements.size();
 	}
-	static JsonArray Parse(std::string json);
+	static JsonArray Parse(const std::string& json);
 private:
 	std::vector<std::string> elements;
 };

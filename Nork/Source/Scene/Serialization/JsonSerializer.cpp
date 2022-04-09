@@ -39,70 +39,63 @@ namespace Nork {
 
 	template<> JsonObject JsonComponentSerializer<DirLight>::Serialize(const DirLight& component)
 	{
-		return JsonObject();
-			//.Property("color", JsonArray().Elements((float*)&component.light., 3))
-			//.Property("direction", JsonArray().Elements((float*)&component.direction, 3));
+		auto json = JsonObject()
+			.Property("color", JsonArray().Elements(&component.light->color.x, 3))
+			.Property("direction", JsonArray().Elements(&component.light->direction.x, 3))
+			.Property("outOfProj", component.light->outOfProjValue);
+		if (component.shadow != nullptr)
+		{
+			json.Property("shadow", JsonObject()
+				.Property("", component.shadow->bias)
+				.Property("", component.shadow->biasMin));
+		}
+		return json;
 	}
 	template<> DirLight JsonComponentSerializer<DirLight>::Deserialize(const JsonObject& json)
 	{
 		DirLight comp;
-		// json.Get<JsonArray>("color").Get<float>((float*)&comp.color, 3);
-		// json.Get<JsonArray>("direction").Get<float>((float*)&comp.direction, 3);
+		json.Get<JsonArray>("color").Get(&comp.light->color.x, 3);
+		json.Get<JsonArray>("direction").Get(&comp.light->direction.x, 3);
+		json.Get("outOfProj", comp.light->outOfProjValue);
+		if (json.Contains("shadow"))
+		{
+			Logger::Error("Deserializing Shadows is not implemented yet");
+		}
 		return comp;
 	}
 
 	template<> JsonObject JsonComponentSerializer<PointLight>::Serialize(const PointLight& component)
 	{
-		return JsonObject();
-			// .Property("color", JsonArray().Elements((float*)&component.color, 3))
-			// .Property("position", JsonArray().Elements((float*)&component.position, 3))
-			// .Property("linear", component.linear)
-			// .Property("quadratic", component.quadratic)
-			// .Property("intensity", component.GetIntensity());
+		auto json = JsonObject()
+			.Property("color", JsonArray().Elements(&component.light->color.x, 3))
+			.Property("position", JsonArray().Elements(&component.light->position.x, 3))
+			.Property("linear", component.light->linear)
+			.Property("quadratic", component.light->quadratic)
+			.Property("intensity", component.GetIntensity());
+		if (component.shadow != nullptr)
+		{
+			json.Property("shadow", JsonObject()
+				.Property("", component.shadow->bias)
+				.Property("", component.shadow->biasMin)
+				.Property("", component.shadow->far)
+				.Property("", component.shadow->near));
+		}
+		return json;
 	}
 	template<> PointLight JsonComponentSerializer<PointLight>::Deserialize(const JsonObject& json)
 	{
 		PointLight comp;
-		// json.Get<JsonArray>("color").Get<float>((float*)&comp.color, 3);
-		// json.Get<JsonArray>("position").Get<float>((float*)&comp.position, 3);
-		// comp.linear = json.Get<float>("linear");
-		// comp.quadratic = json.Get<float>("quadratic");
-		// comp.SetIntensity(json.Get<float>("intensity"));
+		json.Get<JsonArray>("color").Get(&comp.light->color.x, 3);
+		json.Get<JsonArray>("position").Get(&comp.light->position.x, 3);
+		json.Get("linear", comp.light->linear);
+		json.Get<float>("quadratic", comp.light->quadratic);
+		comp.SetIntensity(json.Get<float>("intensity"));
+		if (json.Contains("shadow"))
+		{
+			Logger::Error("Deserializing Shadows is not implemented yet");
+		}
 		return comp;
 	}
-
-	/*template<> JsonObject JsonComponentSerializer<DirShadow>::Serialize(const DirShadow& component)
-	{
-		return JsonObject()
-			.Property("bias", component.bias)
-			.Property("biasMin", component.biasMin)
-			.Property("top", component.top)
-			.Property("bottom", component.bottom)
-			.Property("left", component.left)
-			.Property("right", component.right)
-			.Property("near", component.near)
-			.Property("far", component.far)
-			.Property("pcfSize", component.pcfSize)
-			.Property("idx", component.idx)
-			.Property("VP", JsonArray().Elements((float*)&component.VP, 4 * 4));
-	}*/
-	/*template<> DirShadow JsonComponentSerializer<DirShadow>::Deserialize(const JsonObject& json)
-	{
-		DirShadow comp;
-		json.Get<JsonArray>("VP").Get<float>((float*)&comp.VP, 4 * 4);
-		comp.bias = json.Get<float>("bias");
-		comp.biasMin = json.Get<float>("biasMin");
-		comp.top = json.Get<float>("top");
-		comp.bottom = json.Get<float>("bottom");
-		comp.left = json.Get<float>("left");
-		comp.right = json.Get<float>("right");
-		comp.far = json.Get<float>("far");
-		comp.near = json.Get<float>("near");
-		comp.idx = json.Get<float>("idx");
-		comp.pcfSize = json.Get<float>("pcfSize");
-		return comp;
-	}*/
-
 	template<> JsonObject JsonComponentSerializer<Kinematic>::Serialize(const Kinematic& component)
 	{
 		return JsonObject()
@@ -165,18 +158,6 @@ namespace Nork {
 		json.Get("tag", comp.tag);
 		return comp;
 	}
-
-	/*template<> JsonObject JsonComponentSerializer<PointShadow>::Serialize(const PointShadow& component)
-	{
-		return JsonObject();
-			.Property("bias", component.bias)
-			.Property("biasMin", component.biasMin)
-			.Property("near", component.near)
-			.Property("far", component.far)
-			.Property("blur", component.blur)
-			.Property("radius", component.radius)
-			.Property("idx", component.idx);
-	}*/
 	template<> JsonObject JsonComponentSerializer<Drawable>::Serialize(const Drawable& component)
 	{
 		return JsonObject()
@@ -263,7 +244,7 @@ namespace Nork {
 	}
 	std::string JsonSerializer::Serialize(SceneNode& node)
 	{
-		return SerializeNode(node).ToString();
+		return SerializeNode(node).ToStringFormatted();
 	}
 
 	// --------------------DESERIALIZE-----------------------
@@ -305,7 +286,7 @@ namespace Nork {
 	}
 	std::shared_ptr<SceneNode> JsonSerializer::Deserialize(const std::string& json)
 	{
-		auto rootJson = JsonObject::Parse(json);
+		auto rootJson = JsonObject::ParseFormatted(json);
 		return DeserializeNode(rootJson, registry);
 	}
 }

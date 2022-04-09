@@ -14,10 +14,8 @@ static std::string FormatJsonString(const std::string& json)
 		}
 	};
 
-	for (size_t i = 0; i < json.size(); i++)
+	for (auto c: json)
 	{
-		char c = json[i];
-
 		switch (c)
 		{
 		case ',':
@@ -45,6 +43,26 @@ static std::string FormatJsonString(const std::string& json)
 	}
 	return formatted;
 }
+static std::string UnformatJsonString(const std::string& formatted)
+{
+	std::string json;
+	json.reserve(formatted.size());
+
+	for (auto c : formatted)
+	{
+		switch (c)
+		{
+		case '\n':
+		case '\r':
+		case '\t':
+		case ' ':
+			break;
+		default:
+			json += c;
+		}
+	}
+	return json;
+}
 
 std::string JsonParser::Parse(JsonArray value)
 {
@@ -61,6 +79,89 @@ JsonObject JsonParser::GetObject(const std::string& str)
 JsonArray JsonParser::GetArray(const std::string& str)
 {
 	return JsonArray::Parse(str);
+}
+
+std::string JsonParser::FormatString(const std::string& json)
+{
+	std::string formatted;
+	formatted.reserve(json.size());
+
+	for (auto c : json)
+	{
+		switch (c)
+		{
+		case '\b':
+			formatted += "\\b";
+			break;
+		case '\f':
+			formatted += "\\f";
+			break;
+		case '\n':
+			formatted += "\\n";
+			break;
+		case '\t':
+			formatted += "\\t";
+			break;
+		case '\r':
+			formatted += "\\r";
+			break;
+		case '\"':
+			formatted += "\\\"";
+			break;
+		case '\\':
+			formatted += "\\\\";
+			break;
+		default: [[likely]]
+			formatted += c;
+			break;
+		}
+	}
+	return formatted;
+}
+std::string JsonParser::UnformatString(const std::string& formatted)
+{
+	std::string json;
+	json.reserve(formatted.size());
+
+	for (size_t i = 0; i < formatted.size(); i++)
+	{
+		char c = formatted[i];
+		if (c == '\\')
+		{
+			switch (formatted[i + 1])
+			{
+			case 'b':
+				json += '\b';
+				break;
+			case 'f':
+				json += '\f';
+				break;
+			case 'n':
+				json += '\n';
+				break;
+			case 't':
+				json += '\t';
+				break;
+			case 'r':
+				json += '\r';
+				break;
+			case '\"':
+				json += '\"';
+				break;
+			case '\\':
+				json += '\\';
+				break;
+			default: [[unlikely]]
+				Nork::Logger::Error("Unrecognised escaped character: \"", formatted[i + 1], "\"");
+			}
+			i++; // skip escaped character
+		}
+		else [[likely]]
+		{
+			json += c;
+		}
+	}
+	return json;
 }
 
 std::string JsonObject::ToString() const
@@ -125,30 +226,30 @@ static bool IsInsideString(const std::string& str, size_t pos, size_t from)
 	}
 	return isStr;
 }
-static size_t FindClosing(char open, char close, const std::string& str, size_t from)
+static size_t FindClosing(char open, char close, const std::string& str, size_t idx)
 {
-	size_t closePos = from;
-	size_t prevClosePos = closePos;
-	int openArraysBetween = 1;
-
-	do 
+	int depth = 1;
+	while (++idx < str.size())
 	{
-		prevClosePos = closePos;
-		do
+		char c = str[idx];
+		if (c == '\"') // skip strings
 		{
-			closePos = str.find_first_of(close, closePos + 1);
-		} while (IsInsideString(str, closePos, from));
-
-		openArraysBetween--;
-		size_t openPos = prevClosePos;
-		while (openPos < closePos)
-		{
-			openPos = str.find_first_of(open, openPos + 1);
-			if (openPos < closePos && !IsInsideString(str, openPos, from))
-				openArraysBetween++;
+			do
+				idx = str.find_first_of('\"', idx + 1); // jump to end of string
+			while (str[idx - 1] == '\\'); // escaped double-quotes are still inside string
 		}
-	} while (openArraysBetween > 0);
-	return closePos;
+		else if (c == open)
+		{
+			depth++;
+		}
+		else if (c == close)
+		{
+			if (--depth == 0)
+			{
+				return idx;
+			}
+		}
+	}
 }
 static std::string GetNextPropertyValue(const std::string& json, size_t& pos)
 {
@@ -181,27 +282,17 @@ static std::string GetNextPropertyValue(const std::string& json, size_t& pos)
 	else if (json[pos] == '{')
 	{
 		end = FindClosing('{', '}', json, pos);
-		// end = pos;
-		// do
-		// {
-		// 	end = json.find_first_of('}', end + 1);
-		// } while (IsInsideString(json, end, pos));
 		value = json.substr(pos, ++end - pos);
 	}
 	else if (json[pos] == '[')
 	{
 		end = FindClosing('[', ']', json, pos);
-		// end = pos;
-		// do
-		// {
-		// 	end = json.find_first_of(']', end + 1);
-		// } while (IsInsideString(json, end, pos));
 		value = json.substr(pos, ++end - pos);
 	}
 	pos = end;
 	return value;
 }
-JsonObject JsonObject::Parse(std::string json)
+JsonObject JsonObject::Parse(const std::string& json)
 {
 	JsonObject jsonObject;
 
@@ -225,7 +316,12 @@ JsonObject JsonObject::Parse(std::string json)
 	return jsonObject;
 }
 
-JsonArray JsonArray::Parse(std::string json)
+JsonObject JsonObject::ParseFormatted(const std::string& json)
+{
+	return Parse(UnformatJsonString(json));
+}
+
+JsonArray JsonArray::Parse(const std::string& json)
 {
 	JsonArray jsonArray;
 
