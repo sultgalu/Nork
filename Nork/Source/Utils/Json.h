@@ -99,6 +99,11 @@ public:
 		}
 	}
 	template<class T>
+	void Get(const std::string& key, T& val) const
+	{
+		val = Get<T>(key);
+	}
+	template<class T>
 	bool GetIfContains(const std::string& key, T& val) const
 	{
 		if (properties.contains(key))
@@ -113,6 +118,7 @@ public:
 		return properties.contains(key);
 	}
 	std::string ToString() const;
+	std::string ToStringFormatted() const;
 	static JsonObject Parse(std::string json);
 private:
 	std::unordered_map<std::string, std::string> properties;

@@ -49,6 +49,8 @@ namespace Nork {
 		std::filesystem::path MaterialsPath();
 		std::filesystem::path ImagesPath();
 		std::filesystem::path ExportPath();
+
+		void SaveMaterial(std::shared_ptr<Renderer::Material>);
 	private:
 		std::unordered_map<std::string, ModelResource> models;
 		std::unordered_map<std::string, std::shared_ptr<Renderer::Texture2D>> textures;
@@ -68,7 +70,6 @@ namespace Nork {
 		std::filesystem::path assetsPath;
 
 		void SaveModel(const ModelResource& model, const std::string& id);
-		void SaveMaterial(std::shared_ptr<Renderer::Material>);
 		void SaveMesh(std::shared_ptr<Renderer::Mesh>);
 		void SaveImage(std::shared_ptr<Renderer::Texture2D>, const std::string& path);
 		void SaveGLTF(const Renderer::GLTF::GLTF& gltf, const std::string& path);

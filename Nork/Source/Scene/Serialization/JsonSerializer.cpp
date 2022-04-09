@@ -1,7 +1,12 @@
 #include "JsonSerializer.h"
+#include "App/Application.h"
 
 namespace Nork {
 
+	static ResourceManager GetResMan()
+	{
+		return Application::Get().engine.resourceManager;
+	}
 	// --------------COMPONENT SERIALIZATION--------------
 
 	template<class T>
@@ -18,25 +23,25 @@ namespace Nork {
 		glm::vec3 pos = component.GetPosition(), scale = component.GetScale();
 		glm::quat rot = component.GetRotation();
 		return JsonObject()
-			.Property("position", JsonArray().Elements((float*)&pos, 3))
-			.Property("scale", JsonArray().Elements((float*)&scale, 3))
-			.Property("quaternion", JsonArray().Elements((float*)&rot, 4));
+			.Property("position", JsonArray().Elements(&pos.x, 3))
+			.Property("scale", JsonArray().Elements(&scale.x, 3))
+			.Property("quaternion", JsonArray().Elements(&rot.x, 4));
 	}
 	template<> Transform JsonComponentSerializer<Transform>::Deserialize(const JsonObject& json)
 	{
 		glm::vec3 pos, scale;
 		glm::quat rot;
-		json.Get<JsonArray>("position").Get<float>((float*)&pos, 3);
-		json.Get<JsonArray>("scale").Get<float>((float*)&scale, 3);
-		json.Get<JsonArray>("quaternion").Get<float>((float*)&rot, 4);
+		json.Get<JsonArray>("position").Get(&pos.x, 3);
+		json.Get<JsonArray>("scale").Get(&scale.x, 3);
+		json.Get<JsonArray>("quaternion").Get(&rot.x, 4);
 		return Transform().SetPosition(pos).SetScale(scale).SetRotation(rot);
 	}
 
 	template<> JsonObject JsonComponentSerializer<DirLight>::Serialize(const DirLight& component)
 	{
 		return JsonObject();
-			// .Property("color", JsonArray().Elements((float*)&component.color, 3))
-			// .Property("direction", JsonArray().Elements((float*)&component.direction, 3));
+			//.Property("color", JsonArray().Elements((float*)&component.light., 3))
+			//.Property("direction", JsonArray().Elements((float*)&component.direction, 3));
 	}
 	template<> DirLight JsonComponentSerializer<DirLight>::Deserialize(const JsonObject& json)
 	{
@@ -101,26 +106,26 @@ namespace Nork {
 	template<> JsonObject JsonComponentSerializer<Kinematic>::Serialize(const Kinematic& component)
 	{
 		return JsonObject()
-			.Property("forces", JsonArray().Elements((float*)&component.forces, 3))
-			.Property("velocity", JsonArray().Elements((float*)&component.velocity, 3))
-			.Property("w", JsonArray().Elements((float*)&component.w, 3))
+			.Property("forces", JsonArray().Elements(&component.forces.x, 3))
+			.Property("velocity", JsonArray().Elements(&component.velocity.x, 3))
+			.Property("w", JsonArray().Elements(&component.w.x, 3))
 			.Property("mass", component.mass);
 	}
 	template<> Kinematic JsonComponentSerializer<Kinematic>::Deserialize(const JsonObject& json)
 	{
 		Kinematic comp;
-		json.Get<JsonArray>("forces").Get<float>((float*)&comp.forces, 3);
-		json.Get<JsonArray>("velocity").Get<float>((float*)&comp.velocity, 3);
-		json.Get<JsonArray>("w").Get<float>((float*)&comp.w, 3);
-		comp.mass = json.Get<float>("mass");
+		json.Get<JsonArray>("forces").Get(&comp.forces.x, 3);
+		json.Get<JsonArray>("velocity").Get(&comp.velocity.x, 3);
+		json.Get<JsonArray>("w").Get(&comp.w.x, 3);
+		json.Get("mass", comp.mass);
 		return comp;
 	}
 
 	template<> JsonObject JsonComponentSerializer<Camera>::Serialize(const Camera& component)
 	{
 		return JsonObject()
-			.Property("position", JsonArray().Elements((float*)&component.position, 3))
-			.Property("up", JsonArray().Elements((float*)&component.up, 3))
+			.Property("position", JsonArray().Elements(&component.position.x, 3))
+			.Property("up", JsonArray().Elements(&component.up.x, 3))
 			.Property("farClip", component.farClip)
 			.Property("FOV", component.FOV)
 			.Property("moveSpeed", component.moveSpeed)
@@ -134,17 +139,17 @@ namespace Nork {
 	template<> Camera JsonComponentSerializer<Camera>::Deserialize(const JsonObject& json)
 	{
 		Camera comp;
-		json.Get<JsonArray>("position").Get<float>((float*)&comp.position, 3);
-		json.Get<JsonArray>("up").Get<float>((float*)&comp.up, 3);
-		comp.farClip = json.Get<float>("farClip");
-		comp.FOV = json.Get<float>("FOV");
-		comp.moveSpeed = json.Get<float>("moveSpeed");
-		comp.nearClip = json.Get<float>("nearClip");
-		comp.pitch = json.Get<float>("pitch");
-		comp.ratio = json.Get<float>("ratio");
-		comp.rotationSpeed = json.Get<float>("rotationSpeed");
-		comp.yaw = json.Get<float>("yaw");
-		comp.zoomSpeed = json.Get<float>("zoomSpeed");
+		json.Get<JsonArray>("position").Get(&comp.position.x, 3);
+		json.Get<JsonArray>("up").Get(&comp.up.x, 3);
+		json.Get("farClip", comp.farClip);
+		json.Get("FOV", comp.FOV);
+		json.Get("moveSpeed", comp.moveSpeed);
+		json.Get("nearClip", comp.nearClip);
+		json.Get("pitch", comp.pitch);
+		json.Get("ratio", comp.ratio);
+		json.Get("rotationSpeed", comp.rotationSpeed);
+		json.Get("yaw", comp.yaw);
+		json.Get("zoomSpeed", comp.zoomSpeed);
 		comp.Update();
 		return comp;
 	}
@@ -157,7 +162,7 @@ namespace Nork {
 	template<> Tag JsonComponentSerializer<Tag>::Deserialize(const JsonObject& json)
 	{
 		Tag comp;
-		comp.tag = json.Get<std::string>("tag");
+		json.Get("tag", comp.tag);
 		return comp;
 	}
 
@@ -174,12 +179,15 @@ namespace Nork {
 	}*/
 	template<> JsonObject JsonComponentSerializer<Drawable>::Serialize(const Drawable& component)
 	{
-		return JsonObject();
-			//.Property("id", component.meshes->id);
+		return JsonObject()
+			.Property("id", *GetResMan().PathForModel(component.model.meshes[0].mesh));
 	}
 	template<> Drawable JsonComponentSerializer<Drawable>::Deserialize(const JsonObject& json)
 	{
-		return Drawable();
+		auto id = json.Get<std::string>("id");
+		Drawable dr;
+		dr.model = GetResMan().GetModel(id);
+		return dr;
 	}
 
 	template<class T>

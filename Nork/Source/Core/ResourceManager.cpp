@@ -299,7 +299,7 @@ namespace Nork {
 		}
 		auto json = JsonObject().Property("meshes", array);
 		std::ofstream file(AssetIdToModelPath(id).string());
-		file << json.ToString();
+		file << json.ToStringFormatted();
 	}
 	void ResourceManager::SaveMaterial(std::shared_ptr<Renderer::Material> material)
 	{
@@ -356,7 +356,7 @@ namespace Nork {
 	}
 	void ResourceManager::SaveGLTF(const Renderer::GLTF::GLTF& gltf, const std::string& path)
 	{
-		FileUtils::WriteString(gltf.ToJson().ToString(), path);
+		FileUtils::WriteString(gltf.ToJson().ToStringFormatted(), path);
 		Logger::Info("Saved GLTF file to ", path);
 	}
 

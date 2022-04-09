@@ -146,6 +146,10 @@ namespace Nork::Editor
 				{
 					dr->model.meshes[meshIdx].material->Update();
 				}
+				if (ImGui::Button("Save Material"))
+				{
+					data.engine.resourceManager.SaveMaterial(dr->model.meshes[meshIdx].material);
+				}
 				if (ImGui::BeginTabBar("MaterialTexturesTab"))
 				{
 					auto displayTex = [&](Renderer::TextureMap type)

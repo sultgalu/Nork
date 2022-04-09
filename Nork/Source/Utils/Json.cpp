@@ -1,5 +1,51 @@
 #include "Json.h"
 
+static std::string FormatJsonString(const std::string& json)
+{
+	std::string formatted;
+	formatted.reserve((size_t)(json.size() * 1.2f));
+	int depth = 0;
+	auto newLine = [&]()
+	{
+		formatted += "\n";
+		for (size_t i = 0; i < depth; i++)
+		{
+			formatted += "  ";
+		}
+	};
+
+	for (size_t i = 0; i < json.size(); i++)
+	{
+		char c = json[i];
+
+		switch (c)
+		{
+		case ',':
+			formatted += ',';
+			newLine();
+			break;
+		case ':':
+			formatted += ": ";
+			break;
+		case '{':
+		case '[':
+			formatted += c;
+			depth++;
+			newLine();
+			break;
+		case '}':
+		case ']':
+			depth--;
+			newLine();
+			formatted += c;
+			break;
+		default:
+			formatted += c;
+		}
+	}
+	return formatted;
+}
+
 std::string JsonParser::Parse(JsonArray value)
 {
 	return value.ToString();
@@ -30,6 +76,11 @@ std::string JsonObject::ToString() const
 	}
 	ss.seekp(-1, ss.cur) << "}";
 	return ss.str();
+}
+
+std::string JsonObject::ToStringFormatted() const
+{
+	return FormatJsonString(ToString());
 }
 
 std::string JsonArray::ToString() const
