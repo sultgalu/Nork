@@ -7,7 +7,9 @@ namespace Nork::Physics
 	glm::vec4 Center(const std::span<const glm::vec4> points);
 	index_t FarthestIdx(const std::span<const glm::vec3> verts, const glm::vec3&& dir);
 	glm::vec3& Farthest(const std::span<const glm::vec3> verts, const glm::vec3&& dir);
+	float Sign(const glm::vec3& dir, const glm::vec3& from, const glm::vec3& to);
 	float SignedDistance(const glm::vec3& dir, const glm::vec3& from, const glm::vec3& to);
+	float SignedDistanceNormalized(const glm::vec3& dir, const glm::vec3& from, const glm::vec3& to);
 
 	inline glm::vec3 EdgeNormalTowards(glm::vec3 target, glm::vec3 towards)
 	{

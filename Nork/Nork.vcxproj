@@ -166,6 +166,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Components\Impl\Collider.cpp" />
     <ClCompile Include="Source\Core\InputState.cpp" />
     <ClCompile Include="Source\Modules\Renderer\gltf\GLTFBuilder.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Model\DrawBatch.cpp" />
@@ -201,6 +202,7 @@
     <ClCompile Include="Source\Modules\Renderer\Window\Window.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Texture\Texture.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\VertexArray\VertexArray.cpp" />
+    <ClInclude Include="Source\Components\Collider.h" />
     <ClInclude Include="Source\Main\GameLoop.h" />
     <ClInclude Include="Source\Modules\Renderer\GLTF\GLTFBuilder.h" />
     <ClInclude Include="Source\Modules\Renderer\Model\DrawBatch.h" />

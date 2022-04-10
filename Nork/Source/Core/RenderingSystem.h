@@ -74,7 +74,7 @@ namespace Nork {
 		std::shared_ptr<Renderer::Shader> gPassShader, lPassShader,
 			dShadowShader, pShadowShader,
 			skyboxShader, textureShader,
-			pointShader, lineShader;
+			pointShader, lineShader, colliderShader;
 	};
 	struct GlobalShaderUniform
 	{
@@ -86,10 +86,10 @@ namespace Nork {
 
 		float lineWidth = 0.005f;
 		float lineAlpha = 1.0f;
-		float triAlpha = 0.6f;
 		float dummy; // for alignment
 
 		glm::vec4 lineColor = glm::vec4(0, 0, 1, 0.3f);
+		glm::vec4 triColor = glm::vec4(0, 1, 0, 0.2f);
 
 		glm::vec3 selectedColor = glm::vec3(1, 0, 1);
 	};
@@ -104,7 +104,10 @@ namespace Nork {
 		void DrawToScreen(int w, int h);
 		void AddTarget();
 		auto& GetTargetFramebuffers() { return targetFbs; }
+		void SetRenderColliders(bool);
 	private:
+		void RenderColliders();
+		void CreateCollidersVao(size_t count);
 		void UpdateGlobalUniform();
 		void UpdateLights();
 		void ViewProjectionUpdate(Components::Camera& camera);
@@ -125,6 +128,8 @@ namespace Nork {
 		Renderer::DrawBatch drawBatch;
 		std::vector<std::shared_ptr<Renderer::Framebuffer>> targetFbs;
 		Observed<GlobalShaderUniform> globalShaderUniform;
+		std::shared_ptr<Renderer::VertexArray> colliderVao = nullptr;
+
 		bool drawSky = true;
 	private:
 		void OnDShadAdded(entt::registry& reg, entt::entity id);

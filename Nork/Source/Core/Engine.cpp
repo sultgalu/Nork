@@ -19,20 +19,6 @@ namespace Nork
 		auto* tr = reg.try_get<Components::Transform>(id);
 		dr.modelMatrix = renderingSystem.drawState.modelMatrixBuffer.Add(glm::identity<glm::mat4>());
 	}
-	void Engine::Launch()
-	{
-		Nork::Window& win = Application::Get().window;
-
-		while (!win.ShouldClose())
-		{	
-			renderingSystem.Update(scene.GetMainCamera());
-			if (physicsUpdate)
-				physicsSystem.Update(scene.registry);
-
-			Profiler::Clear();
-			win.Refresh();
-		}
-	}
 	void Engine::Update()
 	{
 		if (physicsUpdate)
@@ -96,7 +82,7 @@ namespace Nork
 					physicsSystem.Download(scene.registry); // download changes made by scripting
 					phxCalcDone = false;
 					physicsSystem.Update2(scene.registry);
-					for (size_t i = 0; i < 10; i++)
+					for (size_t i = 0; i < 0; i++)
 					{
 						physicsSystem.DownloadInternal();
 						physicsSystem.Update2(scene.registry);

@@ -16,7 +16,6 @@ namespace Nork
 	public:
 		Engine();
 		Engine(Engine&&) = delete;
-		void Launch();
 		void Update();
 		void StartPhysics();
 		void StopPhysics();

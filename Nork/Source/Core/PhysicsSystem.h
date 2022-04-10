@@ -9,7 +9,6 @@ namespace Nork {
 	class PhysicsSystem
 	{
 	public:
-		void Update(entt::registry& reg);
 		void Upload(entt::registry& reg);
 		void Download(entt::registry& reg);
 		void DownloadInternal();

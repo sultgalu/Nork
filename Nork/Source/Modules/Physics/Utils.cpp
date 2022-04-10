@@ -38,10 +38,20 @@ namespace Nork::Physics
 		return const_cast<glm::vec3&>(*farthest);
 	}
 
+	float Sign(const glm::vec3& dir, const glm::vec3& from, const glm::vec3& to)
+	{
+		glm::vec3 vec = to - from;
+		return glm::dot(dir, vec);
+	}
 	float SignedDistance(const glm::vec3& dir, const glm::vec3& from, const glm::vec3& to)
 	{
 		glm::vec3 vec = to - from;
 		return glm::dot(glm::normalize(dir), vec);
+	}
+	float SignedDistanceNormalized(const glm::vec3& dir, const glm::vec3& from, const glm::vec3& to)
+	{
+		glm::vec3 vec = to - from;
+		return glm::dot(dir, vec);
 	}
 	
 	glm::vec3 Center(const std::span<const glm::vec3> points)

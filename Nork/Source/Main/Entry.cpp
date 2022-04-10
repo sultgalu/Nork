@@ -34,7 +34,7 @@ int main()
 				ent.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
 				ent.AddComponent<Components::Transform>().SetPosition(glm::vec3(i * sep, j * sep, k * sep));
 				ent.AddComponent<Components::Kinematic>().mass = 0.1f;
-				ent.AddComponent<Polygon>();
+				ent.AddComponent<Components::Collider>() = Components::Collider::Cube();
 				ent.AddComponent<Components::Tag>().tag = std::to_string(i).append("-").append(std::to_string(j)).append("-").append(std::to_string(k));
 			}
 		}
@@ -51,7 +51,7 @@ int main()
 	auto& tr = ground.AddComponent<Components::Transform>()
 		.SetPosition(glm::vec3(0, -10, 0))
 		.SetScale(scale);
-	ground.AddComponent<Polygon>().Scale(scale);
+	ground.AddComponent<Components::Collider>() = Components::Collider::Cube();
 	ground.AddComponent<Components::Tag>().tag = "GROUND";
 
 	/*auto node1 = engine.scene.CreateNode();

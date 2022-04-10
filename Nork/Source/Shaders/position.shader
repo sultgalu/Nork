@@ -2,15 +2,15 @@
 #version 330 core
 
 layout(location = 0) in vec3 vPos;
-layout(location = 1) in float isSelected;
+//layout(location = 1) in float isSelected;
 
 uniform mat4 VP;
-out float selected;
+//out float selected;
 
 void main()
 {
 	gl_Position = VP * vec4(vPos, 1.0f);
-	selected = isSelected;
+	//selected = isSelected;
 }
 
 #type fragment
@@ -19,11 +19,11 @@ void main()
 out vec4 fColor;
 uniform vec4 colorDefault;
 uniform vec4 colorSelected;
-in float selected;
+//in float selected;
 
 void main()
 {
-	int sel = int(selected);
-	fColor = sel * colorSelected + (1 - sel) * colorDefault;
-	//fColor = color;
+	//int sel = int(selected);
+	//fColor = sel * colorSelected + (1 - sel) * colorDefault;
+	fColor = colorDefault;
 }

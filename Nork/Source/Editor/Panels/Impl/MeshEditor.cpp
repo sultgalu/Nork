@@ -161,6 +161,11 @@ namespace Nork::Editor
 		if (data.engine.physicsSystem.satRes) ImGui::TextColored(ImVec4(0, 1, 0, 1), "  COLLISION!!");
 		else ImGui::TextColored(ImVec4(1, 0, 0, 1), "  no collision");
 
+		bool renderColliders = data.engine.renderingSystem.colliderVao != nullptr;
+		if (ImGui::Checkbox("Render Colliders", &renderColliders))
+		{
+			data.engine.renderingSystem.SetRenderColliders(renderColliders);
+		}
 		bool physicsUpdate = data.engine.physicsUpdate;
 		if (ImGui::Checkbox("Physics Update##LongPeriod", &physicsUpdate))
 		{
@@ -209,7 +214,7 @@ namespace Nork::Editor
 		ImGui::ColorEdit4("Line Color", &data.engine.renderingSystem.globalShaderUniform.lineColor.r, options);
 		ImGui::SliderFloat("Line alpha (focused)", &data.engine.renderingSystem.globalShaderUniform.lineAlpha, 0, 1, "%.2f");
 
-		ImGui::SliderFloat("Triangle alpha (focused)", &data.engine.renderingSystem.globalShaderUniform.triAlpha, 0, 1, "%.2f");
+		ImGui::ColorEdit4("Triangle", &data.engine.renderingSystem.globalShaderUniform.triColor.r, options);
 
 		ImGui::ColorEdit3("Focused Color", &data.engine.renderingSystem.globalShaderUniform.selectedColor.r, options);
 	}

@@ -6,6 +6,7 @@
 #include "Modules/Renderer/LoadUtils.h"
 #include "Modules/Renderer/Objects/Texture/TextureBuilder.h"
 #include "Modules/Renderer/Objects/Buffer/BufferBuilder.h"
+#include "Modules/Renderer/Objects/VertexArray/VertexArrayBuilder.h"
 
 namespace Nork {
 	void RenderingSystem::OnDLightAdded(entt::registry& reg, entt::entity id)
@@ -77,7 +78,7 @@ namespace Nork {
 
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 		AddTarget();
-
+		UpdateGlobalUniform();
 		// auto image = Renderer::LoadUtils::LoadCubemapImages("Resources/Textures/skybox", ".jpg");
 		// std::array<void*, 6> data;
 		// for (size_t i = 0; i < data.size(); i++)
@@ -111,16 +112,19 @@ namespace Nork {
 	}
 	void RenderingSystem::UpdateGlobalUniform()
 	{
+		glPointSize(globalShaderUniform.pointSize);
 		shaders.pointShader->Use()
 			.SetFloat("aa", globalShaderUniform.pointAA)
 			.SetFloat("size", globalShaderUniform.pointInternalSize)
 			.SetVec4("colorDefault", globalShaderUniform.pointColor)
 			.SetVec4("colorSelected", glm::vec4(globalShaderUniform.selectedColor, globalShaderUniform.pointAlpha));
-
 		shaders.lineShader->Use()
 			.SetFloat("width", globalShaderUniform.lineWidth)
 			.SetVec4("colorDefault", globalShaderUniform.lineColor)
 			.SetVec4("colorSelected", glm::vec4(globalShaderUniform.selectedColor, globalShaderUniform.lineAlpha));
+		shaders.colliderShader->Use()
+			.SetVec4("colorDefault", globalShaderUniform.triColor)
+			.SetVec4("colorSelected", glm::vec4(globalShaderUniform.selectedColor, 1.0f));
 	}
 	void RenderingSystem::UpdateLights()
 	{
@@ -145,6 +149,7 @@ namespace Nork {
 	{
 		shaders.pointShader->Use().SetMat4("VP", camera.viewProjection);
 		shaders.lineShader->Use().SetMat4("VP", camera.viewProjection);
+		shaders.colliderShader->Use().SetMat4("VP", camera.viewProjection);
 		
 		shaders.gPassShader->Use().SetMat4("VP", camera.viewProjection);
 		shaders.lPassShader->Use().SetVec3("viewPos", camera.position);
@@ -192,6 +197,10 @@ namespace Nork {
 		shaders.textureShader->Use()
 			.SetInt("tex", 0);
 		Renderer::DrawUtils::DrawQuad();
+		if (colliderVao != nullptr)
+		{
+			RenderColliders();
+		}
 	}
 	void RenderingSystem::EndFrame()
 	{
@@ -222,6 +231,74 @@ namespace Nork {
 			.Create()
 		);
 	}
+	void RenderingSystem::RenderColliders()
+	{
+		auto count = 0;
+		auto triCount = 0;
+		for (auto [id, coll] : registry.view<Components::Collider>().each())
+		{
+			count += coll.Points().size();
+			triCount += coll.TriangleCount() * 3;
+		}
+		if (count * sizeof(glm::vec3) > colliderVao->GetVBO()->GetSize())
+		{
+			CreateCollidersVao(count);
+		}
+		auto view = registry.view<Components::Collider, Components::Transform>();
+		auto ptr = (glm::vec3*)colliderVao->GetVBO()->GetPersistentPtr();
+		static std::vector<uint32_t> inds;
+		inds.resize(triCount);
+
+		int idx = 0;
+		int triIdx = 0;
+		int triBase = 0;
+		for (auto [id, coll, tr] : view.each())
+		{
+			for (auto& p : coll.Points())
+			{
+				ptr[idx++] = tr.ModelMatrix() * glm::vec4(p, 1.0f);
+			}
+			//std::memcpy(&inds[triIdx], poly.tris.data(), poly.tris.size() * 3 * sizeof(uint32_t));
+			
+			for (auto& idx : coll.TriangleIndices())
+			{
+				inds[triIdx++] = triBase + idx;
+			}
+			triBase += coll.Points().size();
+		}
+		Renderer::Capabilities()
+			.Enable().Blend(Renderer::BlendFunc::SrcAlpha_1MinuseSrcAlpha).CullFace()
+			.Disable().DepthTest();
+		shaders.colliderShader->Use();
+		colliderVao->Bind().DrawIndexed(std::span(inds));
+		//shaders.pointShader->Use();
+		//colliderVao->Bind().Draw(Renderer::DrawMode::Points);
+	}
+	void RenderingSystem::CreateCollidersVao(size_t count)
+	{
+		if (count == 0)
+		{
+			colliderVao = nullptr;
+			return;
+		}
+		using namespace Renderer;
+		using enum BufferStorageFlags;
+		auto vbo = BufferBuilder().Target(BufferTarget::Vertex)
+			.Flags(WriteAccess | Persistent | Coherent).Data(nullptr, count * sizeof(glm::vec3)).Create();
+		vbo->Bind().Map(BufferAccess::Write);
+		colliderVao = VertexArrayBuilder().VBO(vbo).Attributes({ 3 }).Create();
+	}
+	void RenderingSystem::SetRenderColliders(bool opt)
+	{
+		if (opt)
+		{
+			CreateCollidersVao(registry.view<Components::Collider>().size());
+		}
+		else
+		{
+			colliderVao = nullptr;
+		}
+	}
 	std::shared_ptr<Renderer::Shader> Shaders::InitShaderFromSource(std::string path)
 	{
 		return Renderer::ShaderBuilder().Sources(SplitShaders(GetFileContent(path))).Create();
@@ -236,8 +313,8 @@ namespace Nork {
 		pointShader = InitShaderFromSource("Source/Shaders/point.shader");
 		lineShader = InitShaderFromSource("Source/Shaders/line.shader");
 		textureShader = InitShaderFromSource("Source/Shaders/texture.shader");
+		colliderShader = InitShaderFromSource("Source/Shaders/position.shader");
 	}
-
 	void Shaders::SetLightPassShader(std::shared_ptr<Renderer::Shader> shader)
 	{
 		lPassShader = shader;
@@ -252,10 +329,8 @@ namespace Nork {
 		for (int i = 0; i < Renderer::Config::LightData::pointShadowsLimit; i++)
 			lPassShader->SetInt(("pointShadowMaps[" + std::to_string(i) + "]").c_str(), i + Renderer::Config::LightData::pointShadowBaseIndex);
 	}
-
 	void Shaders::SetGeometryPassShader(std::shared_ptr<Renderer::Shader> shader)
 	{
 		gPassShader = shader;
 	}
-
 }

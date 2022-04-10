@@ -27,7 +27,7 @@ namespace Nork
 		std::vector<uint32_t> SortFaceIdxs(const std::vector<uint32_t>& face);
 
 		std::vector<std::vector<uint32_t>> GetFaces();
-		Physics::Collider AsCollider();
+		Physics::Collider AsCollider(const glm::vec3& scale);
 
 		static Polygon GetCube(glm::vec3 pos = glm::vec3(0));
 	};

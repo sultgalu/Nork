@@ -285,14 +285,14 @@ namespace Nork
 		return faces;
 	}
 
-	Physics::Collider Polygon::AsCollider()
+	Physics::Collider Polygon::AsCollider(const glm::vec3& scale)
 	{
 		Physics::Collider res;
 
 		res.verts.reserve(vertices.size());
 		for (size_t i = 0; i < vertices.size(); i++)
 		{
-			res.verts.push_back(glm::vec4(vertices[i], 1));
+			res.verts.push_back(glm::vec4(vertices[i] * scale, 1));
 		}
 
 		auto center = glm::vec3(Physics::Center(res.verts));
