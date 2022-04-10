@@ -76,6 +76,7 @@ namespace Nork {
 		registry.on_destroy<Components::PointLight>().connect<&RenderingSystem::OnPLightRemoved>(this);
 
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+		AddTarget();
 
 		// auto image = Renderer::LoadUtils::LoadCubemapImages("Resources/Textures/skybox", ".jpg");
 		// std::array<void*, 6> data;
@@ -167,21 +168,59 @@ namespace Nork {
 		if (drawSky && skybox != nullptr)
 			Renderer::SkyRenderer::RenderSkybox(*skybox, *shaders.skyboxShader);
 	}
-	void RenderingSystem::Update(Components::Camera& camera)
+	void RenderingSystem::BeginFrame()
 	{
 		SyncComponents();
+		UpdateLights();
+		DrawBatchUpdate();
+	}
+	void RenderingSystem::Update(Components::Camera& camera, int targetIdx)
+	{
 		if (globalShaderUniform.IsChanged())
 		{
 			UpdateGlobalUniform();
 			Logger::Info("Updating");
 		}
 		ViewProjectionUpdate(camera);
-		UpdateLights();
-		DrawBatchUpdate();
-
 		RenderScene();
+		// Draw on target
+		targetFbs[targetIdx]->Bind()
+			.Clear()
+			.SetViewport();
+
+		deferredPipeline.lightFb->Color()->Bind();
+		shaders.textureShader->Use()
+			.SetInt("tex", 0);
+		Renderer::DrawUtils::DrawQuad();
+	}
+	void RenderingSystem::EndFrame()
+	{
+		Renderer::Framebuffer::BindDefault();
+	}
+	void RenderingSystem::DrawToScreen(int w, int h)
+	{
+		Renderer::Capabilities()
+			.Disable().DepthTest().CullFace().Blend();
+
+		//deferredPipeline.lightFb->Color()->Bind();
+		targetFbs[0]->GetAttachments().colors[0].first->Bind2D();
+		shaders.textureShader->Use()
+			.SetInt("tex", 0);
 
 		Renderer::Framebuffer::BindDefault();
+		glViewport(0, 0, w, h);
+		Renderer::DrawUtils::DrawQuad();
+	}
+	void RenderingSystem::AddTarget()
+	{
+		using namespace Renderer;
+		targetFbs.push_back(FramebufferBuilder().Attachments(FramebufferAttachments().Color(
+			TextureBuilder()
+				.Params(TextureParams::FramebufferTex2DParams())
+				.Attributes(TextureAttributes{ .width = 1920, .height = 1080, .format = TextureFormat::RGB16F })
+				.Create2DEmpty(), 0))
+			.Create()
+		);
 	}
 	std::shared_ptr<Renderer::Shader> Shaders::InitShaderFromSource(std::string path)
 	{

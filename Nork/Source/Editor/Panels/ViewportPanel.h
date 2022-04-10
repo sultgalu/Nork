@@ -33,6 +33,8 @@ namespace Nork::Editor
 
 		MouseState mouseState;
 		ImageConfig image;
+		Components::Camera cam1;
+		Components::Camera cam2;
 		CameraController camContr;
 	};
 }

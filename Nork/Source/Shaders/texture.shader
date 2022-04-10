@@ -14,9 +14,10 @@ void main()
 
 #type fragment
 #version 330 core
+#extension ARB_bindless_texture : require
 
 out vec4 fColor;
-uniform sampler2D tex;
+layout(bindless_sampler) uniform sampler2D tex;
 in vec2 fTex;
 
 void main()

@@ -42,7 +42,12 @@ namespace Nork
 		// scriptUpdate -> can change uploaded data
 			phxCalc = true;
 		}
-		renderingSystem.Update(scene.GetMainCamera()); // draw full updated data
+		renderingSystem.BeginFrame();
+		for (size_t i = 0; i < cameras.size(); i++)
+		{
+			renderingSystem.Update(cameras[i], i); // draw full updated data
+		}
+		renderingSystem.EndFrame(); 
 		if (physicsUpdate)
 		{
 		}
@@ -74,6 +79,13 @@ namespace Nork
 		physicsThread->join();
 		delete physicsThread;
 	}
+
+	void Engine::AddCamera(Components::Camera cam)
+	{
+		cameras.push_back(cam);
+		renderingSystem.AddTarget();
+	}
+	
 	std::thread* Engine::LaunchPhysicsThread()
 	{
 		return new std::thread([&]()

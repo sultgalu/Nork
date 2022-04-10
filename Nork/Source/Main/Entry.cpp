@@ -17,7 +17,7 @@ int main()
 
 	Editor::Editor editor(engine);
 
-	editor.SetDisplayTexture(engine.renderingSystem.deferredPipeline.lightFb->Color());
+	//editor.SetDisplayTexture(engine.renderingSystem.deferredPipeline.lightFb->Color());
 
 	int dim = 8;
 	int sep = 3;
@@ -100,20 +100,23 @@ int main()
 			}
 		}
 	}
-	
-	/*Application::Get().dispatcher.GetReceiver().Subscribe<RenderUpdatedEvent>([&](const RenderUpdatedEvent& e)
-		{
-			editor.SetDisplayTexture(engine.renderingSystem.dShadowFramebuffers[0].GetAttachments().depth.value());
-		});*/
-	
+
 	Application::Get().window.SetupCallbacks();
-	//Application::Get().window.Resize(1280, 720);
 	engine.physicsUpdate = false;
 	engine.scene.GetMainCamera().SetPosition(glm::vec3(-58, 16, -91));
 	engine.scene.GetMainCamera().SetRotation(-10, 60);
 	//engine.Launch();
+	Timer t;
+	CameraController camContr;
 	while (!Application::Get().window.ShouldClose())
 	{
 		editor.Update();
+
+		float delta = t.Reset();
+		//camContr.UpdateByKeyInput(engine.scene.GetMainCamera(), delta * 0.5f);
+		//camContr.UpdateByMouseInput(engine.scene.GetMainCamera(), delta * 0.5f);
+		//engine.Update();
+		//auto ctx = Application::Get().window.Underlying().GetContext();
+		//engine.renderingSystem.DrawToScreen(ctx.width, ctx.height);
 	}
 }

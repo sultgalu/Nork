@@ -97,17 +97,21 @@ namespace Nork {
 	{
 	public:
 		RenderingSystem(entt::registry& registry);
-
+		void BeginFrame();
+		void Update(Components::Camera& camera, int targetIdx = 0);
+		void EndFrame();
+		GlobalShaderUniform GetGlobalShaderUniform() { return globalShaderUniform; }
+		void DrawToScreen(int w, int h);
+		void AddTarget();
+		auto& GetTargetFramebuffers() { return targetFbs; }
+	private:
 		void UpdateGlobalUniform();
 		void UpdateLights();
 		void ViewProjectionUpdate(Components::Camera& camera);
 		void SyncComponents();
 		void RenderScene();
-		void Update(Components::Camera& camera);
 		void DrawBatchUpdate();
 
-		GlobalShaderUniform GetGlobalShaderUniform() { return globalShaderUniform; }
-	
 	private:
 		glm::uvec2 resolution = { 1920, 1080 };
 	public:
@@ -119,7 +123,7 @@ namespace Nork {
 		std::shared_ptr<Renderer::TextureCube> skybox;
 		Renderer::DrawState drawState;
 		Renderer::DrawBatch drawBatch;
-
+		std::vector<std::shared_ptr<Renderer::Framebuffer>> targetFbs;
 		Observed<GlobalShaderUniform> globalShaderUniform;
 		bool drawSky = true;
 	private:

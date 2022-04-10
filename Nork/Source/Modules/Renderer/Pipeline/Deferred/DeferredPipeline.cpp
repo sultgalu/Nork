@@ -16,7 +16,7 @@ namespace Nork::Renderer {
 			.Normal(RGB16F)
 			.Diffuse(RGB16F)
 			.Specular(RGB16F)
-			.Depth(Depth16)
+			.Depth(Depth32)
 			.Create();
 		lightFb = LightFramebufferBuilder()
 			.DepthTexture(geometryFb->Depth())

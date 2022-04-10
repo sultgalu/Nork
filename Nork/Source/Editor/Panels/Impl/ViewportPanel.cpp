@@ -18,6 +18,8 @@ namespace Nork::Editor
 			.Attributes(Renderer::TextureAttributes{ .width = 1, .height = 1, .format = Renderer::TextureFormat::RGB })
 			.Create2DWithData(texData);
 		image.texture = defaultTex;
+		data.engine.AddCamera(cam1);
+		data.engine.AddCamera(cam2);
 	}
 
 	ViewportPanel::~ViewportPanel()
@@ -42,9 +44,11 @@ namespace Nork::Editor
 
 	void ViewportPanel::Begin()
 	{
-		camContr.UpdateByKeyInput(data.engine.scene.GetMainCamera(), ImGui::GetIO().DeltaTime * 500);
-		if (state.isHovered)
-			camContr.UpdateByMouseInput(data.engine.scene.GetMainCamera(), ImGui::GetIO().DeltaTime * 500);
+		data.engine.Cameras()[0] = cam1;
+		data.engine.Cameras()[1] = cam2;
+		// camContr.UpdateByKeyInput(data.engine.scene.GetMainCamera(), ImGui::GetIO().DeltaTime * 500);
+		// if (state.isHovered)
+		// 	camContr.UpdateByMouseInput(data.engine.scene.GetMainCamera(), ImGui::GetIO().DeltaTime * 500);
 		ImGui::Begin(this->GetName().data(), 0, ImGuiWindowFlags_NoScrollbar);
 	}
 
@@ -55,10 +59,37 @@ namespace Nork::Editor
 		glm::vec2 texSize(image.resolution.x, image.resolution.y);
 		glm::vec2 displaySize = GetDisplaySize(texSize);
 
-		ImGui::Image((ImTextureID)image.texture->GetHandle(), ImVec2(displaySize.x, displaySize.y), ImVec2(image.uv_min.x, image.uv_min.y),
-			ImVec2(image.uv_max.x, image.uv_max.y), ImVec4(1, 1, 1, 1), ImVec4(0, 0, 0, 0));
-		mouseState.isViewportHovered = ImGui::IsItemHovered();
-		mouseState.isViewportDoubleClicked = mouseState.isViewportHovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
+		if (ImGui::BeginTabBar("texes"))
+		{
+			if (ImGui::BeginTabItem("tex1"))
+			{
+				ImGui::Image((ImTextureID)image.texture->GetHandle(), ImVec2(displaySize.x, displaySize.y), ImVec2(image.uv_min.x, image.uv_min.y),
+					ImVec2(image.uv_max.x, image.uv_max.y), ImVec4(1, 1, 1, 1), ImVec4(0, 0, 0, 0));
+				if (ImGui::IsItemHovered())
+				{
+					camContr.UpdateByKeyInput(cam1, ImGui::GetIO().DeltaTime * 500);
+					if (state.isHovered)
+						camContr.UpdateByMouseInput(cam1, ImGui::GetIO().DeltaTime * 500);
+					mouseState.isViewportHovered = ImGui::IsItemHovered();
+					mouseState.isViewportDoubleClicked = mouseState.isViewportHovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
+				}
+				ImGui::EndTabItem();
+			}
+			if (ImGui::BeginTabItem("tex2"))
+			{
+
+				ImGui::Image((ImTextureID)data.engine.renderingSystem.GetTargetFramebuffers()[1]->GetAttachments().colors[0].first->GetHandle(), ImVec2(displaySize.x, displaySize.y), ImVec2(image.uv_min.x, image.uv_min.y),
+					ImVec2(image.uv_max.x, image.uv_max.y), ImVec4(1, 1, 1, 1), ImVec4(0, 0, 0, 0));
+				if (ImGui::IsItemHovered())
+				{
+					camContr.UpdateByKeyInput(cam2, ImGui::GetIO().DeltaTime * 500);
+					if (state.isHovered)
+						camContr.UpdateByMouseInput(cam2, ImGui::GetIO().DeltaTime * 500);
+				}
+				ImGui::EndTabItem();
+			}
+			ImGui::EndTabBar();
+		}
 
 		auto rMin = ImGui::GetWindowContentRegionMin();
 		auto wPos = ImGui::GetWindowPos();
