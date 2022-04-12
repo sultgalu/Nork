@@ -6,8 +6,11 @@
 
 namespace Nork
 {
+	static std::array<int, 2> c;
+
 	Engine::Engine()
-		: downloadSem(1), uploadSem(0), phxSem(1)
+		: uploadSem(1), updateSem(1),
+		scriptSystem(scene)
 	{
 		scene.registry.on_construct<Components::Drawable>().connect<&Engine::OnDrawableAdded>(this);
 	}
@@ -21,12 +24,37 @@ namespace Nork
 	}
 	void Engine::Update()
 	{
+		if (c[0] % 100 == 0)
+		{
+			std::stringstream ss;
+			for (size_t i = 0; i < c.size(); i++)
+			{
+				ss << (int)c[i] << ";";
+			}
+			Logger::Info(ss.str());
+		}
 		if (physicsUpdate)
 		{
-			while (!phxCalcDone); // wait for phx to finish
+			c[0]++;
+			//phxCalc = false;
+			//while (!phxCalcDone) {} // wait for phx to finish
+			//uploadSem.acquire();
+			//Logger::Info("R A");
+			uploadSem.acquire();
+			updateSem.acquire();
 			physicsSystem.Upload(scene.registry); // upload new data
-		// scriptUpdate -> can change uploaded data
-			phxCalc = true;
+			scriptSystem.Update();
+			//Logger::Info("R R");
+			scriptUpdated = true;
+			updateSem.release();
+			uploadSem.release();
+			//uploadSem.release();
+			// physicsSystem.Download(scene.registry);
+			// physicsSystem.Update2(scene.registry);
+			// physicsSystem.Upload(scene.registry);
+			// scriptUpdate -> can change uploaded data
+			// phxCalcDone = false;
+			// phxCalc = true; // resume physics
 		}
 		renderingSystem.BeginFrame();
 		for (size_t i = 0; i < cameras.size(); i++)
@@ -34,9 +62,12 @@ namespace Nork
 			renderingSystem.Update(cameras[i], i); // draw full updated data
 		}
 		renderingSystem.EndFrame(); 
-		if (physicsUpdate)
-		{
-		}
+		// if (physicsUpdate)
+		// {
+		// 	physicsSystem.Download(scene.registry);
+		// 	physicsSystem.Update2(scene.registry);
+		// 	physicsSystem.Upload(scene.registry);
+		// }
 
 		Nork::Window& win = Application::Get().window;
 		Profiler::Clear();
@@ -53,10 +84,10 @@ namespace Nork
 	{
 		if (physicsUpdate)
 			return;
+		scriptSystem.Update();
 		// start physics thread
-		physicsUpdate = true; 
-		phxCalcDone = true;
 		physicsSystem.Download(scene.registry);
+		physicsUpdate = true;
 		physicsThread = LaunchPhysicsThread();
 	}
 	void Engine::StopPhysics()
@@ -71,24 +102,28 @@ namespace Nork
 		cameras.push_back(cam);
 		renderingSystem.AddTarget();
 	}
-	
+
 	std::thread* Engine::LaunchPhysicsThread()
 	{
 		return new std::thread([&]()
 			{
 				while (physicsUpdate)
 				{
-					while (!phxCalc); 
-					physicsSystem.Download(scene.registry); // download changes made by scripting
-					phxCalcDone = false;
-					physicsSystem.Update2(scene.registry);
-					for (size_t i = 0; i < 0; i++)
+					c[1]++;
+					updateSem.acquire(); // don't let upload happen until done with updating
+					if (scriptUpdated) // if downloading 
+					{
+						physicsSystem.Download(scene.registry);
+						scriptUpdated = false;
+					}
+					else
 					{
 						physicsSystem.DownloadInternal();
-						physicsSystem.Update2(scene.registry);
 					}
-					phxCalcDone = true;
-					phxCalc = false;
+					physicsSystem.Update2(scene.registry);
+					updateSem.release();
+					uploadSem.acquire(); // wait until any uploading is done
+					uploadSem.release();
 				}
 			});
 	}

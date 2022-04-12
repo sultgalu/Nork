@@ -144,6 +144,7 @@ namespace Nork {
 		static Timer deltaTimer(-20);
 		float delta = deltaTimer.ElapsedSeconds();
 		deltaTimer.Restart();
+		//Logger::Info(std::to_string(delta));
 		if (delta > 0.2f)
 			return;
 

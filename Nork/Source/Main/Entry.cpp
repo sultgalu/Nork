@@ -108,15 +108,15 @@ int main()
 	//engine.Launch();
 	Timer t;
 	CameraController camContr;
+
+	//if (shadows-- > 0)
+	engine.StartPhysics();
+	//engine.physicsSystem.physicsSpeed = 100;
 	while (!Application::Get().window.ShouldClose())
 	{
-		editor.Update();
-
-		float delta = t.Reset();
-		//camContr.UpdateByKeyInput(engine.scene.GetMainCamera(), delta * 0.5f);
-		//camContr.UpdateByMouseInput(engine.scene.GetMainCamera(), delta * 0.5f);
-		//engine.Update();
-		//auto ctx = Application::Get().window.Underlying().GetContext();
-		//engine.renderingSystem.DrawToScreen(ctx.width, ctx.height);
+		auto delta = t.Reset();
+		engine.Update();
+		auto ctx = Application::Get().window.Underlying().GetContext();
+		engine.renderingSystem.DrawToScreen(ctx.width, ctx.height);
 	}
 }

@@ -23,7 +23,8 @@ namespace Nork::Components {
 		void BuildTriangleFaces();
 		void CombineFaces();
 		glm::vec3 Center();
-		
+
+		auto& PointsMutable() { return points; }
 		auto& Points() const { return points; }
 		auto& Faces() const { return faces; }
 		auto& Edges() const { return edges; }

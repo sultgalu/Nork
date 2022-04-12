@@ -517,6 +517,91 @@ namespace Nork::Editor
 			ImGui::TreePop();
 		}
 	}
+	void InspectorPanel::ColliderComp(Collider* coll)
+	{
+		if (ImGui::TreeNodeEx("Collider", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			bool changed = false;
+			if (ImGui::Button("Set to cube"))
+			{
+				*coll = Collider::Cube();
+			}
+			if (ImGui::TreeNode("Points##OfCollider"))
+			{
+				auto flags = ImGuiTableFlags_Reorderable | ImGuiTableFlags_Resizable | ImGuiTableFlags_Hideable | ImGuiTableFlags_ContextMenuInBody
+					| ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuterH
+					; // | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY;
+				if (ImGui::BeginTable("Points##Table", 2, flags))
+				{
+					ImGui::TableSetupColumn("id");
+					ImGui::TableSetupColumn("pos");
+					ImGui::TableHeadersRow();
+
+					auto& points = coll->PointsMutable();
+					for (size_t i = 0; i < points.size(); i++)
+					{
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0);
+						std::string idx = std::to_string(i);
+						ImGui::Text(idx.c_str());
+						ImGui::TableSetColumnIndex(1);
+						//ImGui::Text(idx.c_str());
+						if (ImGui::DragFloat3(("##ASD" + idx).c_str(), &points[i].x, 0.001f))
+						{
+							changed = true;
+						}
+					}
+					ImGui::EndTable();
+					if (ImGui::Button("Add##ColliderPoint"))
+					{
+						coll->AddPoint(glm::vec3(0));
+					}
+				}
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNode("Faces##OfCollider"))
+			{
+				auto faces = coll->Faces();
+				for (size_t i = 0; i < faces.size(); i++)
+				{
+					if (ImGui::TreeNode((std::to_string(i)).c_str()))
+					{
+						auto& face = faces[i];
+						std::string normStr = "normal: ";
+						for (size_t j = 0; j < 3; j++)
+						{
+							normStr += std::to_string(face.normal[j]).substr(0, 5) + ";";
+						}
+						ImGui::Text(normStr.c_str());
+						auto& points = coll->PointsMutable();
+						for (auto idx : face.points)
+						{
+							if (ImGui::DragFloat3(("##ASD2" + std::to_string(idx)).c_str(), &points[idx].x, 0.001f))
+							{
+								changed = true;
+							}
+						}
+						ImGui::TreePop();
+					}
+				}
+				ImGui::TreePop();
+			}
+			if (changed)
+			{
+				coll->BuildTriangleFaces();
+				coll->CombineFaces();
+			}
+
+			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
+			if (ImGui::Button("Delete"))
+			{
+				data.selectedNode->GetEntity().RemoveComponent<Collider>();
+			}
+			ImGui::PopStyleColor();
+
+			ImGui::TreePop();
+		}
+	}
 	void InspectorPanel::NameComp(Tag* name)
 	{
 		if (ImGui::TreeNodeEx("Name", ImGuiTreeNodeFlags_DefaultOpen))
@@ -570,7 +655,7 @@ namespace Nork::Editor
 			this->CompSelector<Camera>();
 			this->CompSelector<Drawable>();
 			this->CompSelector<Kinematic>();
-			this->CompSelector<Polygon>();
+			this->CompSelector<Collider>();
 
 			ImGui::EndPopup();
 		}
@@ -594,6 +679,7 @@ namespace Nork::Editor
 			auto* cam = ent.TryGetComponent<Camera>();
 			auto* kin = ent.TryGetComponent<Kinematic>();
 			auto* poly = ent.TryGetComponent<Polygon>();
+			auto* coll = ent.TryGetComponent<Collider>();
 
 			if (tr != nullptr)
 			{
@@ -608,6 +694,11 @@ namespace Nork::Editor
 			if (poly != nullptr)
 			{
 				PolyComp(poly);
+				ImGui::Separator();
+			}
+			if (coll != nullptr)
+			{
+				ColliderComp(coll);
 				ImGui::Separator();
 			}
 			if (pL != nullptr)

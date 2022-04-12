@@ -8,6 +8,7 @@
 #include "RenderingSystem.h"
 #include "PhysicsSystem.h"
 #include "Core/ResourceManager.h"
+#include "ScriptSystem.h"
 
 namespace Nork
 {
@@ -32,15 +33,13 @@ namespace Nork
 		bool physicsUpdate = false;
 		std::mutex physicsDownloadLock;
 		std::mutex physicsUploadLock;
+		std::mutex physicsLock;
 
-		std::counting_semaphore<10> downloadSem;
-		std::counting_semaphore<10> uploadSem;
-		std::counting_semaphore<10> phxSem;
-		bool waitingForUpload = false;
-		bool phxCalc = false;
-		bool phxCalcDone = false;
-		bool downloading = false;
-		bool uploading = false;
+		bool scriptUpdated = false;
+		std::binary_semaphore updateSem;
+		std::binary_semaphore uploadSem;
+
+		ScriptSystem scriptSystem;
 	private:
 		std::vector<Components::Camera> cameras;
 		void OnDrawableAdded(entt::registry& reg, entt::entity id);
