@@ -77,7 +77,6 @@ namespace Nork::Editor
 			}
 			if (ImGui::BeginTabItem("tex2"))
 			{
-
 				ImGui::Image((ImTextureID)data.engine.renderingSystem.GetTargetFramebuffers()[1]->GetAttachments().colors[0].first->GetHandle(), ImVec2(displaySize.x, displaySize.y), ImVec2(image.uv_min.x, image.uv_min.y),
 					ImVec2(image.uv_max.x, image.uv_max.y), ImVec4(1, 1, 1, 1), ImVec4(0, 0, 0, 0));
 				if (ImGui::IsItemHovered())
@@ -117,11 +116,11 @@ namespace Nork::Editor
 
 		if (ImGui::BeginPopup("texturesToDisplay"))
 		{
-			/*if (ImGui::Selectable("DEBUG"))
-			{
-				image.texture = data.engine.renderingSystem.lightMan.GetDebug();
-			}*/
 			if (ImGui::Selectable("Default"))
+			{
+				image.texture = data.engine.renderingSystem.GetTargetFramebuffers()[0]->GetAttachments().colors[0].first;
+			}
+			if (ImGui::Selectable("lightFb target"))
 			{
 				image.texture = data.engine.renderingSystem.deferredPipeline.lightFb->Color();
 			}
@@ -161,6 +160,27 @@ namespace Nork::Editor
 				if (ImGui::Selectable(("Pointlight ShadowMap #" + std::to_string(i)).c_str()))
 				{
 					image.texture = data.engine.renderingSystem.pointShadowMaps[i]->Get();
+				}
+			}
+			if (ImGui::Selectable("Bool dest"))
+			{
+				image.texture = data.engine.renderingSystem.bloom.dest->GetAttachments()
+					.colors[0].first;
+			}
+			for (size_t i = 0; i < data.engine.renderingSystem.bloom.fbs.size(); i++)
+			{
+				if (ImGui::Selectable(("Bloom Texture Helper#" + std::to_string(i)).c_str()))
+				{
+					image.texture = data.engine.renderingSystem.bloom.fbs[i]->GetAttachments()
+						.colors[0].first;
+				}
+			}
+			for (size_t i = 0; i < data.engine.renderingSystem.bloom.fbs.size(); i++)
+			{
+				if (ImGui::Selectable(("Bloom2 Texture Helper#" + std::to_string(i)).c_str()))
+				{
+					image.texture = data.engine.renderingSystem.bloom.fbs2[i]->GetAttachments()
+						.colors[0].first;
 				}
 			}
 			

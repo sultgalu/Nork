@@ -8,6 +8,7 @@
 #include "Modules/Renderer/Config.h"
 #include "Modules/Renderer/Model/DrawBatch.h"
 #include "Modules/Renderer/Storage/DrawState.h"
+#include "Modules/Renderer/Pipeline/PostProcess/Bloom.h"
 
 namespace Nork {
 	
@@ -74,7 +75,8 @@ namespace Nork {
 		std::shared_ptr<Renderer::Shader> gPassShader, lPassShader,
 			dShadowShader, pShadowShader,
 			skyboxShader, textureShader,
-			pointShader, lineShader, colliderShader;
+			pointShader, lineShader, colliderShader,
+			bloomShader, bloom2Shader, hdrShader;
 	};
 	struct GlobalShaderUniform
 	{
@@ -129,6 +131,7 @@ namespace Nork {
 		std::vector<std::shared_ptr<Renderer::Framebuffer>> targetFbs;
 		Observed<GlobalShaderUniform> globalShaderUniform;
 		std::shared_ptr<Renderer::VertexArray> colliderVao = nullptr;
+		Renderer::Bloom bloom;
 
 		bool drawSky = true;
 	private:

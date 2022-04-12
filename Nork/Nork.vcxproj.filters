@@ -243,6 +243,9 @@
     <ClCompile Include="Source\Core\ScriptSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\PostProcess\Bloom.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\PCH\pch.h">
@@ -545,6 +548,9 @@
     <ClInclude Include="Source\Core\ScriptSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\PostProcess\Bloom.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\OneDrive\Dokumentumok\GameEngine_0\GameEngineEditor\resources\shaders\lightPass.shader" />
@@ -559,5 +565,8 @@
     <None Include="Source\Shaders\lightCull.shader" />
     <None Include="Source\Shaders\debug.shader" />
     <None Include="Source\Shaders\texture.shader" />
+    <None Include="Source\Shaders\bloom.shader" />
+    <None Include="Source\Shaders\bloom2.shader" />
+    <None Include="Source\Shaders\hdr.shader" />
   </ItemGroup>
 </Project>

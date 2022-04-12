@@ -14,7 +14,7 @@ namespace Nork {
 		static auto& coll = player.AddComponent<Components::Collider>() = Components::Collider::Cube();
 		static auto& cam = player.AddComponent<Components::Camera>();
 		static auto& playerPl = player.AddComponent<Components::PointLight>();
-
+		
 		auto setup = [&]()
 		{
 			engine.AddCamera(cam);
@@ -23,7 +23,8 @@ namespace Nork {
 			playerTr.SetPosition({ 0, 0, -15 });
 			playerKin.mass = 0.001f;
 			engine.physicsSystem.pipeline.coefficient = 0.2f;
-
+			playerPl.SetIntensity(200);
+			playerPl.light->color = glm::vec4(1.0f, 0.4f, 0.8f, 1.0f);
 			Application::Get().window.Resize(1920, 1080);
 			return true;
 		};

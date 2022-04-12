@@ -24,37 +24,28 @@ namespace Nork
 	}
 	void Engine::Update()
 	{
-		if (c[0] % 100 == 0)
-		{
-			std::stringstream ss;
-			for (size_t i = 0; i < c.size(); i++)
-			{
-				ss << (int)c[i] << ";";
-			}
-			Logger::Info(ss.str());
-		}
+		// if (c[0] % 100 == 0)
+		// {
+		// 	std::stringstream ss;
+		// 	for (size_t i = 0; i < c.size(); i++)
+		// 	{
+		// 		ss << (int)c[i] << ";";
+		// 	}
+		// 	Logger::Info(ss.str());
+		// }
 		if (physicsUpdate)
 		{
 			c[0]++;
-			//phxCalc = false;
-			//while (!phxCalcDone) {} // wait for phx to finish
-			//uploadSem.acquire();
-			//Logger::Info("R A");
 			uploadSem.acquire();
 			updateSem.acquire();
+
 			physicsSystem.Upload(scene.registry); // upload new data
+
 			scriptSystem.Update();
-			//Logger::Info("R R");
 			scriptUpdated = true;
+
 			updateSem.release();
 			uploadSem.release();
-			//uploadSem.release();
-			// physicsSystem.Download(scene.registry);
-			// physicsSystem.Update2(scene.registry);
-			// physicsSystem.Upload(scene.registry);
-			// scriptUpdate -> can change uploaded data
-			// phxCalcDone = false;
-			// phxCalc = true; // resume physics
 		}
 		renderingSystem.BeginFrame();
 		for (size_t i = 0; i < cameras.size(); i++)
@@ -62,23 +53,9 @@ namespace Nork
 			renderingSystem.Update(cameras[i], i); // draw full updated data
 		}
 		renderingSystem.EndFrame(); 
-		// if (physicsUpdate)
-		// {
-		// 	physicsSystem.Download(scene.registry);
-		// 	physicsSystem.Update2(scene.registry);
-		// 	physicsSystem.Upload(scene.registry);
-		// }
-
 		Nork::Window& win = Application::Get().window;
 		Profiler::Clear();
 		win.Refresh();
-		
-		// after 1 render update
-		// wait for eg. 4 physics update
-		// call Window.update()
-		// download phyics data into registry
-		// script update, which can override changes by phyics (eg. set position). Writes straight to registry
-		// upload updated data to phyics
 	}
 	void Engine::StartPhysics()
 	{

@@ -79,6 +79,8 @@ namespace Nork {
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 		AddTarget();
 		UpdateGlobalUniform();
+
+		bloom.InitTextures(5, 1920, 1080);
 		// auto image = Renderer::LoadUtils::LoadCubemapImages("Resources/Textures/skybox", ".jpg");
 		// std::array<void*, 6> data;
 		// for (size_t i = 0; i < data.size(); i++)
@@ -188,13 +190,20 @@ namespace Nork {
 		}
 		ViewProjectionUpdate(camera);
 		RenderScene();
+		if (targetIdx == 0)
+		{
+			bloom.Apply(deferredPipeline.lightFb->Color(), shaders.bloomShader, shaders.textureShader, shaders.bloom2Shader);
+		}
 		// Draw on target
 		targetFbs[targetIdx]->Bind()
 			.Clear()
 			.SetViewport();
+		if (targetIdx == 0)
+			bloom.dest->GetAttachments().colors[0].first->Bind2D();
+		else
+			deferredPipeline.lightFb->Color()->Bind();
 
-		deferredPipeline.lightFb->Color()->Bind();
-		shaders.textureShader->Use()
+		shaders.hdrShader->Use()
 			.SetInt("tex", 0);
 		Renderer::DrawUtils::DrawQuad();
 		if (colliderVao != nullptr)
@@ -314,6 +323,9 @@ namespace Nork {
 		lineShader = InitShaderFromSource("Source/Shaders/line.shader");
 		textureShader = InitShaderFromSource("Source/Shaders/texture.shader");
 		colliderShader = InitShaderFromSource("Source/Shaders/position.shader");
+		bloomShader = InitShaderFromSource("Source/Shaders/bloom.shader");
+		bloom2Shader = InitShaderFromSource("Source/Shaders/bloom2.shader");
+		hdrShader = InitShaderFromSource("Source/Shaders/hdr.shader");
 	}
 	void Shaders::SetLightPassShader(std::shared_ptr<Renderer::Shader> shader)
 	{
