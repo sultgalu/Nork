@@ -48,7 +48,7 @@ namespace Nork
 			uploadSem.release();
 		}
 		renderingSystem.BeginFrame();
-		for (size_t i = 0; i < cameras.size(); i++)
+		for (size_t i = 0; i < cameras.size() - 1; i++)
 		{
 			renderingSystem.Update(cameras[i], i); // draw full updated data
 		}

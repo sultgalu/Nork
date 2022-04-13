@@ -136,10 +136,14 @@ namespace Nork::Editor
 					ImGui::Text("Material ID:"); ImGui::SameLine();
 					ImGui::Text(matPath.has_value() ? (*matPath).c_str() : "unkown");
 
-					if (ImGui::SliderFloat3("diffuse", &dr->model->meshes[meshIdx].material->diffuse.r, 0, 1))
+					if (ImGui::ColorEdit3("diffuse", &dr->model->meshes[meshIdx].material->diffuse.r, ImGuiColorEditFlags_DefaultOptions_ | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float))
 					{
 						dr->model->meshes[meshIdx].material->Update();
 					}
+					// if (ImGui::SliderFloat3("diffuse", &dr->model->meshes[meshIdx].material->diffuse.r, 0, 1))
+					// {
+					// 	dr->model->meshes[meshIdx].material->Update();
+					// }
 					if (ImGui::SliderFloat("specular", &dr->model->meshes[meshIdx].material->specular, 0, 10))
 					{
 						dr->model->meshes[meshIdx].material->Update();

@@ -17,7 +17,7 @@ void main()
 #extension ARB_bindless_texture : require
 
 in vec2 fTex;
-out vec4 fColor;
+out vec3 fColor;
 layout(bindless_sampler) uniform sampler2D tex;
 
 void main()
@@ -26,7 +26,7 @@ void main()
 	//fColor = vec4(col, 1);
 	float brightness = dot(col.rgb, vec3(0.2126, 0.7152, 0.0722));
 	if (brightness > 1)
-		fColor = vec4(col, 1);
+		fColor = col;
 	else
-		fColor = vec4(vec3(0), 1);
+		fColor = vec3(0);
 }

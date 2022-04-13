@@ -76,7 +76,7 @@ namespace Nork {
 			dShadowShader, pShadowShader,
 			skyboxShader, textureShader,
 			pointShader, lineShader, colliderShader,
-			bloomShader, bloom2Shader, hdrShader;
+			bloomShader, bloom2Shader, bloom3Shader, hdrShader;
 	};
 	struct GlobalShaderUniform
 	{
@@ -133,6 +133,7 @@ namespace Nork {
 		std::shared_ptr<Renderer::VertexArray> colliderVao = nullptr;
 		Renderer::Bloom bloom;
 
+		bool useBloom = false;
 		bool drawSky = true;
 	private:
 		void OnDShadAdded(entt::registry& reg, entt::entity id);

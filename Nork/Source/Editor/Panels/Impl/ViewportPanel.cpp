@@ -175,7 +175,7 @@ namespace Nork::Editor
 						.colors[0].first;
 				}
 			}
-			for (size_t i = 0; i < data.engine.renderingSystem.bloom.fbs.size(); i++)
+			for (size_t i = 0; i < data.engine.renderingSystem.bloom.fbs2.size(); i++)
 			{
 				if (ImGui::Selectable(("Bloom2 Texture Helper#" + std::to_string(i)).c_str()))
 				{

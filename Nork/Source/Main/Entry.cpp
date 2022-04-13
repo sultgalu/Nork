@@ -109,13 +109,13 @@ int main()
 	Timer t;
 	CameraController camContr;
 
-	engine.StartPhysics();
+	//engine.StartPhysics();
 	while (!Application::Get().window.ShouldClose())
 	{
-		//editor.Update();
-		auto delta = t.Reset();
-		engine.Update();
-		auto& ctx = Application::Get().window.Underlying().GetContext();
-		engine.renderingSystem.DrawToScreen(ctx.width, ctx.height);
+		editor.Update();
+		// auto delta = t.Reset();
+		// engine.Update();
+		// auto& ctx = Application::Get().window.Underlying().GetContext();
+		// engine.renderingSystem.DrawToScreen(ctx.width, ctx.height);
 	}
 }

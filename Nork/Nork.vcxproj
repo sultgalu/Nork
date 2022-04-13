@@ -411,6 +411,7 @@
     <None Include="..\..\..\..\OneDrive\Dokumentumok\GameEngine_0\GameEngineEditor\resources\shaders\lightPass.shader" />
     <None Include="Source\Shaders\bloom.shader" />
     <None Include="Source\Shaders\bloom2.shader" />
+    <None Include="Source\Shaders\bloom3.shader" />
     <None Include="Source\Shaders\debug.shader" />
     <None Include="Source\Shaders\dirShadMap.shader" />
     <None Include="Source\Shaders\gPass.shader" />
@@ -421,6 +422,7 @@
     <None Include="Source\Shaders\point.shader" />
     <None Include="Source\Shaders\pointShadMap.shader" />
     <None Include="Source\Shaders\position.shader" />
+    <None Include="Source\Shaders\sky.shader" />
     <None Include="Source\Shaders\skybox.shader" />
     <None Include="Source\Shaders\texture.shader" />
   </ItemGroup>
