@@ -53,7 +53,7 @@ namespace Nork
 			renderingSystem.Update(cameras[i], i); // draw full updated data
 		}
 		renderingSystem.EndFrame(); 
-		Nork::Window& win = Application::Get().window;
+		Nork::Window& win = Application::Get().engine.window;
 		Profiler::Clear();
 		win.Refresh();
 	}

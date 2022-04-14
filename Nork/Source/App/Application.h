@@ -8,7 +8,6 @@ namespace Nork
 	{
 	public:
 		static Application& Get();
-		Nork::Window window;
 		Engine engine;
 	private:
 		Application();

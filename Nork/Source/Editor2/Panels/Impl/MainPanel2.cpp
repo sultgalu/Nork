@@ -14,7 +14,7 @@ namespace Nork::Editor2
 	
 	void MainPanel::DrawContent()
 	{
-		auto& input = Application::Get().window.Input();
+		auto& input = Application::Get().engine.window.Input();
 		if (input.IsDown(Key::Ctrl))
 		{
 			if (input.IsDown(Key::O))

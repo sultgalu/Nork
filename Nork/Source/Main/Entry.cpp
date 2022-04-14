@@ -101,7 +101,7 @@ int main()
 		}
 	}
 
-	Application::Get().window.SetupCallbacks();
+	Application::Get().engine.window.SetupCallbacks();
 	engine.physicsUpdate = false;
 	engine.scene.GetMainCamera().SetPosition(glm::vec3(-58, 16, -91));
 	engine.scene.GetMainCamera().SetRotation(-10, 60);
@@ -110,7 +110,7 @@ int main()
 	CameraController camContr;
 
 	//engine.StartPhysics();
-	while (!Application::Get().window.ShouldClose())
+	while (!Application::Get().engine.window.ShouldClose())
 	{
 		editor.Update();
 		// auto delta = t.Reset();

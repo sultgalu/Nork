@@ -25,7 +25,7 @@ namespace Nork
 
 		glfwSetWindowSizeCallback(windowPtr, [](GLFWwindow* winPtr, GLint width, GLint height)
 			{
-				Application::Get().window.Underlying().OnResize(width, height);
+				Application::Get().engine.window.Underlying().OnResize(width, height);
 			});
 		// glfwSetMonitorCallback([](GLFWmonitor* monitor, int didConnect)
 		// 	{

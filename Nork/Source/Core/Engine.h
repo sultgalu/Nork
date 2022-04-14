@@ -23,6 +23,7 @@ namespace Nork
 		void AddCamera(Components::Camera cam);
 		auto& Cameras() { return cameras; }
 	public:
+		Nork::Window window;
 		Scene scene;
 
 		RenderingSystem renderingSystem = RenderingSystem(scene.registry);

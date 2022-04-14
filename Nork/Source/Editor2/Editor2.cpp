@@ -30,7 +30,7 @@ namespace Nork::Editor2
 		}
 
 		ImGui_ImplOpenGL3_Init();
-		ImGui_ImplGlfw_InitForOpenGL(Application::Get().window.Underlying().GetContext().glfwWinPtr, false);
+		ImGui_ImplGlfw_InitForOpenGL(Application::Get().engine.window.Underlying().GetContext().glfwWinPtr, false);
 	}
 
 	Editor::Editor(Engine& engine)
@@ -86,7 +86,7 @@ namespace Nork::Editor2
 	{
 		auto& imIO = ImGui::GetIO();
 		auto ptr = &imIO;
-		auto& input = Application::Get().window.Input();
+		auto& input = Application::Get().engine.window.Input();
 		imIO.MouseWheel += (float)input.ScrollOffs();
 
 		//evMan.Subscribe<Events::MouseDown>([&imIO](const Event& ev)

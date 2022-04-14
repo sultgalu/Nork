@@ -18,14 +18,14 @@ namespace Nork {
 		auto setup = [&]()
 		{
 			engine.AddCamera(cam);
-			glfwSetInputMode(Application::Get().window.Underlying().GetContext().glfwWinPtr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			glfwSetInputMode(Application::Get().engine.window.Underlying().GetContext().glfwWinPtr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 			
 			playerTr.SetPosition({ 0, 0, -15 });
 			playerKin.mass = 0.001f;
 			engine.physicsSystem.pipeline.coefficient = 0.2f;
 			playerPl.SetIntensity(200);
 			playerPl.light->color = glm::vec4(1.0f, 0.4f, 0.8f, 1.0f);
-			Application::Get().window.Resize(1920, 1080);
+			Application::Get().engine.window.Resize(1920, 1080);
 			return true;
 		};
 		static bool set = setup();
@@ -35,7 +35,7 @@ namespace Nork {
 		auto front = cam.front;
 		front.y = 0;
 		front = glm::normalize(front);
-		auto& input = Application::Get().window.Input();
+		auto& input = Application::Get().engine.window.Input();
 		glm::vec3 translation = { 0, 0, 0 };
 		if (input.IsDown(Key::A))
 			translation -= cam.right;
@@ -46,7 +46,7 @@ namespace Nork {
 		if (input.IsDown(Key::D))
 			translation += cam.right;
 		if (input.IsDown(Key::Esc))
-			Application::Get().window.Close();
+			Application::Get().engine.window.Close();
 		if (input.IsDown(Key::Down) && speed > 0)
 			speed /= 1.1f;
 		if (input.IsDown(Key::Up))

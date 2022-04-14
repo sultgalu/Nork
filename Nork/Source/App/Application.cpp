@@ -9,7 +9,6 @@ namespace Nork
 	}
 
 	Application::Application():	
-		window(),
 		engine()
 	{
 	}
