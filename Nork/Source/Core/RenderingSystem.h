@@ -134,7 +134,7 @@ namespace Nork {
 		Renderer::Bloom bloom;
 
 		bool useBloom = false;
-		bool drawSky = true;
+		bool drawSky = false;
 	private:
 		void OnDShadAdded(entt::registry& reg, entt::entity id);
 		void OnPShadAdded(entt::registry& reg, entt::entity id);
