@@ -159,6 +159,8 @@ namespace Nork {
 
 		auto vp = camera.projection * glm::mat4(glm::mat3(camera.view));
 		shaders.skyboxShader->Use().SetMat4("VP", vp);
+		shaders.skyShader->Use().SetMat4("VP", vp)
+			.SetVec3("v3CameraPos", camera.position);
 	}
 	void RenderingSystem::SyncComponents()
 	{
@@ -175,6 +177,13 @@ namespace Nork {
 		deferredPipeline.LightPass();
 		if (drawSky && skybox != nullptr)
 			Renderer::SkyRenderer::RenderSkybox(*skybox, *shaders.skyboxShader);
+		if (drawSky)
+		{
+			Renderer::Capabilities().Disable()
+				.DepthTest().CullFace();
+			shaders.skyShader->Use();
+			Renderer::DrawUtils::DrawCube();
+		}
 	}
 	void RenderingSystem::BeginFrame()
 	{
@@ -320,6 +329,7 @@ namespace Nork {
 		dShadowShader = InitShaderFromSource("Source/Shaders/dirShadMap.shader");
 		pShadowShader = InitShaderFromSource("Source/Shaders/pointShadMap.shader");
 		skyboxShader = InitShaderFromSource("Source/Shaders/skybox.shader");
+		skyShader = InitShaderFromSource("Source/Shaders/sky.shader");
 		pointShader = InitShaderFromSource("Source/Shaders/point.shader");
 		lineShader = InitShaderFromSource("Source/Shaders/line.shader");
 		textureShader = InitShaderFromSource("Source/Shaders/texture.shader");

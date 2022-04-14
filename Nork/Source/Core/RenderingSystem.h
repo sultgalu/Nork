@@ -74,7 +74,7 @@ namespace Nork {
 		void SetGeometryPassShader(std::shared_ptr<Renderer::Shader> shader);
 		std::shared_ptr<Renderer::Shader> gPassShader, lPassShader,
 			dShadowShader, pShadowShader,
-			skyboxShader, textureShader,
+			skyboxShader, skyShader, textureShader,
 			pointShader, lineShader, colliderShader,
 			bloomShader, bloom2Shader, bloom3Shader, hdrShader;
 	};
