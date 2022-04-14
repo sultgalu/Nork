@@ -2,7 +2,7 @@
 #include "Modules/Physics/Pipeline/CollisionDetectionCPU.h"
 #include "App/Application.h"
 
-namespace Nork::Editor
+namespace Nork::Editor2
 {
 	static std::unordered_set<uint32_t> selected;
 	static uint32_t current = 0;

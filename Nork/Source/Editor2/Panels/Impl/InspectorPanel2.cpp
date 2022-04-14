@@ -2,7 +2,7 @@
 #include "../InspectorPanel.h"
 #include "Platform/FileDialog.h"
 
-namespace Nork::Editor
+namespace Nork::Editor2
 {
 	std::string GetName(const std::type_info& info)
 	{

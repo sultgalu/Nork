@@ -3,7 +3,7 @@
 #include "Platform/FileDialog.h"
 #include "App/Application.h"
 
-namespace Nork::Editor
+namespace Nork::Editor2
 {
 	MainPanel::MainPanel(EditorData& d) : Panel("MainPanel", d)
 	{

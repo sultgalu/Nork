@@ -2,7 +2,7 @@
 
 #include "Base/Panel.h"
 
-namespace Nork::Editor
+namespace Nork::Editor2
 {
 	class HierarchyPanel : public Panel
 	{

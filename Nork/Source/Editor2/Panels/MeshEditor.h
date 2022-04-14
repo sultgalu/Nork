@@ -1,7 +1,7 @@
 #pragma once
 #include "Base/Panel.h"
 
-namespace Nork::Editor
+namespace Nork::Editor2
 {
 	class MeshEditorPanel : public Panel
 	{

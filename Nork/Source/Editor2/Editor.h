@@ -3,7 +3,7 @@
 #include "Core/Engine.h"
 #include "EditorData.h"
 
-namespace Nork::Editor
+namespace Nork::Editor2
 {
 	class Editor
 	{

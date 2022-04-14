@@ -3,13 +3,13 @@
 #include "Modules/Renderer/Objects/Texture/TextureBuilder.h"
 #include "App/Application.h"
 
-namespace Nork::Editor
+namespace Nork::Editor2
 {
 	static int viewportCounter = 0;
 	static std::shared_ptr<Renderer::Texture2D> defaultTex;
 
 	ViewportPanel::ViewportPanel(EditorData& d)
-		: Nork::Editor::Panel(std::format("Viewport#{}", viewportCounter++), d),
+		: Nork::Editor2::Panel(std::format("Viewport#{}", viewportCounter++), d),
 		mouseState(MouseState{}), image(ImageConfig{})
 	{
 		uint8_t texData[3] = { 128, 228 , 0 }; 

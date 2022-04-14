@@ -2,7 +2,7 @@
 
 #include "Core/Engine.h"
 
-namespace Nork::Editor
+namespace Nork::Editor2
 {
 	namespace IdQueryMode
 	{

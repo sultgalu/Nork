@@ -3,7 +3,7 @@
 #include "Panels/All.h"
 #include "App/Application.h"
 
-namespace Nork::Editor
+namespace Nork::Editor2
 {
 	std::vector<Panel*> panels;
 

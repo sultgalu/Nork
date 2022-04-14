@@ -1,6 +1,6 @@
 #include "../HierarchyPanel.h"
 
-namespace Nork::Editor {
+namespace Nork::Editor2 {
 	static bool del = false;
 	static void RecursiveDraw(EditorData& data, SceneNode& node)
 	{
@@ -69,7 +69,7 @@ namespace Nork::Editor {
 	}
 }
 
-void Nork::Editor::HierarchyPanel::DrawContent()
+void Nork::Editor2::HierarchyPanel::DrawContent()
 {
 	del = false;
 	RecursiveDraw(data, *data.engine.scene.root);

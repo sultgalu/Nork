@@ -2,7 +2,7 @@
 #include "Panel.h"
 #include "App/Application.h"
 
-namespace Nork::Editor
+namespace Nork::Editor2
 {
 	Panel::Panel(std::string name, EditorData& data)
 		: data(data), name(name)

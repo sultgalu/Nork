@@ -2,7 +2,7 @@
 #include "Base/Panel.h"
 #include "Components/All.h"
 
-namespace Nork::Editor
+namespace Nork::Editor2
 {
 	using namespace Components;
 	class InspectorPanel : public Panel

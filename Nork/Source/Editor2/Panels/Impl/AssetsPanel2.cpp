@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "../AssetsPanel.h"
 
-namespace Nork::Editor
+namespace Nork::Editor2
 {
 	void DrawProfileNode(Profiler::Node& node)
 	{

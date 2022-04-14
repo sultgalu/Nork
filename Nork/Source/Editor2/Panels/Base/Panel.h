@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Core/Engine.h"
-#include "Editor/EditorData.h"
+#include "Editor2/EditorData.h"
 
-namespace Nork::Editor
+namespace Nork::Editor2
 {
 	struct PanelState
 	{

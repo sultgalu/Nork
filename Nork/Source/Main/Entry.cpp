@@ -3,7 +3,7 @@
 #include "Utils/Logger.h"
 #include "Utils/Timer.h"
 #include "Components/Common.h"
-#include "Editor/Editor.h"
+#include "Editor2/Editor.h"
 #include "Core/NorkWindow.h"
 #include "Core/Engine.h"
 #include "App/Application.h"
@@ -15,7 +15,7 @@ int main()
 
 	auto& engine = Application::Get().engine;
 
-	Editor::Editor editor(engine);
+	Editor2::Editor editor(engine);
 
 	//editor.SetDisplayTexture(engine.renderingSystem.deferredPipeline.lightFb->Color());
 

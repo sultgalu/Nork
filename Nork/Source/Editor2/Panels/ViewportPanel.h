@@ -3,7 +3,7 @@
 #include "Base/Panel.h"
 #include "Modules/Renderer/Objects/Texture/Texture.h"
 
-namespace Nork::Editor
+namespace Nork::Editor2
 {
 	class ViewportPanel : public Panel
 	{

@@ -6,18 +6,18 @@ constexpr size_t streamSrinkSize = 4 * 100;
 
 std::stringstream stream("");
 
-Nork::Editor::LogPanel::LogPanel(EditorData& d) : Panel("Log", d)
+Nork::Editor2::LogPanel::LogPanel(EditorData& d) : Panel("Log", d)
 {
 	Logger::PushStream(stream);
 	Logger::Info("Pushed imgui logger");
 }
 
-Nork::Editor::LogPanel::~LogPanel()
+Nork::Editor2::LogPanel::~LogPanel()
 {
 	stream.clear();
 }
 
-void Nork::Editor::LogPanel::DrawContent()
+void Nork::Editor2::LogPanel::DrawContent()
 {
 	std::string str = "no logs now sry"; //stream.str();
 	ImGui::InputTextMultiline("LOG", str.data(), str.size());
