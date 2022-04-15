@@ -18,8 +18,8 @@ namespace Nork::Editor2
 			.Attributes(Renderer::TextureAttributes{ .width = 1, .height = 1, .format = Renderer::TextureFormat::RGB })
 			.Create2DWithData(texData);
 		image.texture = defaultTex;
-		data.engine.AddCamera(cam1);
-		data.engine.AddCamera(cam2);
+		// data.engine.AddCamera(cam1);
+		// data.engine.AddCamera(cam2);
 	}
 
 	ViewportPanel::~ViewportPanel()
@@ -44,8 +44,8 @@ namespace Nork::Editor2
 
 	void ViewportPanel::Begin()
 	{
-		data.engine.Cameras()[0] = cam1;
-		data.engine.Cameras()[1] = cam2;
+		// data.engine.Cameras()[0] = cam1;
+		// data.engine.Cameras()[1] = cam2;
 		// camContr.UpdateByKeyInput(data.engine.scene.GetMainCamera(), ImGui::GetIO().DeltaTime * 500);
 		// if (state.isHovered)
 		// 	camContr.UpdateByMouseInput(data.engine.scene.GetMainCamera(), ImGui::GetIO().DeltaTime * 500);
@@ -77,8 +77,8 @@ namespace Nork::Editor2
 			}
 			if (ImGui::BeginTabItem("tex2"))
 			{
-				ImGui::Image((ImTextureID)data.engine.renderingSystem.GetTargetFramebuffers()[1]->GetAttachments().colors[0].first->GetHandle(), ImVec2(displaySize.x, displaySize.y), ImVec2(image.uv_min.x, image.uv_min.y),
-					ImVec2(image.uv_max.x, image.uv_max.y), ImVec4(1, 1, 1, 1), ImVec4(0, 0, 0, 0));
+				// ImGui::Image((ImTextureID)data.engine.renderingSystem.GetTargetFramebuffers()[1]->GetAttachments().colors[0].first->GetHandle(), ImVec2(displaySize.x, displaySize.y), ImVec2(image.uv_min.x, image.uv_min.y),
+				// 	ImVec2(image.uv_max.x, image.uv_max.y), ImVec4(1, 1, 1, 1), ImVec4(0, 0, 0, 0));
 				if (ImGui::IsItemHovered())
 				{
 					camContr.UpdateByKeyInput(cam2, ImGui::GetIO().DeltaTime * 500);
@@ -118,7 +118,7 @@ namespace Nork::Editor2
 		{
 			if (ImGui::Selectable("Default"))
 			{
-				image.texture = data.engine.renderingSystem.GetTargetFramebuffers()[0]->GetAttachments().colors[0].first;
+				//image.texture = data.engine.renderingSystem.GetTargetFramebuffers()[0]->GetAttachments().colors[0].first;
 			}
 			if (ImGui::Selectable("lightFb target"))
 			{

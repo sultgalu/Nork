@@ -201,8 +201,6 @@ namespace Nork::Editor2
 		ImGui::Checkbox("Draw Triangles", &data.engine.physicsSystem.drawTriangles);
 		ImGui::Checkbox("Draw Lines", &data.engine.physicsSystem.drawLines);
 		ImGui::Checkbox("Draw Points", &data.engine.physicsSystem.drawPoints);
-		ImGui::Checkbox("Draw Sky", &data.engine.renderingSystem.drawSky);
-		ImGui::Checkbox("Use Bloom", &data.engine.renderingSystem.useBloom);
 
 		auto options = ImGuiColorEditFlags_DefaultOptions_ | ImGuiColorEditFlags_AlphaPreview | ImGuiColorEditFlags_AlphaBar;
 		ImGui::SliderInt("Point Size", &data.engine.renderingSystem.globalShaderUniform.pointSize, 1, 1000, "%d", ImGuiSliderFlags_Logarithmic);

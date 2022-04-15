@@ -12,6 +12,7 @@
 
 namespace Nork
 {
+
 	class Engine
 	{
 	public:
@@ -20,8 +21,6 @@ namespace Nork
 		void Update();
 		void StartPhysics();
 		void StopPhysics();
-		void AddCamera(Components::Camera cam);
-		auto& Cameras() { return cameras; }
 	public:
 		Nork::Window window;
 		Scene scene;
@@ -42,7 +41,6 @@ namespace Nork
 
 		ScriptSystem scriptSystem;
 	private:
-		std::vector<Components::Camera> cameras;
 		void OnDrawableAdded(entt::registry& reg, entt::entity id);
 		std::thread* LaunchPhysicsThread();
 	};

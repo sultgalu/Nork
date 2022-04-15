@@ -11,7 +11,32 @@
 #include "Modules/Renderer/Pipeline/PostProcess/Bloom.h"
 
 namespace Nork {
-	
+
+	struct Viewport
+	{
+		enum Source
+		{
+			Deferred = 1 << 0,
+			Bloom = 1 << 5,
+			Tonemap = 1 << 9,
+			Sky = 1 << 10,
+			Colliders = 1 << 15,
+
+			PostProcess = Bloom | Tonemap,
+			Default = Deferred | PostProcess,
+			Debug = Colliders
+		};
+
+		Viewport(std::shared_ptr<Components::Camera> camera);
+		std::shared_ptr<Renderer::Framebuffer> fb;
+		std::shared_ptr<Components::Camera> camera = nullptr;
+		std::shared_ptr<Renderer::Texture> target = nullptr;
+		std::shared_ptr<Renderer::Texture> Texture() { return fb->GetAttachments().colors[0].first; }
+		Source source = Source::Default;
+		bool active = true;
+		bool Renders(Source s) { return (source & s) == s; }
+	};
+
 	class Shaders
 	{
 	private:
@@ -76,7 +101,8 @@ namespace Nork {
 			dShadowShader, pShadowShader,
 			skyboxShader, skyShader, textureShader,
 			pointShader, lineShader, colliderShader,
-			bloomShader, bloom2Shader, bloom3Shader, hdrShader;
+			bloomShader, bloom2Shader, bloom3Shader, 
+			tonemapShader;
 	};
 	struct GlobalShaderUniform
 	{
@@ -100,12 +126,11 @@ namespace Nork {
 	public:
 		RenderingSystem(entt::registry& registry);
 		void BeginFrame();
-		void Update(Components::Camera& camera, int targetIdx = 0);
+		void Update();
+		void Update(Viewport&);
 		void EndFrame();
 		GlobalShaderUniform GetGlobalShaderUniform() { return globalShaderUniform; }
 		void DrawToScreen(int w, int h);
-		void AddTarget();
-		auto& GetTargetFramebuffers() { return targetFbs; }
 		void SetRenderColliders(bool);
 	private:
 		void RenderColliders();
@@ -114,7 +139,7 @@ namespace Nork {
 		void UpdateLights();
 		void ViewProjectionUpdate(Components::Camera& camera);
 		void SyncComponents();
-		void RenderScene();
+		void RenderScene(Viewport& viewport);
 		void DrawBatchUpdate();
 
 	private:
@@ -128,13 +153,12 @@ namespace Nork {
 		std::shared_ptr<Renderer::TextureCube> skybox;
 		Renderer::DrawState drawState;
 		Renderer::DrawBatch drawBatch;
-		std::vector<std::shared_ptr<Renderer::Framebuffer>> targetFbs;
 		Observed<GlobalShaderUniform> globalShaderUniform;
 		std::shared_ptr<Renderer::VertexArray> colliderVao = nullptr;
 		Renderer::Bloom bloom;
-
-		bool useBloom = false;
-		bool drawSky = false;
+		std::shared_ptr<Renderer::Framebuffer> target;
+		std::vector<std::shared_ptr<Viewport>> viewports;
+		float delta;
 	private:
 		void OnDShadAdded(entt::registry& reg, entt::entity id);
 		void OnPShadAdded(entt::registry& reg, entt::entity id);

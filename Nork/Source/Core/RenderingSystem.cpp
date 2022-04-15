@@ -77,7 +77,6 @@ namespace Nork {
 		registry.on_destroy<Components::PointLight>().connect<&RenderingSystem::OnPLightRemoved>(this);
 
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-		AddTarget();
 		UpdateGlobalUniform();
 
 		bloom.InitTextures(8, 1920, 1080);
@@ -92,6 +91,15 @@ namespace Nork {
 			.Attributes(TextureAttributes{ .width = image[0].width, .height = image[0].height, .format = image[0].format })
 			.Params(TextureParams::CubeMapParams())
 			.CreateCubeWithData(data);
+
+		using namespace Renderer;
+		target = FramebufferBuilder().Attachments(FramebufferAttachments().Color(
+			TextureBuilder()
+			.Params(TextureParams::FramebufferTex2DParams())
+			.Attributes(TextureAttributes{ .width = 1920, .height = 1080, .format = TextureFormat::RGB16F })
+			.Create2DEmpty(), 0))
+			.Create();
+		CreateCollidersVao(1);
 	}
 	void RenderingSystem::DrawBatchUpdate()
 	{
@@ -171,13 +179,13 @@ namespace Nork {
 			pl.light->Update();
 		}
 	}
-	void RenderingSystem::RenderScene()
+	void RenderingSystem::RenderScene(Viewport& viewport)
 	{
 		deferredPipeline.GeometryPass({ drawBatch.GetDrawCommand() });
 		deferredPipeline.LightPass();
-		if (drawSky && skybox != nullptr)
-			Renderer::SkyRenderer::RenderSkybox(*skybox, *shaders.skyboxShader);
-		if (drawSky)
+		// if (viewport.Renders(Viewport::Source::Sky))
+		// 	Renderer::SkyRenderer::RenderSkybox(*skybox, *shaders.skyboxShader);
+		if (viewport.Renders(Viewport::Source::Sky))
 		{
 			Renderer::Capabilities().Disable()
 				.DepthTest().CullFace();
@@ -189,37 +197,75 @@ namespace Nork {
 	{
 		SyncComponents();
 		UpdateLights();
-		DrawBatchUpdate();
-	}
-	void RenderingSystem::Update(Components::Camera& camera, int targetIdx)
-	{
 		if (globalShaderUniform.IsChanged())
 		{
 			UpdateGlobalUniform();
 			Logger::Info("Updating");
 		}
-		ViewProjectionUpdate(camera);
-		RenderScene();
-		if (useBloom && targetIdx == 0)
+		DrawBatchUpdate();
+	}
+	void RenderingSystem::Update()
+	{
+		Timer t;
+		for (auto& viewport : viewports)
 		{
-			bloom.Apply(deferredPipeline.lightFb->Color(), shaders.bloomShader, shaders.bloom3Shader, shaders.bloom2Shader);
+			if (viewport->active)
+			{
+				Update(*viewport);
+			}
 		}
-		// Draw on target
-		targetFbs[targetIdx]->Bind()
-			.Clear()
-			.SetViewport();
-		if (useBloom && targetIdx == 0)
-			bloom.dest->GetAttachments().colors[0].first->Bind2D();
-		else
-			deferredPipeline.lightFb->Color()->Bind();
+		delta = t.Elapsed();
+	}
+	void RenderingSystem::Update(Viewport& viewport)
+	{
+		ViewProjectionUpdate(*viewport.camera);
+		if (viewport.Renders(Viewport::Source::Deferred))
+		{
+			RenderScene(viewport);
+			if (viewport.Renders(Viewport::Source::Bloom))
+			{
+				bloom.Apply(deferredPipeline.lightFb->Color(), shaders.bloomShader, shaders.bloom3Shader, shaders.bloom2Shader);
+			}
+			// Draw on target
+		}
+		target->Bind().Clear().SetViewport();
+		if (viewport.Renders(Viewport::Source::Deferred))
+		{
+			if (viewport.Renders(Viewport::Source::Bloom))
+				bloom.dest->GetAttachments().colors[0].first->Bind2D();
+			else
+				deferredPipeline.lightFb->Color()->Bind();
 
-		shaders.hdrShader->Use()
-			.SetInt("tex", 0);
-		Renderer::DrawUtils::DrawQuad();
-		if (colliderVao != nullptr)
-		{
-			RenderColliders();
+			if (viewport.Renders(Viewport::Source::Tonemap))
+			{
+				shaders.tonemapShader->Use().SetInt("tex", 0);
+			}
+			else
+			{
+				shaders.textureShader->Use().SetInt("tex", 0);
+			}
+			Renderer::DrawUtils::DrawQuad();
 		}
+
+		if (viewport.Renders(Viewport::Source::Colliders))
+		{
+			if (colliderVao != nullptr)
+			{
+				RenderColliders();
+			}
+		}
+
+		if (viewport.target)
+		{
+			viewport.target->Bind2D();
+		}
+		else
+		{
+			target->GetAttachments().colors[0].first->Bind2D();
+		}
+		shaders.textureShader->Use().SetInt("tex", 0);
+		viewport.fb->Bind().Clear().SetViewport();
+		Renderer::DrawUtils::DrawQuad();
 	}
 	void RenderingSystem::EndFrame()
 	{
@@ -231,7 +277,7 @@ namespace Nork {
 			.Disable().DepthTest().CullFace().Blend();
 
 		//deferredPipeline.lightFb->Color()->Bind();
-		targetFbs[0]->GetAttachments().colors[0].first->Bind2D();
+		target->GetAttachments().colors[0].first->Bind2D();
 		shaders.textureShader->Use()
 			.SetInt("tex", 0);
 
@@ -239,19 +285,14 @@ namespace Nork {
 		glViewport(0, 0, w, h);
 		Renderer::DrawUtils::DrawQuad();
 	}
-	void RenderingSystem::AddTarget()
-	{
-		using namespace Renderer;
-		targetFbs.push_back(FramebufferBuilder().Attachments(FramebufferAttachments().Color(
-			TextureBuilder()
-				.Params(TextureParams::FramebufferTex2DParams())
-				.Attributes(TextureAttributes{ .width = 1920, .height = 1080, .format = TextureFormat::RGB16F })
-				.Create2DEmpty(), 0))
-			.Create()
-		);
-	}
+	
 	void RenderingSystem::RenderColliders()
 	{
+		Renderer::Capabilities()
+			.Enable().Blend(Renderer::BlendFunc::SrcAlpha_1MinuseSrcAlpha).CullFace()
+			.Disable().DepthTest();
+		shaders.colliderShader->Use();
+
 		auto count = 0;
 		auto triCount = 0;
 		for (auto [id, coll] : registry.view<Components::Collider>().each())
@@ -259,7 +300,7 @@ namespace Nork {
 			count += coll.Points().size();
 			triCount += coll.TriangleCount() * 3;
 		}
-		if (count * sizeof(glm::vec3) > colliderVao->GetVBO()->GetSize())
+		if (!colliderVao || count * sizeof(glm::vec3) > colliderVao->GetVBO()->GetSize())
 		{
 			CreateCollidersVao(count);
 		}
@@ -285,10 +326,6 @@ namespace Nork {
 			}
 			triBase += coll.Points().size();
 		}
-		Renderer::Capabilities()
-			.Enable().Blend(Renderer::BlendFunc::SrcAlpha_1MinuseSrcAlpha).CullFace()
-			.Disable().DepthTest();
-		shaders.colliderShader->Use();
 		colliderVao->Bind().DrawIndexed(std::span(inds));
 		//shaders.pointShader->Use();
 		//colliderVao->Bind().Draw(Renderer::DrawMode::Points);
@@ -337,7 +374,7 @@ namespace Nork {
 		bloomShader = InitShaderFromSource("Source/Shaders/bloom.shader");
 		bloom2Shader = InitShaderFromSource("Source/Shaders/bloom2.shader");
 		bloom3Shader = InitShaderFromSource("Source/Shaders/bloom3.shader");
-		hdrShader = InitShaderFromSource("Source/Shaders/hdr.shader");
+		tonemapShader = InitShaderFromSource("Source/Shaders/tonemap.shader");
 	}
 	void Shaders::SetLightPassShader(std::shared_ptr<Renderer::Shader> shader)
 	{
@@ -356,5 +393,17 @@ namespace Nork {
 	void Shaders::SetGeometryPassShader(std::shared_ptr<Renderer::Shader> shader)
 	{
 		gPassShader = shader;
+	}
+
+	Viewport::Viewport(std::shared_ptr<Components::Camera> camera)
+		:camera(camera)
+	{
+		using namespace Renderer;
+		fb = FramebufferBuilder().Attachments(FramebufferAttachments().Color(
+			TextureBuilder()
+			.Params(TextureParams::FramebufferTex2DParams())
+			.Attributes(TextureAttributes{ .width = 1920, .height = 1080, .format = TextureFormat::RGB16F })
+			.Create2DEmpty(), 0))
+			.Create();
 	}
 }

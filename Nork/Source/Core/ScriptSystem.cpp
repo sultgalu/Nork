@@ -17,7 +17,6 @@ namespace Nork {
 		
 		auto setup = [&]()
 		{
-			engine.AddCamera(cam);
 			glfwSetInputMode(Application::Get().engine.window.Underlying().GetContext().glfwWinPtr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 			
 			playerTr.SetPosition({ 0, 0, -15 });
@@ -85,7 +84,6 @@ namespace Nork {
 
 			playerTr.SetRotation(q);
 		}
-
-		engine.Cameras()[0] = cam;
+		engine.renderingSystem.viewports[0]->camera = std::shared_ptr<Components::Camera>(&cam);
 	}
 }

@@ -48,14 +48,10 @@ namespace Nork
 			uploadSem.release();
 		}
 		renderingSystem.BeginFrame();
-		for (size_t i = 0; i < cameras.size() - 1; i++)
-		{
-			renderingSystem.Update(cameras[i], i); // draw full updated data
-		}
+		renderingSystem.Update(); // draw full updated data
 		renderingSystem.EndFrame(); 
-		Nork::Window& win = Application::Get().engine.window;
 		Profiler::Clear();
-		win.Refresh();
+		window.Refresh();
 	}
 	void Engine::StartPhysics()
 	{
@@ -72,12 +68,6 @@ namespace Nork
 		physicsUpdate = false;
 		physicsThread->join();
 		delete physicsThread;
-	}
-
-	void Engine::AddCamera(Components::Camera cam)
-	{
-		cameras.push_back(cam);
-		renderingSystem.AddTarget();
 	}
 
 	std::thread* Engine::LaunchPhysicsThread()

@@ -39,7 +39,7 @@ namespace Nork::Editor2
 		InitImGui();
 		panels = std::vector<Panel*>{ new MainPanel(data), new AssetsPanel(data), new LogPanel(data),
 			new ViewportPanel(data), new InspectorPanel(data), new HierarchyPanel(data), new MeshEditorPanel(data)};
-		SetDisplayTexture(engine.renderingSystem.GetTargetFramebuffers()[0]->GetAttachments().colors[0].first);
+		// SetDisplayTexture(engine.renderingSystem.GetTargetFramebuffers()[0]->GetAttachments().colors[0].first);
 	}
 
 	void Editor::Render()
