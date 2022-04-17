@@ -69,7 +69,7 @@ namespace Nork::Editor2
 	}
 	void InspectorPanel::TransformComp(Transform* tr)
 	{
-		if (ImGui::TreeNodeEx("Transform", ImGuiTreeNodeFlags_DefaultOpen))
+		/*if (ImGui::TreeNodeEx("Transform", ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			auto pos = tr->GetPosition();
 			auto scale = tr->GetScale();
@@ -111,7 +111,7 @@ namespace Nork::Editor2
 			}
 			ImGui::PopStyleColor();
 			ImGui::TreePop();
-		}
+		}*/
 	}
 	void InspectorPanel::ModelComp(Drawable* dr)
 	{
@@ -417,18 +417,18 @@ namespace Nork::Editor2
 				dL->light->direction = dir;
 				//if (dir * dir != glm::zero<glm::vec3>()) // this logic should go into light
 					//dL->light->direction = glm::normalize(dir);
-				dL->RecalcVP(dL->GetView());
+				dL->RecalcVP();
 			}
 			if (ImGui::SliderFloat("outOfProjValue", &dL->light->outOfProjValue, 0, 1))
 				dL->light->Update();
 			if (ImGui::ColorEdit4("Color", &(dL->light->color.r)))
 				dL->light->Update();
 			if (ImGui::DragFloat2("Left, Right", &dL->left))
-				dL->RecalcVP(dL->GetView());
+				dL->RecalcVP();
 			if (ImGui::DragFloat2("Bottom, Top", &dL->bottom))
-				dL->RecalcVP(dL->GetView());
+				dL->RecalcVP();
 			if (ImGui::DragFloat2("Near, Far", &dL->near))
-				dL->RecalcVP(dL->GetView());
+				dL->RecalcVP();
 
 			if (dL->shadow == nullptr)
 			{

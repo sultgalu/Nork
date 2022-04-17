@@ -72,15 +72,16 @@ namespace Nork::Editor
 			auto& comp = *data.editorCameras.back();
 			json.Get<JsonArray>("position").Get(&comp.position.x, 3);
 			json.Get<JsonArray>("up").Get(&comp.up.x, 3);
-			json.Get("farClip", comp.farClip);
-			json.Get("FOV", comp.FOV);
-			json.Get("moveSpeed", comp.moveSpeed);
 			json.Get("nearClip", comp.nearClip);
-			json.Get("pitch", comp.pitch);
-			json.Get("ratio", comp.ratio);
-			json.Get("rotationSpeed", comp.rotationSpeed);
+			json.Get("farClip", comp.farClip);
 			json.Get("yaw", comp.yaw);
+			json.Get("pitch", comp.pitch);
+			json.Get("FOV", comp.FOV);
+			json.Get("ratio", comp.ratio);
 			json.Get("zoomSpeed", comp.zoomSpeed);
+			json.Get("moveSpeed", comp.moveSpeed);
+			json.Get("rotationSpeed", comp.rotationSpeed);
+			
 			comp.Update();
 		}
 	}
@@ -117,6 +118,7 @@ namespace Nork::Editor
 	void InitImGui()
 	{
 		ImGui::CreateContext();
+
 		auto g = ImGui::GetCurrentContext();
 		ImGuiSettingsHandler ini_handler;
 		ini_handler.TypeName = "Cameras";
@@ -146,6 +148,8 @@ namespace Nork::Editor
 
 		ImGui_ImplOpenGL3_Init();
 		ImGui_ImplGlfw_InitForOpenGL(Application::Get().engine.window.Underlying().GetContext().glfwWinPtr, false);
+	
+		// ImGui::SetColorEditOptions(0);
 	}
 	Editor::Editor(Engine& engine)
 		: engine(engine)
@@ -156,9 +160,11 @@ namespace Nork::Editor
 
 		InitImGui();
 		panels.push_back(std::make_unique<HierarchyPanel>());
+		panels.push_back(std::make_unique<InspectorPanel>());
+		panels.push_back(std::make_unique<PhysicsSettingsPanel>());
+		panels.push_back(std::make_unique<GraphicsSettingsPanel>());
 		// AddViewportPanel();
 		menus.push_back(std::make_unique<FileMenu>());
-
 	}
 
 	void Editor::Render()

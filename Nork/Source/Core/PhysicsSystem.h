@@ -15,7 +15,6 @@ namespace Nork {
 		void Update2(entt::registry& reg);
 
 		std::vector<std::pair<std::string, float>> deltas;
-		bool drawPolies = false, drawLines = true, drawPoints = true, drawTriangles = true;
 		bool satRes = false, gjkRes = false, clipRes = false, aabbRes = false;
 		bool sat = false, gjk = false, clip = true, aabb = true;
 		bool updatePoliesForPhysics = true;

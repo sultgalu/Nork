@@ -40,8 +40,11 @@ namespace Nork
 		std::binary_semaphore uploadSem;
 
 		ScriptSystem scriptSystem;
+
+		entt::observer transformObserver;
 	private:
 		void OnDrawableAdded(entt::registry& reg, entt::entity id);
 		std::thread* LaunchPhysicsThread();
+		void UpdateTransformMatrices();
 	};
 }

@@ -197,10 +197,6 @@ namespace Nork::Editor2
 		ImGui::Checkbox("Update Rotation", &data.engine.physicsSystem.pipeline.updateRotation);
 		ImGui::Checkbox("Detect Collisions", &data.engine.physicsSystem.pipeline.detectCollisions);
 		ImGui::Checkbox("Handle Collisions", &data.engine.physicsSystem.pipeline.handleCollisions);
-		ImGui::Checkbox("Draw Polies", &data.engine.physicsSystem.drawPolies);
-		ImGui::Checkbox("Draw Triangles", &data.engine.physicsSystem.drawTriangles);
-		ImGui::Checkbox("Draw Lines", &data.engine.physicsSystem.drawLines);
-		ImGui::Checkbox("Draw Points", &data.engine.physicsSystem.drawPoints);
 
 		auto options = ImGuiColorEditFlags_DefaultOptions_ | ImGuiColorEditFlags_AlphaPreview | ImGuiColorEditFlags_AlphaBar;
 		ImGui::SliderInt("Point Size", &data.engine.renderingSystem.globalShaderUniform.pointSize, 1, 1000, "%d", ImGuiSliderFlags_Logarithmic);

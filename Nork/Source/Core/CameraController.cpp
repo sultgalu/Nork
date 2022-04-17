@@ -27,13 +27,18 @@ namespace Nork
 		{
 			camera.Move(Rigth, delta);
 		}
+		if (input.IsJustPressed(Key::Space))
+		{
+			camera.moveSpeed *= 10;
+		}
+		if (input.IsJustReleased(Key::Space))
+		{
+			camera.moveSpeed /= 10.f;
+		}
 	}
 	void CameraController::UpdateByMouseInput(Components::Camera& camera, float delta)
 	{
 		auto& input = Application::Get().engine.window.Input();
-
-		static float baseSpeed = camera.moveSpeed;
-		camera.moveSpeed = input.IsDown(Key::Space) ? baseSpeed * 10.0f : baseSpeed;
 
 		if (input.DidScroll())
 		{

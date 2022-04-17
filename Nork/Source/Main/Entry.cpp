@@ -32,7 +32,7 @@ int main()
 			{
 				auto ent = engine.scene.CreateNode()->GetEntity();
 				ent.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
-				ent.AddComponent<Components::Transform>().SetPosition(glm::vec3(i * sep, j * sep, k * sep));
+				ent.AddComponent<Components::Transform>([&](auto& tr) { tr.position = glm::vec3(i * sep, j * sep, k * sep); });
 				ent.AddComponent<Components::Kinematic>().mass = 0.1f;
 				ent.AddComponent<Components::Collider>() = Components::Collider::Cube();
 				ent.AddComponent<Components::Tag>().tag = std::to_string(i).append("-").append(std::to_string(j)).append("-").append(std::to_string(k));
@@ -40,17 +40,13 @@ int main()
 		}
 	}
 
-	if (dim > 5)
-	{
-		engine.physicsSystem.drawPolies = false;
-	}
-
 	glm::vec3 scale = glm::vec3(100, 1, 100);
 	auto ground = engine.scene.CreateNode()->GetEntity();
-	ground.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");;
-	auto& tr = ground.AddComponent<Components::Transform>()
-		.SetPosition(glm::vec3(0, -10, 0))
-		.SetScale(scale);
+	ground.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
+	ground.AddComponent<Components::Transform>([&](auto& tr) {
+		tr.position = glm::vec3(0, -10, 0);
+		tr.scale = scale;
+		});
 	ground.AddComponent<Components::Collider>() = Components::Collider::Cube();
 	ground.AddComponent<Components::Tag>().tag = "GROUND";
 
@@ -69,12 +65,15 @@ int main()
 	engine.scene.AddComponent<Components::Tag>(node2).tag = "NODE 2";*/
 
 	auto sun = engine.scene.CreateNode()->GetEntity();
-	auto& l = sun.AddComponent<Components::DirLight>();
+	sun.AddComponent<Components::DirLight>([](auto& l)
+		{
+			l.far = 100; l.near = -100; l.left = -100; l.right = 100; l.bottom = -100; l.top = 100;
+			l.RecalcVP();
+		});
 	//l.light->color = glm::vec4(0.5f, 0.4f, 0.25f, 1);
 	//l.SetColor(glm::vec4(0.0f));
+
 	sun.AddComponent<Components::DirShadowRequest>();
-	l.far = 100; l.near = -100; l.left = -100; l.right = 100; l.bottom = -100; l.top = 100;
-	l.RecalcVP(l.GetView());
 	sun.AddComponent<Components::Tag>().tag = "SUN";
 	
 	int offsX = 10;
@@ -91,7 +90,7 @@ int main()
 			for (int k = startP; k < endP; k++)
 			{
 				auto pl = engine.scene.CreateNode()->GetEntity();
-				pl.AddComponent<Components::Transform>().SetPosition({ i * sepP + offsX, j * sepP, k * sepP });
+				pl.AddComponent<Components::Transform>([&](auto& tr) { tr.position = { i * sepP + offsX, j * sepP, k * sepP }; });
 				pl.AddComponent<Components::Drawable>();
 				pl.AddComponent<Components::PointLight>().SetIntensity(10);
 				//if (shadows-- > 0)

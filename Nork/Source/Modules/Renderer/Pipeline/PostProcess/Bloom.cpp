@@ -18,48 +18,44 @@ namespace Nork::Renderer {
 		// 	.Create();
 		// ubo->BindBase(10).Map(BufferAccess::Write);
 	}
-	void Bloom::InitTextures(uint32_t size, uint32_t baseX, uint32_t baseY)
+	void Bloom::InitTextures()
 	{
-		uint32_t x = baseX;
-		uint32_t y = baseY;
-		for (size_t i = 0; i < size; i++)
+		if (divider < 1.1f || lowResY < 1)
+		{
+			MetaLogger().Error("Bad Params");
+			return;
+		}
+
+		fbs.clear();
+		fbs2.clear();
+
+		uint32_t x = highResY * ratio;
+		uint32_t y = highResY;
+		while (y > lowResY && y > 0)
 		{
 			auto params = TextureParams::FramebufferTex2DParams();
-			//params.magLinear = false;
-			//params.filter = TextureFilter::Nearest;
 			auto tex = TextureBuilder()
+				.Params(params)
+				.Attributes(TextureAttributes{ .width = x, .height = y, .format = TextureFormat::RGB16F })
+				.Create2DEmpty();
+			auto tex2 = TextureBuilder()
 				.Params(params)
 				.Attributes(TextureAttributes{ .width = x, .height = y, .format = TextureFormat::RGB16F })
 				.Create2DEmpty();
 
 			fbs.push_back(FramebufferBuilder().Attachments(FramebufferAttachments().Color(tex, 0))
 				.Create());
-			x /= 2;
-			y /= 2;
-		}
-
-		x = baseX;
-		y = baseY;
-		for (size_t i = 0; i < size; i++)
-		{
-			auto params = TextureParams::FramebufferTex2DParams();
-			//params.magLinear = false;
-			auto tex = TextureBuilder()
-				.Params(params)
-				.Attributes(TextureAttributes{ .width = x, .height = y, .format = TextureFormat::RGB16F })
-				.Create2DEmpty();
-
-			fbs2.push_back(FramebufferBuilder().Attachments(FramebufferAttachments().Color(tex, 0))
+			fbs2.push_back(FramebufferBuilder().Attachments(FramebufferAttachments().Color(tex2, 0))
 				.Create());
-			x /= 2;
-			y /= 2;
+			x /= divider;
+			y /= divider;
 		}
 
 		auto params = TextureParams::FramebufferTex2DParams();
 		//params.magLinear = false;
 		auto tex = TextureBuilder()
 			.Params(params)
-			.Attributes(TextureAttributes{ .width = baseX, .height = baseY, .format = TextureFormat::RGB16F })
+			.Attributes(TextureAttributes{ .width = (uint32_t)(highResY * ratio), .height = (uint32_t)highResY, .format = TextureFormat::RGB16F })
 			.Create2DEmpty();
 
 		dest = FramebufferBuilder().Attachments(FramebufferAttachments().Color(tex, 0))

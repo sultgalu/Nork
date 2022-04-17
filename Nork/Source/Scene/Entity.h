@@ -14,10 +14,21 @@ namespace Nork {
 		{
 			return registry.emplace<T>(id, args...);
 		}
+		template<class T, class F>
+		inline T& AddComponent(F&& f)
+		{
+			registry.emplace<T>(id);
+			return registry.patch<T>(id, f);
+		}
 		template<class T>
 		inline bool RemoveComponent()
 		{
 			return registry.remove<T>(id) == 1;
+		}
+		template<class T>
+		inline T& ReplaceComponent(const T& replacement) // returns replaced component
+		{
+			return registry.replace<T>(id, replacement);
 		}
 		template<class T>
 		inline T& GetComponent()

@@ -43,10 +43,10 @@ namespace Nork {
 		auto kinView = reg.view<Transform, Kinematic>();
 		kinView.each([&](entt::entity id, Transform& tr, Kinematic& kin)
 			{
-				tr.SetPosition(pWorld.kinems[i].position);
+				tr.position = pWorld.kinems[i].position;
 				kin.velocity = pWorld.kinems[i].velocity;
 				kin.forces = pWorld.kinems[i].forces;
-				tr.SetRotation(pWorld.kinems[i].quaternion);
+				tr.quaternion = pWorld.kinems[i].quaternion;
 				kin.w = pWorld.kinems[i++].w;
 			});
 	}
@@ -63,7 +63,7 @@ namespace Nork {
 		collView.each([&](entt::entity id, Transform& tr, Kinematic& kin, Collider& coll)
 			{
 				pWorld.kinems.push_back(Physics::KinematicData{
-					.position = tr.GetPosition(), .quaternion = tr.GetRotation(),
+					.position = tr.position, .quaternion = tr.quaternion,
 					.velocity = kin.velocity, .w = kin.w, .mass = kin.mass,
 					.isStatic = false, .forces = kin.forces });
 			});
@@ -71,7 +71,7 @@ namespace Nork {
 		collOnlyView.each([&](entt::entity id, Transform& tr, Collider& coll)
 			{
 				pWorld.kinems.push_back(Physics::KinematicData{
-					.position = tr.GetPosition(), .quaternion = tr.GetRotation(),
+					.position = tr.position, .quaternion = tr.quaternion,
 					.velocity = glm::vec3(0),.w = glm::vec3(0), .mass = 1,
 					.isStatic = true, .forces = glm::vec3(0), });
 			});
@@ -79,7 +79,7 @@ namespace Nork {
 		view.each([&](entt::entity id, Transform& tr, Kinematic& kin)
 			{
 				pWorld.kinems.push_back(Physics::KinematicData{
-					.position = tr.GetPosition(), .quaternion = tr.GetRotation(),
+					.position = tr.position, .quaternion = tr.quaternion,
 					.velocity = kin.velocity, .w = kin.w, .mass = kin.mass,
 					.isStatic = false, .forces = kin.forces });
 			});
@@ -90,12 +90,12 @@ namespace Nork {
 
 			collView.each([&](entt::entity id, Transform& tr, Kinematic& kin, Collider& coll)
 				{
-					colls.push_back(Convert(coll, tr.GetScale()));
+					colls.push_back(Convert(coll, tr.scale));
 				});
 
 			collOnlyView.each([&](entt::entity id, Transform& tr, Collider& coll)
 				{
-					colls.push_back(Convert(coll, tr.GetScale()));
+					colls.push_back(Convert(coll, tr.scale));
 				});
 
 			pipeline.SetColliders(colls);
@@ -110,14 +110,14 @@ namespace Nork {
 
 		collView.each([&](entt::entity id, Transform& tr, Kinematic& kin, Collider& poly)
 			{
-				translations.push_back(tr.GetPosition());
-				quaternions.push_back(tr.GetRotation());
+				translations.push_back(tr.position);
+				quaternions.push_back(tr.position);
 			});
 
 		collOnlyView.each([&](entt::entity id, Transform& tr, Collider& poly)
 			{
-				translations.push_back(tr.GetPosition());
-				quaternions.push_back(tr.GetRotation());
+				translations.push_back(tr.position);
+				quaternions.push_back(tr.position);
 			});
 		pipeline.SetModels(translations, quaternions);
 	}

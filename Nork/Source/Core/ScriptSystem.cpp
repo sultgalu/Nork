@@ -19,7 +19,7 @@ namespace Nork {
 		{
 			glfwSetInputMode(Application::Get().engine.window.Underlying().GetContext().glfwWinPtr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 			
-			playerTr.SetPosition({ 0, 0, -15 });
+			playerTr.position = { 0, 0, -15 };
 			playerKin.mass = 0.001f;
 			engine.physicsSystem.pipeline.coefficient = 0.2f;
 			playerPl.SetIntensity(200);
@@ -56,7 +56,7 @@ namespace Nork {
 		//playerTr.Translate(translation * speed);
 		playerKin.velocity.x = translation.x * speed;
 		playerKin.velocity.z = translation.z * speed;
-		cam.position = playerTr.GetPosition();
+		cam.position = playerTr.position;
 		if (input.DidScroll())
 		{
 			cam.Zoom(input.ScrollOffs());
@@ -65,7 +65,7 @@ namespace Nork {
 		if (true || input.IsDown(Button::Left))
 		{
 			cam.Rotate(-input.CursorYOffs(), input.CursorXOffs());
-			playerTr.SetRotation(glm::quat());
+			playerTr.quaternion = glm::quat();
 			playerTr.Rotate(cam.up, cam.yaw);
 			playerTr.Rotate(cam.right, cam.pitch);
 
@@ -82,7 +82,7 @@ namespace Nork {
 			q.y = cr * sp * cy + sr * cp * sy;
 			q.z = cr * cp * sy - sr * sp * cy;
 
-			playerTr.SetRotation(q);
+			playerTr.quaternion = q;
 		}
 		engine.renderingSystem.viewports[0]->camera = std::shared_ptr<Components::Camera>(&cam);
 	}

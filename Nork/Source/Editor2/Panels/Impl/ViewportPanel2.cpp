@@ -148,20 +148,6 @@ namespace Nork::Editor2
 			{
 				image.texture = data.engine.renderingSystem.deferredPipeline.geometryFb->Specular();
 			}
-			for (size_t i = 0; i < data.engine.renderingSystem.dirShadowMaps.size(); i++)
-			{
-				if (ImGui::Selectable(("Dirlight ShadowMap #" + std::to_string(i)).c_str()))
-				{
-					image.texture = data.engine.renderingSystem.dirShadowMaps[i]->Get();
-				}
-			}
-			for (size_t i = 0; i < data.engine.renderingSystem.pointShadowMaps.size(); i++)
-			{
-				if (ImGui::Selectable(("Pointlight ShadowMap #" + std::to_string(i)).c_str()))
-				{
-					image.texture = data.engine.renderingSystem.pointShadowMaps[i]->Get();
-				}
-			}
 			if (ImGui::Selectable("Bool dest"))
 			{
 				image.texture = data.engine.renderingSystem.bloom.dest->GetAttachments()

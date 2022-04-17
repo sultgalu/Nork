@@ -27,10 +27,9 @@ namespace Nork::Components
 		std::shared_ptr<Renderer::DirLight> light;
 		std::shared_ptr<Renderer::DirShadow> shadow = nullptr;
 		inline glm::mat4 GetView() const { return glm::lookAt(glm::vec3(0) - light->direction, glm::vec3(0), glm::vec3(0.0f, 1.0f, 0.0f)); }
-		inline void RecalcVP(const glm::mat4& view)
+		inline void RecalcVP()
 		{
-			light->VP = glm::ortho(left, right, bottom, top, near, far) * view;
-			light->Update();
+			light->VP = glm::ortho(left, right, bottom, top, near, far) * GetView();
 		}
 		float left = -30, right = 30, bottom = -30, top = 30, near = -50, far = 100;
 	};

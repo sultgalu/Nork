@@ -36,8 +36,8 @@ namespace Nork {
 	using namespace Components;
 	template<> JsonObject JsonComponentSerializer<Transform>::Serialize(const Transform& component)
 	{
-		glm::vec3 pos = component.GetPosition(), scale = component.GetScale();
-		glm::quat rot = component.GetRotation();
+		glm::vec3 pos = component.position, scale = component.scale;
+		glm::quat rot = component.quaternion;
 		return JsonObject()
 			.Property("position", JsonArray().Elements(&pos.x, 3))
 			.Property("scale", JsonArray().Elements(&scale.x, 3))
@@ -45,12 +45,12 @@ namespace Nork {
 	}
 	template<> Transform& JsonComponentDeserializer<Transform>::Deserialize(const JsonObject& json)
 	{
-		glm::vec3 pos, scale;
-		glm::quat rot;
-		json.Get<JsonArray>("position").Get(&pos.x, 3);
-		json.Get<JsonArray>("scale").Get(&scale.x, 3);
-		json.Get<JsonArray>("quaternion").Get(&rot.x, 4);
-		return entity.AddComponent<Transform>().SetPosition(pos).SetScale(scale).SetRotation(rot);
+		auto& tr = entity.AddComponent<Transform>();
+		json.Get<JsonArray>("position").Get(&tr.position.x, 3);
+		json.Get<JsonArray>("scale").Get(&tr.scale.x, 3);
+		json.Get<JsonArray>("quaternion").Get(&tr.quaternion.x, 4);
+		tr.RecalcModelMatrix();
+		return tr;
 	}
 
 	template<> JsonObject JsonComponentSerializer<DirLight>::Serialize(const DirLight& component)
@@ -74,7 +74,7 @@ namespace Nork {
 		json.Get<JsonArray>("direction").Get(&comp.light->direction.x, 3);
 		json.Get("outOfProj", comp.light->outOfProjValue);
 		comp.light->Update();
-		comp.RecalcVP(comp.GetView());
+		comp.RecalcVP();
 		if (json.Contains("shadow"))
 		{
 			entity.AddComponent<DirShadowRequest>();

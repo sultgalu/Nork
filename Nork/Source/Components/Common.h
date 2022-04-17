@@ -5,32 +5,21 @@ namespace Nork::Components
 
 	struct Transform
 	{
-		Transform();
-
-		glm::vec3 Translate(const glm::vec3& translation);
-		glm::vec3 Scaling(const glm::vec3& scale);
-		glm::quat Rotate(const glm::vec3& axis, float angle);
+		glm::vec3 position = glm::vec3(0);
+		glm::vec3 scale = glm::vec3(1);
+		glm::quat quaternion = glm::identity<glm::quat>();
+		glm::mat4 modelMatrix = RecalcModelMatrix();
 
 		glm::mat4 TranslationMatrix();
 		glm::mat4 RotationMatrix();
 		glm::mat4 TranslationRotationMatrix();
-		glm::mat4 ModelMatrix();
+		glm::mat4& RecalcModelMatrix();
 
-		const glm::vec3& GetPosition() const { return position; }
-		const glm::vec3& GetScale() const { return scale; }
-		const glm::quat& GetRotation() const { return quaternion; }
-		Transform& SetPosition(const glm::vec3& v);
-		Transform& SetScale(const glm::vec3& v);
-		Transform& SetRotation(const glm::quat& v);
-
-
-	private:
-		glm::vec3 position, scale;
-		glm::quat quaternion;
-		
-		bool changed;
-
-		glm::mat4 modelMatrix;
+		void Rotate(const glm::vec3& axis, float angle) { quaternion = glm::rotate(quaternion, angle, axis); }
+		void SetRotation(const glm::vec3& axis, float angle) { quaternion = glm::angleAxis(angle, glm::normalize(axis)); }
+		glm::vec3 RotationAxis() const { return glm::axis(quaternion); }
+		float RotationAngle() const { return glm::angle(quaternion); }
+		float RotationAngleDegrees() const { return glm::degrees(glm::angle(quaternion)); }
 	};
 
 	struct Tag

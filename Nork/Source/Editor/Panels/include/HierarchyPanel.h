@@ -7,7 +7,7 @@ namespace Nork::Editor {
 	public:
 		HierarchyPanel();
 		void Content() override;
-		const char* GetName() override { return "HierarchyPanel"; };
+		const char* GetName() override { return "Hierarchy"; };
 	private:
 		void RecursiveDraw(std::shared_ptr<SceneNode> node);
 	};

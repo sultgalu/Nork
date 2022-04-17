@@ -13,12 +13,14 @@ namespace Nork {
 	{
 		auto& light = reg.get<Components::DirLight>(id);
 		light.light = drawState.AddDirLight();
+		light.light->Update();
 	}
 	void RenderingSystem::OnPLightAdded(entt::registry& reg, entt::entity id)
 	{
 		auto& light = reg.get<Components::PointLight>(id);
 		light.light = drawState.AddPointLight();
 		light.SetIntensity(50);
+		light.light->Update();
 	}
 	void RenderingSystem::OnDShadAdded(entt::registry& reg, entt::entity id)
 	{
@@ -30,7 +32,7 @@ namespace Nork {
 	{
 		auto& light = reg.get<Components::PointLight>(id);
 		light.shadow = drawState.AddPointShadow(light.light, shaders.pShadowShader, 100, Renderer::TextureFormat::Depth16);
-		reg.remove<Components::PointShadowRequest>(id);
+		//reg.remove<Components::PointShadowRequest>(id);
 	}
 
 	void RenderingSystem::OnDShadRemoved(entt::registry& reg, entt::entity id)
@@ -79,7 +81,7 @@ namespace Nork {
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 		UpdateGlobalUniform();
 
-		bloom.InitTextures(8, 1920, 1080);
+		bloom.InitTextures();
 		auto image = Renderer::LoadUtils::LoadCubemapImages("Resources/Textures/skybox", ".jpg");
 		std::array<void*, 6> data;
 		for (size_t i = 0; i < data.size(); i++)
@@ -99,7 +101,12 @@ namespace Nork {
 			.Attributes(TextureAttributes{ .width = 1920, .height = 1080, .format = TextureFormat::RGB16F })
 			.Create2DEmpty(), 0))
 			.Create();
+
 		CreateCollidersVao(1);
+
+		dirLightObserver.connect(registry, entt::collector.update<Components::DirLight>());
+		pointLightObserver.connect(registry, entt::collector.update<Components::Transform>()
+			.where<Components::PointLight>().update<Components::PointLight>());
 	}
 	void RenderingSystem::DrawBatchUpdate()
 	{
@@ -108,7 +115,7 @@ namespace Nork {
 
 		for (auto [id, dr, tr] : registry.group<Components::Drawable, Components::Transform>().each())
 		{
-			**dr.modelMatrix = tr.ModelMatrix();
+			**dr.modelMatrix = tr.modelMatrix;
 			for (auto& mesh : dr.model->meshes)
 			{
 				drawBatch.AddElement(Renderer::BatchElement{
@@ -141,6 +148,29 @@ namespace Nork {
 	{
 		using namespace Components;
 
+		for (const auto ent : dirLightObserver)
+		{
+			auto& dl = registry.get<DirLight>(ent);
+			dl.RecalcVP();
+			dl.light->Update();
+			if (dl.shadow)
+			{
+				dl.shadow->Update();
+			}
+		}
+		dirLightObserver.clear();
+		for (const auto ent : pointLightObserver)
+		{
+			auto& pl= registry.get<PointLight>(ent);
+			pl.light->position = registry.get<Transform>(ent).position;
+			pl.light->Update();
+			if (pl.shadow)
+			{
+				pl.shadow->Update();
+			}
+		}
+		pointLightObserver.clear();
+
 		for (auto [id, light] : registry.view<DirLight>().each())
 		{
 			if (light.shadow != nullptr)
@@ -170,15 +200,6 @@ namespace Nork {
 		shaders.skyShader->Use().SetMat4("VP", vp)
 			.SetVec3("v3CameraPos", camera.position);
 	}
-	void RenderingSystem::SyncComponents()
-	{
-		using namespace Components;
-		for (auto [id, pl, tr] : registry.view<PointLight, Transform>().each())
-		{
-			pl.light->position = tr.GetPosition();
-			pl.light->Update();
-		}
-	}
 	void RenderingSystem::RenderScene(Viewport& viewport)
 	{
 		deferredPipeline.GeometryPass({ drawBatch.GetDrawCommand() });
@@ -195,7 +216,6 @@ namespace Nork {
 	}
 	void RenderingSystem::BeginFrame()
 	{
-		SyncComponents();
 		UpdateLights();
 		if (globalShaderUniform.IsChanged())
 		{
@@ -316,7 +336,7 @@ namespace Nork {
 		{
 			for (auto& p : coll.Points())
 			{
-				ptr[idx++] = tr.ModelMatrix() * glm::vec4(p, 1.0f);
+				ptr[idx++] = tr.modelMatrix * glm::vec4(p, 1.0f);
 			}
 			//std::memcpy(&inds[triIdx], poly.tris.data(), poly.tris.size() * 3 * sizeof(uint32_t));
 			

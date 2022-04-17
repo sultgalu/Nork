@@ -138,18 +138,17 @@ namespace Nork {
 		void UpdateGlobalUniform();
 		void UpdateLights();
 		void ViewProjectionUpdate(Components::Camera& camera);
-		void SyncComponents();
 		void RenderScene(Viewport& viewport);
 		void DrawBatchUpdate();
 
 	private:
 		glm::uvec2 resolution = { 1920, 1080 };
+		entt::observer dirLightObserver;
+		entt::observer pointLightObserver;
 	public:
 		entt::registry& registry;
 		Shaders shaders;
 		Renderer::DeferredPipeline deferredPipeline;
-		std::array<std::shared_ptr<Renderer::DirShadowMap>, Renderer::Config::LightData::dirShadowsLimit> dirShadowMaps;
-		std::array<std::shared_ptr<Renderer::PointShadowMap>, Renderer::Config::LightData::pointShadowsLimit> pointShadowMaps;
 		std::shared_ptr<Renderer::TextureCube> skybox;
 		Renderer::DrawState drawState;
 		Renderer::DrawBatch drawBatch;

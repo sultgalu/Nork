@@ -13,6 +13,7 @@ namespace Nork
 		scriptSystem(scene)
 	{
 		scene.registry.on_construct<Components::Drawable>().connect<&Engine::OnDrawableAdded>(this);
+		transformObserver.connect(scene.registry, entt::collector.update<Components::Transform>());
 	}
 	void Engine::OnDrawableAdded(entt::registry& reg, entt::entity id)
 	{
@@ -42,10 +43,15 @@ namespace Nork
 			physicsSystem.Upload(scene.registry); // upload new data
 
 			scriptSystem.Update();
+			UpdateTransformMatrices();
 			scriptUpdated = true;
 
 			updateSem.release();
 			uploadSem.release();
+		}
+		else
+		{
+			UpdateTransformMatrices();
 		}
 		renderingSystem.BeginFrame();
 		renderingSystem.Update(); // draw full updated data
@@ -93,5 +99,14 @@ namespace Nork
 					uploadSem.release();
 				}
 			});
+	}
+
+	void Engine::UpdateTransformMatrices()
+	{
+		auto& reg = scene.registry;
+		for (auto entity : transformObserver)
+		{
+			reg.get<Components::Transform>(entity).RecalcModelMatrix();
+		}
 	}
 }
