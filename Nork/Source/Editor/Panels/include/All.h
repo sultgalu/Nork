@@ -5,3 +5,4 @@
 #include "InspectorPanel.h"
 #include "PhysicsSettingsPanel.h"
 #include "GraphicsSettingsPanel.h"
+#include "BloomPanel.h"

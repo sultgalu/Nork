@@ -276,6 +276,9 @@
     <ClCompile Include="Source\Editor\Panels\GraphicsSettingsPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Panels\BloomPanel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\PCH\pch.h">
@@ -627,6 +630,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Panels\include\GraphicsSettingsPanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Panels\include\BloomPanel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

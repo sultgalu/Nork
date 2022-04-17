@@ -17,9 +17,9 @@ namespace Nork::Renderer {
 		std::shared_ptr<Framebuffer> dest;
 		std::shared_ptr<Buffer> ubo;
 
-		float divider = 2.0f;
+		float divider = 1.33f;
 		float highResY = 1080;
-		float lowResY = 30;
+		float lowResY = 100;
 		float ratio = 16.f / 9.f;
 	};
 }

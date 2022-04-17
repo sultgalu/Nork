@@ -163,6 +163,7 @@ namespace Nork::Editor
 		panels.push_back(std::make_unique<InspectorPanel>());
 		panels.push_back(std::make_unique<PhysicsSettingsPanel>());
 		panels.push_back(std::make_unique<GraphicsSettingsPanel>());
+		panels.push_back(std::make_unique<BloomPanel>());
 		// AddViewportPanel();
 		menus.push_back(std::make_unique<FileMenu>());
 	}

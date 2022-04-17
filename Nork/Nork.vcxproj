@@ -173,6 +173,7 @@
     <ClCompile Include="Source\Editor\Menus\FileMenu.cpp" />
     <ClCompile Include="Source\Editor\Panels\HierarchyPanel.cpp" />
     <ClCompile Include="Source\Editor\Panels\GraphicsSettingsPanel.cpp" />
+    <ClCompile Include="Source\Editor\Panels\BloomPanel.cpp" />
     <ClCompile Include="Source\Editor\Panels\PhysicsSettingsPanel.cpp" />
     <ClCompile Include="Source\Editor\Panels\InspectorPanel.cpp" />
     <ClCompile Include="Source\Editor\Panels\ViewportPanel.cpp" />
@@ -221,6 +222,7 @@
     <ClInclude Include="Source\Editor\Menus\include\FileMenu.h" />
     <ClInclude Include="Source\Editor\Menus\include\Menu.h" />
     <ClInclude Include="Source\Editor\Panels\include\All.h" />
+    <ClInclude Include="Source\Editor\Panels\include\BloomPanel.h" />
     <ClInclude Include="Source\Editor\Panels\include\GraphicsSettingsPanel.h" />
     <ClInclude Include="Source\Editor\Panels\include\HierarchyPanel.h" />
     <ClInclude Include="Source\Editor\Panels\include\InspectorPanel.h" />

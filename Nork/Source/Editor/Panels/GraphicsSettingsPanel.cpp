@@ -4,7 +4,6 @@
 namespace Nork::Editor {
 	GraphicsSettingsPanel::GraphicsSettingsPanel()
 	{
-		this->panelState.windowFlags |= ImGuiWindowFlags_::ImGuiWindowFlags_HorizontalScrollbar; // ::ImGuiWindowFlags_AlwaysHorizontalScrollbar;
 	}
 
 	void GraphicsSettingsPanel::Content()
@@ -28,50 +27,6 @@ namespace Nork::Editor {
 			ImGui::ColorEdit4("Triangle", &g.triColor.r, colorOptions);
 
 			ImGui::ColorEdit3("Focused Color", &g.selectedColor.r, colorOptions);
-			ImGui::TreePop();
-		}
-		if (ImGui::TreeNodeEx("Bloom", ImGuiTreeNodeFlags_DefaultOpen))
-		{
-			static bool immediate = false;
-			ImGui::Checkbox("Immediate mode", &immediate);
-			bool changed = false;
-
-			auto& b = r.bloom;
-			changed |= ImGui::SliderFloat("Divider", &b.divider, 1.1f, 10);
-			int high = b.highResY;
-			if (changed |= ImGui::SliderInt("Y High Resolution", &high, 100, 1080))
-			{
-				b.highResY = high;
-			}
-			int low = b.lowResY;
-			if (changed |= ImGui::SliderInt("Y Low Resolution", &low, 1, 1080, "%d", ImGuiSliderFlags_Logarithmic))
-			{
-				b.lowResY = low;
-			}
-			if (changed && immediate)
-			{
-				b.InitTextures();
-			}
-			if (ImGui::Button("Apply##BloomChanges"))
-			{
-				b.InitTextures();
-			}
-
-			if (ImGui::TreeNodeEx("Passes", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_FramePadding))
-			{
-				ImGui::Indent(0);
-				static int size = 10;
-				ImGui::DragInt("Size", &size, 1, 1);
-				for (size_t i = 0; i < b.fbs.size(); i++)
-				{
-					ImGui::Image((ImTextureID)b.fbs[i]->GetAttachments().colors[0].first->GetHandle(), { size * 16.f, size * 9.f }, ImVec2(0, 1), ImVec2(1, 0),
-						ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
-					ImGui::SameLine();
-					ImGui::Image((ImTextureID)b.fbs2[i]->GetAttachments().colors[0].first->GetHandle(), { size * 16.f, size * 9.f }, ImVec2(0, 1), ImVec2(1, 0),
-						ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
-				}
-				ImGui::TreePop();
-			}
 			ImGui::TreePop();
 		}
 	}
