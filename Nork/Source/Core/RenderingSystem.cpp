@@ -198,7 +198,7 @@ namespace Nork {
 		auto vp = camera.projection * glm::mat4(glm::mat3(camera.view));
 		shaders.skyboxShader->Use().SetMat4("VP", vp);
 		shaders.skyShader->Use().SetMat4("VP", vp)
-			.SetVec3("v3CameraPos", camera.position);
+			.SetVec3("camPos", camera.position);
 	}
 	void RenderingSystem::RenderScene(Viewport& viewport)
 	{
@@ -208,8 +208,9 @@ namespace Nork {
 		// 	Renderer::SkyRenderer::RenderSkybox(*skybox, *shaders.skyboxShader);
 		if (viewport.Renders(Viewport::Source::Sky))
 		{
-			Renderer::Capabilities().Disable()
-				.DepthTest().CullFace();
+			Renderer::Capabilities()
+				.Enable().DepthTest(Renderer::DepthFunc::LessOrEqual)
+				.Disable().CullFace();
 			shaders.skyShader->Use();
 			Renderer::DrawUtils::DrawCube();
 		}
@@ -375,18 +376,67 @@ namespace Nork {
 			colliderVao = nullptr;
 		}
 	}
-	std::shared_ptr<Renderer::Shader> Shaders::InitShaderFromSource(std::string path)
+	std::shared_ptr<Renderer::Shader> Shaders::InitShaderFromSource(const std::string& path)
 	{
-		return Renderer::ShaderBuilder().Sources(SplitShaders(GetFileContent(path))).Create();
+		auto shader = Renderer::ShaderBuilder().Sources(SplitShaders(GetFileContent(path))).Create();
+		if (!shader)
+		{
+			std::abort();
+		}
+		shaderSources.push_back({ shader, path });
+		return shader;
+	}
+	std::shared_ptr<Renderer::Shader> Shaders::RecompileShader(std::shared_ptr<Renderer::Shader> shader)
+	{
+		for (auto& [shad, source] : shaderSources)
+		{
+			if (shad == shader)
+			{
+				auto& shaderRef = FindShader(shader);
+				if (RecompileShader(shaderRef, source))
+				{
+					shad = shaderRef;
+					return shaderRef;
+				}
+				return nullptr;
+			}
+		}
+		return nullptr;
+	}
+	bool Shaders::RecompileShader(std::shared_ptr<Renderer::Shader>& shader, const std::string& src)
+	{
+		auto newShad = Renderer::ShaderBuilder().Sources(SplitShaders(GetFileContent(src))).Create();
+		if (newShad)
+		{
+			shader = newShad;
+			return true;
+		}
+		return false;
+	}
+	std::shared_ptr<Renderer::Shader>& Shaders::FindShader(std::shared_ptr<Renderer::Shader> s)
+	{
+		if (s == gPassShader) return gPassShader;
+		if (s == dShadowShader) return dShadowShader;
+		if (s == pShadowShader) return pShadowShader;
+		if (s == skyboxShader) return skyboxShader;
+		if (s == skyShader) return skyShader;
+		if (s == pointShader) return pointShader;
+		if (s == lineShader) return lineShader;
+		if (s == textureShader) return textureShader;
+		if (s == colliderShader) return colliderShader;
+		if (s == bloomShader) return bloomShader;
+		if (s == bloom2Shader) return bloom2Shader;
+		if (s == bloom3Shader) return bloom3Shader;
+		if (s == tonemapShader) return tonemapShader;
 	}
 	Shaders::Shaders()
 	{
 		SetLightPassShader(InitShaderFromSource("Source/Shaders/lightPass.shader"));
-		SetGeometryPassShader(InitShaderFromSource("Source/Shaders/gPass.shader"));
+		gPassShader = InitShaderFromSource("Source/Shaders/gPass.shader");
+		skyShader = InitShaderFromSource("Source/Shaders/sky.shader");
 		dShadowShader = InitShaderFromSource("Source/Shaders/dirShadMap.shader");
 		pShadowShader = InitShaderFromSource("Source/Shaders/pointShadMap.shader");
 		skyboxShader = InitShaderFromSource("Source/Shaders/skybox.shader");
-		skyShader = InitShaderFromSource("Source/Shaders/sky.shader");
 		pointShader = InitShaderFromSource("Source/Shaders/point.shader");
 		lineShader = InitShaderFromSource("Source/Shaders/line.shader");
 		textureShader = InitShaderFromSource("Source/Shaders/texture.shader");
@@ -404,15 +454,6 @@ namespace Nork {
 			.SetInt("gDiff", 1)
 			.SetInt("gNorm", 2)
 			.SetInt("gSpec", 3);
-
-		for (int i = 0; i < Renderer::Config::LightData::dirShadowsLimit; i++)
-			lPassShader->SetInt(("dirShadowMaps[" + std::to_string(i) + "]").c_str(), i + Renderer::Config::LightData::dirShadowBaseIndex);
-		for (int i = 0; i < Renderer::Config::LightData::pointShadowsLimit; i++)
-			lPassShader->SetInt(("pointShadowMaps[" + std::to_string(i) + "]").c_str(), i + Renderer::Config::LightData::pointShadowBaseIndex);
-	}
-	void Shaders::SetGeometryPassShader(std::shared_ptr<Renderer::Shader> shader)
-	{
-		gPassShader = shader;
 	}
 
 	Viewport::Viewport(std::shared_ptr<Components::Camera> camera)

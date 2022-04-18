@@ -73,8 +73,8 @@ namespace Nork {
 		json.Get<JsonArray>("color").Get(&comp.light->color.x, 3);
 		json.Get<JsonArray>("direction").Get(&comp.light->direction.x, 3);
 		json.Get("outOfProj", comp.light->outOfProjValue);
-		comp.light->Update();
 		comp.RecalcVP();
+		comp.light->Update();
 		if (json.Contains("shadow"))
 		{
 			entity.AddComponent<DirShadowRequest>();

@@ -43,6 +43,7 @@ namespace Nork::Renderer {
 				break;
 			}
 		}
+		void SetDefaultTexture(TextureMap type);
 		std::shared_ptr<Data::Material*> GetPtr() { return ptr; }
 	private:
 		std::shared_ptr<Data::Material*> ptr;

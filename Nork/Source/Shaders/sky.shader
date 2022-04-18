@@ -4,125 +4,97 @@
 layout(location = 0) in vec3 vPos;
 uniform mat4 VP;
 
-out vec3 v3Pos;
+out vec3 worldPos2;
 
 void main(void)
 {
-    v3Pos = vPos;
+    worldPos2 = vPos;
     gl_Position = VP * vec4(vPos, 1.0f);
+    gl_Position = gl_Position.xyww;
 }
-
-uniform mat4 _gl_ModelViewProjectionMatrix;
-uniform vec3 _v3CameraPos;     // The camera's current position    
-uniform vec3 _v3LightDir;      // Direction vector to the light source    
-uniform vec3 _v3InvWavelength; // 1 / pow(wavelength, 4) for RGB   
-uniform float _fCameraHeight;    // The camera's current height      
-uniform float _fCameraHeight2;   // fCameraHeight^2
-uniform float _fOuterRadius;     // The outer (atmosphere) radius    
-uniform float _fOuterRadius2;    // fOuterRadius^2
-uniform float _fInnerRadius;    // The inner (planetary) radius    
-uniform float _fInnerRadius2;    // fInnerRadius^2    
-uniform float _fKrESun;			// Kr * ESun      
-uniform float _fKmESun;          // Km * ESun    
-uniform float _fKr4PI;           // Kr * 4 * PI    
-uniform float _fKm4PI;           // Km * 4 * PI      
-uniform float _fScale;           // 1 / (fOuterRadius - fInnerRadius)    
-uniform float _fScaleOverScaleDepth; // fScale / fScaleDepth  
 
 #type fragment
 #version 330 core
 
-uniform vec3 v3CameraPos;
-uniform vec3 v3LightPos = vec3(-1.0f, -1.0f, -1.0f);
-in vec3 v3Pos;
-uniform vec3 v3InvWavelength = vec3(1.0f);
-uniform float fCameraHeight = 1.0f;
-uniform float fCameraHeight2 = 1.0f;
-uniform float fInnerRadius = 1.0f;
-uniform float fInnerRadius2 = 1.0f;
-uniform float fOuterRadius = 1.0f;
-uniform float fOuterRadius2 = 1.0f;
-uniform float fKrESun = 1.0f;
-uniform float fKmESun = 1.0f;
-uniform float fKr4PI = 1.0f;
-uniform float fKm4PI = 1.0f;
-uniform float fScale = 1.0f;
-uniform float fScaleDepth = 1.0f;
-uniform float fScaleOverScaleDepth = 1.0f;
-uniform float fSamples = 1.0f;
-uniform int nSamples = 1;
-const float g = -0.95;
-const float g2 = g * g;
+uniform vec3 camPos;
+uniform vec3 lightPos = vec3(0.58f, 0.36f, -0.26f);
 
-float scale(float fCos)
-{
-    float x = 1.0 - fCos;
-    return fScaleDepth * exp(-0.00287 + x * (0.459 + x * (3.83 + x * (-6.80 + x * 5.25))));
-}
+in vec3 worldPos2;
 
-float getNearIntersection(vec3 pos, vec3 ray, float distance2, float radius2)
+
+uniform float sunSize = 5.0f;
+uniform float sunRad = 0.058f;
+uniform float atmThick = 0.163f;
+uniform float density = 20.33f;
+uniform float commonArea = 0.2f;
+uniform vec3 _color = vec3(2, 1.8f, 1.25f);
+uniform vec3 _colorSky = vec3(1, 1.36f, 2.0f);
+uniform float atmosphereH = 0.57f;
+uniform vec3 atmFilter = vec3(1.7f, 0.63f, 0.13f);
+uniform float atmOffs = 0.00f;
+uniform float skyMin = -0.25f;
+uniform float skyMax = 0.484f;
+uniform float poww = 1.519;
+uniform float correct = 1.0f;
+
+float calcRedness(float lightH)
 {
-    float B = 2.0 * dot(pos, ray);
-    float C = distance2 - radius2;
-    float det = max(0.0, B * B - 4.0 * C);
-    return 0.5 * (-B - sqrt(det));
+    float height = abs(lightH - atmOffs);
+    //if (height < atmThick)
+    //    return 1.0f;
+    height -= atmThick;
+    height = min(height, atmosphereH);
+    float redness = (atmosphereH - height) * (1 / atmosphereH);
+    if (redness < 1.0f)
+        redness = pow(redness, poww);
+    return redness;
+
+    // lightH -= atmOffs;
+    // float dist = lightH - atmosphereH;
+    // if (lightH < 0)
+    // {
+    //     dist = lightH + atmosphereH;
+    //     dist *= -1;
+    // }
+    // if (dist > 0)
+    //     return 0.0f;
+    // 
+    // dist *= -1;
+    // dist *= 1 / atmosphereH; // [0;0.2] -> [0;1]
+    // return dist;
 }
 
 void main ()
 {
-    vec3 v3Ray = v3Pos - v3CameraPos;
-    float fFar = length(v3Ray);
-    v3Ray /= fFar;
+    vec3 worldPos = normalize(worldPos2);
+    vec3 lightPos = normalize(lightPos);
+    float lightH = lightPos.y;
+    float redness = calcRedness(lightH);
+    float rednessSky = calcRedness(worldPos.y) * redness;
+    float skyBrightness = (clamp(lightH, skyMin, skyMax) + -skyMin) * (1 / (skyMax - skyMin));
 
-    float fStartOffset;
-    vec3 v3Start;
+    vec3 col = vec3(0);
+    vec3 color = _color * (1 - redness) + _color * redness * atmFilter;
 
-    if (length(v3CameraPos) > fOuterRadius)
+    float dist = distance(lightPos, worldPos);
+
+    dist = max(dist - sunRad, 0);
+
+    float asd = sunSize / 10;
+    dist += asd;
+    float strength = max(1 - dist, 0);
+    if (strength > 0)
     {
-        float fNear = getNearIntersection(v3CameraPos, v3Ray, fCameraHeight2, fOuterRadius2);
-        v3Start = v3CameraPos + v3Ray * fNear;
-        fFar -= fNear;
-        float fStartAngle = dot(v3Ray, v3Start) / fOuterRadius;
-        float fStartDepth = exp(-1.0 / fScaleDepth);
-        fStartOffset = fStartDepth * scale(fStartAngle);
-    }
-    else
-    {
-        v3Start = v3CameraPos;
-        float fHeight = length(v3Start);
-        float fDepth = exp(fScaleOverScaleDepth * (fInnerRadius - fCameraHeight));
-        float fStartAngle = dot(v3Ray, v3Start) / fHeight;
-        fStartOffset = fDepth * scale(fStartAngle);
-    }
-
-    // Initialize the scattering loop variables
-    float fSampleLength = fFar / fSamples;
-    float fScaledLength = fSampleLength * fScale;
-    vec3 v3SampleRay = v3Ray * fSampleLength;
-    vec3 v3SamplePoint = v3Start + v3SampleRay * 0.5;
-
-    // Now loop through the sample rays
-    vec3 v3FrontColor = vec3(0.0, 0.0, 0.0);
-    for (int i = 0; i < nSamples; i++)
-    {
-        float fHeight = length(v3SamplePoint);
-        float fDepth = exp(fScaleOverScaleDepth * (fInnerRadius - fHeight));
-        float fLightAngle = dot(v3LightPos, v3SamplePoint) / fHeight;
-        float fCameraAngle = dot(v3Ray, v3SamplePoint) / fHeight;
-        float fScatter = (fStartOffset + fDepth * (scale(fLightAngle) - scale(fCameraAngle)));
-        vec3 v3Attenuate = exp(-fScatter * (v3InvWavelength * fKr4PI + fKm4PI));
-        v3FrontColor += v3Attenuate * (fDepth * fScaledLength);
-        v3SamplePoint += v3SampleRay;
+        strength *= 2.0f;
+        vec3 sunCol = 1 * pow(strength, density) * color;
+        col = max(sunCol, col);
+        col += sunCol;
     }
 
-    // Finally, scale the Mie and Rayleigh colors and set up the varying variables for the pixel shader
-    vec4 secondaryColor = vec4(v3FrontColor * fKmESun, 1.0);
-    vec4 primaryColor = vec4(v3FrontColor * (v3InvWavelength * fKrESun), 1.0);
-    vec3 v3Direction = v3CameraPos - v3Pos;
+    // --------------------------------
 
-    float fCos = dot(v3LightPos, v3Direction) / length(v3Direction);
-    float fRayleighPhase = 0.75 * (1.0 + fCos * fCos);
-    float fMiePhase = 1.5 * ((1.0 - g2) / (2.0 + g2)) * (1.0 + fCos * fCos) / pow(1.0 + g2 - 2.0 * g * fCos, 1.5);
-    gl_FragColor = fRayleighPhase * primaryColor + fMiePhase * secondaryColor;
-    gl_FragColor = vec4(secondaryColor.rgb, 1);
+    col += skyBrightness * (_colorSky * (1 - rednessSky) + _colorSky * rednessSky * atmFilter);
+    col *= correct;
+
+    gl_FragColor = vec4(col, 1);
 }

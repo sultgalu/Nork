@@ -9,7 +9,26 @@ namespace Nork::Editor {
 	}
 	void ShaderView::Content()
 	{
-		constexpr float floatSpeed = 0.01f;
+		ImGui::Spacing();
+		ImGui::SameLine(ImGui::GetCurrentWindow()->Size.x - 150);
+		if (ImGui::Button("Recompile"))
+		{
+			auto newShad = GetEngine().renderingSystem.shaders.RecompileShader(shader);
+			if (newShad)
+			{
+				shader = newShad;
+				if (keepValues)
+				{
+					FlushUniformValues();
+				}
+				UpdateUniformValues();
+			}
+		}
+		ImGui::Spacing();
+		ImGui::SameLine(ImGui::GetCurrentWindow()->Size.x - 150);
+		ImGui::Checkbox("Keep values", &keepValues);
+		
+		constexpr float floatSpeed = 0.001f;
 		for (auto& uniform : uniformsInt)
 		{
 			if (ImGui::DragInt(uniform.first.c_str(), &uniform.second) && immediateMode)
@@ -53,16 +72,7 @@ namespace Nork::Editor {
 		{
 			if (ImGui::Button("Flush##Shaders"))
 			{
-				for (auto& uniform : uniformsInt)
-					shader->SetInt(uniform.first, uniform.second);
-				for (auto& uniform : uniformsFloat)
-					shader->SetFloat(uniform.first, uniform.second);
-				for (auto& uniform : uniformsVec2)
-					shader->SetVec2(uniform.first, uniform.second);
-				for (auto& uniform : uniformsVec3)
-					shader->SetVec3(uniform.first, uniform.second);
-				for (auto& uniform : uniformsVec4)
-					shader->SetVec4(uniform.first, uniform.second);
+				FlushUniformValues();
 			}
 		}
 		if (ImGui::Button("Reload All##Shaders"))
@@ -102,5 +112,19 @@ namespace Nork::Editor {
 				uniformsVec4[uniform.first] = shader->GetVec4(uniform.first);
 			}
 		}
+	}
+	void ShaderView::FlushUniformValues()
+	{
+		shader->Use();
+		for (auto& uniform : uniformsInt)
+			shader->SetInt(uniform.first, uniform.second);
+		for (auto& uniform : uniformsFloat)
+			shader->SetFloat(uniform.first, uniform.second);
+		for (auto& uniform : uniformsVec2)
+			shader->SetVec2(uniform.first, uniform.second);
+		for (auto& uniform : uniformsVec3)
+			shader->SetVec3(uniform.first, uniform.second);
+		for (auto& uniform : uniformsVec4)
+			shader->SetVec4(uniform.first, uniform.second);
 	}
 }

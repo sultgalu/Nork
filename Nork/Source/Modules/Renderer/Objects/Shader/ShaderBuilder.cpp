@@ -15,13 +15,16 @@ namespace Nork::Renderer {
 	std::shared_ptr<Shader> ShaderBuilder::Create()
 	{
 		handle = glCreateProgram();
-		Compile();
+		if (!Compile())
+		{
+			return nullptr;
+		}
 		Logger::Info("Created shader ", handle);
 		auto shader = std::make_shared<Shader>(handle, shaderTypes);
 		GLManager::Get().shaders[shader->GetHandle()] = shader;
 		return shader;
 	}
-	void ShaderBuilder::Compile()
+	bool ShaderBuilder::Compile()
 	{
 		std::unordered_map<GLenum, int> handles;
 
@@ -42,7 +45,7 @@ namespace Nork::Renderer {
 				Logger::Error("SHADER::COMPILATION_FAILED");
 				glGetShaderInfoLog(handle, 512, NULL, infoLog);
 				Logger::Error(infoLog);
-				std::abort();
+				return false;
 			}
 			handles[type] = handle;
 		}
@@ -60,11 +63,13 @@ namespace Nork::Renderer {
 			Logger::Error("SHADER::LINKING_FAILED");
 			glGetProgramInfoLog(handle, 512, NULL, infoLog);
 			Logger::Error(infoLog);
+			return false;
 		}
 
 		for (auto& s : handles)
 		{
 			glDeleteShader(s.second);
 		}
+		return true;
 	}
 }

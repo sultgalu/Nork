@@ -92,17 +92,20 @@ namespace Nork {
 			} while (true);
 			return shaderSrcs;
 		}
-		static std::shared_ptr<Renderer::Shader> InitShaderFromSource(std::string path);
+		std::shared_ptr<Renderer::Shader> InitShaderFromSource(const std::string& path);
+		bool RecompileShader(std::shared_ptr<Renderer::Shader>&, const std::string& src);
+		std::shared_ptr<Renderer::Shader>& FindShader(std::shared_ptr<Renderer::Shader>);
 	public:
+		std::shared_ptr<Renderer::Shader> RecompileShader(std::shared_ptr<Renderer::Shader>);
 		Shaders();
 		void SetLightPassShader(std::shared_ptr<Renderer::Shader> shader);
-		void SetGeometryPassShader(std::shared_ptr<Renderer::Shader> shader);
 		std::shared_ptr<Renderer::Shader> gPassShader, lPassShader,
 			dShadowShader, pShadowShader,
 			skyboxShader, skyShader, textureShader,
 			pointShader, lineShader, colliderShader,
 			bloomShader, bloom2Shader, bloom3Shader, 
 			tonemapShader;
+		std::vector<std::pair<std::shared_ptr<Renderer::Shader>, std::string>> shaderSources;
 	};
 	struct GlobalShaderUniform
 	{

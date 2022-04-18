@@ -9,6 +9,7 @@ namespace Nork::Editor {
 		ShaderView(std::shared_ptr<Renderer::Shader>);
 		void Content() override;
 		void UpdateUniformValues();
+		void FlushUniformValues();
 		std::shared_ptr<Renderer::Shader> Shader() { return shader; }
 	private:
 		std::shared_ptr<Renderer::Shader> shader;
@@ -19,5 +20,6 @@ namespace Nork::Editor {
 		std::unordered_map<std::string, glm::vec4> uniformsVec4;
 		std::unordered_map<std::string, int> uniformsInt;
 		bool immediateMode = true;
+		bool keepValues = true;
 	};
 }

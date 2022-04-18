@@ -232,6 +232,7 @@
     <ClInclude Include="Source\Editor\Panels\include\PhysicsSettingsPanel.h" />
     <ClInclude Include="Source\Editor\Panels\include\ShadersPanel.h" />
     <ClInclude Include="Source\Editor\Panels\include\ViewportPanel.h" />
+    <ClInclude Include="Source\Editor\Utils\Utils.h" />
     <ClInclude Include="Source\Editor\Views\include\Components.h" />
     <ClInclude Include="Source\Editor\Views\include\Helpers.h" />
     <ClInclude Include="Source\Editor\Views\include\ShaderView.h" />

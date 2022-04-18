@@ -29,7 +29,7 @@ namespace Nork::Editor {
 		auto dir = dirLight.light->direction;
 		changed |= ImGui::SliderFloat3("Direction", &dirLight.light->direction.x, -1.01, 1.01);
 		changed |= ImGui::SliderFloat("outOfProjValue", &dirLight.light->outOfProjValue, 0, 1);
-		changed |= ImGui::ColorEdit4("Color", &(dirLight.light->color.r));
+		changed |= ImGui::ColorEdit3("Color", &(dirLight.light->color.r));
 		changed |= ImGui::DragFloat2("Left, Right", &dirLight.left);
 		changed |= ImGui::DragFloat2("Bottom, Top", &dirLight.bottom);
 		changed |= ImGui::DragFloat2("Near, Far", &dirLight.near);
@@ -251,6 +251,11 @@ namespace Nork::Editor {
 						ImGui::Text("Format: "); ImGui::SameLine(); ImGui::Text(Renderer::TextureFormatToString(tex->GetAttributes().format));
 
 						ImGui::EndTabItem();
+						if (ImGui::Button("Default"))
+						{
+							dr.model->meshes[meshIdx].material->SetDefaultTexture(type);
+							dr.model->meshes[meshIdx].material->Update();
+						}
 						if (ImGui::Button("Load texture"))
 						{
 							std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::Image, L"Load Texture", L"Load");

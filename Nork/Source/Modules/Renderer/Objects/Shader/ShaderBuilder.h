@@ -9,7 +9,7 @@ namespace Nork::Renderer {
 		ShaderBuilder& Sources(const std::unordered_map<ShaderType, std::string>& sources);
 		std::shared_ptr<Shader> Create();
 	private:
-		void Compile();
+		bool Compile();
 	private:
 		GLuint handle;
 		std::unordered_map<ShaderType, std::string> sources;

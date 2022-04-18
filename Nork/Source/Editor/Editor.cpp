@@ -165,6 +165,7 @@ namespace Nork::Editor
 		panels.push_back(std::make_unique<BloomPanel>());
 		// AddViewportPanel();
 		menus.push_back(std::make_unique<FileMenu>());
+		ImGui::SetColorEditOptions(ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB | ImGuiColorEditFlags_PickerHueBar | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
 	}
 
 	void Editor::Render()

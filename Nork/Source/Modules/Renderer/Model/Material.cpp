@@ -31,4 +31,8 @@ namespace Nork::Renderer {
 		specularExponent = 128;
 		Update();
 	}
+	void Material::SetDefaultTexture(TextureMap type)
+	{
+		SetTextureMap(GetDefaultTextureMaps()[std::to_underlying(type)], type);
+	}
 }
