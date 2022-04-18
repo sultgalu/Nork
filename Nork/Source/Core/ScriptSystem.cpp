@@ -17,14 +17,14 @@ namespace Nork {
 		
 		auto setup = [&]()
 		{
-			glfwSetInputMode(Application::Get().engine.window.Underlying().GetContext().glfwWinPtr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-			
 			playerTr.position = { 0, 0, -15 };
 			playerKin.mass = 0.001f;
 			engine.physicsSystem.pipeline.coefficient = 0.2f;
 			playerPl.SetIntensity(200);
 			playerPl.light->color = glm::vec4(1.0f, 0.4f, 0.8f, 1.0f);
 			Application::Get().engine.window.Resize(1920, 1080);
+			// if (engine.renderingSystem.viewports.empty())
+			//  	engine.renderingSystem.viewports.push_back();
 			return true;
 		};
 		static bool set = setup();
@@ -84,6 +84,6 @@ namespace Nork {
 
 			playerTr.quaternion = q;
 		}
-		engine.renderingSystem.viewports[0]->camera = std::shared_ptr<Components::Camera>(&cam);
+		*engine.renderingSystem.viewports[0]->camera = cam;
 	}
 }

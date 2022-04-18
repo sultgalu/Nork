@@ -81,6 +81,39 @@ namespace Nork::Renderer {
 			uniformLocations[name] = loc;
 			return loc;
 		}
+		const std::unordered_map<std::string, GLint>& UniformLocations() { return uniformLocations; }
+		std::unordered_map<std::string, size_t> QueryAllUniformNamesAndTypes();
+
+		glm::vec4 GetVec4(const std::string& name)
+		{
+			glm::vec4 val = glm::zero<glm::vec4>();
+			glGetUniformfv(handle, GetOrQueryUniformLocation(name), &val.x);
+			return val;
+		}
+		glm::vec3 GetVec3(const std::string& name)
+		{
+			glm::vec3 val = glm::zero<glm::vec3>();
+			glGetUniformfv(handle, GetOrQueryUniformLocation(name), &val.x);
+			return val;
+		}
+		glm::vec2 GetVec2(const std::string& name)
+		{
+			glm::vec2 val = glm::zero<glm::vec2>();
+			glGetUniformfv(handle, GetOrQueryUniformLocation(name), &val.x);
+			return val;
+		}
+		float GetFloat(const std::string& name)
+		{
+			float val = 0.0f;
+			glGetUniformfv(handle, GetOrQueryUniformLocation(name), &val);
+			return val;
+		}
+		int GetInt(const std::string& name)
+		{
+			int val = 0.0f;
+			glGetUniformiv(handle, GetOrQueryUniformLocation(name), &val);
+			return val;
+		}
 	public:
 		const std::vector<ShaderType> shaderTypes;
 	private:

@@ -57,8 +57,8 @@ namespace Nork {
 	void RenderingSystem::OnPLightRemoved(entt::registry & reg, entt::entity id)
 	{
 		reg.remove<Components::PointShadowRequest>(id); // remove shadow first from UBO
-		auto& light = reg.get<Components::DirLight>(id);
-		drawState.RemoveDirLight(light.light);
+		auto& light = reg.get<Components::PointLight>(id);
+		drawState.RemovePointLight(light.light);
 		light.shadow = nullptr;
 	}
 	RenderingSystem::RenderingSystem(entt::registry& registry)

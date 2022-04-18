@@ -6,6 +6,7 @@ namespace Nork::Editor {
 	{
 		bool isFocused, isHovered, isDocked, isAppearing, isCollapsed;
 		bool isOpen = true;
+		bool setFocus = false;
 		ImGuiWindowFlags windowFlags = 0;
 	};
 
@@ -14,6 +15,11 @@ namespace Nork::Editor {
 	public:
 		bool Draw()
 		{
+			if (panelState.setFocus)
+			{
+				ImGui::SetNextWindowFocus();
+				panelState.setFocus = false;
+			}
 			if (panelState.isOpen)
 			{
 				if (ImGui::Begin(GetName(), &panelState.isOpen, panelState.windowFlags))
@@ -47,6 +53,7 @@ namespace Nork::Editor {
 		}
 		virtual void OnContentSkipped() {};
 		virtual const char* GetName() = 0;
+		virtual bool DeleteOnClose() const { return false; }
 	public:
 		PanelState panelState;
 	};

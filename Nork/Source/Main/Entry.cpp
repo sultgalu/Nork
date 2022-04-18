@@ -108,13 +108,15 @@ int main()
 	Timer t;
 	CameraController camContr;
 
-	//engine.StartPhysics();
+	// glfwSetInputMode(Application::Get().engine.window.Underlying().GetContext().glfwWinPtr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	// engine.renderingSystem.viewports.push_back(std::make_shared<Viewport>(std::make_shared<Components::Camera>()));
+	// engine.StartPhysics();
 	while (!Application::Get().engine.window.ShouldClose())
 	{
 		editor.Update();
-		// auto delta = t.Reset();
-		// engine.Update();
-		// auto& ctx = Application::Get().window.Underlying().GetContext();
-		// engine.renderingSystem.DrawToScreen(ctx.width, ctx.height);
+		//auto delta = t.Reset();
+		//engine.Update();
+		//auto& ctx = Application::Get().engine.window.Underlying().GetContext();
+		//engine.renderingSystem.DrawToScreen(ctx.width, ctx.height);
 	}
 }

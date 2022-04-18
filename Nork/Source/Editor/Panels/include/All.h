@@ -6,3 +6,4 @@
 #include "PhysicsSettingsPanel.h"
 #include "GraphicsSettingsPanel.h"
 #include "BloomPanel.h"
+#include "ShadersPanel.h"

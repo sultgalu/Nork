@@ -33,6 +33,8 @@ namespace Nork
 		M = GLFW_KEY_M,
 		O = GLFW_KEY_O,
 
+		F1 = GLFW_KEY_F1,
+
 		Max = GLFW_KEY_LAST
 	};
 

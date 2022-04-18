@@ -3,7 +3,6 @@
 #include "App/Application.h"
 #include "Panels/include/All.h"
 #include "Menus/include/All.h"
-#include "Views/include/All.h"
 
 namespace Nork::Editor
 {
@@ -196,12 +195,9 @@ namespace Nork::Editor
 
 		for (int i = 0; i < panels.size(); i++)
 		{
-			if (!panels[i]->Draw())
+			if (!panels[i]->Draw() && panels[i]->DeleteOnClose())
 			{
-				if (dynamic_cast<ViewportPanel*>(panels[i].get()))
-				{
-					panels.erase(panels.begin() + i);
-				}
+				panels.erase(panels.begin() + i);
 			}
 		}
 
@@ -215,6 +211,21 @@ namespace Nork::Editor
 			ImGui::UpdatePlatformWindows();
 			ImGui::RenderPlatformWindowsDefault();
 			glfwMakeContextCurrent(backup_current_context);
+		}
+
+		if (engine.window.Input().IsJustPressed(Key::F1))
+		{
+			data.gameMode = !data.gameMode;
+			if (data.gameMode)
+			{
+				glfwSetInputMode(Application::Get().engine.window.Underlying().GetContext().glfwWinPtr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+				engine.StartPhysics();
+			}
+			else
+			{
+				glfwSetInputMode(Application::Get().engine.window.Underlying().GetContext().glfwWinPtr, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+				engine.StopPhysics();
+			}
 		}
 	}
 	void Editor::Update()
@@ -254,6 +265,62 @@ namespace Nork::Editor
 		//imIO.AddFocusEvent(true);
 		//imIO.AddFocusEvent(false);
 	}
+	std::pair<std::shared_ptr<Renderer::Shader>, std::string> SelectShaderFromRenderer(Engine& engine)
+	{
+		auto& shaders = engine.renderingSystem.shaders;
+		std::pair<std::shared_ptr<Renderer::Shader>, std::string> selected = { nullptr, "" };
+
+		if (ImGui::MenuItem("Geometry Pass"))
+			selected = { shaders.gPassShader, "Geometry Pass"};
+		if (ImGui::MenuItem("Light Pass"))
+			selected = { shaders.lPassShader, "Light Pass" };
+		ImGui::Separator();
+
+		if (ImGui::MenuItem("Dir. Light Shadow"))
+			selected = { shaders.dShadowShader, "Dir. Light Shadow" };
+		if (ImGui::MenuItem("Point Light Shadow"))
+			selected = { shaders.pShadowShader, "Point Light Shadow" };
+		ImGui::Separator();
+
+		if (ImGui::MenuItem("Point"))
+			selected = { shaders.pointShader, "Point" };
+		if (ImGui::MenuItem("Line"))
+			selected = { shaders.lineShader, "Line" };
+		if (ImGui::MenuItem("Collider"))
+			selected = { shaders.colliderShader, "Collider" };
+		ImGui::Separator();
+
+		if (ImGui::MenuItem("Bloom 1"))
+			selected = { shaders.bloomShader, "Bloom 1" };
+		if (ImGui::MenuItem("Bloom 2"))
+			selected = { shaders.bloom2Shader, "Bloom 2" };
+		if (ImGui::MenuItem("Bloom 3"))
+			selected = { shaders.bloom3Shader, "Bloom 3" };
+
+		ImGui::Separator();
+		if (ImGui::MenuItem("Tonemap"))
+			selected = { shaders.tonemapShader, "Tonemap" };
+		if (ImGui::MenuItem("Texture"))
+			selected = { shaders.textureShader, "Texture" };
+		if (ImGui::MenuItem("Sky"))
+			selected = { shaders.skyShader, "Sky" };
+		if (ImGui::MenuItem("Skybox"))
+			selected = { shaders.skyboxShader, "Skybox" };
+
+		return selected;
+	}
+	int FindShaderPanelBy(std::vector<std::unique_ptr<Panel>>& panels, std::shared_ptr<Renderer::Shader> shader)
+	{
+		for (int i = 0; i < panels.size(); i++)
+		{
+			auto shaderPanel = dynamic_cast<ShadersPanel*>(panels[i].get());
+			if (shaderPanel && shaderPanel->shaderView.Shader() == shader)
+			{
+				return i;
+			}
+		}
+		return -1;
+	}
 	void Editor::DrawPanelManager()
 	{
 		if (ImGui::BeginMenu("Panels"))
@@ -271,6 +338,23 @@ namespace Nork::Editor
 			if (ImGui::MenuItem("New Viewport"))
 			{
 				AddViewportPanel();
+			}
+			if (ImGui::BeginMenu("Shaders"))
+			{
+				auto shader = SelectShaderFromRenderer(engine);
+				if (shader.first)
+				{
+					int idx = FindShaderPanelBy(panels, shader.first);
+					if (idx > 0)
+					{
+						panels[idx]->panelState.setFocus = true;
+					}
+					else
+					{
+						panels.push_back(std::make_unique<ShadersPanel>(shader.first, shader.second));
+					}
+				}
+				ImGui::EndMenu();
 			}
 			ImGui::EndMenu();
 		}

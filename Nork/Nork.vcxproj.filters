@@ -279,6 +279,12 @@
     <ClCompile Include="Source\Editor\Panels\BloomPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Panels\ShadersPanel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Views\ShaderView.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\PCH\pch.h">
@@ -611,9 +617,6 @@
     <ClInclude Include="Source\Editor\Menus\include\FileMenu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Views\include\All.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Editor\Panels\include\ViewportPanel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -633,6 +636,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Panels\include\BloomPanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Panels\include\ShadersPanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Views\include\ShaderView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

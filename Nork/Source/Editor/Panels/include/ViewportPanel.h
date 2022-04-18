@@ -13,6 +13,7 @@ namespace Nork::Editor {
 		const char* GetName() override { return name.c_str(); };
 		void SetIndex(int idx) { name = "Viewport  " + std::to_string(idx); }
 		void OnContentSkipped() override;
+		bool DeleteOnClose() const override { return true; }
 	private:
 		ViewportView viewportView;
 		std::string name = "Viewport";
