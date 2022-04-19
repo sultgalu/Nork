@@ -69,6 +69,7 @@ int main()
 		{
 			l.far = 100; l.near = -100; l.left = -100; l.right = 100; l.bottom = -100; l.top = 100;
 			l.RecalcVP();
+			l.sun = true;
 		});
 	//l.light->color = glm::vec4(0.5f, 0.4f, 0.25f, 1);
 	//l.SetColor(glm::vec4(0.0f));

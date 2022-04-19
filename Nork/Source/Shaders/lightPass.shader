@@ -27,6 +27,7 @@ struct DirLight
 	vec3 direction;
 	float outOfProj;
 	vec4 color;
+	vec4 color2;
 	mat4 VP;
 };
 
@@ -188,15 +189,15 @@ float clip(vec3 fragPos, float clippedVal)
 }
 vec3 dLight(DirLight light, Materials material, vec3 normal, vec3 viewDir, vec3 worldPos)
 {
-	vec3 ambient = light.color.rgb * material.ambient;
+	vec3 ambient = light.color.a * light.color.rgb * material.ambient;
 
 	vec3 lightDir = -normalize(light.direction); // acts now as a position pointing towards the origin (otherwise should * (-1)) 
 	float diffAngle = max(dot(lightDir, normal), 0.0f);
-	vec3 diffuse = light.color.rgb * diffAngle * material.diffuse;
+	vec3 diffuse = light.color2.rgb * diffAngle * material.diffuse;
 
 	vec3 halfwayDir = normalize(viewDir + lightDir);
 	float angle = pow(max(dot(halfwayDir, normal), 0.0f), material.specularExponent);
-	vec3 specular = light.color.rgb * angle * material.specular;
+	vec3 specular = light.color2.rgb * angle * material.specular;
 
 	vec4 lightView = light.VP * vec4(worldPos, 1.0f);
 	vec3 fragPos = lightView.xyz / lightView.w; // clipping
@@ -211,15 +212,15 @@ float dShadow(DirShadow shadow, float bias, vec3 fragPos)
 }
 vec3 dLightShadow(DirLight light, Materials material, vec3 normal, vec3 viewDir, DirShadow shadow, vec3 worldPos)
 {
-	vec3 ambient = light.color.rgb * material.ambient;
+	vec3 ambient = light.color.a * light.color.rgb * material.ambient;
 
 	vec3 lightDir = normalize(light.direction); // acts now as a position pointing towards the origin (otherwise should * (-1)) 
 	float diffAngle = max(dot(-lightDir, normal), 0.0f);
-	vec3 diffuse = light.color.rgb * diffAngle * material.diffuse;
+	vec3 diffuse = light.color2.rgb * diffAngle * material.diffuse;
 
 	vec3 halfwayDir = normalize(viewDir - lightDir);
 	float angle = pow(max(dot(halfwayDir, normal), 0.0f), material.specularExponent);
-	vec3 specular = light.color.rgb * angle * material.specular;
+	vec3 specular = light.color2.rgb * angle * material.specular;
 
 	vec4 lightView = light.VP * vec4(worldPos, 1.0f);
 	vec3 fragPos = lightView.xyz / lightView.w; // clipping

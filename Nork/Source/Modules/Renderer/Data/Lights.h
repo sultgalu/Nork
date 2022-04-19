@@ -22,6 +22,7 @@ namespace Nork::Renderer::Data
 		glm::vec3 direction;
 		float outOfProjValue = 1;
 		glm::vec4 color;
+		glm::vec4 color2 = glm::vec4(0);
 		glm::mat4 VP;
 	};
 	struct DirShadow
