@@ -157,6 +157,10 @@ namespace Nork {
 			{
 				dl.shadow->Update();
 			}
+			if (dl.sun)
+			{
+				shaders.skyShader->Use().SetVec3("lightPos", -dl.light->direction);
+			}
 		}
 		dirLightObserver.clear();
 		for (const auto ent : pointLightObserver)
@@ -197,8 +201,7 @@ namespace Nork {
 
 		auto vp = camera.projection * glm::mat4(glm::mat3(camera.view));
 		shaders.skyboxShader->Use().SetMat4("VP", vp);
-		shaders.skyShader->Use().SetMat4("VP", vp)
-			.SetVec3("camPos", camera.position);
+		shaders.skyShader->Use().SetMat4("VP", vp);
 	}
 	void RenderingSystem::RenderScene(Viewport& viewport)
 	{

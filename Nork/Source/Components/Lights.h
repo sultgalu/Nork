@@ -32,6 +32,7 @@ namespace Nork::Components
 			light->VP = glm::ortho(left, right, bottom, top, near, far) * GetView();
 		}
 		float left = -30, right = 30, bottom = -30, top = 30, near = -50, far = 100;
+		bool sun = false;
 	};
 	struct DirShadowRequest
 	{

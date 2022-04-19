@@ -44,7 +44,7 @@ void main()
 
 #type fragment
 #version 330 core
-
+	
 in vec4 worldPos;
 
 uniform float far;

@@ -24,44 +24,30 @@ in vec3 worldPos2;
 
 uniform float sunSize = 5.0f;
 uniform float sunRad = 0.058f;
-uniform float atmThick = 0.163f;
+uniform float atmThick = 0.05f;
 uniform float density = 20.33f;
 uniform float commonArea = 0.2f;
 uniform vec3 _color = vec3(2, 1.8f, 1.25f);
 uniform vec3 _colorSky = vec3(1, 1.36f, 2.0f);
-uniform float atmosphereH = 0.57f;
-uniform vec3 atmFilter = vec3(1.7f, 0.63f, 0.13f);
+uniform float atmosphereH = 0.377f;
+uniform vec3 atmFilter = vec3(8.0f, 0.767f, -1.0f);
 uniform float atmOffs = 0.00f;
-uniform float skyMin = -0.25f;
-uniform float skyMax = 0.484f;
-uniform float poww = 1.519;
+uniform float skyMin = -0.284f;
+uniform float skyMax = 0.217f;
+uniform float poww = 1.619;
 uniform float correct = 1.0f;
 
 float calcRedness(float lightH)
 {
     float height = abs(lightH - atmOffs);
-    //if (height < atmThick)
-    //    return 1.0f;
+    if (height < atmThick)
+        return 1.0f;
     height -= atmThick;
     height = min(height, atmosphereH);
     float redness = (atmosphereH - height) * (1 / atmosphereH);
     if (redness < 1.0f)
         redness = pow(redness, poww);
     return redness;
-
-    // lightH -= atmOffs;
-    // float dist = lightH - atmosphereH;
-    // if (lightH < 0)
-    // {
-    //     dist = lightH + atmosphereH;
-    //     dist *= -1;
-    // }
-    // if (dist > 0)
-    //     return 0.0f;
-    // 
-    // dist *= -1;
-    // dist *= 1 / atmosphereH; // [0;0.2] -> [0;1]
-    // return dist;
 }
 
 void main ()

@@ -27,6 +27,7 @@ namespace Nork::Editor {
 		//dirLight.RecalcVP();
 		// dirLight.light->Update();
 		auto dir = dirLight.light->direction;
+		changed |= ImGui::Checkbox("Sun", &dirLight.sun);
 		changed |= ImGui::SliderFloat3("Direction", &dirLight.light->direction.x, -1.01, 1.01);
 		changed |= ImGui::SliderFloat("outOfProjValue", &dirLight.light->outOfProjValue, 0, 1);
 		changed |= ImGui::ColorEdit3("Color", &(dirLight.light->color.r));
@@ -43,8 +44,8 @@ namespace Nork::Editor {
 		}
 		else if (ImGui::TreeNode("Shadow"))
 		{
-			changed |= ImGui::SliderFloat("Bias", (float*)&(dirLight.shadow->bias), 0, 1);
-			changed |= ImGui::SliderFloat("min Bias", (float*)&(dirLight.shadow->biasMin), 0, 1);
+			changed |= ImGui::DragFloat("Bias", (float*)&(dirLight.shadow->bias), 0.001f);
+			changed |= ImGui::DragFloat("min Bias", (float*)&(dirLight.shadow->biasMin), 0.001f);
 
 			static auto imgSize = 100;
 			auto tex = dirLight.shadow->shadowMap.Get();
