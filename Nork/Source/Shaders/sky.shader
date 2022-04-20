@@ -33,7 +33,7 @@ uniform float atmosphereH = 0.377f;
 uniform vec3 atmFilter = vec3(8.0f, 0.767f, -1.0f);
 uniform float atmOffs = 0.00f;
 uniform float skyMin = -0.284f;
-uniform float skyMax = 0.217f;
+uniform float skyMax = 0.417f;
 uniform float poww = 1.619;
 uniform float correct = 1.0f;
 

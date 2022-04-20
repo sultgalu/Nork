@@ -111,13 +111,13 @@ namespace Nork {
 		collView.each([&](entt::entity id, Transform& tr, Kinematic& kin, Collider& poly)
 			{
 				translations.push_back(tr.position);
-				quaternions.push_back(tr.position);
+				quaternions.push_back(tr.quaternion);
 			});
 
 		collOnlyView.each([&](entt::entity id, Transform& tr, Collider& poly)
 			{
 				translations.push_back(tr.position);
-				quaternions.push_back(tr.position);
+				quaternions.push_back(tr.quaternion);
 			});
 		pipeline.SetModels(translations, quaternions);
 	}
