@@ -38,8 +38,6 @@ namespace Nork::Renderer {
 			: ptrRef(ptrRef), shadowMap(shadowMap)
 		{
 			shadMap = shadowMap.Get()->GetBindlessHandle();
-			bias = 0.01f;
-			biasMin = 0.01f;
 			Update();
 		}
 		void Update()

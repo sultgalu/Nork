@@ -27,7 +27,7 @@ namespace Nork::Renderer::Data
 	};
 	struct DirShadow
 	{
-		float bias, biasMin;
+		float bias = 0.01f, biasMin = 0.01f;
 		uint64_t shadMap;
 	};
 }

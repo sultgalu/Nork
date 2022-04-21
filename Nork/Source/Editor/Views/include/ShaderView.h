@@ -21,5 +21,6 @@ namespace Nork::Editor {
 		std::unordered_map<std::string, int> uniformsInt;
 		bool immediateMode = true;
 		bool keepValues = true;
+		bool colorEdit = true;
 	};
 }

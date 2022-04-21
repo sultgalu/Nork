@@ -9,7 +9,8 @@ namespace Nork::Editor {
 	}
 	void ShaderView::Content()
 	{
-		ImGui::Spacing();
+		ImGui::Checkbox("Color edit", &colorEdit);
+		//ImGui::Spacing();
 		ImGui::SameLine(ImGui::GetCurrentWindow()->Size.x - 150);
 		if (ImGui::Button("Recompile"))
 		{
@@ -55,7 +56,14 @@ namespace Nork::Editor {
 		ImGui::Separator();
 		for (auto& uniform : uniformsVec3)
 		{
-			if (ImGui::DragFloat3(uniform.first.c_str(), &uniform.second.x, floatSpeed) && immediateMode)
+			if (colorEdit)
+			{
+				if (ImGui::ColorEdit3(uniform.first.c_str(), &uniform.second.x) && immediateMode)
+				{
+					shader->Use().SetVec3(uniform.first, uniform.second);
+				}
+			}
+			else if (ImGui::DragFloat3(uniform.first.c_str(), &uniform.second.x, floatSpeed) && immediateMode)
 			{
 				shader->Use().SetVec3(uniform.first, uniform.second);
 			}
@@ -63,7 +71,14 @@ namespace Nork::Editor {
 		ImGui::Separator();
 		for (auto& uniform : uniformsVec4)
 		{
-			if (ImGui::DragFloat4(uniform.first.c_str(), &uniform.second.x, floatSpeed) && immediateMode)
+			if (colorEdit)
+			{
+				if (ImGui::ColorEdit4(uniform.first.c_str(), &uniform.second.x) && immediateMode)
+				{
+					shader->Use().SetVec3(uniform.first, uniform.second);
+				}
+			}
+			else if (ImGui::DragFloat4(uniform.first.c_str(), &uniform.second.x, floatSpeed) && immediateMode)
 			{
 				shader->Use().SetVec4(uniform.first, uniform.second);
 			}

@@ -16,71 +16,91 @@ void main(void)
 #type fragment
 #version 330 core
 
-uniform vec3 camPos;
 uniform vec3 lightPos = vec3(0.58f, 0.36f, -0.26f);
 
 in vec3 worldPos2;
 
+uniform vec3 sunColor = vec3(10.0f);
+uniform vec3 baseColor = vec3(10.0f);
+uniform vec3 inscatterColor = vec3(0.06f, 0.28f, 1.0f);
+uniform vec3 miaScatterColor = vec3(0.6f);
+uniform vec3 extinctionColor = vec3(1.0f, 0.193f, 0.042f);
 
-uniform float sunSize = 5.0f;
-uniform float sunRad = 0.058f;
-uniform float atmThick = 0.05f;
-uniform float density = 20.33f;
-uniform float commonArea = 0.2f;
-uniform vec3 _color = vec3(2, 1.8f, 1.25f);
-uniform vec3 _colorSky = vec3(1, 1.36f, 2.0f);
-uniform float atmosphereH = 0.377f;
-uniform vec3 atmFilter = vec3(8.0f, 0.767f, -1.0f);
-uniform float atmOffs = 0.00f;
-uniform float skyMin = -0.284f;
-uniform float skyMax = 0.417f;
-uniform float poww = 1.619;
-uniform float correct = 1.0f;
+uniform float sunRad = 0.03;
+uniform vec2 atmDistMinMax = vec2(2, 4);
 
-float calcRedness(float lightH)
+uniform float atmPlainness = 3.0f;
+
+uniform float brightnessPow = 7.0f;
+uniform float scatterPow = 0.6f;
+uniform vec3 outscatterPtg = vec3(0.01f, 0.05f, 0.18f);
+
+uniform float extVolume = 1.0f;
+uniform float atmShadowPow = 1.0f;
+uniform float atmShadowBias = 0.5f;
+
+vec3 wavelengths[3] = {
+    //vec3(0.4, 0, 0.4),
+    vec3(1, 0, 0),
+    vec3(0, 1, 0),
+    vec3(0, 0, 1),
+    //vec3(0.4, 0, 0)
+};
+
+vec3 getInscattering(float distFromSun, float atmDist, vec3 scatterColor)
 {
-    float height = abs(lightH - atmOffs);
-    if (height < atmThick)
-        return 1.0f;
-    height -= atmThick;
-    height = min(height, atmosphereH);
-    float redness = (atmosphereH - height) * (1 / atmosphereH);
-    if (redness < 1.0f)
-        redness = pow(redness, poww);
-    return redness;
+    float brightness = (1 - distFromSun) * 10 + 1; // [1;10]
+    float blueFactor = distFromSun * 10 + 1; // [1;10]
+    blueFactor = pow(blueFactor, scatterPow);
+    vec3 color = baseColor;
+    // color *= pow(brightness, brightnessPow);
+    color *= pow(atmDist, brightnessPow);
+    color *= pow(scatterColor, vec3(blueFactor));
+    return color;
+    //return (4 - distFromSun) * baseColor * inscatterColor * (distFromSun + 1) * atmDist;
+}
+
+vec3 applyExtinction(vec3 color, float distFromSun, float atmDistVert, float atmDistSun, vec3 extColor)
+{
+    if (extVolume == 0)
+        return color;
+    return  color * pow(extColor, vec3(atmDistVert - atmDistMinMax.x + atmDistSun - atmDistMinMax.x));
 }
 
 void main ()
 {
     vec3 worldPos = normalize(worldPos2);
     vec3 lightPos = normalize(lightPos);
-    float lightH = lightPos.y;
-    float redness = calcRedness(lightH);
-    float rednessSky = calcRedness(worldPos.y) * redness;
-    float skyBrightness = (clamp(lightH, skyMin, skyMax) + -skyMin) * (1 / (skyMax - skyMin));
 
-    vec3 col = vec3(0);
-    vec3 color = _color * (1 - redness) + _color * redness * atmFilter;
+    float distanceFromLight = distance(worldPos, lightPos);
+    distanceFromLight = (clamp(distanceFromLight - sunRad, 0, 2 - sunRad)) / (2.0f - sunRad);
 
-    float dist = distance(lightPos, worldPos);
+    float lightAngle = acos(dot(lightPos, vec3(0, 1, 0)));
+    float lightAngleN = clamp(lightAngle / (3.15f / 2), 0, 1);
+    float vertAngle = acos(dot(worldPos, vec3(0, 1, 0)));
+    float vertAngleN = clamp(vertAngle / (3.15f / 2), 0, 1);
+    vertAngleN = pow(vertAngleN, atmPlainness); 
+    float atmDistVert = atmDistMinMax.x + (atmDistMinMax.y - atmDistMinMax.x) * vertAngleN;
+    float atmDistSun = atmDistMinMax.x + (atmDistMinMax.y - atmDistMinMax.x) * lightAngleN;
 
-    dist = max(dist - sunRad, 0);
+    //float atmInShadow = pow(distanceFromLight, atmShadowPow);
 
-    float asd = sunSize / 10;
-    dist += asd;
-    float strength = max(1 - dist, 0);
-    if (strength > 0)
+    float atmInShadow = pow(1 - min(lightPos.y + atmShadowBias, 1), atmShadowPow);
+
+    vec3 color = vec3(0);
+    if (distanceFromLight == 0)
     {
-        strength *= 2.0f;
-        vec3 sunCol = 1 * pow(strength, density) * color;
-        col = max(sunCol, col);
-        col += sunCol;
+        color = sunColor;
     }
+    else
+    {
+        color += getInscattering(distanceFromLight, atmDistVert, inscatterColor) * (1 - atmInShadow);
+        
+        //color += getInscattering(distanceFromLight, atmDist, miaScatterColor);
+    }
+    color = applyExtinction(color, distanceFromLight, atmDistVert, atmDistSun, extinctionColor);
+    color = applyExtinction(color, distanceFromLight, atmDistVert, atmDistSun, miaScatterColor);
+    //color = applyOutscattering(vertAngleN, color, distanceFromLight);
 
-    // --------------------------------
-
-    col += skyBrightness * (_colorSky * (1 - rednessSky) + _colorSky * rednessSky * atmFilter);
-    col *= correct;
-
-    gl_FragColor = vec4(col, 1);
+    gl_FragColor = vec4(color, 1);
 }

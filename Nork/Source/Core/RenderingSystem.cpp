@@ -152,20 +152,21 @@ namespace Nork {
 		{
 			auto& dl = registry.get<DirLight>(ent);
 			dl.RecalcVP();
-			dl.light->Update();
 			if (dl.shadow)
 			{
 				dl.shadow->Update();
 			}
 			if (dl.sun)
 			{
-				float redness = std::clamp(-dl.light->direction.y, 0.0f, 0.2f) * 5;
+				float height = glm::normalize(-dl.light->direction).y;
+				float redness = std::clamp(height, 0.0f, 0.2f) * 5;
 				redness = 1 - redness;
 				dl.light->color2 = dl.light->color - redness * glm::vec4(0.0f, 0.7f, 1.0f, 0.0f);
 				
-				dl.light->color.a = std::clamp(-dl.light->direction.y + 0.2f, 0.0f, 0.3f) * 2.0f;
+				dl.light->color.a = std::clamp(height + 0.2f, 0.0f, 0.3f) * 2.0f;
 				shaders.skyShader->Use().SetVec3("lightPos", -dl.light->direction);
 			}
+			dl.light->Update();
 		}
 		dirLightObserver.clear();
 		for (const auto ent : pointLightObserver)

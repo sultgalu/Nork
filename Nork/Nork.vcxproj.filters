@@ -666,5 +666,6 @@
     <None Include="Source\Shaders\tonemap.shader" />
     <None Include="Source\Shaders\bloom3.shader" />
     <None Include="Source\Shaders\sky.shader" />
+    <None Include="Source\Shaders\sky2.shader" />
   </ItemGroup>
 </Project>
