@@ -54,7 +54,6 @@ namespace Nork {
 			{
 				Self(winPtr).typedChars.push_back(character);
 			});
-
 		glfwSetWindowCloseCallback(windowPtr, [](GLFWwindow* winPtr)
 			{
 				Self(winPtr).windowShouldClose = true;

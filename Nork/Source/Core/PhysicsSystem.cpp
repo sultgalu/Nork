@@ -65,7 +65,8 @@ namespace Nork {
 				pWorld.kinems.push_back(Physics::KinematicData{
 					.position = tr.position, .quaternion = tr.quaternion,
 					.velocity = kin.velocity, .w = kin.w, .mass = kin.mass,
-					.isStatic = false, .forces = kin.forces });
+					.isStatic = false, .forces = kin.forces,
+					.torque = kin.torque, .I = kin.I });
 			});
 
 		collOnlyView.each([&](entt::entity id, Transform& tr, Collider& coll)
@@ -73,7 +74,7 @@ namespace Nork {
 				pWorld.kinems.push_back(Physics::KinematicData{
 					.position = tr.position, .quaternion = tr.quaternion,
 					.velocity = glm::vec3(0),.w = glm::vec3(0), .mass = 1,
-					.isStatic = true, .forces = glm::vec3(0), });
+					.isStatic = true, .forces = glm::vec3(0) });
 			});
 
 		view.each([&](entt::entity id, Transform& tr, Kinematic& kin)
@@ -81,7 +82,8 @@ namespace Nork {
 				pWorld.kinems.push_back(Physics::KinematicData{
 					.position = tr.position, .quaternion = tr.quaternion,
 					.velocity = kin.velocity, .w = kin.w, .mass = kin.mass,
-					.isStatic = false, .forces = kin.forces });
+					.isStatic = false, .forces = kin.forces,
+					.torque = kin.torque, .I = kin.I });
 			});
 
 		if (updatePoliesForPhysics)
@@ -97,7 +99,6 @@ namespace Nork {
 				{
 					colls.push_back(Convert(coll, tr.scale));
 				});
-
 			pipeline.SetColliders(colls);
 			updatePoliesForPhysics = false;
 		}
@@ -120,6 +121,16 @@ namespace Nork {
 				quaternions.push_back(tr.quaternion);
 			});
 		pipeline.SetModels(translations, quaternions);
+
+		for (size_t i = 0; i < pWorld.kinems.size(); i++)
+		{
+			Physics::AABB aabb(pWorld.shapes[i].verts);
+			float sum = 0;
+			for (size_t i = 0; i < 3; i++)
+				sum += glm::pow(aabb.max[i] - aabb.min[i], 2);
+			sum /= 18.0f;
+			pWorld.kinems[i].I = sum * pWorld.kinems[i].mass;
+		}
 	}
 
 	void PhysicsSystem::DownloadInternal()

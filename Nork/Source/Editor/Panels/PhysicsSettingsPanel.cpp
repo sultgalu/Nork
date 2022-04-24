@@ -8,7 +8,7 @@ namespace Nork::Editor {
 	void PhysicsSettingsPanel::Content()
 	{
 		auto& p = GetEngine().physicsSystem.pipeline;
-		ImGui::DragFloat("Coefficient", &p.coefficient);
+		ImGui::DragFloat("Coefficient##2", &p.coefficient);
 
 		bool g = p.g != 0;
 		static float savedG = 0;

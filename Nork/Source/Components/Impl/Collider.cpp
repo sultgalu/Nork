@@ -121,6 +121,19 @@ namespace Nork::Components {
 				}
 				if (Physics::Sign(edgeNormal, point1, point) > 0)
 				{
+					// remove broken edge from edges
+					auto idx1 = face.points[i];
+					auto idx2 = face.points[(i + 1) % face.points.size()];
+					for (size_t k = 0; k < edges.size(); k++)
+					{
+						auto& edge = edges[k];
+						if ((edge.first == idx1 && edge.second == idx2) || (edge.first == idx2 && edge.second == idx1))
+						{
+							edges.erase(edges.begin() + k);
+							break;
+						}
+					}
+
 					return (i + 1) % face.points.size();
 				}
 			}
@@ -228,8 +241,8 @@ namespace Nork::Components {
 		// Back
 		collider.AddEdge(4, 6);
 
-		// collider.BuildTriangleFaces();
-		// collider.CombineFaces();
+		collider.BuildTriangleFaces();
+		collider.CombineFaces();
 
 		return collider;
 	}

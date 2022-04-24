@@ -3,6 +3,13 @@
 namespace Nork::Physics
 {
 	using index_t = uint32_t;
+	glm::vec3 EdgeNormal(const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& pInner, const glm::vec3& planeNormal, bool normalize = true);
+	glm::vec3 EdgeNormal(const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& pInner, bool normalize = true);
+	int TryExpandConvex2DSorted(std::vector<glm::vec3>& points, const glm::vec3& point, const glm::vec3& planeNormal);
+	std::vector<glm::vec3> SortPoints2D(const std::span<const glm::vec3> points);
+	float TriangleArea(const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& p3);
+	glm::vec3 Center2D(const std::span<const glm::vec3> points);
+	glm::vec3 Center2DSorted(const std::span<const glm::vec3> points);
 	glm::vec3 Center(const std::span<const glm::vec3> points);
 	glm::vec4 Center(const std::span<const glm::vec4> points);
 	index_t FarthestIdx(const std::span<const glm::vec3> verts, const glm::vec3&& dir);

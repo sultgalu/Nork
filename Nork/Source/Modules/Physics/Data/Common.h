@@ -60,5 +60,7 @@ namespace Nork::Physics
 		float mass;
 		bool isStatic = false;
 		glm::vec3 forces;
+		glm::vec3 torque = glm::vec3(0);
+		float I;
 	};
 }

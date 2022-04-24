@@ -16,7 +16,7 @@ namespace Nork::Physics
 		glm::vec3 center;
 		glm::vec3 colliderCenter;
 
-		std::vector<uint32_t> SideFacesOfVert(uint32_t vertIdx)
+		std::vector<uint32_t> SideFacesOfVert(uint32_t vertIdx) const
 		{
 			std::vector<uint32_t> res;
 			for (size_t i = 0; i < faceVerts.size(); i++)
@@ -32,7 +32,7 @@ namespace Nork::Physics
 			}
 			return res;
 		}
-		std::vector<uint32_t> EdgesOnFace(uint32_t faceIdx)
+		std::vector<uint32_t> EdgesOnFace(uint32_t faceIdx) const
 		{
 			std::vector<uint32_t> res;
 			for (size_t i = 0; i < edges.size(); i++)

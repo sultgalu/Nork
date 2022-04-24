@@ -42,7 +42,10 @@ namespace Nork
 
 			physicsSystem.Upload(scene.registry); // upload new data
 
-			scriptSystem.Update();
+			if (scriptUpdate)
+			{
+				scriptSystem.Update();
+			}
 			UpdateTransformMatrices();
 			scriptUpdated = true;
 
@@ -59,11 +62,15 @@ namespace Nork
 		Profiler::Clear();
 		window.Refresh();
 	}
-	void Engine::StartPhysics()
+	void Engine::StartPhysics(bool startScript)
 	{
 		if (physicsUpdate)
 			return;
-		scriptSystem.Update();
+		if (startScript)
+		{
+			scriptUpdate = true;
+			scriptSystem.Update();
+		}
 		// start physics thread
 		physicsSystem.Download(scene.registry);
 		physicsUpdate = true;
@@ -71,6 +78,7 @@ namespace Nork
 	}
 	void Engine::StopPhysics()
 	{
+		scriptUpdate = false;
 		physicsUpdate = false;
 		physicsThread->join();
 		delete physicsThread;

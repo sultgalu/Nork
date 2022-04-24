@@ -23,7 +23,7 @@ namespace Nork {
 			Colliders = 1 << 15,
 
 			PostProcess = Bloom | Tonemap,
-			Default = Deferred | PostProcess | Sky,
+			Default = Deferred | Tonemap | Sky,
 			Debug = Colliders
 		};
 

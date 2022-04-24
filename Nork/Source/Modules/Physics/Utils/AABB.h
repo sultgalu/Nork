@@ -7,6 +7,8 @@ namespace Nork::Physics
 {
 	struct AABB
 	{
+		AABB(std::span<glm::vec3> verts);
+		AABB() = default;
 		glm::vec3 min;
 		glm::vec3 max;
 	};
@@ -15,14 +17,10 @@ namespace Nork::Physics
 	{
 	public:
 		AABBTest(Shape& shape1, Shape& shape2)
-			: aabb1(CalcAABB(shape1)), aabb2(CalcAABB(shape2)) {}
-		static std::vector<uint32_t> GetResult(World&);
-		static std::vector<std::pair<uint32_t, uint32_t>> GetResult2(World&);
-		static AABB GetAABB(std::span<glm::vec3> verts);
+			: aabb1(AABB(shape1.verts)), aabb2(AABB(shape1.verts)) {}
+		static std::vector<std::pair<uint32_t, uint32_t>> GetResult(World&);
 		static float GetDelta();
 		static uint32_t Intersecting(AABB& aabb1, AABB& aabb2);
-	private:
-		static AABB CalcAABB(Shape& shape);
 	private:
 		AABB aabb1;
 		AABB aabb2;

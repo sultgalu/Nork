@@ -265,6 +265,14 @@ namespace Nork::Editor
 		}
 		//imIO.AddFocusEvent(true);
 		//imIO.AddFocusEvent(false);
+
+		if (engine.window.Input().IsJustPressed(Key::F2))
+		{
+			if (engine.physicsUpdate)
+				engine.StopPhysics();
+			else
+				engine.StartPhysics(false);
+		}
 	}
 	std::pair<std::shared_ptr<Renderer::Shader>, std::string> SelectShaderFromRenderer(Engine& engine)
 	{

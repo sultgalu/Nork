@@ -70,7 +70,7 @@ namespace Nork::Physics
 		}
 		return res;
 	}
-	static glm::vec3 Interpolate(float sdStart, float sdEnd, glm::vec3& start, glm::vec3& end)
+	static glm::vec3 Interpolate(float sdStart, float sdEnd, const glm::vec3& start, const glm::vec3& end)
 	{
 		float normalDistance = sdStart - sdEnd;
 		float startToFacePortion = sdStart / normalDistance;
@@ -119,26 +119,33 @@ namespace Nork::Physics
 
 		uint32_t startIdx = faceVerts.size() - 1;
 		uint32_t endIdx = 0;
-		float sdStart = SignedDistance(planeNorm, planeVert, verts[faceVerts[startIdx]]);
-
+		auto getVerts = [&](uint32_t idx)
+		{
+			return verts[idx]; // +vertOffs;
+		};
+		float sdStart = SignedDistance(planeNorm, planeVert, getVerts(faceVerts[startIdx]));
 		while (endIdx < faceVerts.size())
 		{
-			float sdEnd = SignedDistance(planeNorm, planeVert, verts[faceVerts[endIdx]]);
+			float sdEnd = SignedDistance(planeNorm, planeVert, getVerts(faceVerts[endIdx]));
 
 			if (sdStart > 0)
 			{
 				if (sdEnd <= 0)
 				{
-					points.push_back(Interpolate(sdStart, sdEnd, verts[faceVerts[startIdx]], verts[faceVerts[endIdx]]));
-					points.push_back(verts[faceVerts[endIdx]] - planeNorm * sdEnd);
+					points.push_back(Interpolate(sdStart, sdEnd, getVerts(faceVerts[startIdx]), getVerts(faceVerts[endIdx])));
+					//points.push_back(getVerts(faceVerts[endIdx]) - planeNorm * sdEnd);
 				}
 			}
 			else
 			{
-				if (sdEnd > 0)
-					points.push_back(Interpolate(sdEnd, sdStart, verts[faceVerts[endIdx]], verts[faceVerts[startIdx]]));
+				if (sdEnd >= 0)
+				{
+					points.push_back(Interpolate(sdEnd, sdStart, getVerts(faceVerts[endIdx]), getVerts(faceVerts[startIdx])));
+				}
 				else
-					points.push_back(verts[faceVerts[endIdx]] - planeNorm * sdEnd);
+				{
+					// points.push_back(getVerts(faceVerts[endIdx]) - planeNorm * sdEnd);
+				}
 			}
 
 			startIdx = endIdx++;
@@ -147,17 +154,148 @@ namespace Nork::Physics
 
 		return points;
 	}
-	std::vector<glm::vec3> FaceContactPoints(Shape& faceShape, Shape& vertShape, uint32_t faceIdx, uint32_t vertIdx)
+	std::vector<glm::vec3> ClipPointsOnPlane(glm::vec3& planeNorm, glm::vec3& planeVert, const std::vector<glm::vec3>& points)
+	{
+		std::vector<glm::vec3> clipped;
+
+		uint32_t startIdx = points.size() - 1;
+		uint32_t endIdx = 0;
+		float sdStart = SignedDistance(planeNorm, planeVert, points[startIdx]);
+		while (endIdx < points.size())
+		{
+			float sdEnd = SignedDistance(planeNorm, planeVert, points[endIdx]);
+
+			if (sdStart > 0)
+			{
+				if (sdEnd <= 0)
+				{
+					clipped.push_back(Interpolate(sdStart, sdEnd, points[startIdx], points[endIdx]));
+					//points.push_back(getVerts(faceVerts[endIdx]) - planeNorm * sdEnd);
+				}
+			}
+			else
+			{
+				if (sdEnd >= 0)
+				{
+					clipped.push_back(Interpolate(sdEnd, sdStart, points[endIdx], points[startIdx]));
+				}
+				else
+				{
+					// points.push_back(getVerts(faceVerts[endIdx]) - planeNorm * sdEnd);
+				}
+			}
+
+			startIdx = endIdx++;
+			sdStart = sdEnd;
+		}
+
+		return clipped;
+	}
+	std::vector<glm::vec3> ClipFaceOnFace(const Shape& faceShape, const Shape& faceShape2, const uint32_t faceIdx, const uint32_t faceIdx2, bool clipDepth = true)
+	{
+		std::vector<glm::vec3> result;
+		glm::vec3& faceNorm = faceShape.faces[faceIdx].norm;
+		auto faceEdgeIdxs = faceShape.EdgesOnFace(faceIdx);
+
+		std::vector<glm::vec3> contactPointsForFace;
+		if (clipDepth)
+		{
+			contactPointsForFace = ClipFaceOnPlane(faceNorm,
+				faceShape.verts[faceShape.faces[faceIdx].vertIdx],
+				faceShape2.faceVerts[faceIdx2], faceShape2.verts);
+		}
+		else
+		{
+			for (auto& vertIdx : faceShape2.faceVerts[faceIdx2])
+			{
+				contactPointsForFace.push_back(faceShape2.verts[vertIdx]);
+			}
+		}
+
+		for (size_t j = 0; j < faceEdgeIdxs.size(); j++)
+		{
+			if (contactPointsForFace.size() == 0)
+				break;
+
+			Edge& edge = faceShape.edges[faceEdgeIdxs[j]];
+			glm::vec3 edgeNormal = glm::cross(faceNorm, faceShape.verts[edge.first] - faceShape.verts[edge.second]);
+
+			{ // making sure the edgeNormal is pointing outwards
+				glm::vec3 thirdVertOnFace;
+				for (size_t k = 0; k < 3; k++)
+				{
+					uint32_t vertIdx = faceShape.faceVerts[faceIdx][k];
+					if (vertIdx != edge.first &&
+						vertIdx != edge.second)
+					{
+						thirdVertOnFace = faceShape.verts[vertIdx];
+						break;
+					}
+				}
+				if (glm::dot(edgeNormal, (faceShape.verts[edge.first]) - thirdVertOnFace) < 0)
+					edgeNormal *= -1;
+			}
+			contactPointsForFace = ClipVertsOnEdge(edgeNormal, faceShape.verts[edge.first], contactPointsForFace);
+		}
+		for (size_t j = 0; j < contactPointsForFace.size(); j++)
+		{
+			for (size_t k = 0; k < result.size(); k++)
+			{
+				auto vec = contactPointsForFace[j] - result[k];
+				if (glm::dot(vec, vec) < 0.001f)
+					goto AlreadyIn;
+			}
+			result.push_back(contactPointsForFace[j]);
+		AlreadyIn:;
+		}
+		return result;
+	}
+	std::vector<glm::vec3> ClipPointsOnFace(const Shape& faceShape, const uint32_t faceIdx, const std::vector<glm::vec3>& points)
+	{
+		auto contactPointsForFace = points;
+		glm::vec3& faceNorm = faceShape.faces[faceIdx].norm;
+		auto faceEdgeIdxs = faceShape.EdgesOnFace(faceIdx);
+
+		for (size_t j = 0; j < faceEdgeIdxs.size(); j++)
+		{
+			if (contactPointsForFace.size() == 0)
+				break;
+
+			Edge& edge = faceShape.edges[faceEdgeIdxs[j]];
+			glm::vec3 edgeNormal = glm::cross(faceNorm, faceShape.verts[edge.first] - faceShape.verts[edge.second]);
+
+			{ // making sure the edgeNormal is pointing outwards
+				glm::vec3 thirdVertOnFace;
+				for (size_t k = 0; k < 3; k++)
+				{
+					uint32_t vertIdx = faceShape.faceVerts[faceIdx][k];
+					if (vertIdx != edge.first &&
+						vertIdx != edge.second)
+					{
+						thirdVertOnFace = faceShape.verts[vertIdx];
+						break;
+					}
+				}
+				if (glm::dot(edgeNormal, (faceShape.verts[edge.first]) - thirdVertOnFace) < 0)
+					edgeNormal *= -1;
+			}
+
+			contactPointsForFace = ClipVertsOnEdge(edgeNormal, faceShape.verts[edge.first], contactPointsForFace);
+		}
+		return contactPointsForFace;
+	}
+
+	std::vector<glm::vec3> FaceContactPoints(const Shape& faceShape, const Shape& vertShape, const uint32_t faceIdx, const uint32_t vertIdx)
 	{
 		std::vector<glm::vec3> result;
 
 		glm::vec3& faceNorm = faceShape.faces[faceIdx].norm;
+		glm::vec3& faceP = faceShape.verts[faceShape.faces[faceIdx].vertIdx];
 		auto sideFaces = vertShape.SideFacesOfVert(vertIdx);
 		auto faceEdgeIdxs = faceShape.EdgesOnFace(faceIdx);
 		for (size_t i = 0; i < sideFaces.size(); i++)
 		{
-			auto contactPointsForFace = ClipFaceOnPlane(faceNorm,
-				faceShape.verts[faceShape.faces[faceIdx].vertIdx],
+			auto contactPointsForFace = ClipFaceOnPlane(faceNorm, faceP,
 				vertShape.faceVerts[sideFaces[i]], vertShape.verts);
 
 			for (size_t j = 0; j < faceEdgeIdxs.size(); j++)
@@ -180,7 +318,7 @@ namespace Nork::Physics
 							break;
 						}
 					}
-					if (glm::dot(edgeNormal, faceShape.verts[edge.first] - thirdVertOnFace) < 0)
+					if (glm::dot(edgeNormal, (faceShape.verts[edge.first]) - thirdVertOnFace) < 0)
 						edgeNormal *= -1;
 				}
 
@@ -190,7 +328,8 @@ namespace Nork::Physics
 			{
 				for (size_t k = 0; k < result.size(); k++)
 				{
-					if (contactPointsForFace[j] == result[k])
+					auto vec = contactPointsForFace[j] - result[k];
+					if (glm::dot(vec, vec) < 0.1f)
 						goto AlreadyIn;
 				}
 				result.push_back(contactPointsForFace[j]);
@@ -198,10 +337,108 @@ namespace Nork::Physics
 			}
 			//result.insert(result.end(), contactPointsForFace.begin(), contactPointsForFace.end());
 		}
-	
+		result = SortPoints2D(result);
+		std::vector<glm::vec3> innerPoints;
+		std::unordered_set<int> checked;
+		for (auto& sideFace: sideFaces)
+		{
+			for (auto& vertIdx : vertShape.faceVerts[sideFace])
+			{
+				if (checked.contains(vertIdx))
+					continue;
+				checked.insert(vertIdx);
+				auto& vert = vertShape.verts[vertIdx];
+				auto sd = SignedDistance(faceNorm, faceP, vert);
+				if (sd < 0)
+				{ // inside other shape
+					innerPoints.push_back(vert + faceNorm * -sd);
+				}
+			}
+		}
+		innerPoints = ClipPointsOnFace(faceShape, faceIdx, innerPoints);
+		auto beforeInners = result;
+		for (auto& innerPoint : innerPoints)
+		{
+			TryExpandConvex2DSorted(result, innerPoint, faceNorm);
+		}
+		if (result.empty())
+		{
+			Logger::Error("");
+			//FaceContactPoints(faceShape, vertShape, faceIdx, vertIdx, vertOffs);
+		}
+		for (size_t i = 0; i < result.size(); i++)
+		{
+			for (size_t j = i + 1; j < result.size(); j++)
+			{
+				if (result[i] == result[j])
+				{
+					Logger::Error("");
+				}
+			}
+		}
+		auto center = Center2DSorted(result);
+		if (glm::isnan(center.x))
+		{
+			Logger::Error("");
+		}
 		return result;
 	}
+	std::vector<glm::vec3> FaceContactPoints2(const Shape& faceShape, const Shape& vertShape, const uint32_t faceIdx, const uint32_t vertIdx)
+	{
+		auto& faceNormal = faceShape.faces[faceIdx].norm;
+		auto& faceVert = faceShape.verts[faceShape.faces[faceIdx].vertIdx];
 
+		auto sideFaces = vertShape.SideFacesOfVert(vertIdx);
+		auto sideEdges = vertShape.Edges(vertShape.verts[vertIdx]);
+
+		//auto faceEdgeIdxs = faceShape.EdgesOnFace(faceIdx);
+		constexpr float faceBias = 0.0f;
+		constexpr float edgeBias = 90.0f;
+		for (auto& sideFaceIdx : sideFaces)
+		{
+			auto& sideFaceNorm = vertShape.faces[sideFaceIdx].norm;
+			auto cos = glm::dot(faceNormal, glm::normalize(-sideFaceNorm));
+			auto degrees = glm::degrees(glm::acos(cos));
+			if (glm::abs(degrees) <= faceBias)
+			{
+				std::vector<glm::vec3> facePoints;
+				for (auto& vertIdx : vertShape.faceVerts[sideFaceIdx])
+				{
+					facePoints.push_back(vertShape.verts[vertIdx]);
+				}
+				return ClipPointsOnFace(faceShape, faceIdx, facePoints);
+				// return ClipFaceOnFace(faceShape, vertShape, faceIdx, sideFaceIdx, false);
+			}
+		}
+		for (auto& sideEdgeIdx : sideEdges)
+		{
+			auto edgeVec = vertShape.verts[sideEdgeIdx.first] - vertShape.verts[sideEdgeIdx.second];
+			auto dotProd = glm::abs(glm::dot(faceNormal, edgeVec));
+			auto degrees = glm::degrees(glm::acos(dotProd));
+			if (degrees >= edgeBias)
+			{	
+				auto clipped = ClipPointsOnFace(faceShape, faceIdx, { vertShape.verts[sideEdgeIdx.first], vertShape.verts[sideEdgeIdx.second] });
+				if (!clipped.empty())
+				{
+					return clipped;
+				}
+			}
+		}
+		if (!ClipPointsOnFace(faceShape, faceIdx, { vertShape.verts[vertIdx] }).empty())
+		{
+			return { vertShape.verts[vertIdx] };
+		}
+		for (auto& sideEdgeIdx : sideEdges)
+		{
+			auto clipped = ClipPointsOnPlane(faceNormal, faceVert, { vertShape.verts[sideEdgeIdx.first], vertShape.verts[sideEdgeIdx.second] }); // max 1
+			if (!clipped.empty())
+			{
+				return clipped;
+			}
+		}
+		Logger::Error("");
+		return {};
+	}
 	void Pipeline::GenContactPoints()
 	{
 		contactPoints.clear();
@@ -209,22 +446,39 @@ namespace Nork::Physics
 		for (size_t i = 0; i < colls.size(); i++)
 		{
 			auto& res = colls[i];
+			float bias = 0.1f;
+			if (res.depth < 0)
+			{
+				contactPoints.push_back(glm::vec3(0));
+				continue;
+			}
+			glm::vec3 collOffs = res.depth > 0 ? glm::vec3(0) : res.dir * (glm::min(0.0f, res.depth) - bias);
 			//if (res.distance <= 0) continue;
 			auto shape1 = world.shapes[res.pair.x];
 			auto shape2 = world.shapes[res.pair.y];
 
+			auto transformedShape = shape1;
+			std::vector<glm::vec3> transformedVerts;
+			for (auto& p : shape1.verts)
+			{
+				transformedVerts.push_back(p + collOffs);
+			}
+			transformedShape.verts = transformedVerts;
+
 			if (res.type == CollisionType::FaceVert)
 			{
-				auto cps = FaceContactPoints(shape1, shape2, res.featureIdx1, res.featureIdx2);
-				glm::vec3 contactPoint = Center(cps);
+				auto cps = FaceContactPoints2(transformedShape, shape2, res.featureIdx1, res.featureIdx2);
+				glm::vec3 contactPoint = Center(cps) - collOffs;
+				if (glm::isnan(contactPoint.x))
+					Logger::Error("");
 				contactPoints.push_back(contactPoint);
 			}
 			else if (res.type == CollisionType::VertFace)
 			{
-				auto& vert1 = shape1.verts[res.featureIdx2];
-				auto& face2 = shape2.faces[res.featureIdx1];
-
-				glm::vec3 contactPoint = Center(FaceContactPoints(shape2, shape1, res.featureIdx1, res.featureIdx2));
+				auto contact = FaceContactPoints2(shape2, transformedShape, res.featureIdx1, res.featureIdx2);
+				glm::vec3 contactPoint = Center(contact);
+				if (glm::isnan(contactPoint.x))
+					Logger::Error("");
 				contactPoints.push_back(contactPoint);
 			}
 			else if (res.type == CollisionType::EdgeEdge)
@@ -248,113 +502,123 @@ namespace Nork::Physics
 			}
 		}
 	}
+	struct Island
+	{
+		std::unordered_set<int> objects;
+		bool isStatic = false; // has a static object
+		KinematicData kinem;
+	};
 	void Pipeline::ResolveCollisions(float delta)
 	{
 		auto& colls = collisionDetector->GetResults();
 		for (size_t i = 0; i < colls.size(); i++)
 		{
 			auto& coll = colls[i];
-			if (coll.depth < -0.0001f)
+			if (coll.depth < 0.0f)
 				continue;
 			auto& objs = colls[i].pair;
 			auto& kinem1 = world.kinems[objs.x];
 			auto& kinem2 = world.kinems[objs.y];
 
+			if (kinem1.isStatic)
+				kinem1.mass = 100000000.0f;
+			if (kinem2.isStatic)
+				kinem2.mass = 100000000.0f;
+
 			auto wDiff = glm::abs(glm::dot(kinem1.w - kinem2.w, kinem1.w - kinem2.w));
 			auto vDiff = glm::abs(glm::dot(kinem1.velocity - kinem2.velocity, kinem1.velocity - kinem2.velocity));
+			glm::vec3 t = glm::vec3(0);
+			float fr = -0.9f;
+			float fr2 = 1.0f;
+			float bias = 0.1f;
+			const glm::vec3& contactPoint = contactPoints[i];
+			glm::vec3 r1 = contactPoint - world.shapes[objs.x].center;
+			glm::vec3 r2 = contactPoint - world.shapes[objs.y].center;
 
+			auto applyForce = [&](KinematicData& kinem, const glm::vec3& r)
+			{
+				if (glm::dot(kinem.velocity, kinem.forces) >= 0)
+				{
+					auto forceDirVel = glm::dot(kinem.forces, kinem.velocity);
+					if (forceDirVel < 0.001f)
+					{
+						kinem.velocity -= forceDirVel * kinem.forces;
+					}
+					auto counterForce = glm::dot(kinem.forces, coll.dir);
+					auto perpForce = (kinem.forces - counterForce) * fr2;
+					auto counterTorque = glm::cross(r, counterForce * kinem.forces);
+					auto frictionTorque = glm::cross(r, perpForce * kinem.forces);
+					kinem.forces += counterForce * coll.dir;
+					kinem.forces += perpForce * (kinem.forces - coll.dir * counterForce);
+					kinem.torque += counterTorque;
+					kinem.torque += frictionTorque;
+					if (glm::isnan(kinem.torque.x))
+						Logger::Error("");
+
+				}
+			};
+			// applyForce(kinem1, r1);
+			// applyForce(kinem2, r2);
 			if (coll.depth > 0)
 			{
+				//coll.dir *= -1;
 				float resulting = (1 + coefficient) * glm::dot(kinem1.velocity - kinem2.velocity, coll.dir) / (1 / kinem1.mass + 1 / kinem2.mass /* + angularPart*/);
 
-				if (genContactPoints /*&& vDiff > 3.0f*//* && (wDiff > 10.0f || vDiff > 1.0f)*/)
-				{
-					const glm::vec3& contactPoint = contactPoints[i];
-					glm::vec3 r1 = contactPoint - world.shapes[objs.x].center;
-					glm::vec3 r2 = contactPoint - world.shapes[objs.y].center;
-					float momentOfInertia1 = kinem1.mass * glm::pow(2, 2); // first 2 -> radius
-					float momentOfInertia2 = kinem2.mass * glm::pow(2, 2);
-					auto angularPart1 = glm::cross((1 / momentOfInertia1) * (glm::cross(r1, coll.dir)), r1);
-					auto angularPart2 = glm::cross((1 / momentOfInertia2) * (glm::cross(r2, coll.dir)), r2);
-					float angularPart = glm::dot(angularPart1 + angularPart2, coll.dir);
+				float momentOfInertia1 = 1.0f * (1.0f / 6.0f) * kinem1.mass * (4); // !!HARDCODED!!
+				float momentOfInertia2 = (1.0f / 6.0f) * kinem2.mass * (kinem2.isStatic ? 10000 : 4); // !!HARDCODED!!
+				auto angularPart1 = glm::cross((1 / momentOfInertia1) * (glm::cross(r1, coll.dir)), r1);
+				auto angularPart2 = glm::cross((1 / momentOfInertia2) * (glm::cross(r2, coll.dir)), r2);
 
-					auto wp1 = glm::dot(kinem1.w, r1);
-					auto wp2 = glm::dot(kinem2.w, r2);
-					float resultingA = (1 + coefficient) * glm::dot(kinem1.velocity - kinem2.velocity + wp1 - wp2, coll.dir) / (1 / kinem1.mass + 1 / kinem2.mass + angularPart);
-					resulting = resultingA;
-					glm::vec3 deltaW1 = -(1 / momentOfInertia1) * glm::cross(r1, resultingA * coll.dir);
-					glm::vec3 deltaW2 = (1 / momentOfInertia2) * glm::cross(r2, resultingA * coll.dir);
-					if (kinem1.isStatic)
-					{
-						deltaW2 -= deltaW1;
-						deltaW1 = glm::vec3(0);
-					}
-					if (kinem2.isStatic)
-					{
-						deltaW1 -= deltaW2;
-						deltaW2 = glm::vec3(0);
-					}
-					kinem1.w += deltaW1;
-					kinem2.w += deltaW2;
+				float angularPart = glm::dot(angularPart1 + angularPart2, coll.dir);
+
+				auto vel1 = kinem1.velocity + glm::cross(kinem1.w, r1);
+				auto vel2 = kinem2.velocity + glm::cross(kinem2.w, r2);
+				t = vel1 - vel2;
+				if (t != glm::vec3(0))
+				{
+					t = glm::cross(coll.dir, glm::normalize(vel1 - vel2));
+					t = glm::cross(t, coll.dir);
 				}
 
-				float deltaV1 = -(resulting / kinem1.mass);
-				float deltaV2 = (resulting / kinem2.mass);
+				float resultingA = -(1 + coefficient) * glm::dot(vel1 - vel2, coll.dir) / (1 / kinem1.mass + 1 / kinem2.mass + angularPart);
+				resulting = resultingA;
+				glm::vec3 deltaW1 = (1 / momentOfInertia1) * glm::cross(r1, resultingA * (coll.dir + fr * t));
+				glm::vec3 deltaW2 = -(1 / momentOfInertia2) * glm::cross(r2, resultingA * (coll.dir + fr * t));
+				if (glm::isnan(deltaW1.x) || glm::isnan(deltaW2.x))
+					Logger::Error("");
 				if (kinem1.isStatic)
 				{
-					deltaV2 -= deltaV1;
+					//deltaW2 -= deltaW1;
+					deltaW1 = glm::vec3(0);
+				}
+				if (kinem2.isStatic)
+				{
+					//deltaW1 -= deltaW2;
+					deltaW2 = glm::vec3(0);
+				}
+				kinem1.w += deltaW1;
+				kinem2.w += deltaW2;
+
+				float deltaV1 = (resulting / kinem1.mass);
+				float deltaV2 = -(resulting / kinem2.mass);
+				if (kinem1.isStatic)
+				{
+					//deltaV2 -= deltaV1;
 					deltaV1 = 0;
 				}
 				if (kinem2.isStatic)
 				{
-					deltaV1 -= deltaV2;
+					//deltaV1 -= deltaV2;
 					deltaV2 = 0;
 				}
 				if (coll.depth > 0 && glm::dot(coll.dir, kinem1.velocity - kinem2.velocity) <= 0)
 				{
-					kinem1.velocity = kinem1.velocity + deltaV1 * coll.dir;
-					kinem2.velocity = kinem2.velocity + deltaV2 * coll.dir;
+					kinem1.velocity = kinem1.velocity + deltaV1 * (coll.dir + fr * t);
+					kinem2.velocity = kinem2.velocity + deltaV2 * (coll.dir + fr * t);
 				}
-				/*if (kinem1.isStatic)
-				{
-					glm::vec3 changeInVel = -(1 + coefficient) * glm::dot(kinem2.velocity, coll.dir) * -coll.dir;
-					kinem2.velocity = kinem2.velocity + changeInVel;
 
-					float vNextFrame = glm::dot(kinem2.forces * (delta * 1) / kinem2.mass, coll.dir);
-					float vNow = glm::dot(changeInVel, coll.dir);
-					if (glm::dot(vNextFrame, vNow) < 0 && glm::abs(vNextFrame) > glm::abs(vNow))
-						kinem2.velocity -= glm::dot(kinem2.velocity, coll.dir) * coll.dir;
-				}
-				if (kinem2.isStatic)
-				{
-					glm::vec3 changeInVel = -(1 + coefficient) * glm::dot(kinem1.velocity, coll.dir) * coll.dir;
-					kinem1.velocity = kinem1.velocity + changeInVel;
-
-					float vNextFrame = glm::dot(kinem1.forces * (delta * 1) / kinem1.mass, coll.dir);
-					float vNow = glm::dot(changeInVel, coll.dir);
-					if (glm::dot(vNextFrame, vNow) < 0 && glm::abs(vNextFrame) > glm::abs(vNow))
-						kinem1.velocity -= glm::dot(kinem1.velocity, coll.dir) * coll.dir;
-				}
-				else
-				{
-					float resulting = (1 + coefficient) * glm::dot(kinem1.velocity - kinem2.velocity, coll.dir) / (1 / kinem1.mass + 1 / kinem2.mass + angularPart);
-					float deltaV1 = -(resulting / kinem1.mass);
-					float deltaV2 = (resulting / kinem2.mass);
-					glm::vec3 deltaW1 = -(1 / momentOfInertia1) * glm::cross(r1, resulting * coll.dir);
-					glm::vec3 deltaW2 = -(1 / momentOfInertia2) * glm::cross(r2, resulting * coll.dir);
-					glm::vec3 up1 = glm::normalize(deltaW1);
-					glm::vec3 up2 = glm::normalize(deltaW2);
-					float upA1 = glm::length(deltaW1);
-					float upA2 = glm::length(deltaW2);
-
-					kinem1.aVelUp += up1;
-					kinem2.aVelUp += up2;
-					kinem1.aVelSpeed += upA1;
-					kinem2.aVelSpeed += upA2;
-
-					kinem1.velocity = kinem1.velocity + deltaV1 * coll.dir;
-					kinem2.velocity = kinem2.velocity + deltaV2 * coll.dir;
-				}*/
+				if (glm::isnan(kinem1.velocity.x) || glm::isnan(kinem2.velocity.x))
+					Logger::Error("");
 			}
 			if (coll.depth > 0)
 			{
@@ -375,24 +639,27 @@ namespace Nork::Physics
 					kinem2.position -= translate;
 				}
 			}
-			if (coll.depth >= 0)
-			{
-				glm::vec3 cf1 = coll.dir * kinem1.forces;
-				glm::vec3 cf2 = -coll.dir * kinem2.forces;
-				kinem1.forces -= cf1;
-				kinem2.forces -= cf2;
-			}
 		}
 	}
 	void Pipeline::RotationUpdate(float delta)
 	{
-		for (size_t i = 0; i < world.kinems.size(); i++)
+		for (auto& k: world.kinems)
 		{
-			if (world.kinems[i].isStatic || glm::dot(world.kinems[i].w, world.kinems[i].w) == 0) continue;
+			if (k.isStatic || glm::dot(k.w, k.w) == 0) continue;
 
-			float angle = glm::length(world.kinems[i].w);
-			glm::vec3 up = world.kinems[i].w * (1 / angle);
-			world.kinems[i].quaternion = glm::rotate(world.kinems[i].quaternion, angle * delta, up);
+			float angle = glm::length(k.w);
+			if (angle > 0)
+			{
+				glm::quat rot(2, k.w * delta);
+				rot = glm::normalize(rot);
+				k.quaternion = rot * k.quaternion;
+
+				if (glm::isnan(k.torque.x))
+					Logger::Error("");
+				glm::vec3 angularAcc = k.torque / k.I;
+				k.w += angularAcc * delta;
+				k.torque = glm::vec3(0);
+			}
 		}
 	}
 
@@ -426,8 +693,9 @@ namespace Nork::Physics
 			glm::vec3 translate = k.velocity * delta + 0.5f * acceleration * delta * delta;
 
 			k.velocity += deltaV;
+			if (glm::isnan(k.velocity.x))
+				Logger::Error("");
 			k.position += translate;
-
 			k.forces = g * k.mass * glm::vec3(0, -1, 0);
 		}
 	}

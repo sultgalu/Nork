@@ -19,7 +19,7 @@ namespace Nork
 		Engine();
 		Engine(Engine&&) = delete;
 		void Update();
-		void StartPhysics();
+		void StartPhysics(bool startScript = true);
 		void StopPhysics();
 	public:
 		Nork::Window window;
@@ -35,6 +35,7 @@ namespace Nork
 		std::mutex physicsUploadLock;
 		std::mutex physicsLock;
 
+		bool scriptUpdate = false;
 		bool scriptUpdated = false;
 		std::binary_semaphore updateSem;
 		std::binary_semaphore uploadSem;

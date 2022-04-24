@@ -87,8 +87,8 @@ namespace Nork::Physics
 		{
 			glm::mat4 rotation = glm::mat4_cast(quaternions[i]);
 
-			shapes[i].center = rotation * glm::vec4(shapes[i].center, 1);
-			shapes[i].center += translate[i];
+			// shapes[i].center = rotation * glm::vec4(shapes[i].center, 1);
+			// shapes[i].center += translate[i];
 			for (size_t j = 0; j < shapes[i].verts.size(); j++)
 			{
 				shapes[i].verts[j] = rotation * glm::vec4(shapes[i].colliderVerts[j], 1);
@@ -98,6 +98,13 @@ namespace Nork::Physics
 			{
 				shapes[i].faces[j].norm = rotation * glm::vec4(shapes[i].colliderFaces[j].norm, 1);
 			}
+
+			shapes[i].center = glm::vec3(0);
+			for (auto& vert : shapes[i].verts)
+			{
+				shapes[i].center += vert;
+			}
+			shapes[i].center /= shapes[i].verts.size();
 		}
 	}
 

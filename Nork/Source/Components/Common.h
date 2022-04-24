@@ -56,6 +56,8 @@ namespace Nork::Components
 		float mass = 1;
 		glm::vec3 velocity;
 		glm::vec3 forces;
-		glm::vec3 w;
+		glm::vec3 w = glm::vec3(0);
+		glm::vec3 torque = glm::vec3(0);
+		float I;
 	};
 }

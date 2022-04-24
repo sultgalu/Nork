@@ -31,7 +31,10 @@ namespace Nork::Physics
 		res.resize(world.shapes.size());
 		for (size_t i = 0; i < world.shapes.size(); i++)
 		{
-			res[i] = (std::pair(i, AABBTest::GetAABB(world.shapes[i].verts)));
+			res[i] = (std::pair(i, AABB(world.shapes[i].verts)));
+			float bias = 0.0f;
+			res[i].second.min -= glm::vec3(bias);
+			res[i].second.max += glm::vec3(bias);
 		}
 		return res;
 	}

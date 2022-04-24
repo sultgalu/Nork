@@ -109,25 +109,35 @@ namespace Nork::Editor {
 		changed |= ImGui::DragFloat3("Scale", &tr.scale.x, 0.1f, 0.1f, 1000.0f, "%.3f");
 
 		glm::vec3 rotateAmount = { 0, 0, 0 };
-		if (changed |= ImGui::DragFloat3("Rotate", &rotateAmount.x, 0.01f))
+		if (ImGui::DragFloat3("Rotate Locally", &rotateAmount.x, 0.01f) && (changed = true))
 		{
 			tr.Rotate(glm::vec3(1, 0, 0), rotateAmount.x);
 			tr.Rotate(glm::vec3(0, 1, 0), rotateAmount.y);
 			tr.Rotate(glm::vec3(0, 0, 1), rotateAmount.z);
 		}
+		glm::vec3 rotateAmount2 = { 0, 0, 0 };
+		if (ImGui::DragFloat3("Rotate Globally", &rotateAmount.x, 0.01f) && (changed = true))
+		{
+			glm::quat rot(1, rotateAmount);
+			tr.quaternion = glm::normalize(rot) * tr.quaternion;
+		}
 		glm::vec3 rotationAxis = tr.RotationAxis();
 		float angle = tr.RotationAngleDegrees();
-		if (changed |= ImGui::DragFloat("Angle", &angle, 0.1f))
+		if (ImGui::DragFloat("Angle", &angle, 0.1f) && (changed = true))
 		{
 			tr.SetRotation(glm::normalize(rotationAxis), glm::radians(angle));
 		}
-		if (changed |= ImGui::DragFloat3("Set Rotation Axis", &rotationAxis.x, 0.01f))
+		if (ImGui::DragFloat3("Set Rotation Axis", &rotationAxis.x, 0.01f) && (changed = true))
 		{
 			tr.SetRotation(glm::normalize(rotationAxis), glm::radians(angle));
 		}
-		if (changed |= ImGui::DragFloat4("Quaternion", &tr.quaternion.w, 0.1f))
+		if (ImGui::DragFloat4("Quaternion", &tr.quaternion.w, 0.1f) && (changed = true))
 		{
 			tr.quaternion = glm::normalize(tr.quaternion);
+		}
+		if (ImGui::Button("Reset Rotation") && (changed = true))
+		{
+			tr.quaternion = glm::qua(1.0f, glm::vec3(0));
 		}
 	}
 	template<> void SceneNodeView::ShowComponent(Components::Camera& cam, bool& changed)
@@ -408,15 +418,16 @@ namespace Nork::Editor {
 		changed |= ImGui::DragFloat3("Velocity", &kin.velocity.x, 0.001f);
 		auto axis = glm::normalize(kin.w);
 		auto angle = glm::length(kin.w);
-		if (changed |= ImGui::DragFloat3("Angular Velocity Axis", &axis.x))
-		{
-			kin.w = axis * angle;
-		}
-
-		if (changed |= ImGui::DragFloat("Angular Velocity Speed", &angle, 0.001f))
-		{
-			kin.w = axis * angle;
-		}
+		changed |= ImGui::DragFloat3("Angular Velocity Axis", &kin.w.x);
+		// if (changed |= ImGui::DragFloat3("Angular Velocity Axis", &axis.x))
+		// {
+		// 	kin.w = axis * angle;
+		// }
+		// 
+		// if (changed |= ImGui::DragFloat("Angular Velocity Speed", &angle, 0.001f))
+		// {
+		// 	kin.w = axis * angle;
+		// }
 	}
 	template<> void SceneNodeView::ShowComponent(Components::Tag & tag, bool& changed)
 	{

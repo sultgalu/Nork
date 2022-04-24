@@ -11,7 +11,7 @@ namespace Nork
 		Window();
 		void Close();
 		void SetupCallbacks();
-		bool ShouldClose() { return input.ShouldWindowClose(); }
+		bool ShouldClose() { return glfwWindowShouldClose(win.GetContext().glfwWinPtr); }
 		//inline bool IsRunning() { return running; }
 		inline void Resize(int w, int h) { win.Resize(w, h); }
 		inline void Refresh() { win.Refresh(); input.Update(); win.PollEvents(); }
