@@ -41,15 +41,17 @@ namespace Nork {
 		return JsonObject()
 			.Property("position", JsonArray().Elements(&pos.x, 3))
 			.Property("scale", JsonArray().Elements(&scale.x, 3))
-			.Property("quaternion", JsonArray().Elements(&rot.x, 4));
+			.Property("quaternion", JsonArray().Elements(&rot.w, 4));
 	}
 	template<> Transform& JsonComponentDeserializer<Transform>::Deserialize(const JsonObject& json)
 	{
-		auto& tr = entity.AddComponent<Transform>();
-		json.Get<JsonArray>("position").Get(&tr.position.x, 3);
-		json.Get<JsonArray>("scale").Get(&tr.scale.x, 3);
-		json.Get<JsonArray>("quaternion").Get(&tr.quaternion.x, 4);
-		tr.RecalcModelMatrix();
+		auto& tr = entity.AddComponent<Transform>([&](Transform& tr)
+			{
+				json.Get<JsonArray>("position").Get(&tr.position.x, 3);
+				json.Get<JsonArray>("scale").Get(&tr.scale.x, 3);
+				json.Get<JsonArray>("quaternion").Get(&tr.quaternion.w, 4);
+				tr.RecalcModelMatrix();
+			});
 		return tr;
 	}
 
@@ -58,7 +60,8 @@ namespace Nork {
 		auto json = JsonObject()
 			.Property("color", JsonArray().Elements(&component.light->color.x, 3))
 			.Property("direction", JsonArray().Elements(&component.light->direction.x, 3))
-			.Property("outOfProj", component.light->outOfProjValue);
+			.Property("outOfProj", component.light->outOfProjValue)
+			.Property("sun", component.sun);
 		if (component.shadow != nullptr)
 		{
 			json.Property("shadow", JsonObject()
@@ -69,20 +72,23 @@ namespace Nork {
 	}
 	template<> DirLight& JsonComponentDeserializer<DirLight>::Deserialize(const JsonObject& json)
 	{
-		auto& comp = entity.AddComponent<DirLight>();
-		json.Get<JsonArray>("color").Get(&comp.light->color.x, 3);
-		json.Get<JsonArray>("direction").Get(&comp.light->direction.x, 3);
-		json.Get("outOfProj", comp.light->outOfProjValue);
-		comp.RecalcVP();
-		comp.light->Update();
-		if (json.Contains("shadow"))
-		{
-			entity.AddComponent<DirShadowRequest>();
-			json.Get<JsonObject>("shadow")
-				.Get("bias", comp.shadow->bias)
-				.Get("biasMin", comp.shadow->biasMin);
-			comp.shadow->Update();
-		}
+		auto& comp = entity.AddComponent<DirLight>([&](DirLight& comp)
+			{
+				json.Get<JsonArray>("color").Get(&comp.light->color.x, 3);
+				json.Get<JsonArray>("direction").Get(&comp.light->direction.x, 3);
+				json.Get("outOfProj", comp.light->outOfProjValue);
+				json.GetIfContains("sun", comp.sun);
+				if (json.Contains("shadow"))
+				{
+					entity.AddComponent<DirShadowRequest>();
+					json.Get<JsonObject>("shadow")
+						.Get("bias", comp.shadow->bias)
+						.Get("biasMin", comp.shadow->biasMin);
+					comp.shadow->Update();
+				}
+				comp.RecalcVP();
+				comp.light->Update();
+			});
 		return comp;
 	}
 
@@ -106,23 +112,25 @@ namespace Nork {
 	}
 	template<> PointLight& JsonComponentDeserializer<PointLight>::Deserialize(const JsonObject& json)
 	{
-		auto& comp = entity.AddComponent<PointLight>();
-		json.Get<JsonArray>("color").Get(&comp.light->color.x, 3);
-		json.Get<JsonArray>("position").Get(&comp.light->position.x, 3);
-		json.Get("linear", comp.light->linear);
-		json.Get<float>("quadratic", comp.light->quadratic);
-		comp.SetIntensity(json.Get<float>("intensity"));
-		comp.light->Update();
-		if (json.Contains("shadow"))
-		{
-			entity.AddComponent<PointShadowRequest>();
-			json.Get<JsonObject>("shadow")
-				.Get("bias", comp.shadow->bias)
-				.Get("biasMin", comp.shadow->biasMin)
-				.Get("far", comp.shadow->far)
-				.Get("near", comp.shadow->near);
-			comp.shadow->Update();
-		}
+		auto& comp = entity.AddComponent<PointLight>([&](PointLight& comp)
+			{
+				json.Get<JsonArray>("color").Get(&comp.light->color.x, 3);
+				json.Get<JsonArray>("position").Get(&comp.light->position.x, 3);
+				json.Get("linear", comp.light->linear);
+				json.Get<float>("quadratic", comp.light->quadratic);
+				comp.SetIntensity(json.Get<float>("intensity"));
+				comp.light->Update();
+				if (json.Contains("shadow"))
+				{
+					entity.AddComponent<PointShadowRequest>();
+					json.Get<JsonObject>("shadow")
+						.Get("bias", comp.shadow->bias)
+						.Get("biasMin", comp.shadow->biasMin)
+						.Get("far", comp.shadow->far)
+						.Get("near", comp.shadow->near);
+					comp.shadow->Update();
+				}
+			});
 		return comp;
 	}
 	template<> JsonObject JsonComponentSerializer<Kinematic>::Serialize(const Kinematic& component)
@@ -135,11 +143,13 @@ namespace Nork {
 	}
 	template<> Kinematic& JsonComponentDeserializer<Kinematic>::Deserialize(const JsonObject& json)
 	{
-		auto& comp = entity.AddComponent<Kinematic>();
-		json.Get<JsonArray>("forces").Get(&comp.forces.x, 3);
-		json.Get<JsonArray>("velocity").Get(&comp.velocity.x, 3);
-		json.Get<JsonArray>("w").Get(&comp.w.x, 3);
-		json.Get("mass", comp.mass);
+		auto& comp = entity.AddComponent<Kinematic>([&](Kinematic& comp)
+			{
+				json.Get<JsonArray>("forces").Get(&comp.forces.x, 3);
+				json.Get<JsonArray>("velocity").Get(&comp.velocity.x, 3);
+				json.Get<JsonArray>("w").Get(&comp.w.x, 3);
+				json.Get("mass", comp.mass);
+			});
 		return comp;
 	}
 
@@ -160,19 +170,21 @@ namespace Nork {
 	}
 	template<> Camera& JsonComponentDeserializer<Camera>::Deserialize(const JsonObject& json)
 	{
-		auto& comp = entity.AddComponent<Camera>();
-		json.Get<JsonArray>("position").Get(&comp.position.x, 3);
-		json.Get<JsonArray>("up").Get(&comp.up.x, 3);
-		json.Get("farClip", comp.farClip);
-		json.Get("FOV", comp.FOV);
-		json.Get("moveSpeed", comp.moveSpeed);
-		json.Get("nearClip", comp.nearClip);
-		json.Get("pitch", comp.pitch);
-		json.Get("ratio", comp.ratio);
-		json.Get("rotationSpeed", comp.rotationSpeed);
-		json.Get("yaw", comp.yaw);
-		json.Get("zoomSpeed", comp.zoomSpeed);
-		comp.Update();
+		auto& comp = entity.AddComponent<Camera>([&](Camera& comp)
+			{
+				json.Get<JsonArray>("position").Get(&comp.position.x, 3);
+				json.Get<JsonArray>("up").Get(&comp.up.x, 3);
+				json.Get("farClip", comp.farClip);
+				json.Get("FOV", comp.FOV);
+				json.Get("moveSpeed", comp.moveSpeed);
+				json.Get("nearClip", comp.nearClip);
+				json.Get("pitch", comp.pitch);
+				json.Get("ratio", comp.ratio);
+				json.Get("rotationSpeed", comp.rotationSpeed);
+				json.Get("yaw", comp.yaw);
+				json.Get("zoomSpeed", comp.zoomSpeed);
+				comp.Update();
+			});
 		return comp;
 	}
 
@@ -183,8 +195,10 @@ namespace Nork {
 	}
 	template<> Tag& JsonComponentDeserializer<Tag>::Deserialize(const JsonObject& json)
 	{
-		auto& comp = entity.AddComponent<Tag>();
-		json.Get("tag", comp.tag);
+		auto& comp = entity.AddComponent<Tag>([&](Tag& comp)
+			{
+				json.Get("tag", comp.tag);
+			});
 		return comp;
 	}
 	template<> JsonObject JsonComponentSerializer<Drawable>::Serialize(const Drawable& component)
@@ -194,9 +208,63 @@ namespace Nork {
 	}
 	template<> Drawable& JsonComponentDeserializer<Drawable>::Deserialize(const JsonObject& json)
 	{
-		auto& comp = entity.AddComponent<Drawable>();
-		auto id = json.Get<std::string>("id");
-		comp.model = GetResMan().GetModel(id);
+		auto& comp = entity.AddComponent<Drawable>([&](Drawable& comp)
+			{
+				auto id = json.Get<std::string>("id");
+				comp.model = GetResMan().GetModel(id);
+			});
+		return comp;
+	}
+	template<> JsonObject JsonComponentSerializer<Collider>::Serialize(const Collider& component)
+	{
+		JsonArray points;
+		JsonArray edges;
+		JsonArray faces;
+		for (auto& point : component.Points())
+		{
+			points.Element(JsonArray().Elements(&point.x, 3));
+		}
+		for (auto& edge : component.Edges())
+		{
+			edges.Element(JsonArray().Elements(&edge.first, 2));
+		}
+		for (auto& face : component.Faces())
+		{
+			JsonObject f;
+			f.Property("normal", JsonArray().Elements(&face.normal.x, 3));
+			f.Property("points", JsonArray().Elements(face.points));
+			faces.Element(f);
+		}
+		return JsonObject().Property("points", points).Property("edges", edges).Property("faces", faces);
+	}
+	template<> Collider& JsonComponentDeserializer<Collider>::Deserialize(const JsonObject& json)
+	{
+		auto& comp = entity.AddComponent<Collider>([&](Collider& comp)
+			{
+				auto points = json.Get<JsonArray>("points");
+				auto edges = json.Get<JsonArray>("edges");
+				auto faces = json.Get<JsonArray>("faces");
+				for (size_t i = 0; i < points.Size(); i++)
+				{
+					glm::vec3 p;
+					points.Get<JsonArray>(i).Get(&p.x, 3);
+					comp.AddPoint(p);
+				}
+				for (size_t i = 0; i < edges.Size(); i++)
+				{
+					Collider::Edge e;
+					edges.Get<JsonArray>(i).Get(&e.first, 2);
+					comp.AddEdge(e.first, e.second);
+				}
+				for (size_t i = 0; i < faces.Size(); i++)
+				{
+					Collider::Face f;
+					JsonObject face = faces.Get<JsonObject>(i);
+					face.Get<JsonArray>("normal").Get(&f.normal.x, 3);
+					face.Get<JsonArray>("points").Get(f.points);
+					comp.AddFace(f);
+				}
+			});
 		return comp;
 	}
 
@@ -253,6 +321,7 @@ namespace Nork {
 		ser.TrySerializeComponent<PointLight>();
 		ser.TrySerializeComponent<Kinematic>();
 		ser.TrySerializeComponent<Camera>();
+		ser.TrySerializeComponent<Collider>();
 
 		JsonObject json;
 
@@ -297,7 +366,8 @@ namespace Nork {
 				Kinematic,
 				Tag,
 				Drawable,
-				Camera
+				Camera,
+				Collider
 			>(entity, comp);
 		}
 		return entity;

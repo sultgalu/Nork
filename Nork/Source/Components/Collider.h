@@ -20,6 +20,7 @@ namespace Nork::Components {
 		uint32_t AddEdge(uint32_t, uint32_t);
 		void OnEdgeAdded(uint32_t);
 		void OnFaceAdded();
+		void AddFace(const Face&);
 		void BuildTriangleFaces();
 		void CombineFaces();
 		glm::vec3 Center();

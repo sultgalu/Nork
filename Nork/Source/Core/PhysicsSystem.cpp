@@ -50,7 +50,7 @@ namespace Nork {
 				kin.w = pWorld.kinems[i++].w;
 			});
 	}
-	void PhysicsSystem::Download(entt::registry& reg)
+	void PhysicsSystem::Download(entt::registry& reg, bool updatePoliesForPhysics)
 	{
 		using namespace Components;
 
@@ -100,7 +100,6 @@ namespace Nork {
 					colls.push_back(Convert(coll, tr.scale));
 				});
 			pipeline.SetColliders(colls);
-			updatePoliesForPhysics = false;
 		}
 		static std::vector<glm::vec3> translations;
 		static std::vector<glm::quat> quaternions;

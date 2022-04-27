@@ -295,6 +295,7 @@ namespace Nork::Components {
 				neighs2.push_back(i);
 		}
 
+		// TODO:: if the 2 points are in a common face, split that face
 		for (size_t j = 0; j < neighs1.size(); j++)
 		{
 			auto& edge2 = edges[neighs1[j]];
@@ -380,5 +381,10 @@ namespace Nork::Components {
 				return faces.pop_back();
 			}
 		}
+	}
+	// for serialization purposes now
+	void Collider::AddFace(const Face& face)
+	{
+		faces.push_back(face);
 	}
 }

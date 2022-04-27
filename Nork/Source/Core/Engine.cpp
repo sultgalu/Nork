@@ -72,7 +72,7 @@ namespace Nork
 			scriptSystem.Update();
 		}
 		// start physics thread
-		physicsSystem.Download(scene.registry);
+		physicsSystem.Download(scene.registry, true);
 		physicsUpdate = true;
 		physicsThread = LaunchPhysicsThread();
 	}
@@ -94,7 +94,7 @@ namespace Nork
 					updateSem.acquire(); // don't let upload happen until done with updating
 					if (scriptUpdated) // if downloading 
 					{
-						physicsSystem.Download(scene.registry);
+						physicsSystem.Download(scene.registry, true);
 						scriptUpdated = false;
 					}
 					else

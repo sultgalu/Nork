@@ -192,7 +192,6 @@ namespace Nork::Editor2
 		ImGui::Separator();
 
 		ImGui::DragFloat("Physics speed", &data.engine.physicsSystem.physicsSpeed, 0.001f, 0, 10, "%.3f", ImGuiSliderFlags_Logarithmic);
-		ImGui::Checkbox("Update polies", &data.engine.physicsSystem.updatePoliesForPhysics);
 		ImGui::Checkbox("Update Velocities", &data.engine.physicsSystem.pipeline.updateVelocities);
 		ImGui::Checkbox("Update Rotation", &data.engine.physicsSystem.pipeline.updateRotation);
 		ImGui::Checkbox("Detect Collisions", &data.engine.physicsSystem.pipeline.detectCollisions);

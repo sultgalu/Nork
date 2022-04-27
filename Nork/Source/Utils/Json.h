@@ -203,6 +203,15 @@ public:
 		return array;
 	}
 	template<JsonDataType T>
+	void Get(std::vector<T>& vec)
+	{
+		vec.reserve(vec.size() + Size());
+		for (size_t i = 0; i < Size(); i++)
+		{
+			vec.push_back(Get<T>(i));
+		}
+	}
+	template<JsonDataType T>
 	void Get(T* buf, size_t count) const
 	{
 		for (size_t i = 0; i < elements.size(); i++)
