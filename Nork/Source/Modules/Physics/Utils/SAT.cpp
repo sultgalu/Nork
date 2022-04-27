@@ -93,7 +93,6 @@ namespace Nork::Physics
 		return true;
 	}
 
-
 	CollisionResult SAT::GetResult()
 	{
 		if (FacePhase(shape1, shape2, CollisionType::FaceVert) && FacePhase(shape2, shape1, CollisionType::VertFace) && EdgePhase())

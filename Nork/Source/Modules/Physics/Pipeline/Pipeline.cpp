@@ -15,33 +15,25 @@ namespace Nork::Physics
 		if (detectCollisions)
 		{
 			collisionDetector->BroadPhase();
-			deltas.push_back(std::pair("broad phase", t.Reset()));
-
 			collisionDetector->NarrowPhase();
-			deltas.push_back(std::pair("narrow phase", t.Reset()));
 		}
 		if (genContactPoints)
 		{
 			GenContactPoints();
-			deltas.push_back(std::pair("gen contact points", t.Reset()));
 		}
 		if (handleCollisions)
 		{
 			ResolveCollisions(delta);
-			deltas.push_back(std::pair("resolve colls", t.Reset()));
 		}
 
 		if (updateVelocities)
 		{
 			VelocityUpdate(delta); // can't put front couse it won't change Shape's verts pos.
-			deltas.push_back(std::pair("update vels", t.Reset()));
 		}
 		if (updateRotation)
 		{
 			RotationUpdate(delta);
-			deltas.push_back(std::pair("update rots", t.Reset()));
 		}
-		deltas.push_back(std::pair("WHOLE", summaT.Reset()));
 	}
 
 	glm::vec3 GetIntersectionPoint(glm::vec3 p1, glm::vec3 p2, glm::vec3 v1, glm::vec3 v2)
@@ -287,104 +279,6 @@ namespace Nork::Physics
 
 	std::vector<glm::vec3> FaceContactPoints(const Shape& faceShape, const Shape& vertShape, const uint32_t faceIdx, const uint32_t vertIdx)
 	{
-		std::vector<glm::vec3> result;
-
-		glm::vec3& faceNorm = faceShape.faces[faceIdx].norm;
-		glm::vec3& faceP = faceShape.verts[faceShape.faces[faceIdx].vertIdx];
-		auto sideFaces = vertShape.SideFacesOfVert(vertIdx);
-		auto faceEdgeIdxs = faceShape.EdgesOnFace(faceIdx);
-		for (size_t i = 0; i < sideFaces.size(); i++)
-		{
-			auto contactPointsForFace = ClipFaceOnPlane(faceNorm, faceP,
-				vertShape.faceVerts[sideFaces[i]], vertShape.verts);
-
-			for (size_t j = 0; j < faceEdgeIdxs.size(); j++)
-			{
-				if (contactPointsForFace.size() == 0)
-					break;
-
-				Edge& edge = faceShape.edges[faceEdgeIdxs[j]];
-				glm::vec3 edgeNormal = glm::cross(faceNorm, faceShape.verts[edge.first] - faceShape.verts[edge.second]);
-
-				{ // making sure the edgeNormal is pointing outwards
-					glm::vec3 thirdVertOnFace;
-					for (size_t k = 0; k < 3; k++)
-					{
-						uint32_t vertIdx = faceShape.faceVerts[faceIdx][k];
-						if (vertIdx != edge.first &&
-							vertIdx != edge.second)
-						{
-							thirdVertOnFace = faceShape.verts[vertIdx];
-							break;
-						}
-					}
-					if (glm::dot(edgeNormal, (faceShape.verts[edge.first]) - thirdVertOnFace) < 0)
-						edgeNormal *= -1;
-				}
-
-				contactPointsForFace = ClipVertsOnEdge(edgeNormal, faceShape.verts[edge.first], contactPointsForFace);
-			}
-			for (size_t j = 0; j < contactPointsForFace.size(); j++)
-			{
-				for (size_t k = 0; k < result.size(); k++)
-				{
-					auto vec = contactPointsForFace[j] - result[k];
-					if (glm::dot(vec, vec) < 0.1f)
-						goto AlreadyIn;
-				}
-				result.push_back(contactPointsForFace[j]);
-			AlreadyIn:;
-			}
-			//result.insert(result.end(), contactPointsForFace.begin(), contactPointsForFace.end());
-		}
-		result = SortPoints2D(result);
-		std::vector<glm::vec3> innerPoints;
-		std::unordered_set<int> checked;
-		for (auto& sideFace: sideFaces)
-		{
-			for (auto& vertIdx : vertShape.faceVerts[sideFace])
-			{
-				if (checked.contains(vertIdx))
-					continue;
-				checked.insert(vertIdx);
-				auto& vert = vertShape.verts[vertIdx];
-				auto sd = SignedDistance(faceNorm, faceP, vert);
-				if (sd < 0)
-				{ // inside other shape
-					innerPoints.push_back(vert + faceNorm * -sd);
-				}
-			}
-		}
-		innerPoints = ClipPointsOnFace(faceShape, faceIdx, innerPoints);
-		auto beforeInners = result;
-		for (auto& innerPoint : innerPoints)
-		{
-			TryExpandConvex2DSorted(result, innerPoint, faceNorm);
-		}
-		if (result.empty())
-		{
-			Logger::Error("");
-			//FaceContactPoints(faceShape, vertShape, faceIdx, vertIdx, vertOffs);
-		}
-		for (size_t i = 0; i < result.size(); i++)
-		{
-			for (size_t j = i + 1; j < result.size(); j++)
-			{
-				if (result[i] == result[j])
-				{
-					Logger::Error("");
-				}
-			}
-		}
-		auto center = Center2DSorted(result);
-		if (glm::isnan(center.x))
-		{
-			Logger::Error("");
-		}
-		return result;
-	}
-	std::vector<glm::vec3> FaceContactPoints2(const Shape& faceShape, const Shape& vertShape, const uint32_t faceIdx, const uint32_t vertIdx)
-	{
 		auto& faceNormal = faceShape.faces[faceIdx].norm;
 		auto& faceVert = faceShape.verts[faceShape.faces[faceIdx].vertIdx];
 
@@ -407,7 +301,6 @@ namespace Nork::Physics
 					facePoints.push_back(vertShape.verts[vertIdx]);
 				}
 				return ClipPointsOnFace(faceShape, faceIdx, facePoints);
-				// return ClipFaceOnFace(faceShape, vertShape, faceIdx, sideFaceIdx, false);
 			}
 		}
 		for (auto& sideEdgeIdx : sideEdges)
@@ -452,30 +345,21 @@ namespace Nork::Physics
 				contactPoints.push_back(glm::vec3(0));
 				continue;
 			}
-			glm::vec3 collOffs = res.depth > 0 ? glm::vec3(0) : res.dir * (glm::min(0.0f, res.depth) - bias);
-			//if (res.distance <= 0) continue;
 			auto shape1 = world.shapes[res.pair.x];
 			auto shape2 = world.shapes[res.pair.y];
 
-			auto transformedShape = shape1;
-			std::vector<glm::vec3> transformedVerts;
-			for (auto& p : shape1.verts)
-			{
-				transformedVerts.push_back(p + collOffs);
-			}
-			transformedShape.verts = transformedVerts;
 
 			if (res.type == CollisionType::FaceVert)
 			{
-				auto cps = FaceContactPoints2(transformedShape, shape2, res.featureIdx1, res.featureIdx2);
-				glm::vec3 contactPoint = Center(cps) - collOffs;
+				auto cps = FaceContactPoints(shape1, shape2, res.featureIdx1, res.featureIdx2);
+				glm::vec3 contactPoint = Center(cps);
 				if (glm::isnan(contactPoint.x))
 					Logger::Error("");
 				contactPoints.push_back(contactPoint);
 			}
 			else if (res.type == CollisionType::VertFace)
 			{
-				auto contact = FaceContactPoints2(shape2, transformedShape, res.featureIdx1, res.featureIdx2);
+				auto contact = FaceContactPoints(shape2, shape1, res.featureIdx1, res.featureIdx2);
 				glm::vec3 contactPoint = Center(contact);
 				if (glm::isnan(contactPoint.x))
 					Logger::Error("");
@@ -520,13 +404,11 @@ namespace Nork::Physics
 			auto& kinem1 = world.kinems[objs.x];
 			auto& kinem2 = world.kinems[objs.y];
 
-			if (kinem1.isStatic)
-				kinem1.mass = 100000000.0f;
-			if (kinem2.isStatic)
-				kinem2.mass = 100000000.0f;
+			// if (kinem1.isStatic)
+			// 	kinem1.mass = 100000000.0f;
+			// if (kinem2.isStatic)
+			// 	kinem2.mass = 100000000.0f;
 
-			auto wDiff = glm::abs(glm::dot(kinem1.w - kinem2.w, kinem1.w - kinem2.w));
-			auto vDiff = glm::abs(glm::dot(kinem1.velocity - kinem2.velocity, kinem1.velocity - kinem2.velocity));
 			glm::vec3 t = glm::vec3(0);
 			float fr = -0.9f;
 			float fr2 = 1.0f;
@@ -534,91 +416,117 @@ namespace Nork::Physics
 			const glm::vec3& contactPoint = contactPoints[i];
 			glm::vec3 r1 = contactPoint - world.shapes[objs.x].center;
 			glm::vec3 r2 = contactPoint - world.shapes[objs.y].center;
+			auto vel1 = kinem1.velocity + glm::cross(kinem1.w, r1);
+			auto vel2 = kinem2.velocity + glm::cross(kinem2.w, r2);
+			auto velDiffLenSquared = glm::dot(vel1 - vel2, vel1 - vel2);
 
-			auto applyForce = [&](KinematicData& kinem, const glm::vec3& r)
+			auto applyForce = [&](KinematicData& kinem, const glm::vec3& r, const glm::vec3& collDir)
 			{
 				if (glm::dot(kinem.velocity, kinem.forces) >= 0)
 				{
-					auto forceDirVel = glm::dot(kinem.forces, kinem.velocity);
-					if (forceDirVel < 0.001f)
-					{
-						kinem.velocity -= forceDirVel * kinem.forces;
-					}
-					auto counterForce = glm::dot(kinem.forces, coll.dir);
+					// auto forceDirVel = glm::dot(kinem.forces, kinem.velocity);
+					// if (forceDirVel < 0.001f)
+					// {
+					// 	kinem.velocity -= forceDirVel * kinem.forces;
+					// }
+					auto counterForce = glm::dot(kinem.forces, collDir);
 					auto perpForce = (kinem.forces - counterForce) * fr2;
 					auto counterTorque = glm::cross(r, counterForce * kinem.forces);
 					auto frictionTorque = glm::cross(r, perpForce * kinem.forces);
-					kinem.forces += counterForce * coll.dir;
-					kinem.forces += perpForce * (kinem.forces - coll.dir * counterForce);
+					// kinem.forces += counterForce * collDir;
+					// kinem.forces += perpForce * (kinem.forces - collDir * counterForce);
 					kinem.torque += counterTorque;
-					kinem.torque += frictionTorque;
+					// kinem.torque += frictionTorque;
 					if (glm::isnan(kinem.torque.x))
 						Logger::Error("");
 
 				}
 			};
-			// applyForce(kinem1, r1);
-			// applyForce(kinem2, r2);
+			// applyForce(kinem1, r1, coll.dir);
+			// applyForce(kinem2, r2, coll.dir);
+
+			// if (velDiffLenSquared < 0.01f)
+			// {
+			// 	kinem1.velocity -= coll.dir * glm::dot(kinem1.velocity, coll.dir);
+			// 	kinem2.velocity -= coll.dir * glm::dot(kinem2.velocity, coll.dir);
+			// 	kinem1.w = coll.dir * glm::dot(kinem1.w, coll.dir);
+			// 	kinem2.w = coll.dir * glm::dot(kinem2.w, coll.dir);
+			// }
+			if (coll.depth == 0)
+			{
+				coll.depth = 0;
+			}
 			if (coll.depth > 0)
 			{
-				//coll.dir *= -1;
-				float resulting = (1 + coefficient) * glm::dot(kinem1.velocity - kinem2.velocity, coll.dir) / (1 / kinem1.mass + 1 / kinem2.mass /* + angularPart*/);
+				float actualCoefficient = coefficient;
+				if (velDiffLenSquared < 0.01f)
+				{
+					actualCoefficient = 0;
+					// fr = 0.0f;
+				}
 
-				float momentOfInertia1 = 1.0f * (1.0f / 6.0f) * kinem1.mass * (4); // !!HARDCODED!!
-				float momentOfInertia2 = (1.0f / 6.0f) * kinem2.mass * (kinem2.isStatic ? 10000 : 4); // !!HARDCODED!!
-				auto angularPart1 = glm::cross((1 / momentOfInertia1) * (glm::cross(r1, coll.dir)), r1);
-				auto angularPart2 = glm::cross((1 / momentOfInertia2) * (glm::cross(r2, coll.dir)), r2);
+				float resulting = (1 + actualCoefficient) * glm::dot(kinem1.velocity - kinem2.velocity, coll.dir) / (1 / kinem1.mass + 1 / kinem2.mass /* + angularPart*/);
+
+				auto angularPart1 = glm::cross((1 / kinem1.I) * (glm::cross(r1, coll.dir)), r1);
+				auto angularPart2 = glm::cross((1 / kinem2.I) * (glm::cross(r2, coll.dir)), r2);
 
 				float angularPart = glm::dot(angularPart1 + angularPart2, coll.dir);
 
-				auto vel1 = kinem1.velocity + glm::cross(kinem1.w, r1);
-				auto vel2 = kinem2.velocity + glm::cross(kinem2.w, r2);
 				t = vel1 - vel2;
 				if (t != glm::vec3(0))
 				{
-					t = glm::cross(coll.dir, glm::normalize(vel1 - vel2));
+					t = glm::cross(coll.dir, glm::normalize(t));
 					t = glm::cross(t, coll.dir);
 				}
 
-				float resultingA = -(1 + coefficient) * glm::dot(vel1 - vel2, coll.dir) / (1 / kinem1.mass + 1 / kinem2.mass + angularPart);
+				float resultingA = -(1 + actualCoefficient) * glm::dot(vel1 - vel2, coll.dir) / (1 / kinem1.mass + 1 / kinem2.mass + angularPart);
 				resulting = resultingA;
-				glm::vec3 deltaW1 = (1 / momentOfInertia1) * glm::cross(r1, resultingA * (coll.dir + fr * t));
-				glm::vec3 deltaW2 = -(1 / momentOfInertia2) * glm::cross(r2, resultingA * (coll.dir + fr * t));
+				glm::vec3 deltaW1 = (1.0f / kinem1.I + (kinem2.isStatic ? 1.0f / kinem2.I : 0)) * glm::cross(r1, resultingA * (coll.dir + fr * t));
+				glm::vec3 deltaW2 = -(1.0f / kinem2.I + (kinem1.isStatic ? 1.0f / kinem1.I : 0)) * glm::cross(r2, resultingA * (coll.dir + fr * t));
 				if (glm::isnan(deltaW1.x) || glm::isnan(deltaW2.x))
 					Logger::Error("");
 				if (kinem1.isStatic)
 				{
-					//deltaW2 -= deltaW1;
 					deltaW1 = glm::vec3(0);
 				}
 				if (kinem2.isStatic)
 				{
-					//deltaW1 -= deltaW2;
 					deltaW2 = glm::vec3(0);
 				}
 				kinem1.w += deltaW1;
 				kinem2.w += deltaW2;
 
-				float deltaV1 = (resulting / kinem1.mass);
-				float deltaV2 = -(resulting / kinem2.mass);
+				float deltaV1 = 1.0f / kinem1.mass + (kinem2.isStatic ? 1.0f / kinem2.mass : 0);
+				float deltaV2 = -(1.0f / kinem2.mass + (kinem1.isStatic ? 1.0f / kinem1.mass : 0));
 				if (kinem1.isStatic)
 				{
-					//deltaV2 -= deltaV1;
 					deltaV1 = 0;
 				}
 				if (kinem2.isStatic)
 				{
-					//deltaV1 -= deltaV2;
 					deltaV2 = 0;
 				}
 				if (coll.depth > 0 && glm::dot(coll.dir, kinem1.velocity - kinem2.velocity) <= 0)
 				{
-					kinem1.velocity = kinem1.velocity + deltaV1 * (coll.dir + fr * t);
-					kinem2.velocity = kinem2.velocity + deltaV2 * (coll.dir + fr * t);
+					kinem1.velocity += resulting * deltaV1 * (coll.dir + fr * t);
+					kinem2.velocity += resulting * deltaV2 * (coll.dir + fr * t);
 				}
 
 				if (glm::isnan(kinem1.velocity.x) || glm::isnan(kinem2.velocity.x))
 					Logger::Error("");
+
+				auto newVel1 = kinem1.velocity + glm::cross(kinem1.w, r1);
+				auto newVel2 = kinem2.velocity + glm::cross(kinem2.w, r2);
+
+				auto cr = -glm::dot((newVel1 - newVel2), coll.dir) / glm::dot((vel1 - vel2), coll.dir);
+				if (cr == actualCoefficient)
+				{
+					actualCoefficient = 0;
+				}
+				else
+				{
+					actualCoefficient = 0;
+				}
 			}
 			if (coll.depth > 0)
 			{
@@ -675,10 +583,8 @@ namespace Nork::Physics
 
 	void Pipeline::SetModels(std::span<glm::vec3> translate, std::span<glm::quat> quaternions)
 	{
-		deltas.clear();
 		Timer t;
 		collisionDetector->UpdateTransforms(translate, quaternions);
-		deltas.push_back(std::pair("Update Transforms", t.Elapsed()));
 	}
 
 	void Pipeline::VelocityUpdate(float delta)

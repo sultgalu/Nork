@@ -19,7 +19,7 @@ int main()
 
 	//editor.SetDisplayTexture(engine.renderingSystem.deferredPipeline.lightFb->Color());
 
-	int dim = 2;
+	int dim = 6;
 	int sep = 3;
 	int start = -dim / 2;
 	int end = dim / 2 + dim % 2;
@@ -41,19 +41,19 @@ int main()
 	}
 
 	// SINGLE
-	  // auto ent = engine.scene.CreateNode()->GetEntity();
-	  // ent.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
-	  // ent.AddComponent<Components::Transform>([&](auto& tr) { tr.position = glm::vec3(0); });
-	  // ent.AddComponent<Components::Kinematic>().mass = 0.1f;
-	  // ent.AddComponent<Components::Collider>() = Components::Collider::Cube();
-	  // ent.AddComponent<Components::Tag>().tag = "SINGLE";
-	  // 
-	  // auto ent2 = engine.scene.CreateNode()->GetEntity();
-	  // ent2.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
-	  // ent2.AddComponent<Components::Transform>([&](auto& tr) { tr.position = glm::vec3(0, 2, 0.5f); });
-	  // ent2.AddComponent<Components::Kinematic>().mass = 0.1f;
-	  // ent2.AddComponent<Components::Collider>() = Components::Collider::Cube();
-	  // ent2.AddComponent<Components::Tag>().tag = "SINGLE2";
+	//   auto ent = engine.scene.CreateNode()->GetEntity();
+	//   ent.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
+	//   ent.AddComponent<Components::Transform>([&](auto& tr) { tr.position = glm::vec3(0); });
+	//   ent.AddComponent<Components::Kinematic>().mass = 0.1f;
+	//   ent.AddComponent<Components::Collider>() = Components::Collider::Cube();
+	//   ent.AddComponent<Components::Tag>().tag = "SINGLE";
+	//   
+	//   auto ent2 = engine.scene.CreateNode()->GetEntity();
+	//   ent2.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
+	//   ent2.AddComponent<Components::Transform>([&](auto& tr) { tr.position = glm::vec3(0, 2, 0.5f); });
+	//   ent2.AddComponent<Components::Kinematic>().mass = 0.1f;
+	//   ent2.AddComponent<Components::Collider>() = Components::Collider::Cube();
+	//   ent2.AddComponent<Components::Tag>().tag = "SINGLE2";
 
 	glm::vec3 scale = glm::vec3(100, 1, 100);
 	auto ground = engine.scene.CreateNode()->GetEntity();

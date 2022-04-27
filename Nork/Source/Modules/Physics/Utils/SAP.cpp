@@ -60,6 +60,7 @@ namespace Nork::Physics
 		{
 			AABB& aabb1 = aabbs[i].second;
 			std::vector<uint32_t> newInterval = { i };
+			newInterval.reserve(currentInterval.size() * 1.5f);
 
 			for (uint32_t j = 0; j < currentInterval.size(); j++)
 			{

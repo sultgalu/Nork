@@ -25,7 +25,6 @@ namespace Nork::Physics
 		float g = 10;
 		float coefficient = 0.1f;
 
-		std::vector<std::pair<std::string, float>> deltas;
 		std::vector<glm::vec3> contactPoints;
 
 		void Update(float delta);
