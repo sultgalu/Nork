@@ -5,9 +5,6 @@ namespace Nork::Components
 
 	struct Transform
 	{
-		glm::vec3 position = glm::vec3(0);
-		glm::vec3 scale = glm::vec3(1);
-		glm::quat quaternion = glm::identity<glm::quat>();
 		glm::mat4 modelMatrix = RecalcModelMatrix();
 
 		glm::mat4 TranslationMatrix();
@@ -15,11 +12,36 @@ namespace Nork::Components
 		glm::mat4 TranslationRotationMatrix();
 		glm::mat4& RecalcModelMatrix();
 
-		void Rotate(const glm::vec3& axis, float angle) { quaternion = glm::rotate(quaternion, angle, axis); }
-		void SetRotation(const glm::vec3& axis, float angle) { quaternion = glm::angleAxis(angle, glm::normalize(axis)); }
+		void Rotate(const glm::vec3& axis, float angle) { localQuaternion = glm::rotate(localQuaternion, angle, axis); }
+		void SetRotation(const glm::vec3& axis, float angle) { localQuaternion = glm::angleAxis(angle, glm::normalize(axis)); }
 		glm::vec3 RotationAxis() const { return glm::axis(quaternion); }
 		float RotationAngle() const { return glm::angle(quaternion); }
 		float RotationAngleDegrees() const { return glm::degrees(glm::angle(quaternion)); }
+
+		const glm::vec3& Position() const { return position; }
+		const glm::vec3& Scale() const { return scale; }
+		const glm::quat& Quaternion() const { return quaternion; }
+
+		void UpdateGlobalByParent(const Transform& parent)
+		{
+			position = parent.position + localPosition;
+			scale = parent.scale + localScale;
+			quaternion = parent.quaternion + localQuaternion;
+		}
+		void UpdateGlobalWithoutParent()
+		{
+			position = localPosition;
+			scale = localScale;
+			quaternion = localQuaternion;
+		}
+	private:
+		glm::vec3 position = glm::vec3(0);
+		glm::vec3 scale = glm::vec3(1);
+		glm::quat quaternion = glm::identity<glm::quat>();
+	public:
+		glm::vec3 localPosition = glm::vec3(0);
+		glm::vec3 localScale = glm::vec3(1);
+		glm::quat localQuaternion = glm::identity<glm::quat>();
 	};
 
 	struct Tag

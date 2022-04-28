@@ -41,10 +41,12 @@ namespace Nork
 			updateSem.acquire();
 
 			physicsSystem.Upload(scene.registry); // upload new data
+			UpdateGlobalTransforms();
 
 			if (scriptUpdate)
 			{
 				scriptSystem.Update();
+				UpdateGlobalTransforms();
 			}
 			UpdateTransformMatrices();
 			scriptUpdated = true;
@@ -54,6 +56,7 @@ namespace Nork
 		}
 		else
 		{
+			UpdateGlobalTransforms();
 			UpdateTransformMatrices();
 		}
 		renderingSystem.BeginFrame();
@@ -105,6 +108,27 @@ namespace Nork
 					updateSem.release();
 					uploadSem.acquire(); // wait until any uploading is done
 					uploadSem.release();
+				}
+			});
+	}
+
+	void Engine::UpdateGlobalTransforms()
+	{
+		auto& reg = scene.registry;
+		scene.root->ForEachDescendants([&](SceneNode& node)
+			{
+				auto* tr = node.GetEntity().TryGetComponent<Components::Transform>();
+				if (tr)
+				{
+					auto* parentTr = node.GetParent().GetEntity().TryGetComponent<Components::Transform>();
+					if (parentTr)
+					{
+						tr->UpdateGlobalByParent(*parentTr);
+					}
+					else
+					{
+						tr->UpdateGlobalWithoutParent();
+					}
 				}
 			});
 	}

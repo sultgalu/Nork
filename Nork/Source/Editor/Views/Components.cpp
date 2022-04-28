@@ -105,8 +105,14 @@ namespace Nork::Editor {
 	}
 	template<> void SceneNodeView::ShowComponent(Components::Transform& tr, bool& changed)
 	{
-		changed |= ImGui::DragFloat3("Position", &tr.position.x, 0.1f);
-		changed |= ImGui::DragFloat3("Scale", &tr.scale.x, 0.1f, 0.1f, 1000.0f, "%.3f");
+		ImGui::Text("Pos: %f;%f;%f", tr.Position().x, tr.Position().y, tr.Position().z);
+		ImGui::Text("Scale: %f;%f;%f", tr.Scale().x, tr.Scale().y, tr.Scale().z);
+		ImGui::Text("Quaternion: %f;%f;%f;%f", tr.Quaternion().w, tr.Quaternion().x, tr.Quaternion().y, tr.Quaternion().z);
+
+		ImGui::Separator();
+		changed |= ImGui::DragFloat3("Position", &tr.localPosition.x, 0.1f);
+		changed |= ImGui::DragFloat3("Scale", &tr.localScale.x, 0.1f, 0.1f, 1000.0f, "%.3f");
+		ImGui::Separator();
 
 		glm::vec3 rotateAmount = { 0, 0, 0 };
 		if (ImGui::DragFloat3("Rotate Locally", &rotateAmount.x, 0.01f) && (changed = true))
@@ -119,8 +125,9 @@ namespace Nork::Editor {
 		if (ImGui::DragFloat3("Rotate Globally", &rotateAmount.x, 0.01f) && (changed = true))
 		{
 			glm::quat rot(1, rotateAmount);
-			tr.quaternion = glm::normalize(rot) * tr.quaternion;
+			tr.localQuaternion = glm::normalize(rot) * tr.localQuaternion;
 		}
+		ImGui::Separator();
 		glm::vec3 rotationAxis = tr.RotationAxis();
 		float angle = tr.RotationAngleDegrees();
 		if (ImGui::DragFloat("Angle", &angle, 0.1f) && (changed = true))
@@ -131,13 +138,14 @@ namespace Nork::Editor {
 		{
 			tr.SetRotation(glm::normalize(rotationAxis), glm::radians(angle));
 		}
-		if (ImGui::DragFloat4("Quaternion", &tr.quaternion.w, 0.1f) && (changed = true))
+		if (ImGui::DragFloat4("Quaternion", &tr.localQuaternion.w, 0.1f) && (changed = true))
 		{
-			tr.quaternion = glm::normalize(tr.quaternion);
+			tr.localQuaternion = glm::normalize(tr.localQuaternion);
 		}
+		ImGui::Separator();
 		if (ImGui::Button("Reset Rotation") && (changed = true))
 		{
-			tr.quaternion = glm::qua(1.0f, glm::vec3(0));
+			tr.localQuaternion = glm::qua(1.0f, glm::vec3(0));
 		}
 	}
 	template<> void SceneNodeView::ShowComponent(Components::Camera& cam, bool& changed)

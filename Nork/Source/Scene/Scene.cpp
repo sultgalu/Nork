@@ -59,17 +59,4 @@ namespace Nork
 		registry.destroy(node.GetEntity().Id());
 		node.GetParent().RemoveChild(node);
 	}
-	Components::Camera& Scene::GetMainCamera()
-	{
-		for (auto [id, cam, tag] : registry.view<Components::Camera, Components::Tag>().each())
-		{
-			if (tag.tag == "Main Camera")
-				return cam;
-		}
-
-		auto mainCameraNode = CreateNode();
-		auto cam = mainCameraNode->GetEntity().AddComponent<Components::Camera>();
-		mainCameraNode->GetEntity().AddComponent<Components::Tag>().tag = "Main Camera";
-		return cam;
-	}
 }

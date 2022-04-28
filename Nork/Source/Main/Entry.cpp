@@ -32,7 +32,7 @@ int main()
 			{
 				auto ent = engine.scene.CreateNode()->GetEntity();
 				ent.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
-				ent.AddComponent<Components::Transform>([&](auto& tr) { tr.position = glm::vec3(i * sep, j * sep, k * sep); });
+				ent.AddComponent<Components::Transform>([&](auto& tr) { tr.localPosition = glm::vec3(i * sep, j * sep, k * sep); });
 				ent.AddComponent<Components::Kinematic>().mass = 0.1f;
 				ent.AddComponent<Components::Collider>() = Components::Collider::Cube();
 				ent.AddComponent<Components::Tag>().tag = std::to_string(i).append("-").append(std::to_string(j)).append("-").append(std::to_string(k));
@@ -59,8 +59,8 @@ int main()
 	auto ground = engine.scene.CreateNode()->GetEntity();
 	ground.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
 	ground.AddComponent<Components::Transform>([&](auto& tr) {
-		tr.position = glm::vec3(0, -10, 0);
-		tr.scale = scale;
+		tr.localPosition = glm::vec3(0, -10, 0);
+		tr.localScale = scale;
 		});
 	ground.AddComponent<Components::Collider>() = Components::Collider::Cube();
 	ground.AddComponent<Components::Tag>().tag = "GROUND";
@@ -107,7 +107,7 @@ int main()
 			for (int k = startP; k < endP; k++)
 			{
 				auto pl = engine.scene.CreateNode()->GetEntity();
-				pl.AddComponent<Components::Transform>([&](auto& tr) { tr.position = { i * sepP + offsX, j * sepP, k * sepP }; });
+				pl.AddComponent<Components::Transform>([&](auto& tr) { tr.localPosition = { i * sepP + offsX, j * sepP, k * sepP }; });
 				pl.AddComponent<Components::Drawable>();
 				pl.AddComponent<Components::PointLight>().SetIntensity(10);
 				//if (shadows-- > 0)
@@ -119,8 +119,6 @@ int main()
 
 	Application::Get().engine.window.SetupCallbacks();
 	engine.physicsUpdate = false;
-	engine.scene.GetMainCamera().SetPosition(glm::vec3(-58, 16, -91));
-	engine.scene.GetMainCamera().SetRotation(-10, 60);
 	//engine.Launch();
 	Timer t;
 	CameraController camContr;

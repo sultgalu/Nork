@@ -172,7 +172,7 @@ namespace Nork {
 		for (const auto ent : pointLightObserver)
 		{
 			auto& pl= registry.get<PointLight>(ent);
-			pl.light->position = registry.get<Transform>(ent).position;
+			pl.light->position = registry.get<Transform>(ent).Position();
 			pl.light->Update();
 			if (pl.shadow)
 			{

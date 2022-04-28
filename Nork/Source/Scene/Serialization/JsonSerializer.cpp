@@ -36,8 +36,8 @@ namespace Nork {
 	using namespace Components;
 	template<> JsonObject JsonComponentSerializer<Transform>::Serialize(const Transform& component)
 	{
-		glm::vec3 pos = component.position, scale = component.scale;
-		glm::quat rot = component.quaternion;
+		glm::vec3 pos = component.localPosition, scale = component.localScale;
+		glm::quat rot = component.localQuaternion;
 		return JsonObject()
 			.Property("position", JsonArray().Elements(&pos.x, 3))
 			.Property("scale", JsonArray().Elements(&scale.x, 3))
@@ -47,9 +47,9 @@ namespace Nork {
 	{
 		auto& tr = entity.AddComponent<Transform>([&](Transform& tr)
 			{
-				json.Get<JsonArray>("position").Get(&tr.position.x, 3);
-				json.Get<JsonArray>("scale").Get(&tr.scale.x, 3);
-				json.Get<JsonArray>("quaternion").Get(&tr.quaternion.w, 4);
+				json.Get<JsonArray>("position").Get(&tr.localPosition.x, 3);
+				json.Get<JsonArray>("scale").Get(&tr.localScale.x, 3);
+				json.Get<JsonArray>("quaternion").Get(&tr.localQuaternion.w, 4);
 				tr.RecalcModelMatrix();
 			});
 		return tr;

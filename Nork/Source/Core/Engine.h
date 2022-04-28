@@ -46,6 +46,7 @@ namespace Nork
 	private:
 		void OnDrawableAdded(entt::registry& reg, entt::entity id);
 		std::thread* LaunchPhysicsThread();
+		void UpdateGlobalTransforms();
 		void UpdateTransformMatrices();
 	};
 }

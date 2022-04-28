@@ -17,7 +17,7 @@ namespace Nork {
 		
 		auto setup = [&]()
 		{
-			playerTr.position = { 0, 0, -15 };
+			playerTr.localPosition = { 0, 0, -15 };
 			playerKin.mass = 0.001f;
 			engine.physicsSystem.pipeline.coefficient = 0.2f;
 			playerPl.SetIntensity(200);
@@ -56,7 +56,7 @@ namespace Nork {
 		//playerTr.Translate(translation * speed);
 		playerKin.velocity.x = translation.x * speed;
 		playerKin.velocity.z = translation.z * speed;
-		cam.position = playerTr.position;
+		cam.position = playerTr.Position();
 		if (input.DidScroll())
 		{
 			cam.Zoom(input.ScrollOffs());
@@ -65,7 +65,7 @@ namespace Nork {
 		if (true || input.IsDown(Button::Left))
 		{
 			cam.Rotate(-input.CursorYOffs(), input.CursorXOffs());
-			playerTr.quaternion = glm::quat();
+			playerTr.localQuaternion = glm::quat();
 			playerTr.Rotate(cam.up, cam.yaw);
 			playerTr.Rotate(cam.right, cam.pitch);
 
@@ -82,7 +82,7 @@ namespace Nork {
 			q.y = cr * sp * cy + sr * cp * sy;
 			q.z = cr * cp * sy - sr * sp * cy;
 
-			playerTr.quaternion = q;
+			playerTr.localQuaternion = q;
 		}
 		*engine.renderingSystem.viewports[0]->camera = cam;
 	}

@@ -18,10 +18,8 @@ namespace Nork
 		{
 			registry = entt::registry();
 		}
-		Components::Camera& GetMainCamera();
 	public:
 		entt::registry registry;
-		std::shared_ptr<SceneNode> root;
-		// std::weak_ptr<SceneNode> mainCameraNode;
+		std::shared_ptr<SceneNode> root;	
 	};
 }
