@@ -314,22 +314,14 @@
     <ClCompile Include="Source\Modules\Physics\Utils\GJK.cpp" />
     <ClCompile Include="Source\Modules\Physics\Utils\SAP.cpp" />
     <ClCompile Include="Source\Modules\Physics\Utils\SAT.cpp" />
-    <ClCompile Include="Source\Editor2\Panels\Impl\MeshEditor2.cpp" />
     <ClCompile Include="Source\Modules\Physics\Data\World.cpp" />
     <ClCompile Include="Source\Modules\Physics\Pipeline\Pipeline.cpp" />
     <ClCompile Include="Source\Modules\Physics\Utils.cpp" />
-    <ClCompile Include="Source\Editor2\Panels\Impl\HierarchyPanel2.cpp" />
     <ClCompile Include="Source\Platform\Windows\FileDialog.cpp" />
-    <ClCompile Include="Source\Editor2\Panels\Impl\InspectorPanel2.cpp" />
     <ClCompile Include="Source\Scene\Scene.cpp" />
     <ClCompile Include="Source\Core\CameraController.cpp" />
     <ClCompile Include="Source\Core\Engine.cpp" />
     <ClCompile Include="Source\Components\Impl\Camera.cpp" />
-    <ClCompile Include="Source\Editor2\Panels\Impl\LogPanel2.cpp" />
-    <ClCompile Include="Source\Editor2\Panels\Impl\MainPanel2.cpp" />
-    <ClCompile Include="Source\Editor2\Panels\Impl\AssetsPanel2.cpp" />
-    <ClCompile Include="Source\Editor2\Panels\Base\Panel2.cpp" />
-    <ClCompile Include="Source\Editor2\Editor2.cpp" />
     <ClCompile Include="Source\ThirdParty\include\imgui\backends\imgui_impl_glfw.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -400,20 +392,14 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Source\Main\Entry.cpp" />
-    <ClCompile Include="Source\Editor2\Panels\Impl\ViewportPanel2.cpp" />
     <ClInclude Include="Source\Modules\Renderer\Objects\Texture\Texture.h" />
     <ClInclude Include="Source\Modules\Renderer\Objects\VertexArray\VertexArray.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Source\Editor2\Panels\MeshEditor.h" />
     <ClInclude Include="Source\Modules\Physics\Data\World.h" />
     <ClInclude Include="Source\Modules\Physics\Pipeline\Pipeline.h" />
     <ClInclude Include="Source\Modules\Physics\Utils.h" />
-    <ClInclude Include="Source\Editor2\Panels\All.h" />
-    <ClInclude Include="Source\Editor2\Panels\HierarchyPanel.h" />
     <ClInclude Include="Source\Platform\FileDialog.h" />
-    <ClInclude Include="Source\Editor2\EditorData.h" />
-    <ClInclude Include="Source\Editor2\Panels\InspectorPanel.h" />
     <ClInclude Include="Source\Scene\Scene.h" />
     <ClInclude Include="Source\Components\All.h" />
     <ClInclude Include="Source\Components\Drawable.h" />
@@ -426,18 +412,12 @@
     <ClInclude Include="Source\Components\Camera.h" />
     <ClInclude Include="Source\Components\Common.h" />
     <ClInclude Include="Source\Components\Lights.h" />
-    <ClInclude Include="Source\Editor2\Panels\LogPanel.h" />
-    <ClInclude Include="Source\Editor2\Panels\MainPanel.h" />
-    <ClInclude Include="Source\Editor2\Panels\AssetsPanel.h" />
-    <ClInclude Include="Source\Editor2\Panels\Base\Panel.h" />
-    <ClInclude Include="Source\Editor2\Editor.h" />
     <ClInclude Include="Source\Utils\Logger.h" />
     <ClInclude Include="Source\Utils\Observed.h" />
     <ClInclude Include="Source\Utils\Profiler.h" />
     <ClInclude Include="Source\Utils\Template.h" />
     <ClInclude Include="Source\Utils\Timer.h" />
     <ClInclude Include="Source\PCH\pch.h" />
-    <ClInclude Include="Source\Editor2\Panels\ViewportPanel.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\OneDrive\Dokumentumok\GameEngine_0\GameEngineEditor\resources\shaders\lightPass.shader" />
