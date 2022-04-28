@@ -11,6 +11,7 @@ namespace Nork::Components
 		glm::mat4 RotationMatrix();
 		glm::mat4 TranslationRotationMatrix();
 		glm::mat4& RecalcModelMatrix();
+		glm::mat4 LocalModelMatrix();
 
 		void Rotate(const glm::vec3& axis, float angle) { localQuaternion = glm::rotate(localQuaternion, angle, axis); }
 		void SetRotation(const glm::vec3& axis, float angle) { localQuaternion = glm::angleAxis(angle, glm::normalize(axis)); }
@@ -24,15 +25,24 @@ namespace Nork::Components
 
 		void UpdateGlobalByParent(const Transform& parent)
 		{
-			position = parent.position + localPosition;
-			scale = parent.scale + localScale;
-			quaternion = parent.quaternion + localQuaternion;
+			auto mat = parent.modelMatrix * LocalModelMatrix();
+
+			auto trans = glm::vec3(mat[0][3], mat[1][3], mat[2][3]);
+			mat[0][3] = 0; mat[1][3] = 0; mat[2][3] = 0;
+
+			position = trans;
+			scale = localScale;
+			quaternion = localQuaternion;
+			// glm::tra
+			modelMatrix = mat;
+			//RecalcModelMatrix();
 		}
 		void UpdateGlobalWithoutParent()
 		{
 			position = localPosition;
 			scale = localScale;
 			quaternion = localQuaternion;
+			RecalcModelMatrix();
 		}
 	private:
 		glm::vec3 position = glm::vec3(0);

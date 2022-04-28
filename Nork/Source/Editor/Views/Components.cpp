@@ -466,7 +466,11 @@ namespace Nork::Editor {
 		auto& ent = node->GetEntity();
 		if (ent.HasComponent<T>())
 		{
-			auto treeFlags = ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_ClipLabelForTrailingButton; // ImGuiTreeNodeFlags_DefaultOpen
+			auto treeFlags = ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_ClipLabelForTrailingButton; 
+			if constexpr (std::is_same<T, Components::Transform>::value)
+			{
+				treeFlags |= ImGuiTreeNodeFlags_DefaultOpen;
+			}
 			bool opened = ImGui::TreeNodeEx((componentName<T> +"##" + std::to_string((uint64_t)ent.Id())).c_str(), treeFlags);
 			
 			auto w = ImGui::CalcItemWidth();

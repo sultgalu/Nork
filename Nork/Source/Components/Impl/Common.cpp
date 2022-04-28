@@ -17,4 +17,8 @@ namespace Nork::Components {
 	{
 		return modelMatrix = glm::scale(TranslationRotationMatrix(), scale);
 	}
+	glm::mat4 Transform::LocalModelMatrix()
+	{
+		return glm::scale(glm::translate(glm::identity<glm::mat4>(), localPosition) * glm::mat4_cast(localQuaternion), localScale);
+	}
 }

@@ -3,6 +3,9 @@
 namespace Nork::Editor {
 	static bool del = false;
 
+	static std::shared_ptr<SceneNode> addChild = nullptr;
+	static std::shared_ptr<SceneNode> to = nullptr;
+
 	void HierarchyPanel::RecursiveDraw(std::shared_ptr<SceneNode> node)
 	{
 		auto& ent = node->GetEntity();
@@ -23,8 +26,25 @@ namespace Nork::Editor {
 		if (true)
 			flags |= ImGuiTreeNodeFlags_OpenOnArrow
 			| ImGuiTreeNodeFlags_OpenOnDoubleClick;
+			//| ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
 		bool open = ImGui::TreeNodeEx(str.c_str(), flags);
+		constexpr int dragDrogVerifier = 24234;
+		if (ImGui::BeginDragDropSource())
+		{
+			ImGui::SetDragDropPayload("NodeDrag", &dragDrogVerifier, sizeof(dragDrogVerifier));
+			ImGui::EndDragDropSource();
+		}
+		if (ImGui::BeginDragDropTarget())
+		{
+			auto payload = ImGui::AcceptDragDropPayload("NodeDrag");
+			if (payload && payload->DataSize == sizeof(dragDrogVerifier) && *(const int*)(payload->Data) == dragDrogVerifier)
+			{
+				addChild = GetCommonData().selectedNode;
+				to = node;
+			}
+			ImGui::EndDragDropTarget();
+		}
 		if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
 		{
 			GetCommonData().selectedNode = node;
@@ -36,6 +56,15 @@ namespace Nork::Editor {
 		}
 		if (ImGui::BeginPopup("entRightClick"))
 		{
+			if (ImGui::Selectable("Add Child"))
+			{
+				GetCommonData().selectedNode = GetScene().CreateNode(*GetCommonData().selectedNode);
+				auto& entity = GetCommonData().selectedNode->GetEntity();
+				entity.AddComponent<Components::Tag>().tag =
+					std::string("ent #" + std::to_string(static_cast<int>(entity.Id())));
+				entity.AddComponent<Components::Transform>();
+				ImGui::CloseCurrentPopup();
+			}
 			if (ImGui::Selectable("Delete"))
 			{
 				del = true;
@@ -73,6 +102,12 @@ namespace Nork::Editor {
 		{
 			GetScene().DeleteNode(*GetCommonData().selectedNode);
 			GetCommonData().selectedNode = nullptr;
+		}
+		if (addChild && to)
+		{
+			to->AddChild(addChild);
+			to = nullptr;
+			addChild = nullptr;
 		}
 
 		ImGui::Separator();

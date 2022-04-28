@@ -48,7 +48,6 @@ namespace Nork
 				scriptSystem.Update();
 				UpdateGlobalTransforms();
 			}
-			UpdateTransformMatrices();
 			scriptUpdated = true;
 
 			updateSem.release();
@@ -57,7 +56,6 @@ namespace Nork
 		else
 		{
 			UpdateGlobalTransforms();
-			UpdateTransformMatrices();
 		}
 		renderingSystem.BeginFrame();
 		renderingSystem.Update(); // draw full updated data
