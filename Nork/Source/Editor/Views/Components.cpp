@@ -481,7 +481,11 @@ namespace Nork::Editor {
 			if (ImGui::Button(("X##Delete" + componentName<T>).c_str()))
 			{	
 				ent.RemoveComponent<T>();
-				opened = false;
+				if (opened)
+				{
+					ImGui::TreePop();
+					opened = false;
+				}
 			}
 			ImGui::PopStyleColor();
 

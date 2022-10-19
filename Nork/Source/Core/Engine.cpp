@@ -118,12 +118,16 @@ namespace Nork
 				auto* tr = node.GetEntity().TryGetComponent<Components::Transform>();
 				if (tr)
 				{
-					auto* parentTr = node.GetParent().GetEntity().TryGetComponent<Components::Transform>();
-					if (parentTr)
+					for (auto& child : node.GetChildren())
 					{
-						tr->UpdateGlobalByParent(*parentTr);
+						auto* childTr = child->GetEntity().TryGetComponent<Components::Transform>();
+						if (childTr)
+						{
+							tr->UpdateChild(*childTr);
+						}
 					}
-					else
+					auto& parent = node.GetParent();
+					if (!parent.GetEntity().HasComponent<Components::Transform>())
 					{
 						tr->UpdateGlobalWithoutParent();
 					}

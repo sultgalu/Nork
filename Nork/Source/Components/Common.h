@@ -9,6 +9,7 @@ namespace Nork::Components
 
 		glm::mat4 TranslationMatrix();
 		glm::mat4 RotationMatrix();
+		glm::mat4 ScaleMatrix();
 		glm::mat4 TranslationRotationMatrix();
 		glm::mat4& RecalcModelMatrix();
 		glm::mat4 LocalModelMatrix();
@@ -23,20 +24,20 @@ namespace Nork::Components
 		const glm::vec3& Scale() const { return scale; }
 		const glm::quat& Quaternion() const { return quaternion; }
 
-		void UpdateGlobalByParent(const Transform& parent)
+		struct Tr
 		{
-			auto mat = parent.modelMatrix * LocalModelMatrix();
-
-			auto trans = glm::vec3(mat[0][3], mat[1][3], mat[2][3]);
-			mat[0][3] = 0; mat[1][3] = 0; mat[2][3] = 0;
-
-			position = trans;
-			scale = localScale;
-			quaternion = localQuaternion;
-			// glm::tra
-			modelMatrix = mat;
-			//RecalcModelMatrix();
+			glm::vec3 position;
+			glm::quat quaternion;
+			glm::vec3 scale;
+		};
+		Tr GetDifferenceFromModelMatrix() const;
+		void SetToDecomposed(const glm::mat4);
+		void Trans(const glm::mat4& mat)
+		{
+			modelMatrix = mat * modelMatrix;
+			SetToDecomposed(modelMatrix);
 		}
+		void UpdateChild(Transform&);
 		void UpdateGlobalWithoutParent()
 		{
 			position = localPosition;
@@ -44,7 +45,7 @@ namespace Nork::Components
 			quaternion = localQuaternion;
 			RecalcModelMatrix();
 		}
-	private:
+	public:
 		glm::vec3 position = glm::vec3(0);
 		glm::vec3 scale = glm::vec3(1);
 		glm::quat quaternion = glm::identity<glm::quat>();

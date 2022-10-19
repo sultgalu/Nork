@@ -19,7 +19,7 @@ int main()
 
 	//editor.SetDisplayTexture(engine.renderingSystem.deferredPipeline.lightFb->Color());
 
-	int dim = 6;
+	int dim = 4;
 	int sep = 3;
 	int start = -dim / 2;
 	int end = dim / 2 + dim % 2;
