@@ -1,6 +1,6 @@
 export module Nork.Editor.Panels:HierarchyPanel;
 
-import :Panel;
+export import :Panel;
 
 export namespace Nork::Editor {
 	class HierarchyPanel : public Panel

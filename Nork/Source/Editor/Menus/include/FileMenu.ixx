@@ -1,6 +1,6 @@
 export module Nork.Editor.Menus:FileMenu;
 
-import :Menu;
+export import :Menu;
 
 export namespace Nork::Editor {
 	class FileMenu: public Menu

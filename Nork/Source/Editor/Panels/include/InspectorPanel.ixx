@@ -1,6 +1,6 @@
 export module Nork.Editor.Panels:InspectorPanel;
 
-import :Panel;
+export import :Panel;
 
 export namespace Nork::Editor {
 

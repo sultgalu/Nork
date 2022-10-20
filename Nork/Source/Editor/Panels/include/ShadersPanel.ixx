@@ -1,6 +1,6 @@
 export module Nork.Editor.Panels:ShadersPanel;
 
-import :Panel;
+export import :Panel;
 import Nork.Editor.Views;
 
 export namespace Nork::Editor {

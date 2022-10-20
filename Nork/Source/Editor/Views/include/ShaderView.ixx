@@ -1,6 +1,6 @@
 export module Nork.Editor.Views:ShaderView;
 
-import :View;
+export import :View;
 
 export namespace Nork::Editor {
 	class ShaderView : public View

@@ -1,6 +1,6 @@
 export module Nork.Editor.Panels:Panel;
 
-import Nork.Editor.Views;
+export import Nork.Editor.Views;
 
 export namespace Nork::Editor {
 	struct PanelState

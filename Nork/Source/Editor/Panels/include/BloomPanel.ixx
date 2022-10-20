@@ -1,6 +1,6 @@
 export module Nork.Editor.Panels:BloomPanel;
 
-import :Panel;
+export import :Panel;
 
 export namespace Nork::Editor {
 

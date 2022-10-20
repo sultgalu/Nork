@@ -1,6 +1,6 @@
 export module Nork.Editor.Views:Components;
 
-import :View;
+export import :View;
 import Nork.Components;
 
 export namespace Nork::Editor {

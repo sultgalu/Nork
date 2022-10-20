@@ -1,6 +1,6 @@
 export module Nork.Editor.Panels:GraphicsSettingsPanel;
 
-import :Panel;
+export import :Panel;
 
 export namespace Nork::Editor {
 
