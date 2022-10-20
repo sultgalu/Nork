@@ -1,8 +1,8 @@
-#pragma once
+export module Nork.Physics:GJK;
 
-#include "../Utils.h"
+export import :Utils;
 
-namespace Nork::Physics
+export namespace Nork::Physics
 {
 	class GJK
 	{

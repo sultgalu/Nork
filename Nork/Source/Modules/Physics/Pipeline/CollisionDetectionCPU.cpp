@@ -1,7 +1,4 @@
-#include "pch.h"
-#include "CollisionDetectionCPU.h"
-#include "../Utils/SAT.h"
-#include "../Utils/SAP.h"
+module Nork.Physics;
 
 namespace Nork::Physics
 {

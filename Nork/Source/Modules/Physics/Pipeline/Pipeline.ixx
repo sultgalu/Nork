@@ -1,13 +1,13 @@
-#pragma once
+export module Nork.Physics:Pipeline;
 
-#include "../Data/World.h"
-#include "../Utils/AABB.h"
-#include "../Utils/GJK.h"
-#include "../Utils/SAT.h"
-#include "../Utils/SAP.h"
-#include "CollisionDetection.h"
+export import :World;
+export import :AABB;
+export import :GJK;
+export import :SAT;
+export import :SAP;
+export import :CollisionDetection;
 
-namespace Nork::Physics
+export namespace Nork::Physics
 {
 	class Pipeline
 	{

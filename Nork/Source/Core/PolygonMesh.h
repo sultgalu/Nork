@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Modules/Physics/Data/World.h"
-#include "Modules/Physics/Utils.h"
+import Nork.Physics;
 
 namespace Nork
 {

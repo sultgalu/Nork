@@ -1,8 +1,8 @@
-#pragma once
+export module Nork.Physics:GPU;
 
-#include "Common.h"
+export import :Common;
 
-namespace Nork::Physics
+export namespace Nork::Physics
 {
 	struct ShapeGPU
 	{

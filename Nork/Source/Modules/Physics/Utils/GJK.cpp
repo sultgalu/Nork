@@ -1,5 +1,4 @@
-#include "pch.h"
-#include "GJK.h"
+module Nork.Physics;
 
 namespace Nork::Physics
 {

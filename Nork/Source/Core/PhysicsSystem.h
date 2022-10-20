@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Modules/Physics/Pipeline/Pipeline.h"
+import Nork.Physics;
 #include "Components/Common.h"
 #include "PolygonMesh.h"
 

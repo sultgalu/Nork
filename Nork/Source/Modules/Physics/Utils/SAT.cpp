@@ -1,6 +1,4 @@
-#include "pch.h"
-#include "SAT.h"
-#include "../Utils.h"
+module Nork.Physics;
 
 namespace Nork::Physics
 {

@@ -1,8 +1,8 @@
-#pragma once
+export module Nork.Physics:CollisionDetection;
 
-#include "../Data/Common.h"
+export import :Common;
 
-namespace Nork::Physics
+export namespace Nork::Physics
 {
 	class CollisionDetection
 	{

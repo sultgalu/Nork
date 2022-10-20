@@ -5,7 +5,7 @@
 #include "Core/CameraController.h"
 #include "Scene/Scene.h"
 #include "PolygonMesh.h"
-#include "Modules/Physics/Data/World.h"
+import Nork.Physics;
 #include "RenderingSystem.h"
 #include "PhysicsSystem.h"
 #include "Core/ResourceManager.h"

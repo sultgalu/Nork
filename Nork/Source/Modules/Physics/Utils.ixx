@@ -1,6 +1,6 @@
-#pragma once
+export module Nork.Physics:Utils;
 
-namespace Nork::Physics
+export namespace Nork::Physics
 {
 	using index_t = uint32_t;
 	glm::vec3 EdgeNormal(const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& pInner, const glm::vec3& planeNormal, bool normalize = true);

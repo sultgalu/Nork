@@ -1,4 +1,4 @@
-#include "Utils.h"
+module Nork.Physics;
 
 namespace Nork::Physics
 {

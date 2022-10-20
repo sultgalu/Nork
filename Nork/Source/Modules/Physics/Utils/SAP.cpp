@@ -1,5 +1,4 @@
-#include "pch.h"
-#include "SAP.h"
+module Nork.Physics;
 
 namespace Nork::Physics
 {

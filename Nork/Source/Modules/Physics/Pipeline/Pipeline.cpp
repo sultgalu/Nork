@@ -1,6 +1,6 @@
-#include "Pipeline.h"
+module Nork.Physics;
+
 #include "../Config.h"
-#include "CollisionDetectionCPU.h"
 
 namespace Nork::Physics
 {

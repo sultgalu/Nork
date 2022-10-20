@@ -1,8 +1,9 @@
-#pragma once
-#include "../Data/World.h"
-#include "AABB.h"
+export module Nork.Physics:SAP;
 
-namespace Nork::Physics
+export import :World;
+export import :AABB;
+
+export namespace Nork::Physics
 {
 	class SAP
 	{

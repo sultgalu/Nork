@@ -1,5 +1,6 @@
-#include "pch.h"
-#include "MD.h"
+module Nork.Physics;
+
+import :MD;
 
 namespace Nork::Physics
 {

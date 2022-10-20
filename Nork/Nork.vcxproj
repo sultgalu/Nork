@@ -309,16 +309,16 @@
     <ClCompile Include="Source\Scene\Serialization\JsonSerializer.cpp" />
     <ClCompile Include="Source\Utils\Profiler.cpp" />
     <ClInclude Include="Source\Modules\Physics\Config.h" />
-    <ClInclude Include="Source\Modules\Physics\Pipeline\CollisionDetection.h" />
-    <ClInclude Include="Source\Modules\Physics\Pipeline\CollisionDetectionCPU.h" />
-    <ClInclude Include="Source\Modules\Physics\Data\Common.h" />
-    <ClInclude Include="Source\Modules\Physics\Data\GPU.h" />
-    <ClInclude Include="Source\Modules\Physics\Data\SSBO.h" />
-    <ClInclude Include="Source\Modules\Physics\Utils\MD.h" />
-    <ClInclude Include="Source\Modules\Physics\Utils\AABB.h" />
-    <ClInclude Include="Source\Modules\Physics\Utils\GJK.h" />
-    <ClInclude Include="Source\Modules\Physics\Utils\SAP.h" />
-    <ClInclude Include="Source\Modules\Physics\Utils\SAT.h" />
+    <ClCompile Include="Source\Modules\Physics\Pipeline\CollisionDetection.ixx" />
+    <ClCompile Include="Source\Modules\Physics\Pipeline\CollisionDetectionCPU.ixx" />
+    <ClCompile Include="Source\Modules\Physics\Data\Common.ixx" />
+    <ClCompile Include="Source\Modules\Physics\Data\GPU.ixx" />
+    <ClCompile Include="Source\Modules\Physics\Data\SSBO.ixx" />
+    <ClCompile Include="Source\Modules\Physics\Utils\MD.ixx" />
+    <ClCompile Include="Source\Modules\Physics\Utils\AABB.ixx" />
+    <ClCompile Include="Source\Modules\Physics\Utils\GJK.ixx" />
+    <ClCompile Include="Source\Modules\Physics\Utils\SAP.ixx" />
+    <ClCompile Include="Source\Modules\Physics\Utils\SAT.ixx" />
     <ClInclude Include="Source\Core\PolygonMesh.h" />
     <ClCompile Include="Source\Core\PolygonMesh.cpp" />
     <ClCompile Include="Source\Modules\Physics\Pipeline\CollisionDetectionCPU.cpp" />
@@ -413,9 +413,9 @@
     <ClCompile Include="Source\Modules\Renderer\Objects\VertexArray\VertexArray.ixx" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Source\Modules\Physics\Data\World.h" />
-    <ClInclude Include="Source\Modules\Physics\Pipeline\Pipeline.h" />
-    <ClInclude Include="Source\Modules\Physics\Utils.h" />
+    <ClCompile Include="Source\Modules\Physics\Data\World.ixx" />
+    <ClCompile Include="Source\Modules\Physics\Pipeline\Pipeline.ixx" />
+    <ClCompile Include="Source\Modules\Physics\Utils.ixx" />
     <ClInclude Include="Source\Platform\FileDialog.h" />
     <ClInclude Include="Source\Scene\Scene.h" />
     <ClInclude Include="Source\Components\All.h" />
@@ -445,6 +445,9 @@
   <ItemGroup>
     <None Include="..\..\..\..\OneDrive\Dokumentumok\GameEngine_0\GameEngineEditor\resources\shaders\lightPass.shader" />
     <ClCompile Include="Source\Modules\Renderer\Data\Nork.Renderer.Data.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="Source\Modules\Physics\Nork.Physics.ixx">
       <FileType>Document</FileType>
     </ClCompile>
     <None Include="Source\Shaders\bloom.shader" />

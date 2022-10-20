@@ -1,6 +1,6 @@
-#pragma once
+export module Nork.Physics:SSBO;
 
-namespace Nork::Physics
+export namespace Nork::Physics
 {
 	template<class T>
 	struct ShaderStorageBuffer

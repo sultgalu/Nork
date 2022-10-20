@@ -1,5 +1,4 @@
-﻿#include "pch.h"
-#include "AABB.h"
+﻿module Nork.Physics;
 
 namespace Nork::Physics
 {

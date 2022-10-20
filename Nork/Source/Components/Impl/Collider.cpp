@@ -1,5 +1,5 @@
 #include "Components/Collider.h"
-#include "Modules/Physics/Utils.h"
+import Nork.Physics;
 
 namespace Nork::Components {
 	/*void Collider::RebuildEdges()

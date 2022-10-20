@@ -1,4 +1,4 @@
-#include "World.h"
+module Nork.Physics;
 
 namespace Nork::Physics
 {

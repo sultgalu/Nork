@@ -1,6 +1,6 @@
-#pragma once
+export module Nork.Physics:Common;
 
-namespace Nork::Physics
+export namespace Nork::Physics
 {
 	struct Face
 	{

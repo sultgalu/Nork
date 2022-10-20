@@ -1,6 +1,6 @@
-#pragma once
+export module Nork.Physics:MD;
 
-namespace Nork::Physics
+export namespace Nork::Physics
 {
 	class MD
 	{

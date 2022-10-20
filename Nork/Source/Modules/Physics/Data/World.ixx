@@ -1,9 +1,9 @@
-#pragma once
+export module Nork.Physics:World;
 
-#include "Common.h"
-#include "../Utils.h"
+export import :Common;
+export import :Utils;
 
-namespace Nork::Physics
+export namespace Nork::Physics
 {
 	struct Shape
 	{

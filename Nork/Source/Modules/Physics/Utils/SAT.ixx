@@ -1,8 +1,8 @@
-#pragma once
+export module Nork.Physics:SAT;
 
-#include "../Data/World.h"
+export import :World;
 
-namespace Nork::Physics
+export namespace Nork::Physics
 {
 	template<typename T>
 	struct GPUBuffer
