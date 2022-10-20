@@ -1,4 +1,5 @@
-#include "JsonSerializer.h"
+module Nork.Scene; 
+
 #include "Core/ResourceManager.h"
 import Application;
 

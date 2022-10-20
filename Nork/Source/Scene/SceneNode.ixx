@@ -1,8 +1,8 @@
-#pragma once
+export module Nork.Scene:SceneNode;
 
-#include "Entity.h"
+import :Entity;
 
-namespace Nork {
+export namespace Nork {
 
 	class SceneNode
 	{

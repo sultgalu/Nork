@@ -1,6 +1,6 @@
-#pragma once
+export module Nork.Utils:Input;
 
-namespace Nork
+export namespace Nork
 {
 	enum class Key
 	{

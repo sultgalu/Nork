@@ -1,8 +1,8 @@
-#pragma once
+export module Nork.Scene:JsonSerializer;
 
-#include "Scene/SceneNode.h"
+import :SceneNode;
 
-namespace Nork {
+export namespace Nork {
 	class JsonSerializer
 	{
 	public:

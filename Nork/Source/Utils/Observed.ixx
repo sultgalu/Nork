@@ -1,6 +1,6 @@
-#pragma once
+export module Nork.Utils:Observed;
 
-namespace Nork {
+export namespace Nork {
 	template<class T>
 	struct Observed : T
 	{

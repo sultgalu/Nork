@@ -1,5 +1,4 @@
-#include "pch.h"
-#include "FileUtils.h"
+module Nork.Utils;
 
 namespace Nork {
     void FileUtils::WriteString(const std::string& str, const std::string& path)

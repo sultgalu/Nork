@@ -29,7 +29,6 @@ namespace Nork::Physics
 
 	std::vector<std::pair<uint32_t, uint32_t>> AABBTest::GetResult(World& world)
 	{
-		Timer t;
 		std::vector<AABB> aabbs;
 		aabbs.reserve(world.shapes.size());
 		std::vector<std::pair<uint32_t, uint32_t>> results;
@@ -46,7 +45,6 @@ namespace Nork::Physics
 					results.push_back(std::pair(i, j));
 			}
 		}
-		delta = t.Elapsed();
 		return results;
 	}
 

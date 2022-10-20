@@ -1,6 +1,6 @@
-#pragma once
+export module Nork.Utils:FileUtils;
 
-namespace Nork {
+export namespace Nork {
 	class FileUtils
 	{
 	public:

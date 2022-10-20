@@ -2,7 +2,7 @@
 
 #include "Core/InputState.h"
 #include "Components/Camera.h"
-#include "Scene/Scene.h"
+import Nork.Scene;
 
 namespace Nork
 {

@@ -220,6 +220,19 @@
     <ClCompile Include="Source\Modules\Renderer\Window\Window.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Texture\Texture.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\VertexArray\VertexArray.cpp" />
+    <ClCompile Include="Source\Scene\Nork.Scene.ixx" />
+    <ClCompile Include="Source\Utils\Nork.Utils.ixx">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </PrecompiledHeaderFile>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
     <ClInclude Include="Source\Components\Collider.h" />
     <ClInclude Include="Source\Core\ScriptSystem.h" />
     <ClInclude Include="Source\Editor\Editor.h" />
@@ -296,10 +309,10 @@
     <ClInclude Include="Source\ThirdParty\include\entt\entt.hpp" />
     <ClInclude Include="Source\ThirdParty\include\stb\stb_image.h" />
     <ClInclude Include="Source\ThirdParty\include\stb\stb_image_write.h" />
-    <ClInclude Include="Source\Utils\FileUtils.h" />
-    <ClInclude Include="Source\Utils\Json.h" />
-    <ClInclude Include="Source\Scene\Entity.h" />
-    <ClInclude Include="Source\Scene\SceneNode.h" />
+    <ClCompile Include="Source\Utils\FileUtils.ixx" />
+    <ClCompile Include="Source\Utils\Json.ixx" />
+    <ClCompile Include="Source\Scene\Entity.ixx" />
+    <ClCompile Include="Source\Scene\SceneNode.ixx" />
     <ClCompile Include="Source\Utils\FileUtils.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -417,7 +430,7 @@
     <ClCompile Include="Source\Modules\Physics\Pipeline\Pipeline.ixx" />
     <ClCompile Include="Source\Modules\Physics\Utils.ixx" />
     <ClInclude Include="Source\Platform\FileDialog.h" />
-    <ClInclude Include="Source\Scene\Scene.h" />
+    <ClCompile Include="Source\Scene\Scene.ixx" />
     <ClInclude Include="Source\Components\All.h" />
     <ClInclude Include="Source\Components\Drawable.h" />
     <ClInclude Include="Source\Core\Engine.h">
@@ -430,16 +443,23 @@
     </ClInclude>
     <ClInclude Include="Source\Core\CameraController.h" />
     <ClInclude Include="Source\Core\InputState.h" />
-    <ClInclude Include="Source\Scene\Serialization\JsonSerializer.h" />
-    <ClInclude Include="Source\Utils\Input.h" />
+    <ClCompile Include="Source\Scene\Serialization\JsonSerializer.ixx" />
+    <ClCompile Include="Source\Utils\Input.ixx" />
     <ClInclude Include="Source\Components\Camera.h" />
     <ClInclude Include="Source\Components\Common.h" />
     <ClInclude Include="Source\Components\Lights.h" />
-    <ClInclude Include="Source\Utils\Logger.h" />
-    <ClInclude Include="Source\Utils\Observed.h" />
-    <ClInclude Include="Source\Utils\Profiler.h" />
+    <ClInclude Include="Source\Utils\Logger.h">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClInclude>
+    <ClCompile Include="Source\Utils\Observed.ixx" />
+    <ClCompile Include="Source\Utils\Profiler.ixx" />
     <ClInclude Include="Source\Utils\Template.h" />
-    <ClInclude Include="Source\Utils\Timer.h" />
+    <ClCompile Include="Source\Utils\Timer.ixx" />
     <ClInclude Include="Source\PCH\pch.h" />
   </ItemGroup>
   <ItemGroup>

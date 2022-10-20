@@ -3,8 +3,8 @@
 
 #include "NorkWindow.h"
 #include "Core/CameraController.h"
-#include "Scene/Scene.h"
 #include "PolygonMesh.h"
+import Nork.Scene;
 import Nork.Physics;
 #include "RenderingSystem.h"
 #include "PhysicsSystem.h"

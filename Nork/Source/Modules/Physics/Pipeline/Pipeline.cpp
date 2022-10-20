@@ -10,8 +10,6 @@ namespace Nork::Physics
 	}
 	void Pipeline::Update(float delta)
 	{
-		Timer summaT;
-		Timer t;
 		if (detectCollisions)
 		{
 			collisionDetector->BroadPhase();
@@ -583,7 +581,6 @@ namespace Nork::Physics
 
 	void Pipeline::SetModels(std::span<glm::vec3> translate, std::span<glm::quat> quaternions)
 	{
-		Timer t;
 		collisionDetector->UpdateTransforms(translate, quaternions);
 	}
 

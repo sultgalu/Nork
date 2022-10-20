@@ -1,8 +1,8 @@
-#pragma once
+export module Nork.Utils:Profiler;
 
-#include "Timer.h"
+import :Timer;
 
-namespace Nork
+export namespace Nork
 {
 	class Profiler
 	{

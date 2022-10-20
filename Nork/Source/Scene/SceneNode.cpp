@@ -1,4 +1,4 @@
-#include "SceneNode.h"
+module Nork.Scene;
 
 namespace Nork {
 

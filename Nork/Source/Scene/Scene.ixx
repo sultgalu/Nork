@@ -1,8 +1,8 @@
-#pragma once
+export module Nork.Scene:Scene;
 
-#include "SceneNode.h"
+import :SceneNode;
 
-namespace Nork
+export namespace Nork
 {
 	typedef uint64_t uuid;
 	class Scene

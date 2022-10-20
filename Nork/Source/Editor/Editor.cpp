@@ -4,6 +4,7 @@
 #include "Menus/include/All.h"
 
 import Application;
+import Nork.Utils;
 
 namespace Nork::Editor
 {

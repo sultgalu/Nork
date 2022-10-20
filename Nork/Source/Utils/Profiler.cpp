@@ -1,5 +1,4 @@
-
-#include "Profiler.h"
+module Nork.Utils;
 
 namespace Nork
 {

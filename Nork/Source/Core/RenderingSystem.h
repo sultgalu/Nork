@@ -1,8 +1,9 @@
 #pragma once
 
-#include "Scene/Scene.h"
+import Nork.Scene;
 import Nork.Renderer;
 #include "Modules/Renderer/Config.h"
+#include "Components/All.h"
 
 namespace Nork {
 

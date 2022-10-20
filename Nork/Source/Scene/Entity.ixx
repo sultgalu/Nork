@@ -1,8 +1,8 @@
-#pragma once
+export module Nork.Scene:Entity;
 
-#include "Components/All.h"
+import "Components/All.h";
 
-namespace Nork {
+export namespace Nork {
 	class Entity
 	{
 	public:

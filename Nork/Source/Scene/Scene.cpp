@@ -1,6 +1,4 @@
-#include "pch.h"
-#include "Scene.h"
-#include "Serialization/JsonSerializer.h"
+module Nork.Scene;
 
 namespace fs = std::filesystem;
 

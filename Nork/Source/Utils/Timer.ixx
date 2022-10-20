@@ -1,6 +1,6 @@
-#pragma once
+export module Nork.Utils:Timer;
 
-namespace Nork
+export namespace Nork
 {
 	class Timer
 	{

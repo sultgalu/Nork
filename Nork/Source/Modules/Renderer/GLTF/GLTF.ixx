@@ -1,6 +1,7 @@
 #pragma once
 
 export module Nork.Renderer:GLTF;
+export import Nork.Utils;
 
 export namespace Nork::Renderer::GLTF {
 	struct Property

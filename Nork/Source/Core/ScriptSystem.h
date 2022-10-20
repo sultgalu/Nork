@@ -1,5 +1,5 @@
 #pragma once
-#include "Scene/Scene.h"
+import Nork.Scene;
 
 namespace Nork {
 	class ScriptSystem

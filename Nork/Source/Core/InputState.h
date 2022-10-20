@@ -1,5 +1,5 @@
 #pragma once
-#include "Utils/Input.h"
+import Nork.Utils;
 
 namespace Nork
 {
