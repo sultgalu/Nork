@@ -1,6 +1,6 @@
 export module Nork.Scene:Entity;
 
-import "Components/All.h";
+import Nork.Components;
 
 export namespace Nork {
 	class Entity

@@ -1,8 +1,7 @@
 #pragma once
 
 import Nork.Physics;
-#include "Components/Common.h"
-#include "PolygonMesh.h"
+import Nork.Components;
 
 namespace Nork {
 

@@ -87,7 +87,7 @@
     <ClCompile Include="Source\Modules\Physics\Pipeline\CollisionDetectionCPU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\PolygonMesh.cpp">
+    <ClCompile Include="Source\Components\Impl\PolygonMesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Utils\Profiler.cpp">
@@ -171,7 +171,7 @@
     <ClCompile Include="Source\Modules\Renderer\Objects\GLManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Components\Impl\Common.cpp">
+    <ClCompile Include="Source\Components\Impl\Components.Common.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Components\Impl\Lights.cpp">
@@ -470,18 +470,33 @@
     <ClCompile Include="Source\Scene\Nork.Scene.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Platform\FileDialog.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Components\Nork.Components.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Components\Camera.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Components\Collider.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Components\Components.Common.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Components\Drawable.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Components\Components.Lights.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Components\PolygonMesh.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\PCH\pch.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Components\Camera.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Components\Lights.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Components\Common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\CameraController.h">
@@ -489,18 +504,6 @@
     </ClInclude>
     <ClInclude Include="Source\Core\InputState.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Components\Drawable.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Components\All.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Platform\FileDialog.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\PolygonMesh.h">
-      <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Modules\Physics\Config.h">
       <Filter>Header Files</Filter>
@@ -521,9 +524,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Main\GameLoop.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Components\Collider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\ScriptSystem.h">

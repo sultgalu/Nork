@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core/InputState.h"
-#include "Components/Camera.h"
+import Nork.Components;
 import Nork.Scene;
 
 namespace Nork

@@ -1,4 +1,5 @@
-#include "Components/Collider.h"
+module Nork.Components;
+
 import Nork.Physics;
 
 namespace Nork::Components {

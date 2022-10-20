@@ -1,6 +1,6 @@
 #include "include/Components.h"
 #include "../Views/include/Helpers.h"
-#include "Platform/FileDialog.h"
+import Nork.FileDialog;
 
 namespace Nork::Editor {
 

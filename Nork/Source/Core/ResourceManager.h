@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Components/Drawable.h"
+import Nork.Components;
 import Nork.Renderer;
 
 namespace Nork {

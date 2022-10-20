@@ -1,5 +1,4 @@
-#include "pch.h"
-#include "../Camera.h"
+module Nork.Components;
 
 namespace Nork::Components
 {

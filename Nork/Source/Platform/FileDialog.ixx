@@ -1,6 +1,6 @@
-#pragma once
+export module Nork.FileDialog;
 
-namespace Nork::FileDialog
+export namespace Nork::FileDialog
 {
 	enum class EngineFileTypes
 	{

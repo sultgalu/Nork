@@ -1,8 +1,8 @@
-#pragma once
+export module Nork.Components:PolygonMesh;
 
 import Nork.Physics;
 
-namespace Nork
+export namespace Nork
 {
 	struct Polygon
 	{

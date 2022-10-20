@@ -1,4 +1,4 @@
-#include "PolygonMesh.h"
+module Nork.Components;
 
 namespace Nork
 {

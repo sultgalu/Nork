@@ -1,11 +1,8 @@
-#pragma once
+export module Nork.Components:Drawable;
 
 import Nork.Renderer;
 
-namespace Nork {
-}
-
-namespace Nork::Components
+export namespace Nork::Components
 {
 	struct Mesh
 	{

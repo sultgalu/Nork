@@ -3,7 +3,7 @@
 import Nork.Scene;
 import Nork.Renderer;
 #include "Modules/Renderer/Config.h"
-#include "Components/All.h"
+import Nork.Components;
 
 namespace Nork {
 

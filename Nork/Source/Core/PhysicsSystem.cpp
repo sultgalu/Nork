@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "PhysicsSystem.h"
-#include "Components/Collider.h"
+import Nork.Components;
 import Nork.Utils;
 
 namespace Nork {

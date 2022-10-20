@@ -1,6 +1,6 @@
-#pragma once
+export module Nork.Components:Common;
 
-namespace Nork::Components
+export namespace Nork::Components
 {
 
 	struct Transform

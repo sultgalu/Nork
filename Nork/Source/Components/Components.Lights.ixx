@@ -1,8 +1,8 @@
-#pragma once
+export module Nork.Components:Lights;
 
 import Nork.Renderer;
 
-namespace Nork::Components
+export namespace Nork::Components
 {
 	struct PointLight
 	{

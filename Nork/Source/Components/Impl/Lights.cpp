@@ -1,4 +1,4 @@
-#include "../Lights.h"
+module Nork.Components;
 
 namespace Nork::Components {
 	inline static constexpr auto ranges = std::array<uint32_t, 14>({ 0, 7, 13, 20, 32, 50, 65, 100, 160, 200, 325, 600, 3250, std::numeric_limits<uint32_t>::max() });

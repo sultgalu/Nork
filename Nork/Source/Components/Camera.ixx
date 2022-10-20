@@ -1,6 +1,6 @@
-#pragma once
+export module Nork.Components:Camera;
 
-namespace Nork::Components
+export namespace Nork::Components
 {
 	struct Camera
 	{

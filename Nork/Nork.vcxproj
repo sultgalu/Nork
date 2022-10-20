@@ -191,7 +191,7 @@
     <ClCompile Include="Source\Modules\Renderer\Nork.Renderer.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Pipeline\PostProcess\Bloom.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Storage\BufferWrapper.cpp" />
-    <ClCompile Include="Source\Components\Impl\Common.cpp" />
+    <ClCompile Include="Source\Components\Impl\Components.Common.cpp" />
     <ClCompile Include="Source\Components\Impl\Lights.cpp" />
     <ClCompile Include="Source\Core\PhysicsSystem.cpp" />
     <ClCompile Include="Source\Core\ResourceManager.cpp" />
@@ -233,7 +233,7 @@
       <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </ForcedIncludeFiles>
     </ClCompile>
-    <ClInclude Include="Source\Components\Collider.h" />
+    <ClCompile Include="Source\Components\Collider.ixx" />
     <ClInclude Include="Source\Core\ScriptSystem.h" />
     <ClInclude Include="Source\Editor\Editor.h" />
     <ClInclude Include="Source\Editor\Menus\include\All.h" />
@@ -332,8 +332,8 @@
     <ClCompile Include="Source\Modules\Physics\Utils\GJK.ixx" />
     <ClCompile Include="Source\Modules\Physics\Utils\SAP.ixx" />
     <ClCompile Include="Source\Modules\Physics\Utils\SAT.ixx" />
-    <ClInclude Include="Source\Core\PolygonMesh.h" />
-    <ClCompile Include="Source\Core\PolygonMesh.cpp" />
+    <ClCompile Include="Source\Components\PolygonMesh.ixx" />
+    <ClCompile Include="Source\Components\Impl\PolygonMesh.cpp" />
     <ClCompile Include="Source\Modules\Physics\Pipeline\CollisionDetectionCPU.cpp" />
     <ClCompile Include="Source\Modules\Physics\Utils\MD.cpp" />
     <ClCompile Include="Source\Modules\Physics\Utils\AABB.cpp" />
@@ -429,10 +429,10 @@
     <ClCompile Include="Source\Modules\Physics\Data\World.ixx" />
     <ClCompile Include="Source\Modules\Physics\Pipeline\Pipeline.ixx" />
     <ClCompile Include="Source\Modules\Physics\Utils.ixx" />
-    <ClInclude Include="Source\Platform\FileDialog.h" />
+    <ClCompile Include="Source\Platform\FileDialog.ixx" />
     <ClCompile Include="Source\Scene\Scene.ixx" />
-    <ClInclude Include="Source\Components\All.h" />
-    <ClInclude Include="Source\Components\Drawable.h" />
+    <ClCompile Include="Source\Components\Nork.Components.ixx" />
+    <ClCompile Include="Source\Components\Drawable.ixx" />
     <ClInclude Include="Source\Core\Engine.h">
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Default</CompileAs>
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Default</CompileAs>
@@ -445,9 +445,9 @@
     <ClInclude Include="Source\Core\InputState.h" />
     <ClCompile Include="Source\Scene\Serialization\JsonSerializer.ixx" />
     <ClCompile Include="Source\Utils\Input.ixx" />
-    <ClInclude Include="Source\Components\Camera.h" />
-    <ClInclude Include="Source\Components\Common.h" />
-    <ClInclude Include="Source\Components\Lights.h" />
+    <ClCompile Include="Source\Components\Camera.ixx" />
+    <ClCompile Include="Source\Components\Components.Common.ixx" />
+    <ClCompile Include="Source\Components\Components.Lights.ixx" />
     <ClInclude Include="Source\Utils\Logger.h">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>

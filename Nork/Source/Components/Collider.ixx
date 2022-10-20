@@ -1,6 +1,6 @@
-#pragma once
+export module Nork.Components:Collider;
 
-namespace Nork::Components {
+export namespace Nork::Components {
 	struct Collider
 	{
 		using Edge = std::pair<uint32_t, uint32_t>;

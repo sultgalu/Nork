@@ -1,4 +1,4 @@
-#include "../FileDialog.h"
+module Nork.FileDialog;
 
 #include <windows.h>
 #include <shobjidl.h> 

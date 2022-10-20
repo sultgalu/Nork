@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "ScriptSystem.h"
 import Application;
-#include "Components/All.h"
+import Nork.Components;
 
 namespace Nork {
 	void ScriptSystem::Update()

@@ -1,6 +1,6 @@
 #pragma once
 #include "../../View.h"
-#include "Components/All.h"
+import Nork.Components;
 
 namespace Nork::Editor {
 	class SceneNodeView: public View
