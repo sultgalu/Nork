@@ -1,4 +1,5 @@
-#include "RenderingSystem.h"
+module Nork.Core;
+
 import Nork.Renderer;
 
 namespace Nork {

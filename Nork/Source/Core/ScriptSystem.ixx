@@ -1,4 +1,5 @@
-#pragma once
+export module Nork.Core:ScriptSystem;
+
 import Nork.Scene;
 
 namespace Nork {

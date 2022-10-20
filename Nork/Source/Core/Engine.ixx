@@ -1,18 +1,13 @@
-// export module Engine;
-#pragma once
+export module Nork.Core:Engine;
 
-#include "NorkWindow.h"
-#include "Core/CameraController.h"
-import Nork.Components;
-import Nork.Scene;
-import Nork.Physics;
-#include "RenderingSystem.h"
-#include "PhysicsSystem.h"
-#include "Core/ResourceManager.h"
-#include "ScriptSystem.h"
-import Nork.Renderer;
+export import :NorkWindow;
+export import :CameraController;
+export import :ResourceManager;
+export import :RenderingSystem;
+export import :PhysicsSystem;
+export import :ScriptSystem;
 
-namespace Nork
+export namespace Nork
 {
 	class Engine
 	{

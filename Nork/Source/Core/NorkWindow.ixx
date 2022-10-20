@@ -1,9 +1,9 @@
-#pragma once
+export module Nork.Core:NorkWindow;
 
 import Nork.Renderer;
-#include "Core/InputState.h"
+export import :InputState;
 
-namespace Nork
+export namespace Nork
 {
 	class Window
 	{

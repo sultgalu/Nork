@@ -1,5 +1,5 @@
-#include "pch.h"
-#include "ScriptSystem.h"
+module Nork.Core;
+
 import Application;
 import Nork.Components;
 

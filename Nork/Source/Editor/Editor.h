@@ -1,6 +1,5 @@
 #pragma once
-
-#include "Core/Engine.h"
+import Nork.Core;
 #include "Panels/include/Panel.h"
 #include "Panels/include/ShadersPanel.h"
 #include "Menus/include/Menu.h"

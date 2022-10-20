@@ -1,5 +1,4 @@
-#include "pch.h"
-#include "InputState.h"
+module Nork.Core;
 
 namespace Nork {
 	static Nork::Input& Self(GLFWwindow* windowPtr)

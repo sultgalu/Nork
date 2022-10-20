@@ -1,6 +1,6 @@
-#pragma once
+export module Nork.Renderer:Config;
 
-namespace Nork::Renderer::Config
+export namespace Nork::Renderer::Config
 {
 	struct LightData
 	{
@@ -19,8 +19,8 @@ namespace Nork::Renderer::Config
 	};
 
 #ifdef _DEBUG
-	inline static constexpr bool AssertSyncronization = true;
+	inline constexpr bool AssertSyncronization = true;
 #else
-	inline static constexpr bool AssertSyncronization = false;
+	inline constexpr bool AssertSyncronization = false;
 #endif
 }

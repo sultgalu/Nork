@@ -1,8 +1,6 @@
-#include "Core/CameraController.h"
 import Nork.Components;
+import Nork.Core;
 #include "Editor/Editor.h"
-#include "Core/NorkWindow.h"
-#include "Core/Engine.h"
 // #include "App/Application.h"
 
 import Application;

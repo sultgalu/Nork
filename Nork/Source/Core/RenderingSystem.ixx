@@ -1,11 +1,12 @@
-#pragma once
+module;
+
+export module Nork.Core:RenderingSystem;
 
 import Nork.Scene;
 import Nork.Renderer;
-#include "Modules/Renderer/Config.h"
 import Nork.Components;
 
-namespace Nork {
+export namespace Nork {
 
 	struct Viewport
 	{

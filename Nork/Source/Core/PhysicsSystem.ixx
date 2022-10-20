@@ -1,9 +1,9 @@
-#pragma once
+export module Nork.Core:PhysicsSystem;
 
 import Nork.Physics;
 import Nork.Components;
 
-namespace Nork {
+export namespace Nork {
 
 	class PhysicsSystem
 	{

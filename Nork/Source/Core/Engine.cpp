@@ -1,8 +1,5 @@
-// module Engine;
+module Nork.Core;
 
-#include "Engine.h"
-
-#include "Core/InputState.h"
 import Nork.Renderer;
 import Application;
 

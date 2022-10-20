@@ -1,7 +1,5 @@
 module Nork.Physics;
 
-#include "../Config.h"
-
 namespace Nork::Physics
 {
 	Pipeline::Pipeline()

@@ -1,5 +1,4 @@
-
-#include "ResourceManager.h"
+module Nork.Core;
 
 import Nork.Renderer;
 

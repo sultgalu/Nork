@@ -170,6 +170,7 @@
     <ClCompile Include="Source\App\Application.ixx" />
     <ClCompile Include="Source\Components\Impl\Collider.cpp" />
     <ClCompile Include="Source\Core\InputState.cpp" />
+    <ClCompile Include="Source\Core\Nork.Core.ixx" />
     <ClCompile Include="Source\Core\ScriptSystem.cpp" />
     <ClCompile Include="Source\Editor\Editor.cpp" />
     <ClCompile Include="Source\Editor\Menus\FileMenu.cpp" />
@@ -234,7 +235,7 @@
       </ForcedIncludeFiles>
     </ClCompile>
     <ClCompile Include="Source\Components\Collider.ixx" />
-    <ClInclude Include="Source\Core\ScriptSystem.h" />
+    <ClCompile Include="Source\Core\ScriptSystem.ixx" />
     <ClInclude Include="Source\Editor\Editor.h" />
     <ClInclude Include="Source\Editor\Menus\include\All.h" />
     <ClInclude Include="Source\Editor\Menus\include\FileMenu.h" />
@@ -263,8 +264,8 @@
     <ClCompile Include="Source\Modules\Renderer\Model\MeshFactory.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Data\Data.Material.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Data\Vertex.ixx" />
-    <ClInclude Include="Source\Core\PhysicsSystem.h" />
-    <ClInclude Include="Source\Core\ResourceManager.h" />
+    <ClCompile Include="Source\Core\PhysicsSystem.ixx" />
+    <ClCompile Include="Source\Core\ResourceManager.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Model\Material.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Buffer\BufferBuilder.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Framebuffer\FramebufferBuilder.ixx" />
@@ -275,8 +276,8 @@
     <ClCompile Include="Source\Modules\Renderer\Objects\VertexArray\VertexArrayBuilder.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Pipeline\Light\DirShadowMap.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Pipeline\Light\PointShadowMap.ixx" />
-    <ClInclude Include="Source\Core\RenderingSystem.h" />
-    <ClInclude Include="Source\Modules\Renderer\Config.h" />
+    <ClCompile Include="Source\Core\RenderingSystem.ixx" />
+    <ClCompile Include="Source\Modules\Renderer\Config.ixx" />
     <ClCompile Include="Source\Modules\Renderer\LoadUtils.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Data\Lights.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Model\Mesh.ixx" />
@@ -290,7 +291,7 @@
     <ClCompile Include="Source\Modules\Renderer\Objects\Framebuffer\Framebuffer.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Buffer\Buffer.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Shader\Shader.ixx" />
-    <ClInclude Include="Source\Core\NorkWindow.h" />
+    <ClCompile Include="Source\Core\NorkWindow.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Objects\GLObject.ixx">
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsCppModule</CompileAs>
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsCppModule</CompileAs>
@@ -321,7 +322,6 @@
     <ClCompile Include="Source\Scene\SceneNode.cpp" />
     <ClCompile Include="Source\Scene\Serialization\JsonSerializer.cpp" />
     <ClCompile Include="Source\Utils\Profiler.cpp" />
-    <ClInclude Include="Source\Modules\Physics\Config.h" />
     <ClCompile Include="Source\Modules\Physics\Pipeline\CollisionDetection.ixx" />
     <ClCompile Include="Source\Modules\Physics\Pipeline\CollisionDetectionCPU.ixx" />
     <ClCompile Include="Source\Modules\Physics\Data\Common.ixx" />
@@ -433,16 +433,16 @@
     <ClCompile Include="Source\Scene\Scene.ixx" />
     <ClCompile Include="Source\Components\Nork.Components.ixx" />
     <ClCompile Include="Source\Components\Drawable.ixx" />
-    <ClInclude Include="Source\Core\Engine.h">
+    <ClCompile Include="Source\Core\Engine.ixx">
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Default</CompileAs>
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Default</CompileAs>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
       <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch.h</ForcedIncludeFiles>
       <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</ForcedIncludeFiles>
-    </ClInclude>
-    <ClInclude Include="Source\Core\CameraController.h" />
-    <ClInclude Include="Source\Core\InputState.h" />
+    </ClCompile>
+    <ClCompile Include="Source\Core\CameraController.ixx" />
+    <ClCompile Include="Source\Core\InputState.ixx" />
     <ClCompile Include="Source\Scene\Serialization\JsonSerializer.ixx" />
     <ClCompile Include="Source\Utils\Input.ixx" />
     <ClCompile Include="Source\Components\Camera.ixx" />

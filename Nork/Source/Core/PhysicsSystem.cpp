@@ -1,5 +1,5 @@
-#include "pch.h"
-#include "PhysicsSystem.h"
+module Nork.Core;
+
 import Nork.Components;
 import Nork.Utils;
 

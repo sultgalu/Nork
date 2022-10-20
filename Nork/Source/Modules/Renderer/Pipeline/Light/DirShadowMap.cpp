@@ -1,7 +1,5 @@
 module Nork.Renderer;
 
-#include "../../Config.h"
-
 namespace Nork::Renderer {
 	DirShadowMap::DirShadowMap(std::shared_ptr<Shader> shader, uint32_t width, uint32_t height, TextureFormat depthFormat)
 		: shader(shader)

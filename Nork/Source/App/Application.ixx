@@ -1,7 +1,6 @@
 module;
 
-// #include "Core/Engine.h"
-#include "Core/Engine.h"
+import Nork.Core;
 
 export module Application;
 

@@ -1,7 +1,8 @@
-#pragma once
+export module Nork.Core:InputState;
+
 import Nork.Utils;
 
-namespace Nork
+export namespace Nork
 {
 	class Input: Template::Types::OnlyConstruct
 	{

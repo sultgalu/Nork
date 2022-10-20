@@ -1,10 +1,10 @@
-#pragma once
+export module Nork.Core:CameraController;
 
-#include "Core/InputState.h"
+export import :InputState;
 import Nork.Components;
 import Nork.Scene;
 
-namespace Nork
+export namespace Nork
 {
 	class CameraController
 	{

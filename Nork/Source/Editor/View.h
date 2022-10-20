@@ -1,5 +1,8 @@
 #pragma once
-#include "Core/Engine.h"
+
+import Nork.Core;
+import Nork.Scene;
+import Nork.Components;
 
 namespace Nork::Editor {
 

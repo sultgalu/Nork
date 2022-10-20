@@ -1,5 +1,5 @@
-#include "pch.h"
-#include "CameraController.h"
+module Nork.Core;
+
 import Application;
 
 namespace Nork

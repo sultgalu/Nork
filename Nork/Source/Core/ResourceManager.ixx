@@ -1,9 +1,9 @@
-#pragma once
+export module Nork.Core:ResourceManager;
 
 import Nork.Components;
 import Nork.Renderer;
 
-namespace Nork {
+export namespace Nork {
 	struct MeshResource
 	{
 		std::string mesh;

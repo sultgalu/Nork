@@ -1,6 +1,6 @@
 module Nork.Scene; 
 
-#include "Core/ResourceManager.h"
+import Nork.Core;
 import Application;
 
 namespace Nork {

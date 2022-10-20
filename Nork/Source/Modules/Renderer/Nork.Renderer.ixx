@@ -53,5 +53,6 @@ export import :Capabilities;
 
 export import :Window;
 
+export import :Config;
 export import :DrawUtils;
 export import :LoadUtils;

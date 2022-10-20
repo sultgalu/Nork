@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/Engine.h"
+import Nork.Core;
 
 namespace Nork {
 	class GameLoop
