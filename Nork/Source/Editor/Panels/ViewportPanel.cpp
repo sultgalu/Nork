@@ -1,5 +1,4 @@
-#include "pch.h"
-#include "include/ViewportPanel.h"
+module Nork.Editor.Panels;
 
 namespace Nork::Editor {
 	ViewportPanel::ViewportPanel()

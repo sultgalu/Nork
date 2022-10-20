@@ -1,9 +1,9 @@
-#pragma once
+export module Nork.Editor.Panels:ViewportPanel;
 
-#include "Panel.h"
-#include "../../Views/include/Viewport.h"
+import :Panel;
+import Nork.Editor.Views;
 
-namespace Nork::Editor {
+export namespace Nork::Editor {
 	class ViewportPanel : public Panel
 	{
 	public:

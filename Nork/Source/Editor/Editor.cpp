@@ -1,25 +1,13 @@
-#include "pch.h"
-#include "Editor.h"
-#include "Panels/include/All.h"
-#include "Menus/include/All.h"
+module Nork.Editor;
 
 import Application;
 import Nork.Utils;
+import Nork.Editor.Views;
 
 namespace Nork::Editor
 {
-	static CommonData* _commonData;
-	static Engine* _engine;
 	static Editor* _editor;
-	CommonData& _GetCommonData()
-	{
-		return *_commonData;
-	}
-	Engine& _GetEngine()
-	{
-		return *_engine;
-	}
-	Editor& _GetEditor()
+	Editor& Editor::Get()
 	{
 		return *_editor;
 	}
@@ -64,8 +52,8 @@ namespace Nork::Editor
 			return;
 		}
 		
-		auto& data = _GetCommonData();
-		auto& editor = _GetEditor();
+		auto& data = Editor::Get().data;
+		auto& editor = Editor::Get();
 		auto arr = root.Get<JsonArray>("cameras");
 		for (auto& json : arr.Get<JsonObject>())
 		{
@@ -88,7 +76,7 @@ namespace Nork::Editor
 	}
 	static void WriteImGuiIniFile(ImGuiContext* ctx, ImGuiSettingsHandler* handler, ImGuiTextBuffer* out_buf)
 	{
-		auto& data = _GetCommonData();
+		auto& data = Editor::Get().data;
 		JsonArray cameras;
 		for (auto& cam : data.editorCameras)
 		{
@@ -155,8 +143,6 @@ namespace Nork::Editor
 	Editor::Editor(Engine& engine)
 		: engine(engine)
 	{
-		_engine = &engine;
-		_commonData = &data;
 		_editor = this;
 
 		InitImGui();

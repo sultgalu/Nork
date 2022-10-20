@@ -1,8 +1,8 @@
-#pragma once
+export module Nork.Editor.Views:ShaderView;
 
-#include "../../View.h"
+import :View;
 
-namespace Nork::Editor {
+export namespace Nork::Editor {
 	class ShaderView : public View
 	{
 	public:

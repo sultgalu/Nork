@@ -1,4 +1,4 @@
-#include "include/Viewport.h"
+module Nork.Editor.Views;
 
 namespace Nork::Editor {
 	static glm::vec2 GetDisplaySize(glm::vec2 texSize)

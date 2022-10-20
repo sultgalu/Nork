@@ -1,8 +1,9 @@
-#pragma once
-#include "../../View.h"
+export module Nork.Editor.Views:Components;
+
+import :View;
 import Nork.Components;
 
-namespace Nork::Editor {
+export namespace Nork::Editor {
 	class SceneNodeView: public View
 	{
 	public:

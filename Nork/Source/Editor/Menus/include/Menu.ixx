@@ -1,7 +1,8 @@
-#pragma once
-#include "../../View.h"
+export module Nork.Editor.Menus:Menu;
 
-namespace Nork::Editor {
+import Nork.Editor.Views;
+
+export namespace Nork::Editor {
 
 	class Menu: public View
 	{

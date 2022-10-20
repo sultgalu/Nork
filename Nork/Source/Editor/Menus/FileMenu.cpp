@@ -1,4 +1,5 @@
-#include "include/FileMenu.h"
+module Nork.Editor.Menus;
+
 import Nork.FileDialog;
 
 namespace Nork::Editor {

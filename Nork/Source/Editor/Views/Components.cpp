@@ -1,5 +1,5 @@
-#include "include/Components.h"
-#include "../Views/include/Helpers.h"
+module Nork.Editor.Views;
+
 import Nork.FileDialog;
 
 namespace Nork::Editor {

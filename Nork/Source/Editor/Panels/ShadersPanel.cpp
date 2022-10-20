@@ -1,6 +1,4 @@
-#include "pch.h"
-#include "include/ShadersPanel.h"
-#include "../Views/include/ShaderView.h"
+module Nork.Editor.Panels;
 
 namespace Nork::Editor {
 	ShadersPanel::ShadersPanel(std::shared_ptr<Renderer::Shader> shader, const std::string& name)

@@ -1,5 +1,4 @@
-#include "pch.h"
-#include "include/PhysicsSettingsPanel.h"
+module Nork.Editor.Panels;
 
 namespace Nork::Editor {
 	PhysicsSettingsPanel::PhysicsSettingsPanel()

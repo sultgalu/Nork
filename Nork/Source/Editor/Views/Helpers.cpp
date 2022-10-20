@@ -1,4 +1,4 @@
-#include "include/Helpers.h"
+module Nork.Editor.Views;
 
 namespace Nork::Editor::Helpers {
 	bool TextEditable(std::string& text)

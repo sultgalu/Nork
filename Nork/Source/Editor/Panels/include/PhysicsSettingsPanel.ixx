@@ -1,8 +1,8 @@
-#pragma once
+export module Nork.Editor.Panels:PhysicsSettingsPanel;
 
-#include "Panel.h"
+import :Panel;
 
-namespace Nork::Editor {
+export namespace Nork::Editor {
 	class PhysicsSettingsPanel : public Panel
 	{
 	public:

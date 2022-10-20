@@ -1,4 +1,7 @@
-#include "include/HierarchyPanel.h"
+module Nork.Editor.Panels;
+
+import Nork.Scene;
+import Nork.Components;
 
 namespace Nork::Editor {
 	static bool del = false;

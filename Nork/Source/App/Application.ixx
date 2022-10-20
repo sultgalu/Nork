@@ -1,10 +1,6 @@
-module;
-
-import Nork.Core;
-
 export module Application;
 
-// import Engine;
+import Nork.Core;
 
 export namespace Nork
 {

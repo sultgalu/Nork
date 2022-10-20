@@ -1,8 +1,8 @@
-#pragma once
+export module Nork.Editor.Views:Viewport;
 
-#include "../../View.h"
+import :View;
 
-namespace Nork::Editor {
+export namespace Nork::Editor {
 	class ViewportView: public View
 	{
 	public:

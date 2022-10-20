@@ -1,9 +1,9 @@
-#pragma once
+export module Nork.Editor.Panels:ShadersPanel;
 
-#include "Panel.h"
-#include "../../Views/include/ShaderView.h"
+import :Panel;
+import Nork.Editor.Views;
 
-namespace Nork::Editor {
+export namespace Nork::Editor {
 
 	class ShadersPanel : public Panel
 	{

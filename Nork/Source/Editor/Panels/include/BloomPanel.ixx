@@ -1,7 +1,8 @@
-#pragma once
-#include "Panel.h"
+export module Nork.Editor.Panels:BloomPanel;
 
-namespace Nork::Editor {
+import :Panel;
+
+export namespace Nork::Editor {
 
 	class BloomPanel : public Panel
 	{

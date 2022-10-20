@@ -1,7 +1,8 @@
-#pragma once
-#include "../../View.h"
+export module Nork.Editor.Panels:Panel;
 
-namespace Nork::Editor {
+import Nork.Editor.Views;
+
+export namespace Nork::Editor {
 	struct PanelState
 	{
 		bool isFocused, isHovered, isDocked, isAppearing, isCollapsed;

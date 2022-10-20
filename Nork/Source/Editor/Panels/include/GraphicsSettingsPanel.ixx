@@ -1,7 +1,8 @@
-#pragma once
-#include "Panel.h"
+export module Nork.Editor.Panels:GraphicsSettingsPanel;
 
-namespace Nork::Editor {
+import :Panel;
+
+export namespace Nork::Editor {
 
 	class GraphicsSettingsPanel : public Panel
 	{

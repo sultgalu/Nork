@@ -1,10 +1,10 @@
-#pragma once
-import Nork.Core;
-#include "Panels/include/Panel.h"
-#include "Panels/include/ShadersPanel.h"
-#include "Menus/include/Menu.h"
+export module Nork.Editor;
 
-namespace Nork::Editor {
+import Nork.Core;
+import Nork.Editor.Panels;
+import Nork.Editor.Menus;
+
+export namespace Nork::Editor {
 	class Panel;
 	class Menu;
 
@@ -15,7 +15,8 @@ namespace Nork::Editor {
 		void Render();
 		void Update();
 		void UpdateImguiInputs();
-		void AddViewportPanel();
+		void AddViewportPanel(); 
+		static Editor& Get();
 	private:
 		void DrawPanelManager();
 		template<std::derived_from<Panel> T>
@@ -30,12 +31,13 @@ namespace Nork::Editor {
 			}
 			return nullptr;
 		}
+	public:
+		CommonData data;
+		Engine& engine;
 	private:
 		std::vector<std::unique_ptr<Panel>> panels;
 		std::vector<std::unique_ptr<ShadersPanel>> shaderPanels;
 		std::vector<std::unique_ptr<Menu>> menus;
-		CommonData data;
-		Engine& engine;
 		int viewportPanelCount = 0;
 	};
 }

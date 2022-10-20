@@ -1,6 +1,6 @@
 import Nork.Components;
 import Nork.Core;
-#include "Editor/Editor.h"
+import Nork.Editor;
 // #include "App/Application.h"
 
 import Application;

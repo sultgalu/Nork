@@ -1,5 +1,4 @@
-#include "pch.h"
-#include "include/BloomPanel.h"
+module Nork.Editor.Panels;
 
 namespace Nork::Editor {
 	BloomPanel::BloomPanel()

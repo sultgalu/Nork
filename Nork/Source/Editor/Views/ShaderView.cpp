@@ -1,5 +1,4 @@
-#include "pch.h"
-#include "include/ShaderView.h"
+module Nork.Editor.Views;
 
 namespace Nork::Editor {
 	ShaderView::ShaderView(std::shared_ptr<Renderer::Shader> shader)

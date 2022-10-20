@@ -1,5 +1,6 @@
-#include "include/InspectorPanel.h"
-#include "../Views/include/Components.h"
+module Nork.Editor.Panels;
+
+import Nork.Editor.Views;
 
 namespace Nork::Editor {
 	InspectorPanel::InspectorPanel()

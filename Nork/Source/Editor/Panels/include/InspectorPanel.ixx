@@ -1,7 +1,8 @@
-#pragma once
-#include "Panel.h"
+export module Nork.Editor.Panels:InspectorPanel;
 
-namespace Nork::Editor {
+import :Panel;
+
+export namespace Nork::Editor {
 
 	class InspectorPanel : public Panel
 	{

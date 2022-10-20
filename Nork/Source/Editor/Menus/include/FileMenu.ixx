@@ -1,8 +1,8 @@
-#pragma once
+export module Nork.Editor.Menus:FileMenu;
 
-#include "Menu.h"
+import :Menu;
 
-namespace Nork::Editor {
+export namespace Nork::Editor {
 	class FileMenu: public Menu
 	{
 	public:
