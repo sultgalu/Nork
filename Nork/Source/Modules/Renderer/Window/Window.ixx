@@ -1,8 +1,6 @@
-#pragma once
+export module Nork.Renderer:Window;
 
-#include "Utils/Input.h"
-
-namespace Nork::Renderer
+export namespace Nork::Renderer
 {
 	struct WindowSetup
 	{

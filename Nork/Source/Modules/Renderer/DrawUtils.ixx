@@ -1,6 +1,6 @@
-#pragma once
+export module Nork.Renderer:DrawUtils;
 
-namespace Nork::Renderer {
+export namespace Nork::Renderer {
 	class DrawUtils
 	{
 	public:

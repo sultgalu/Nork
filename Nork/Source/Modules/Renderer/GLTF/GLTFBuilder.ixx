@@ -1,9 +1,10 @@
-#pragma once
-#include "gltf.h"
-#include "../Model/Mesh.h"
-#include "../Model/Material.h"
+export module Nork.Renderer:GLTFBuilder;
 
-namespace Nork::Renderer {
+export import :Material;
+export import :Mesh;
+export import :GLTF;
+
+export namespace Nork::Renderer {
 	class GLTFBuilder
 	{
 	public:

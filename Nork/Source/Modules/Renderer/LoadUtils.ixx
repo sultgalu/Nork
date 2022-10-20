@@ -1,10 +1,10 @@
-#pragma once
+export module Nork.Renderer:LoadUtils;
 
-import Nork.Renderer;
-#include "Model/Mesh.h"
-#include "Model/Material.h"
+export import :Texture;
+export import :Material;
+export import Nork.Renderer.Data;
 
-namespace Nork::Renderer
+export namespace Nork::Renderer
 {
 	struct Image
 	{

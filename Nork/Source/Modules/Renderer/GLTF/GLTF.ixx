@@ -1,6 +1,8 @@
 #pragma once
 
-namespace Nork::Renderer::GLTF {
+export module Nork.Renderer:GLTF;
+
+export namespace Nork::Renderer::GLTF {
 	struct Property
 	{
 		virtual JsonObject ToJson() const = 0;

@@ -1,8 +1,6 @@
-#include "pch.h"
-#include "PointShadowMap.h"
-#include "../../State/Capabilities.h"
-#include "../../Config.h"
 import Nork.Renderer;
+
+#include "../../Config.h"
 
 namespace Nork::Renderer {
 	PointShadowMap::PointShadowMap(std::shared_ptr<Shader> shader, uint32_t size, TextureFormat depthFormat)

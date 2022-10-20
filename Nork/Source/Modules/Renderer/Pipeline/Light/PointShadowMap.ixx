@@ -1,10 +1,11 @@
-#pragma once
+export module Nork.Renderer:PointShadowMap;
 
-#include "../../Data/Lights.h"
-#include "../../Model/DrawBatch.h"
-import Nork.Renderer;
+import :DrawCommand;
+import :Framebuffer;
+import :Shader;
+export import Nork.Renderer.Data;
 
-namespace Nork::Renderer {
+export namespace Nork::Renderer {
 	class PointShadowMap
 	{
 	public:

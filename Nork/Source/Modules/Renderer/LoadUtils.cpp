@@ -1,4 +1,4 @@
-#include "LoadUtils.h"
+module Nork.Renderer;
 
 #define STB_IMAGE_IMPLEMENTATION
 //#define STBI_NO_BMP

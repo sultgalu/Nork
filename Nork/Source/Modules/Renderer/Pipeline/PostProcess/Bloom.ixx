@@ -1,7 +1,11 @@
-#pragma once
-import Nork.Renderer;
+export module Nork.Renderer:Bloom;
 
-namespace Nork::Renderer {
+export import :Buffer;
+export import :Texture;
+export import :Shader;
+export import :Framebuffer;
+
+export namespace Nork::Renderer {
 	class Bloom
 	{
 	public:

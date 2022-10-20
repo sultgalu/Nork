@@ -2,13 +2,7 @@
 
 #include "Scene/Scene.h"
 import Nork.Renderer;
-#include "Modules/Renderer/Pipeline/Light/DirShadowMap.h"
-#include "Modules/Renderer/Pipeline/Light/PointShadowMap.h"
-#include "Modules/Renderer/Pipeline/Deferred/DeferredPipeline.h"
 #include "Modules/Renderer/Config.h"
-#include "Modules/Renderer/Model/DrawBatch.h"
-#include "Modules/Renderer/Storage/DrawState.h"
-#include "Modules/Renderer/Pipeline/PostProcess/Bloom.h"
 
 namespace Nork {
 

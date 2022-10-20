@@ -1,6 +1,4 @@
-#include "pch.h"
-#include "DrawState.h"
-import Nork.Renderer;
+module Nork.Renderer;
 
 namespace Nork::Renderer {
 	DrawState::DrawState()

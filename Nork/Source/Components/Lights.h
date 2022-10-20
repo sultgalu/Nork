@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Modules/Renderer/Model/Light.h"
+import Nork.Renderer;
 
 namespace Nork::Components
 {

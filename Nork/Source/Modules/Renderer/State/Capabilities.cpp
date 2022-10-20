@@ -1,4 +1,4 @@
-#include "Capabilities.h"
+module Nork.Renderer;
 
 namespace Nork::Renderer {
 	static DepthFunc depthFunc;

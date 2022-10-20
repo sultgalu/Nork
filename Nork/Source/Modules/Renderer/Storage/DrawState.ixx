@@ -1,11 +1,11 @@
-#pragma once
+export module Nork.Renderer:DrawState;
 
-#include "TypedBuffers.h"
-#include "VertexArrayWrapper.h"
-#include "../Model/Material.h"
-#include "../Model/Light.h"
+export import :TypedBuffers;
+export import :VertexArrayWrapper;
+export import :Material;
+export import :Light;
 
-namespace Nork::Renderer {
+export namespace Nork::Renderer {
 	struct DrawState
 	{
 	public:

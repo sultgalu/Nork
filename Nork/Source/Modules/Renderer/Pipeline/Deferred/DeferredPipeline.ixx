@@ -1,9 +1,11 @@
-#pragma once
+export module Nork.Renderer:DeferredPipeline;
 
-import Nork.Renderer;
-#include "../../Model/DrawBatch.h"
+export import :DrawCommand;
+export import :Shader;
+export import :GeometryFramebuffer;
+export import :LightFramebuffer;
 
-namespace Nork::Renderer {
+export namespace Nork::Renderer {
 
 	class DeferredPipeline
 	{

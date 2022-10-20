@@ -1,8 +1,8 @@
-#pragma once
+export module Nork.Renderer:TypedBufferWrapper;
 
-#include "BufferWrapper.h"
+export import :BufferWrapper;
 
-namespace Nork::Renderer {
+export namespace Nork::Renderer {
 
 	template<class T, BufferTarget _Target>
 	class TypedBufferWrapper : BufferWrapper

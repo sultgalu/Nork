@@ -1,8 +1,4 @@
-#include "pch.h"
-#include "Bloom.h"
-import Nork.Renderer;
-#include "../../DrawUtils.h"
-#include "../../State/Capabilities.h"
+module Nork.Renderer;
 
 namespace Nork::Renderer {
 	static constexpr size_t maxTexCount = 20;

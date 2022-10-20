@@ -1,10 +1,11 @@
-#pragma once
+export module Nork.Renderer:SkyRenderer;
 
-#include "../../State/Capabilities.h"
-import Nork.Renderer;
-#include "../../DrawUtils.h"
+export import :Texture;
+export import :Shader;
+export import :DrawUtils;
+export import :Capabilities;
 
-namespace Nork::Renderer {
+export namespace Nork::Renderer {
 	class SkyRenderer
 	{
 	public:

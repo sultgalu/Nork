@@ -1,10 +1,10 @@
-#pragma once
+export module Nork.Renderer:Material;
 
-import Nork.Renderer;
-#include "../Data/Material.h"
-#include "../Storage/TypedBuffers.h"
+export import Nork.Renderer.Data;
 
-namespace Nork::Renderer {
+export import :Texture;
+
+export namespace Nork::Renderer {
 	enum class TextureMap: uint8_t
 	{
 		Diffuse = 0, Normal, Roughness, Reflection, COUNT

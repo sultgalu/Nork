@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Modules/Renderer/Window/Window.h"
+import Nork.Renderer;
 #include "Core/InputState.h"
 
 namespace Nork

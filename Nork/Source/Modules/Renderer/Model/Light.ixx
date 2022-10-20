@@ -1,10 +1,10 @@
-#pragma once
+export module Nork.Renderer:Light;
 
-#include "../Data/Lights.h"
-#include "../Pipeline/Light/PointShadowMap.h"
-#include "../Pipeline/Light/DirShadowMap.h"
+export import :PointShadowMap;
+export import :DirShadowMap;
+export import Nork.Renderer.Data;
 
-namespace Nork::Renderer {
+export namespace Nork::Renderer {
 	struct DirLight: Data::DirLight
 	{
 		DirLight(std::shared_ptr<Data::DirLight*> ptrRef)

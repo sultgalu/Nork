@@ -2,8 +2,8 @@
 
 #include "Engine.h"
 
-#include "Modules/Renderer/LoadUtils.h"
 #include "Core/InputState.h"
+import Nork.Renderer;
 import Application;
 
 namespace Nork

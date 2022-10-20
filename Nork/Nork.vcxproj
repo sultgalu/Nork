@@ -186,6 +186,7 @@
     <ClCompile Include="Source\Editor\Views\Viewport.cpp" />
     <ClCompile Include="Source\Modules\Renderer\gltf\GLTFBuilder.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Model\DrawBatch.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Model\DrawCommand.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Model\MeshFactory.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Nork.Renderer.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Pipeline\PostProcess\Bloom.cpp" />
@@ -241,17 +242,17 @@
     <ClInclude Include="Source\Editor\Views\include\Viewport.h" />
     <ClInclude Include="Source\Editor\View.h" />
     <ClInclude Include="Source\Main\GameLoop.h" />
-    <ClInclude Include="Source\Modules\Renderer\GLTF\GLTFBuilder.h" />
-    <ClInclude Include="Source\Modules\Renderer\Model\DrawBatch.h" />
-    <ClInclude Include="Source\Modules\Renderer\Model\Light.h" />
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\PostProcess\Bloom.h" />
-    <ClInclude Include="Source\Modules\Renderer\Storage\BufferWrapper.h" />
-    <ClInclude Include="Source\Modules\Renderer\Model\MeshFactory.h" />
-    <ClInclude Include="Source\Modules\Renderer\Data\Material.h" />
-    <ClInclude Include="Source\Modules\Renderer\Data\Vertex.h" />
+    <ClCompile Include="Source\Modules\Renderer\GLTF\GLTFBuilder.ixx" />
+    <ClCompile Include="Source\Modules\Renderer\Model\DrawBatch.ixx" />
+    <ClCompile Include="Source\Modules\Renderer\Model\Light.ixx" />
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\PostProcess\Bloom.ixx" />
+    <ClCompile Include="Source\Modules\Renderer\Storage\BufferWrapper.ixx" />
+    <ClCompile Include="Source\Modules\Renderer\Model\MeshFactory.ixx" />
+    <ClCompile Include="Source\Modules\Renderer\Data\Data.Material.ixx" />
+    <ClCompile Include="Source\Modules\Renderer\Data\Vertex.ixx" />
     <ClInclude Include="Source\Core\PhysicsSystem.h" />
     <ClInclude Include="Source\Core\ResourceManager.h" />
-    <ClInclude Include="Source\Modules\Renderer\Model\Material.h" />
+    <ClCompile Include="Source\Modules\Renderer\Model\Material.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Buffer\BufferBuilder.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Framebuffer\FramebufferBuilder.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Framebuffer\GeometryFramebufferBuilder.ixx" />
@@ -259,20 +260,20 @@
     <ClCompile Include="Source\Modules\Renderer\Objects\Shader\ShaderBuilder.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Texture\TextureBuilder.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Objects\VertexArray\VertexArrayBuilder.ixx" />
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\Light\DirShadowMap.h" />
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\Light\PointShadowMap.h" />
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\Light\DirShadowMap.ixx" />
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\Light\PointShadowMap.ixx" />
     <ClInclude Include="Source\Core\RenderingSystem.h" />
     <ClInclude Include="Source\Modules\Renderer\Config.h" />
-    <ClInclude Include="Source\Modules\Renderer\LoadUtils.h" />
-    <ClInclude Include="Source\Modules\Renderer\Data\Lights.h" />
-    <ClInclude Include="Source\Modules\Renderer\Model\Mesh.h" />
-    <ClInclude Include="Source\Modules\Renderer\DrawUtils.h" />
+    <ClCompile Include="Source\Modules\Renderer\LoadUtils.ixx" />
+    <ClCompile Include="Source\Modules\Renderer\Data\Lights.ixx" />
+    <ClCompile Include="Source\Modules\Renderer\Model\Mesh.ixx" />
+    <ClCompile Include="Source\Modules\Renderer\DrawUtils.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Framebuffer\GeometryFramebuffer.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Framebuffer\LightFramebuffer.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Objects\GLManager.ixx">
       <FileType>Document</FileType>
     </ClCompile>
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\Deferred\DeferredPipeline.h" />
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\Deferred\DeferredPipeline.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Framebuffer\Framebuffer.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Buffer\Buffer.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Shader\Shader.ixx" />
@@ -284,14 +285,14 @@
     <ClCompile Include="Source\Modules\Renderer\Objects\Texture\TextureAttributes.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Texture\TextureFormat.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Texture\TextureParams.ixx" />
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\PostProcess\SkyRenderer.h" />
-    <ClInclude Include="Source\Modules\Renderer\State\Capabilities.h" />
-    <ClInclude Include="Source\Modules\Renderer\Storage\TypedBuffers.h" />
-    <ClInclude Include="Source\Modules\Renderer\Storage\DrawState.h" />
-    <ClInclude Include="Source\Modules\Renderer\Storage\VertexArrayWrapper.h" />
-    <ClInclude Include="Source\Modules\Renderer\Storage\TypedBufferWrapper.h" />
-    <ClInclude Include="Source\Modules\Renderer\Window\Window.h" />
-    <ClInclude Include="Source\Modules\Renderer\GLTF\gltf.h" />
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\PostProcess\SkyRenderer.ixx" />
+    <ClCompile Include="Source\Modules\Renderer\State\Capabilities.ixx" />
+    <ClCompile Include="Source\Modules\Renderer\Storage\TypedBuffers.ixx" />
+    <ClCompile Include="Source\Modules\Renderer\Storage\DrawState.ixx" />
+    <ClCompile Include="Source\Modules\Renderer\Storage\VertexArrayWrapper.ixx" />
+    <ClCompile Include="Source\Modules\Renderer\Storage\TypedBufferWrapper.ixx" />
+    <ClCompile Include="Source\Modules\Renderer\Window\Window.ixx" />
+    <ClCompile Include="Source\Modules\Renderer\GLTF\GLTF.ixx" />
     <ClInclude Include="Source\ThirdParty\include\entt\entt.hpp" />
     <ClInclude Include="Source\ThirdParty\include\stb\stb_image.h" />
     <ClInclude Include="Source\ThirdParty\include\stb\stb_image_write.h" />
@@ -429,7 +430,6 @@
     </ClInclude>
     <ClInclude Include="Source\Core\CameraController.h" />
     <ClInclude Include="Source\Core\InputState.h" />
-    <ClInclude Include="Source\Scene\Serialization\GLTFSerializer.h" />
     <ClInclude Include="Source\Scene\Serialization\JsonSerializer.h" />
     <ClInclude Include="Source\Utils\Input.h" />
     <ClInclude Include="Source\Components\Camera.h" />
@@ -444,6 +444,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\OneDrive\Dokumentumok\GameEngine_0\GameEngineEditor\resources\shaders\lightPass.shader" />
+    <ClCompile Include="Source\Modules\Renderer\Data\Nork.Renderer.Data.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
     <None Include="Source\Shaders\bloom.shader" />
     <None Include="Source\Shaders\bloom2.shader" />
     <None Include="Source\Shaders\bloom3.shader" />

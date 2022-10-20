@@ -1,6 +1,6 @@
-#pragma once
+export module Nork.Renderer:Capabilities;
 
-namespace Nork::Renderer {
+export namespace Nork::Renderer {
 	enum class DepthFunc
 	{
 		Less = GL_LESS, LessOrEqual = GL_LEQUAL

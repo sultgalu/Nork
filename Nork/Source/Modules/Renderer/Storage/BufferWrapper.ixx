@@ -1,8 +1,8 @@
-#pragma once
+export module Nork.Renderer:BufferWrapper;
 
-import Nork.Renderer;
+export import :Buffer;
 
-namespace Nork::Renderer {
+export namespace Nork::Renderer {
 	class BufferWrapper
 	{
 	public:

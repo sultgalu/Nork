@@ -1,11 +1,9 @@
-#pragma once
+export module Nork.Renderer:TypedBuffers;
 
-#include "TypedBufferWrapper.h"
-#include "../Data/Material.h"
-#include "../Data/Lights.h"
-#include "../Data/Vertex.h"
+export import :TypedBufferWrapper;
+export import Nork.Renderer.Data;
 
-namespace Nork::Renderer {
+export namespace Nork::Renderer {
 	using DefaultVBO = VBO<Data::Vertex>;
 
 	using MaterialUBO = UBO<Data::Material>;

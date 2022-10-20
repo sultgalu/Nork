@@ -1,4 +1,4 @@
-#include "DrawBatch.h"
+module Nork.Renderer;
 
 namespace Nork::Renderer {
 	DrawBatch::DrawBatch(MatrixUBO& modelUBO, MaterialUBO& materialUBO, VAO& vao)

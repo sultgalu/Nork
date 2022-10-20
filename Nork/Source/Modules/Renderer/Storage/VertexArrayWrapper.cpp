@@ -1,6 +1,4 @@
-#include "pch.h"
-#include "VertexArrayWrapper.h"
-import Nork.Renderer;
+module Nork.Renderer;
 
 namespace Nork::Renderer {
 	VAO::VAO(size_t vertexLimit, size_t indexLimit)

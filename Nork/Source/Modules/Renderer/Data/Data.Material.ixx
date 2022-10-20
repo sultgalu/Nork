@@ -1,5 +1,6 @@
-#pragma once
-namespace Nork::Renderer::Data {
+export module Nork.Renderer.Data:Material;
+
+export namespace Nork::Renderer::Data {
 	struct Material
 	{
 		uint64_t diffuseMap;

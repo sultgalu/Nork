@@ -1,5 +1,4 @@
-#include "pch.h"
-#include "Window.h"
+module Nork.Renderer;
 
 namespace Nork::Renderer
 {

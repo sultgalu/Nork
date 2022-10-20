@@ -1,8 +1,8 @@
-#pragma once
+export module Nork.Renderer:Mesh;
 
-#include "../Storage/VertexArrayWrapper.h"
+export import :VertexArrayWrapper;
 
-namespace Nork::Renderer {
+export namespace Nork::Renderer {
 	class Mesh
 	{
 	public:

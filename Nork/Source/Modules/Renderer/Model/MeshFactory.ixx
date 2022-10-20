@@ -1,8 +1,8 @@
-#pragma once
+export module Nork.Renderer:MeshFactory;
 
-#include "Mesh.h"
+export import :Mesh;
 
-namespace Nork::Renderer {
+export namespace Nork::Renderer {
 	class MeshFactory
 	{
 	public:

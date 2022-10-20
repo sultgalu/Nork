@@ -1,9 +1,7 @@
 #pragma once
 
 #include "Components/Drawable.h"
-#include "Modules/Renderer/Model/MeshFactory.h"
-#include "Modules/Renderer/Storage/DrawState.h"
-#include "Modules/Renderer/GLTF/gltf.h"
+import Nork.Renderer;
 
 namespace Nork {
 	struct MeshResource

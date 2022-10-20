@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Modules/Renderer/Model/Mesh.h"
-#include "Modules/Renderer/Model/Material.h"
+import Nork.Renderer;
 
 namespace Nork {
 }

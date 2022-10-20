@@ -1,5 +1,4 @@
-#include "Material.h"
-import Nork.Renderer;
+module Nork.Renderer;
 
 namespace Nork::Renderer {
 	static std::shared_ptr<Texture2D> CreateTexture2D(TextureFormat format, std::vector<float> data)

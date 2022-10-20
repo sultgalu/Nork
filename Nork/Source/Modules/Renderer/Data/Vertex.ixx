@@ -1,6 +1,6 @@
-#pragma once
+export module Nork.Renderer.Data:Vertex;
 
-namespace Nork::Renderer::Data {
+export namespace Nork::Renderer::Data {
 	struct Vertex
 	{
 		glm::vec3 position, normal;

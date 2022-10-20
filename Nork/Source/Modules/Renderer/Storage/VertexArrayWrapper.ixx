@@ -1,9 +1,9 @@
-#pragma once
+export module Nork.Renderer:VertexArrayWrapper;
 
-#include "TypedBuffers.h"
-import Nork.Renderer;
+export import :TypedBuffers;
+export import :VertexArray;
 
-namespace Nork::Renderer {
+export namespace Nork::Renderer {
 	class VAO
 	{
 	public:

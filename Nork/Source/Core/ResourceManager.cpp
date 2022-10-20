@@ -2,8 +2,6 @@
 #include "ResourceManager.h"
 
 import Nork.Renderer;
-#include "Modules/Renderer/GLTF/GLTFBuilder.h"
-#include "Modules/Renderer/LoadUtils.h"
 
 namespace Nork {
 	namespace fs = std::filesystem;

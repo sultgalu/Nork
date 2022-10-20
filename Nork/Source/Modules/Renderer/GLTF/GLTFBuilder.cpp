@@ -1,4 +1,4 @@
-#include "GLTFBuilder.h"
+module Nork.Renderer;
 
 namespace Nork::Renderer {
 	static GLTF::Buffer WriteIndexBuffer(std::shared_ptr<Renderer::Mesh> mesh, GLTF::Buffer& buffer, const std::string& path)

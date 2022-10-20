@@ -1,6 +1,6 @@
-#pragma once
+export module Nork.Renderer.Data:Lights;
 
-namespace Nork::Renderer::Data
+export namespace Nork::Renderer::Data
 {
 	struct PointLight
 	{
