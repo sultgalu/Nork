@@ -1,8 +1,7 @@
 #pragma once
 
 #include "../../State/Capabilities.h"
-#include "../../Objects/Texture/Texture.h"
-#include "../../Objects/Shader/Shader.h"
+import Nork.Renderer;
 #include "../../DrawUtils.h"
 
 namespace Nork::Renderer {

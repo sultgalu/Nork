@@ -1,8 +1,6 @@
 #pragma once
 
-#include "../Objects/Shader/Shader.h"
-#include "../Objects/VertexArray/VertexArray.h"
-#include "../Objects/Buffer/BufferBuilder.h"
+import Nork.Renderer;
 #include "../Storage/TypedBuffers.h"
 #include "Mesh.h"
 #include "Material.h"

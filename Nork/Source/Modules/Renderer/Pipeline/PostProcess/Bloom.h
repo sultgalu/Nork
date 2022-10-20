@@ -1,8 +1,5 @@
 #pragma once
-
-#include "../../Objects/Framebuffer/Framebuffer.h"
-#include "../../Objects/Buffer/Buffer.h"
-#include "../../Objects/Shader/Shader.h"
+import Nork.Renderer;
 
 namespace Nork::Renderer {
 	class Bloom

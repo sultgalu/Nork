@@ -1,6 +1,5 @@
 #include "MeshFactory.h"
-#include "../Objects/Buffer/BufferBuilder.h"
-#include "../Objects/VertexArray/VertexArrayBuilder.h"
+import Nork.Renderer;
 
 namespace Nork::Renderer {
 	std::vector<unsigned int> GetCubeIndices();

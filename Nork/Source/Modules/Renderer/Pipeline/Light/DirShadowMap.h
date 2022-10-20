@@ -2,8 +2,7 @@
 
 #include "../../Data/Lights.h"
 #include "../../Model/DrawBatch.h"
-#include "../../Objects/Shader/Shader.h"
-#include "../../Objects/Framebuffer/Framebuffer.h"
+import Nork.Renderer;
 
 namespace Nork::Renderer {
 

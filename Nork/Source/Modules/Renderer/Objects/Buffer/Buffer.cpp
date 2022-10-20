@@ -1,5 +1,5 @@
-#include "pch.h"
-#include "Buffer.h"
+module Nork.Renderer;
+
 namespace Nork::Renderer {
 	static std::unordered_map<BufferTarget, GLuint> boundBuffers;
 

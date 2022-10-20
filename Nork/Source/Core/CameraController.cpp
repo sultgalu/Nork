@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "CameraController.h"
-#include "App/Application.h"
+import Application;
 
 namespace Nork
 {

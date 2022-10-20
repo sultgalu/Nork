@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../Data/Lights.h"
-//#include "../Objects/Texture/Texture.h"
 #include "../Pipeline/Light/PointShadowMap.h"
 #include "../Pipeline/Light/DirShadowMap.h"
 

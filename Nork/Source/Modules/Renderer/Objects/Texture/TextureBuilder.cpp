@@ -1,5 +1,4 @@
-#include "TextureBuilder.h"
-#include "../GLManager.h"
+module Nork.Renderer;
 
 namespace Nork::Renderer {
 	static std::vector<int> QuerySupportedCompressedFormats()

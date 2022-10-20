@@ -6,13 +6,16 @@
 #include "Editor/Editor.h"
 #include "Core/NorkWindow.h"
 #include "Core/Engine.h"
-#include "App/Application.h"
+// #include "App/Application.h"
+
+import Application;
+
 using namespace Nork;
 
 int main()
 {
 	Logger::PushStream(std::cout);
-
+	
 	auto& engine = Application::Get().engine;
 
 	Editor::Editor editor(engine);

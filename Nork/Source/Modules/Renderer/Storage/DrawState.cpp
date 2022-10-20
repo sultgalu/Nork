@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "DrawState.h"
-#include "../Objects/Buffer/BufferBuilder.h"
+import Nork.Renderer;
 
 namespace Nork::Renderer {
 	DrawState::DrawState()

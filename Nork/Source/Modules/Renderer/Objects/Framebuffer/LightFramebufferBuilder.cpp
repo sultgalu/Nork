@@ -1,6 +1,4 @@
-#include "LightFramebufferBuilder.h"
-#include "../GLManager.h"
-#include "../Texture/TextureBuilder.h"
+module Nork.Renderer;
 
 namespace Nork::Renderer {
 

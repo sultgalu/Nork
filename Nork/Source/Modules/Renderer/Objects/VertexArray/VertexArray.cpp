@@ -1,5 +1,4 @@
-#include "pch.h"
-#include "VertexArray.h"
+module Nork.Renderer;
 
 namespace Nork::Renderer {
 

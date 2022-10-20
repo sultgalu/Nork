@@ -1,6 +1,4 @@
-#include "FramebufferBuilder.h"
-#include "../GLManager.h"
-
+module Nork.Renderer;
 
 namespace Nork::Renderer {
 	std::shared_ptr<Framebuffer> FramebufferBuilder::Create()

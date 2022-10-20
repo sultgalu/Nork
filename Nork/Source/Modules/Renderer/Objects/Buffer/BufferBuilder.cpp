@@ -1,5 +1,4 @@
-#include "BufferBuilder.h"
-#include "../GLManager.h"
+module Nork.Renderer;
 
 namespace Nork::Renderer {
 	std::shared_ptr<Buffer> BufferBuilder::Create()

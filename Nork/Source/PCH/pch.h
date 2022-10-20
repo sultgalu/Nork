@@ -66,8 +66,8 @@
 ////-----------------OPENGL-----------------------
 
 #include <glad/glad.h>
-#include <glm/glm/gtc/matrix_transform.hpp>
-#include <glm/glm/gtc/quaternion.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 #include <glfw/glfw3.h>
 
@@ -80,7 +80,7 @@
 
 ////-----------------OTHERS-----------------------
 
-#include <entt/single_include/entt/entt.hpp>
+#include <entt/entt.hpp>
 
 //--------------OURS----------------
 

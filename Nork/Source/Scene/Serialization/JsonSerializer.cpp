@@ -1,5 +1,6 @@
 #include "JsonSerializer.h"
-#include "App/Application.h"
+#include "Core/ResourceManager.h"
+import Application;
 
 namespace Nork {
 

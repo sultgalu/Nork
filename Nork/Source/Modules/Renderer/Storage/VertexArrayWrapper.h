@@ -1,7 +1,7 @@
 #pragma once
 
 #include "TypedBuffers.h"
-#include "../Objects/VertexArray/VertexArray.h"
+import Nork.Renderer;
 
 namespace Nork::Renderer {
 	class VAO

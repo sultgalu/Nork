@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Objects/Buffer/Buffer.h"
+import Nork.Renderer;
 
 namespace Nork::Renderer {
 	class BufferWrapper

@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "NorkWindow.h"
-#include "App/Application.h"
+import Application;
 
 namespace Nork
 {

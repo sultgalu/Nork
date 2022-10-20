@@ -1,9 +1,8 @@
 #include "pch.h"
 #include "DirShadowMap.h"
-#include "../../State/Capabilities.h"
+#include "../../State/Capabilities.h"	
 #include "../../Config.h"
-#include "../../Objects/Texture/TextureBuilder.h"
-#include "../../Objects/Framebuffer/FramebufferBuilder.h"
+import Nork.Renderer;
 
 namespace Nork::Renderer {
 	DirShadowMap::DirShadowMap(std::shared_ptr<Shader> shader, uint32_t width, uint32_t height, TextureFormat depthFormat)

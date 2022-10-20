@@ -1,8 +1,6 @@
 #pragma once
 
-#include "../../Objects/Framebuffer/GeometryFramebuffer.h"
-#include "../../Objects/Framebuffer/LightFramebuffer.h"
-#include "../../Objects/Shader/Shader.h"
+import Nork.Renderer;
 #include "../../Model/DrawBatch.h"
 
 namespace Nork::Renderer {

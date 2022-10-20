@@ -1,5 +1,4 @@
-#include "pch.h"
-#include "Texture.h"
+module Nork.Renderer;
 
 namespace Nork::Renderer {
 	static GLuint boundTextures[32]{0};

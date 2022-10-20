@@ -1,5 +1,4 @@
-#include "ShaderBuilder.h"
-#include "../GLManager.h"
+module Nork.Renderer;
 
 namespace Nork::Renderer {
 	ShaderBuilder& ShaderBuilder::Sources(const std::unordered_map<ShaderType, std::string>& sources)

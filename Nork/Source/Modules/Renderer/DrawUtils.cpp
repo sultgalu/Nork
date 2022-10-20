@@ -1,6 +1,5 @@
 #include "DrawUtils.h"
-#include "Objects/Buffer/BufferBuilder.h"
-#include "Objects/VertexArray/VertexArrayBuilder.h"
+import Nork.Renderer;
 
 namespace Nork::Renderer {
 

@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Objects/Shader/Shader.h"
-#include "Objects/Texture/Texture.h"
+import Nork.Renderer;
 #include "Model/Mesh.h"
 #include "Model/Material.h"
 

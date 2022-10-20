@@ -1,18 +1,19 @@
+// export module Engine;
 #pragma once
+
 #include "NorkWindow.h"
 #include "Core/CameraController.h"
 #include "Scene/Scene.h"
 #include "PolygonMesh.h"
 #include "Modules/Physics/Data/World.h"
-#include "Modules/Renderer/Objects/Shader/Shader.h"
 #include "RenderingSystem.h"
 #include "PhysicsSystem.h"
 #include "Core/ResourceManager.h"
 #include "ScriptSystem.h"
+import Nork.Renderer;
 
 namespace Nork
 {
-
 	class Engine
 	{
 	public:

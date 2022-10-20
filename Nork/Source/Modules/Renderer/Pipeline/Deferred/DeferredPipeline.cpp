@@ -1,8 +1,6 @@
-#include "pch.h"
+import Nork.Renderer;
 #include "DeferredPipeline.h"
 #include "../../State/Capabilities.h"
-#include "../../Objects/Framebuffer/GeometryFramebufferBuilder.h"
-#include "../../Objects/Framebuffer/LightFramebufferBuilder.h"
 #include "../../DrawUtils.h"
 
 namespace Nork::Renderer {

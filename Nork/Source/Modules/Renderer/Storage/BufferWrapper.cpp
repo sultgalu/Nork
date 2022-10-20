@@ -1,5 +1,5 @@
 #include "BufferWrapper.h"
-#include "../Objects/Buffer/BufferBuilder.h"
+import Nork.Renderer;
 
 namespace Nork::Renderer {
 	BufferWrapper::BufferWrapper(BufferTarget target, uint32_t stride, size_t initialCount)

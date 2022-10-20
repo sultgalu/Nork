@@ -1,6 +1,4 @@
-#include "pch.h"
-#include "Shader.h"
-#include "Shader.h"
+module Nork.Renderer;
 
 namespace Nork::Renderer {
 	std::unordered_map<std::string, size_t> Shader::QueryAllUniformNamesAndTypes()

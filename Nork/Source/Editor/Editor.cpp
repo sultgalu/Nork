@@ -1,8 +1,9 @@
 #include "pch.h"
 #include "Editor.h"
-#include "App/Application.h"
 #include "Panels/include/All.h"
 #include "Menus/include/All.h"
+
+import Application;
 
 namespace Nork::Editor
 {

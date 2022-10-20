@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "ScriptSystem.h"
-#include "App/Application.h"
+import Application;
 
 namespace Nork {
 	void ScriptSystem::Update()

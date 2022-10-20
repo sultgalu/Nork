@@ -1,8 +1,6 @@
 #include "pch.h"
 #include "Bloom.h"
-#include "../../Objects/Buffer/BufferBuilder.h"
-#include "../../Objects/Texture/TextureBuilder.h"
-#include "../../Objects/Framebuffer/FramebufferBuilder.h"
+import Nork.Renderer;
 #include "../../DrawUtils.h"
 #include "../../State/Capabilities.h"
 

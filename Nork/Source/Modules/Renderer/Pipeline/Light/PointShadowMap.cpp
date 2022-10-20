@@ -2,8 +2,7 @@
 #include "PointShadowMap.h"
 #include "../../State/Capabilities.h"
 #include "../../Config.h"
-#include "../../Objects/Framebuffer/FramebufferBuilder.h"
-#include "../../Objects/Texture/TextureBuilder.h"
+import Nork.Renderer;
 
 namespace Nork::Renderer {
 	PointShadowMap::PointShadowMap(std::shared_ptr<Shader> shader, uint32_t size, TextureFormat depthFormat)

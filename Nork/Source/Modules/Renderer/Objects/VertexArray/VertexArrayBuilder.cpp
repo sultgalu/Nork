@@ -1,5 +1,4 @@
-#include "VertexArrayBuilder.h"
-#include "../GLManager.h"
+module Nork.Renderer;
 
 namespace Nork::Renderer {
 	std::shared_ptr<VertexArray> VertexArrayBuilder::Create(std::source_location loc)

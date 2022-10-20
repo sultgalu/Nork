@@ -1,12 +1,7 @@
 #include "RenderingSystem.h"
-#include "Modules/Renderer/Objects/Framebuffer/GeometryFramebufferBuilder.h"
-#include "Modules/Renderer/Objects/Framebuffer/LightFramebufferBuilder.h"
-#include "Modules/Renderer/Objects/Shader/ShaderBuilder.h"
 #include "Modules/Renderer/Pipeline/PostProcess/SkyRenderer.h"
 #include "Modules/Renderer/LoadUtils.h"
-#include "Modules/Renderer/Objects/Texture/TextureBuilder.h"
-#include "Modules/Renderer/Objects/Buffer/BufferBuilder.h"
-#include "Modules/Renderer/Objects/VertexArray/VertexArrayBuilder.h"
+import Nork.Renderer;
 
 namespace Nork {
 	void RenderingSystem::OnDLightAdded(entt::registry& reg, entt::entity id)

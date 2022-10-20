@@ -1,4 +1,4 @@
-#include "GLManager.h"
+module Nork.Renderer;
 
 namespace Nork::Renderer {
 	GLManager& GLManager::Get()

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Objects/Texture/Texture.h"
+import Nork.Renderer;
 #include "../Data/Material.h"
 #include "../Storage/TypedBuffers.h"
 
