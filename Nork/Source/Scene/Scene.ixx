@@ -1,6 +1,7 @@
 export module Nork.Scene:Scene;
 
 import :SceneNode;
+import <entt/entt.hpp>;
 
 export namespace Nork
 {

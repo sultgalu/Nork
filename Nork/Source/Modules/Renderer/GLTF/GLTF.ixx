@@ -1,5 +1,3 @@
-#pragma once
-
 export module Nork.Renderer:GLTF;
 export import Nork.Utils;
 

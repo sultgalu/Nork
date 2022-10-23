@@ -1,5 +1,3 @@
-#pragma once
-
 export module Nork.Renderer:GLManager;
 
 export import :Buffer;

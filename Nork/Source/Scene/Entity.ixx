@@ -1,6 +1,7 @@
 export module Nork.Scene:Entity;
 
 import Nork.Components;
+import <entt/entt.hpp>;
 
 export namespace Nork {
 	class Entity
@@ -9,10 +10,10 @@ export namespace Nork {
 		Entity(entt::entity id, entt::registry& registry)
 			: id(id), registry(registry)
 		{}
-		template<class T, class... A>
-		inline T& AddComponent(A... args)
+		template<class T>
+		inline T& AddComponent()
 		{
-			return registry.emplace<T>(id, args...);
+			return registry.emplace<T>(id);
 		}
 		template<class T, class F>
 		inline T& AddComponent(F&& f)

@@ -8,7 +8,7 @@ namespace Nork {
 	ResourceManager::ResourceManager(Renderer::DrawState& drawState)
 		: drawState(drawState)
 	{
-		assetsPath = fs::current_path().append("Assets");
+		assetsPath = fs::current_path() / "Assets";
 		fs::create_directory(assetsPath);
 		fs::create_directory(BufferBinariesPath());
 		fs::create_directory(ImagesPath());

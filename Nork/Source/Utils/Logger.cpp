@@ -1,4 +1,5 @@
-#include "Logger.h"
+module Nork.Logger;
+// #include "Logger.h"
 
 namespace Nork
 {

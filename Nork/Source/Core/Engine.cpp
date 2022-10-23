@@ -18,7 +18,7 @@ namespace Nork
 	{
 		auto& dr = reg.get<Components::Drawable>(id);
 		dr.model = resourceManager.GetModel("");
-	
+
 		auto* tr = reg.try_get<Components::Transform>(id);
 		dr.modelMatrix = renderingSystem.drawState.modelMatrixBuffer.Add(glm::identity<glm::mat4>());
 	}

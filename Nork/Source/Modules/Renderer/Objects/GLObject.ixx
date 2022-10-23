@@ -1,5 +1,3 @@
-#pragma once
-
 export module Nork.Renderer:GLObject;
 
 export namespace Nork::Renderer {

@@ -21,8 +21,14 @@ namespace Nork
 				NoCopyConstruct(const NoCopyConstruct&) = delete;
 				NoCopyConstruct(NoCopyConstruct&) = delete;
 			};
-			struct NoCopyAssign : std::_Deleted_copy_assign<Base> {};
-			struct NoMoveAssign : std::_Deleted_move_assign<Base> {};
+			struct NoCopyAssign // : std::_Deleted_copy_assign<Base> {};
+			{
+				NoCopyAssign& operator=(const NoCopyAssign&) = delete;
+			};
+			struct NoMoveAssign // : std::_Deleted_move_assign<Base> {};
+			{
+				NoMoveAssign& operator=(NoMoveAssign&&) = delete;
+			};
 
 			struct NoCopy : NoCopyAssign, NoCopyConstruct {};
 			struct NoMove : NoMoveAssign {};

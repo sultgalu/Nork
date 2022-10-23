@@ -1,11 +1,12 @@
 export module Nork.Core:Engine;
 
-export import :NorkWindow;
-export import :CameraController;
-export import :ResourceManager;
-export import :RenderingSystem;
-export import :PhysicsSystem;
-export import :ScriptSystem;
+import :NorkWindow;
+import :CameraController;
+import :ResourceManager;
+import :RenderingSystem;
+import :PhysicsSystem;
+import :ScriptSystem;
+import <entt/entt.hpp>;
 
 export namespace Nork
 {

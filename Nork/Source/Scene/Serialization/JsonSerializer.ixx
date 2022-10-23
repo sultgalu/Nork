@@ -1,6 +1,7 @@
 export module Nork.Scene:JsonSerializer;
 
 import :SceneNode;
+import <entt/entt.hpp>;
 
 export namespace Nork {
 	class JsonSerializer

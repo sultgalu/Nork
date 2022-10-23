@@ -1,10 +1,9 @@
-module;
-
 export module Nork.Core:RenderingSystem;
 
 import Nork.Scene;
 import Nork.Renderer;
 import Nork.Components;
+import <entt/entt.hpp>;
 
 export namespace Nork {
 

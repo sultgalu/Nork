@@ -2,6 +2,7 @@ export module Nork.Core:PhysicsSystem;
 
 import Nork.Physics;
 import Nork.Components;
+import <entt/entt.hpp>;
 
 export namespace Nork {
 

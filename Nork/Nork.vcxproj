@@ -131,9 +131,12 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>Source/PCH;Source;</AdditionalIncludeDirectories>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <ForcedIncludeFiles>pch.h</ForcedIncludeFiles>
+      <ForcedIncludeFiles>common.h</ForcedIncludeFiles>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+      <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -152,10 +155,12 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>Source/PCH;Source;</AdditionalIncludeDirectories>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <ForcedIncludeFiles>pch.h</ForcedIncludeFiles>
+      <ForcedIncludeFiles>common.h</ForcedIncludeFiles>
       <UseStandardPreprocessor>true</UseStandardPreprocessor>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+      <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -223,7 +228,31 @@
     <ClCompile Include="Source\Modules\Renderer\Window\Window.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Texture\Texture.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\VertexArray\VertexArray.cpp" />
+    <ClCompile Include="Source\PCH\Nork.Common.ixx">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="Source\PCH\Nork.std.ixx">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="Source\Scene\Nork.Scene.ixx" />
+    <ClCompile Include="Source\Utils\Logger.ixx">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
     <ClCompile Include="Source\Utils\Nork.Utils.ixx">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -257,7 +286,6 @@
     <ClCompile Include="Source\Editor\Views\include\ShaderView.ixx" />
     <ClCompile Include="Source\Editor\Views\include\Viewport.ixx" />
     <ClCompile Include="Source\Editor\Views\include\View.ixx" />
-    <ClInclude Include="Source\Main\GameLoop.h" />
     <ClCompile Include="Source\Modules\Renderer\GLTF\GLTFBuilder.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Model\DrawBatch.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Model\Light.ixx" />
@@ -309,9 +337,14 @@
     <ClCompile Include="Source\Modules\Renderer\Storage\TypedBufferWrapper.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Window\Window.ixx" />
     <ClCompile Include="Source\Modules\Renderer\GLTF\GLTF.ixx" />
-    <ClInclude Include="Source\ThirdParty\include\entt\entt.hpp" />
-    <ClInclude Include="Source\ThirdParty\include\stb\stb_image.h" />
-    <ClInclude Include="Source\ThirdParty\include\stb\stb_image_write.h" />
+    <ClCompile Include="Source\PCH\ThirdParty.h">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsHeaderUnit</CompileAs>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsHeaderUnit</CompileAs>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
     <ClCompile Include="Source\Utils\FileUtils.ixx" />
     <ClCompile Include="Source\Utils\Json.ixx" />
     <ClCompile Include="Source\Scene\Entity.ixx" />
@@ -417,15 +450,17 @@
       <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </ForcedIncludeFiles>
     </ClCompile>
-    <ClCompile Include="Source\PCH\pch.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-      <UseStandardPreprocessor Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</UseStandardPreprocessor>
-    </ClCompile>
     <ClCompile Include="Source\Main\Entry.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Texture\Texture.ixx" />
     <ClCompile Include="Source\Modules\Renderer\Objects\VertexArray\VertexArray.ixx" />
+    <ClCompile Include="Source\ThirdParty\include\entt\entt.hpp">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsHeaderUnit</CompileAs>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsHeaderUnit</CompileAs>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ForcedIncludeFiles>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Modules\Physics\Data\World.ixx" />
@@ -450,19 +485,21 @@
     <ClCompile Include="Source\Components\Camera.ixx" />
     <ClCompile Include="Source\Components\Components.Common.ixx" />
     <ClCompile Include="Source\Components\Components.Lights.ixx" />
-    <ClInclude Include="Source\Utils\Logger.h">
+    <ClCompile Include="Source\Utils\Observed.ixx" />
+    <ClCompile Include="Source\Utils\Profiler.ixx" />
+    <ClCompile Include="Source\Utils\Template.ixx">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
       <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
       </ForcedIncludeFiles>
       <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </ForcedIncludeFiles>
-    </ClInclude>
-    <ClCompile Include="Source\Utils\Observed.ixx" />
-    <ClCompile Include="Source\Utils\Profiler.ixx" />
-    <ClInclude Include="Source\Utils\Template.h" />
+    </ClCompile>
     <ClCompile Include="Source\Utils\Timer.ixx" />
-    <ClInclude Include="Source\PCH\pch.h" />
+    <ClInclude Include="Source\PCH\pch.h">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsHeaderUnit</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsHeaderUnit</CompileAs>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\OneDrive\Dokumentumok\GameEngine_0\GameEngineEditor\resources\shaders\lightPass.shader" />
