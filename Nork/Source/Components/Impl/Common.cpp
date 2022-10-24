@@ -1,5 +1,4 @@
 #include "../Common.h"
-#include <glm/glm/gtx/matrix_decompose.hpp>
 
 namespace Nork::Components {
 	glm::mat4 Transform::TranslationMatrix()

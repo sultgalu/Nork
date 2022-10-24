@@ -104,9 +104,9 @@ namespace Nork {
 		static std::vector<glm::vec3> translations;
 		static std::vector<glm::quat> quaternions;
 		translations.clear();
-		translations.reserve(reg.size<Transform>());
+		translations.reserve(reg.view<Transform>().size());
 		quaternions.clear();
-		quaternions.reserve(reg.size<Transform>());
+		quaternions.reserve(reg.view<Transform>().size());
 
 		collView.each([&](entt::entity id, Transform& tr, Kinematic& kin, Collider& poly)
 			{
