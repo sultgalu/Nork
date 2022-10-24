@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "SAP.h"
+#include <execution>
 
 namespace Nork::Physics
 {
@@ -48,7 +49,7 @@ namespace Nork::Physics
 		Timer t;
 		auto aabbs = GetAABBs();
 		deltas.push_back(std::pair("GetAABBBs", t.Reset()));
-		std::sort(aabbs.begin(), aabbs.end(), [](auto& a, auto& b)
+		std::sort(std::execution::par_unseq, aabbs.begin(), aabbs.end(), [](auto& a, auto& b)
 			{
 				return a.second.min.x < b.second.min.x;
 			});
