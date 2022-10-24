@@ -16,8 +16,6 @@ namespace Nork::Physics
 		std::vector<std::pair<uint32_t, AABB>> GetAABBs();
 		std::vector<std::pair<uint32_t, uint32_t>> Get();
 		World& world;
-
-		static std::vector<std::pair<std::string, float>> GetDeltas();
 	};
 
 }

@@ -39,21 +39,16 @@ namespace Nork::Physics
 		}
 		return res;
 	}
-	std::vector<std::pair<std::string, float>> deltas;
 	// Right now it produces out-of sync jumping bc of the random order of pairs it gives back (y-collision order)
 	std::vector<std::pair<index_t, index_t>> SAP::Get()
 	{
-		deltas.clear();
 		std::vector<std::pair<uint32_t, uint32_t>> res;
 
-		Timer t;
 		auto aabbs = GetAABBs();
-		deltas.push_back(std::pair("GetAABBBs", t.Reset()));
-		std::sort(std::execution::par_unseq, aabbs.begin(), aabbs.end(), [](auto& a, auto& b)
+		std::sort(std::execution::unseq, aabbs.begin(), aabbs.end(), [](auto& a, auto& b)
 			{
 				return a.second.min.x < b.second.min.x;
 			});
-		deltas.push_back(std::pair("Sort AABBBs", t.Reset()));
 		
 		// aabbs sorted now by x axis
 		std::vector<uint32_t> currentInterval = { 0 };
@@ -97,11 +92,6 @@ namespace Nork::Physics
 			}
 			currentInterval = newInterval;
 		}
-		deltas.push_back(std::pair("Iteration", t.Reset()));
 		return res;
-	}
-	std::vector<std::pair<std::string, float>> SAP::GetDeltas()
-	{
-		return deltas;
 	}
 }
