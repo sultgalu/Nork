@@ -16,8 +16,8 @@ namespace Nork::Physics
 	class AABBTest
 	{
 	public:
-		AABBTest(Collider& shape1, Collider& shape2)
-			: aabb1(AABB(shape1.verts)), aabb2(AABB(shape1.verts)) {}
+		AABBTest(Collider& collider1, Collider& collider2)
+			: aabb1(AABB(collider1.verts)), aabb2(AABB(collider1.verts)) {}
 		static std::vector<std::pair<uint32_t, uint32_t>> GetResult(World&);
 		static float GetDelta();
 		static uint32_t Intersecting(AABB& aabb1, AABB& aabb2);

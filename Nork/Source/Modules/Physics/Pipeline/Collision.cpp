@@ -30,53 +30,53 @@ namespace Nork::Physics {
 		return res;
 	}
 
-	static std::vector<glm::vec3> FaceContactPoints(const Collider& faceShape, const Collider& vertShape, const uint32_t faceIdx, const uint32_t vertIdx)
+	static std::vector<glm::vec3> FaceContactPoints(const Collider& facecollider, const Collider& vertcollider, const uint32_t faceIdx, const uint32_t vertIdx)
 	{
-		auto& faceNormal = faceShape.faces[faceIdx].norm;
-		auto& faceVert = faceShape.verts[faceShape.faces[faceIdx].vertIdx];
+		auto& faceNormal = facecollider.faces[faceIdx].norm;
+		auto& faceVert = facecollider.verts[facecollider.faces[faceIdx].vertIdx];
 
-		auto sideFaces = vertShape.SideFacesOfVert(vertIdx);
-		auto sideEdges = vertShape.Edges(vertShape.verts[vertIdx]);
+		auto sideFaces = vertcollider.SideFacesOfVert(vertIdx);
+		auto sideEdges = vertcollider.Edges(vertcollider.verts[vertIdx]);
 
-		//auto faceEdgeIdxs = faceShape.EdgesOnFace(faceIdx);
+		//auto faceEdgeIdxs = facecollider.EdgesOnFace(faceIdx);
 		constexpr float faceBias = 0.0f;
 		constexpr float edgeBias = 90.0f;
 		for (auto& sideFaceIdx : sideFaces)
 		{
-			auto& sideFaceNorm = vertShape.faces[sideFaceIdx].norm;
+			auto& sideFaceNorm = vertcollider.faces[sideFaceIdx].norm;
 			auto cos = glm::dot(faceNormal, glm::normalize(-sideFaceNorm));
 			auto degrees = glm::degrees(glm::acos(cos));
 			if (glm::abs(degrees) <= faceBias)
 			{
 				std::vector<glm::vec3> facePoints;
-				for (auto& vertIdx : vertShape.faceVerts[sideFaceIdx])
+				for (auto& vertIdx : vertcollider.faceVerts[sideFaceIdx])
 				{
-					facePoints.push_back(vertShape.verts[vertIdx]);
+					facePoints.push_back(vertcollider.verts[vertIdx]);
 				}
-				return Clip::PointsOnFace(faceShape, faceIdx, facePoints);
+				return Clip::PointsOnFace(facecollider, faceIdx, facePoints);
 			}
 		}
 		for (auto& sideEdgeIdx : sideEdges)
 		{
-			auto edgeVec = vertShape.verts[sideEdgeIdx.first] - vertShape.verts[sideEdgeIdx.second];
+			auto edgeVec = vertcollider.verts[sideEdgeIdx.first] - vertcollider.verts[sideEdgeIdx.second];
 			auto dotProd = glm::abs(glm::dot(faceNormal, edgeVec));
 			auto degrees = glm::degrees(glm::acos(dotProd));
 			if (degrees >= edgeBias)
 			{
-				auto clipped = Clip::PointsOnFace(faceShape, faceIdx, { vertShape.verts[sideEdgeIdx.first], vertShape.verts[sideEdgeIdx.second] });
+				auto clipped = Clip::PointsOnFace(facecollider, faceIdx, { vertcollider.verts[sideEdgeIdx.first], vertcollider.verts[sideEdgeIdx.second] });
 				if (!clipped.empty())
 				{
 					return clipped;
 				}
 			}
 		}
-		if (!Clip::PointsOnFace(faceShape, faceIdx, { vertShape.verts[vertIdx] }).empty())
+		if (!Clip::PointsOnFace(facecollider, faceIdx, { vertcollider.verts[vertIdx] }).empty())
 		{
-			return { vertShape.verts[vertIdx] };
+			return { vertcollider.verts[vertIdx] };
 		}
 		for (auto& sideEdgeIdx : sideEdges)
 		{
-			auto clipped = Clip::PointsOnPlane(faceNormal, faceVert, { vertShape.verts[sideEdgeIdx.first], vertShape.verts[sideEdgeIdx.second] }); // max 1
+			auto clipped = Clip::PointsOnPlane(faceNormal, faceVert, { vertcollider.verts[sideEdgeIdx.first], vertcollider.verts[sideEdgeIdx.second] }); // max 1
 			if (!clipped.empty())
 			{
 				return clipped;

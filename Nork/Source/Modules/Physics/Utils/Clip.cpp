@@ -124,24 +124,24 @@ namespace Nork::Physics
 
 	return clipped;
 }
-	std::vector<glm::vec3> Clip::FaceOnFace(const Collider& faceShape, const Collider& faceShape2, const uint32_t faceIdx, const uint32_t faceIdx2, bool clipDepth)
+	std::vector<glm::vec3> Clip::FaceOnFace(const Collider& facecollider, const Collider& facecollider2, const uint32_t faceIdx, const uint32_t faceIdx2, bool clipDepth)
 	{
 		std::vector<glm::vec3> result;
-		const glm::vec3& faceNorm = faceShape.faces[faceIdx].norm;
-		auto faceEdgeIdxs = faceShape.EdgesOnFace(faceIdx);
+		const glm::vec3& faceNorm = facecollider.faces[faceIdx].norm;
+		auto faceEdgeIdxs = facecollider.EdgesOnFace(faceIdx);
 	
 		std::vector<glm::vec3> contactPointsForFace;
 		if (clipDepth)
 		{
 			contactPointsForFace = Clip::FaceOnPlane(faceNorm,
-				faceShape.verts[faceShape.faces[faceIdx].vertIdx],
-				faceShape2.faceVerts[faceIdx2], faceShape2.verts);
+				facecollider.verts[facecollider.faces[faceIdx].vertIdx],
+				facecollider2.faceVerts[faceIdx2], facecollider2.verts);
 		}
 		else
 		{
-			for (auto& vertIdx : faceShape2.faceVerts[faceIdx2])
+			for (auto& vertIdx : facecollider2.faceVerts[faceIdx2])
 			{
-				contactPointsForFace.push_back(faceShape2.verts[vertIdx]);
+				contactPointsForFace.push_back(facecollider2.verts[vertIdx]);
 			}
 		}
 	
@@ -150,25 +150,25 @@ namespace Nork::Physics
 			if (contactPointsForFace.size() == 0)
 				break;
 	
-			const Edge& edge = faceShape.edges[faceEdgeIdxs[j]];
-			glm::vec3 edgeNormal = glm::cross(faceNorm, faceShape.verts[edge.first] - faceShape.verts[edge.second]);
+			const Edge& edge = facecollider.edges[faceEdgeIdxs[j]];
+			glm::vec3 edgeNormal = glm::cross(faceNorm, facecollider.verts[edge.first] - facecollider.verts[edge.second]);
 	
 			{ // making sure the edgeNormal is pointing outwards
 				glm::vec3 thirdVertOnFace;
 				for (size_t k = 0; k < 3; k++)
 				{
-					uint32_t vertIdx = faceShape.faceVerts[faceIdx][k];
+					uint32_t vertIdx = facecollider.faceVerts[faceIdx][k];
 					if (vertIdx != edge.first &&
 						vertIdx != edge.second)
 					{
-						thirdVertOnFace = faceShape.verts[vertIdx];
+						thirdVertOnFace = facecollider.verts[vertIdx];
 						break;
 					}
 				}
-				if (glm::dot(edgeNormal, (faceShape.verts[edge.first]) - thirdVertOnFace) < 0)
+				if (glm::dot(edgeNormal, (facecollider.verts[edge.first]) - thirdVertOnFace) < 0)
 					edgeNormal *= -1;
 			}
-			contactPointsForFace = Clip::VertsOnEdge(edgeNormal, faceShape.verts[edge.first], contactPointsForFace);
+			contactPointsForFace = Clip::VertsOnEdge(edgeNormal, facecollider.verts[edge.first], contactPointsForFace);
 		}
 		for (size_t j = 0; j < contactPointsForFace.size(); j++)
 		{
@@ -183,37 +183,37 @@ namespace Nork::Physics
 		}
 		return result;
 	}
-	std::vector<glm::vec3> Clip::PointsOnFace(const Collider& faceShape, const uint32_t faceIdx, const std::vector<glm::vec3>& points)
+	std::vector<glm::vec3> Clip::PointsOnFace(const Collider& facecollider, const uint32_t faceIdx, const std::vector<glm::vec3>& points)
 	{
 		auto contactPointsForFace = points;
-		const glm::vec3& faceNorm = faceShape.faces[faceIdx].norm;
-		auto faceEdgeIdxs = faceShape.EdgesOnFace(faceIdx);
+		const glm::vec3& faceNorm = facecollider.faces[faceIdx].norm;
+		auto faceEdgeIdxs = facecollider.EdgesOnFace(faceIdx);
 
 		for (size_t j = 0; j < faceEdgeIdxs.size(); j++)
 		{
 			if (contactPointsForFace.size() == 0)
 				break;
 
-			const Edge& edge = faceShape.edges[faceEdgeIdxs[j]];
-			glm::vec3 edgeNormal = glm::cross(faceNorm, faceShape.verts[edge.first] - faceShape.verts[edge.second]);
+			const Edge& edge = facecollider.edges[faceEdgeIdxs[j]];
+			glm::vec3 edgeNormal = glm::cross(faceNorm, facecollider.verts[edge.first] - facecollider.verts[edge.second]);
 
 			{ // making sure the edgeNormal is pointing outwards
 				glm::vec3 thirdVertOnFace;
 				for (size_t k = 0; k < 3; k++)
 				{
-					uint32_t vertIdx = faceShape.faceVerts[faceIdx][k];
+					uint32_t vertIdx = facecollider.faceVerts[faceIdx][k];
 					if (vertIdx != edge.first &&
 						vertIdx != edge.second)
 					{
-						thirdVertOnFace = faceShape.verts[vertIdx];
+						thirdVertOnFace = facecollider.verts[vertIdx];
 						break;
 					}
 				}
-				if (glm::dot(edgeNormal, (faceShape.verts[edge.first]) - thirdVertOnFace) < 0)
+				if (glm::dot(edgeNormal, (facecollider.verts[edge.first]) - thirdVertOnFace) < 0)
 					edgeNormal *= -1;
 			}
 
-			contactPointsForFace = Clip::VertsOnEdge(edgeNormal, faceShape.verts[edge.first], contactPointsForFace);
+			contactPointsForFace = Clip::VertsOnEdge(edgeNormal, facecollider.verts[edge.first], contactPointsForFace);
 		}
 		return contactPointsForFace;
 	}

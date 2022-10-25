@@ -4,32 +4,32 @@
 
 namespace Nork::Physics
 {
-	SAT::SAT(const Collider& shape1, const Collider& shape2)
+	SAT::SAT(const Collider& collider1, const Collider& collider2)
 	{
-		if (FacePhase(shape1, shape2, CollisionType::FaceVert) && FacePhase(shape2, shape1, CollisionType::VertFace) && EdgePhase(shape1, shape2))
+		if (FacePhase(collider1, collider2, CollisionType::FaceVert) && FacePhase(collider2, collider1, CollisionType::VertFace) && EdgePhase(collider1, collider2))
 		{
 		}
 	}
 
-	bool SAT::FacePhase(const Collider& shape1, const Collider& shape2, CollisionType type)
+	bool SAT::FacePhase(const Collider& collider1, const Collider& collider2, CollisionType type)
 	{
-		glm::vec3 filterDir = shape2.center - shape1.center;
+		glm::vec3 filterDir = collider2.center - collider1.center;
 
-		for (size_t i = 0; i < shape1.faces.size(); i++)
+		for (size_t i = 0; i < collider1.faces.size(); i++)
 		{
-			//if (glm::dot(filterDir, shape1.fNorm[i]) <= 0) // discard if isn't facing the other object
+			//if (glm::dot(filterDir, collider1.fNorm[i]) <= 0) // discard if isn't facing the other object
 			//{
 			//	continue;
 			//}
-			index_t farthestVertTowardsFaceIdx = FarthestIdx(shape2.verts, -shape1.faces[i].norm);
-			float pointDistanceFromFaceOutwards = SignedDistance(shape1.faces[i].norm, shape1.VertFromFace(i), shape2.verts[farthestVertTowardsFaceIdx]);
+			index_t farthestVertTowardsFaceIdx = FarthestIdx(collider2.verts, -collider1.faces[i].norm);
+			float pointDistanceFromFaceOutwards = SignedDistance(collider1.faces[i].norm, collider1.VertFromFace(i), collider2.verts[farthestVertTowardsFaceIdx]);
 			if (pointDistanceFromFaceOutwards > state.depth)
 			{
 				state.featureIdx1 = i;
 				state.featureIdx2 = farthestVertTowardsFaceIdx;
 				state.depth = pointDistanceFromFaceOutwards;
 				state.type = type;
-				state.dir = glm::normalize(shape1.faces[i].norm);
+				state.dir = glm::normalize(collider1.faces[i].norm);
 				if (type == CollisionType::VertFace) state.dir *= -1;
 
 				if (pointDistanceFromFaceOutwards > 0)
@@ -38,16 +38,16 @@ namespace Nork::Physics
 		}
 		return true;
 	}
-	bool SAT::EdgePhase(const Collider& shape1, const Collider& shape2)
+	bool SAT::EdgePhase(const Collider& collider1, const Collider& collider2)
 	{
 		//std::vector<Edge*> filteredEdges1, filteredEdges2;
 		std::vector<index_t> filteredEdges1, filteredEdges2;
 
-		glm::vec3 filterDir = shape2.center - shape1.center;
-		for (size_t i = 0; i < shape1.edges.size(); i++)
+		glm::vec3 filterDir = collider2.center - collider1.center;
+		for (size_t i = 0; i < collider1.edges.size(); i++)
 		{
-			float sd1 = SignedDistance(filterDir, shape1.center, shape1.FirstVertFromEdge(shape1.edges[i]));
-			float sd2 = SignedDistance(filterDir, shape1.center, shape1.SecondVertFromEdge(shape1.edges[i]));
+			float sd1 = SignedDistance(filterDir, collider1.center, collider1.FirstVertFromEdge(collider1.edges[i]));
+			float sd2 = SignedDistance(filterDir, collider1.center, collider1.SecondVertFromEdge(collider1.edges[i]));
 			if (sd1 > 0 || sd2 > 0) // at least one edge is fully in front of center plane
 			{
 				filteredEdges1.push_back(i);
@@ -55,10 +55,10 @@ namespace Nork::Physics
 		}
 
 		filterDir *= -1;
-		for (size_t i = 0; i < shape2.edges.size(); i++)
+		for (size_t i = 0; i < collider2.edges.size(); i++)
 		{
-			float sd1 = SignedDistance(filterDir, shape2.center, shape2.FirstVertFromEdge(shape2.edges[i]));
-			float sd2 = SignedDistance(filterDir, shape2.center, shape2.SecondVertFromEdge(shape2.edges[i]));
+			float sd1 = SignedDistance(filterDir, collider2.center, collider2.FirstVertFromEdge(collider2.edges[i]));
+			float sd2 = SignedDistance(filterDir, collider2.center, collider2.SecondVertFromEdge(collider2.edges[i]));
 			if (sd1 > 0 || sd2 > 0) // at least one edge is fully in front of center plane
 			{
 				filteredEdges2.push_back(i);
@@ -69,14 +69,14 @@ namespace Nork::Physics
 		{
 			for (size_t j = 0; j < filteredEdges2.size(); j++)
 			{
-				glm::vec3 edge1ToEdge2Normal = glm::cross(shape2.EdgeDirection(shape2.edges[filteredEdges2[j]]), shape1.EdgeDirection(shape1.edges[filteredEdges1[i]]));
+				glm::vec3 edge1ToEdge2Normal = glm::cross(collider2.EdgeDirection(collider2.edges[filteredEdges2[j]]), collider1.EdgeDirection(collider1.edges[filteredEdges1[i]]));
 				if (edge1ToEdge2Normal == glm::zero<glm::vec3>())
 					continue; // calculating with 0;0;0 normal doesn't make sense
-				if (SignedDistance(edge1ToEdge2Normal, shape1.FirstVertFromEdge(shape1.edges[filteredEdges1[i]]), shape1.center) > 0)
+				if (SignedDistance(edge1ToEdge2Normal, collider1.FirstVertFromEdge(collider1.edges[filteredEdges1[i]]), collider1.center) > 0)
 					edge1ToEdge2Normal *= -1; // edge normal faces inwards, correct it
 
-				glm::vec3& closest2 = Farthest(shape2.verts, -edge1ToEdge2Normal); // Get the closest point towards c1
-				glm::vec3& closest1 = Farthest(shape1.verts, std::forward<glm::vec3>(edge1ToEdge2Normal)); // Get the closest point fromwards c1
+				glm::vec3& closest2 = Farthest(collider2.verts, -edge1ToEdge2Normal); // Get the closest point towards c1
+				glm::vec3& closest1 = Farthest(collider1.verts, std::forward<glm::vec3>(edge1ToEdge2Normal)); // Get the closest point fromwards c1
 				float distance = SignedDistance(edge1ToEdge2Normal, closest1, closest2);
 				if (distance > state.depth)
 				{

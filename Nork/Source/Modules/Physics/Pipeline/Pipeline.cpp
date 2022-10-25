@@ -64,8 +64,8 @@ namespace Nork::Physics
 
 				glm::mat4 rotation = glm::mat4_cast(world.kinems[i].quaternion);
 
-				// shapes[i].center = rotation * glm::vec4(shapes[i].center, 1);
-				// shapes[i].center += translate[i];
+				// colliders[i].center = rotation * glm::vec4(colliders[i].center, 1);
+				// colliders[i].center += translate[i];
 				for (size_t j = 0; j < collider.verts.size(); j++)
 				{
 					collider.verts[j] = rotation * glm::vec4(colliderLocal.verts[j], 1);

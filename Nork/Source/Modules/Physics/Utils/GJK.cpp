@@ -233,7 +233,7 @@ namespace Nork::Physics
 		{
 			glm::vec3 nextPoint = Support(verts1Copy, verts2Copy, direction);
 			if (glm::dot(direction, nextPoint) < 0)
-				return std::optional<std::pair<float, glm::vec3>>(); // found a line separating the two shapes
+				return std::optional<std::pair<float, glm::vec3>>(); // found a line separating the two colliders
 
 			simplex.push_back(nextPoint);
 			if (HandleSimplex(simplex, direction))

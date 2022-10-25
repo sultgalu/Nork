@@ -5,7 +5,7 @@
 
 namespace Nork::Physics
 {
-	/*struct Shape
+	/*struct collider
 	{
 		std::span<glm::vec3> colliderVerts; // locals ...
 		std::span<Face> colliderFaces;

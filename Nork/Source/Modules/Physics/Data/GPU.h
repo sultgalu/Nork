@@ -4,7 +4,7 @@
 
 namespace Nork::Physics
 {
-	struct ShapeGPU
+	struct colliderGPU
 	{
 		uint32_t vertStart, vertCount;
 		uint32_t edgeStart, edgeCount;

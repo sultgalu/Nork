@@ -82,8 +82,8 @@ namespace Nork::Physics
 		return EdgeNormal(p1, p2, pInner, planeNormal);
 	}
 	// loop over the edges, find the first edge, where point is outside, thats the insertion point
-	// continue searching, if it finds an other edge like that, it means that point would make the shape concave, return -1
-	// without finding an edge like that, it means the point is inside, and it would make the shape concave, return -1
+	// continue searching, if it finds an other edge like that, it means that point would make the collider concave, return -1
+	// without finding an edge like that, it means the point is inside, and it would make the collider concave, return -1
 	int TryExpandConvex2DSorted(std::vector<glm::vec3>& points, const glm::vec3& point, const glm::vec3& planeNormal)
 	{
 		if (points.size() <= 2)
