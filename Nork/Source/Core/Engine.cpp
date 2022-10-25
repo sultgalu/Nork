@@ -95,7 +95,9 @@ namespace Nork
 					updateSem.acquire(); // don't let upload happen until done with updating
 					if (scriptUpdated) // if downloading 
 					{
+					// Timer t;
 						physicsSystem.Download(scene.registry, true);
+					//Logger::Debug("elapsed: ", t.Elapsed(), "ms");
 						scriptUpdated = false;
 					}
 					else

@@ -4,14 +4,14 @@
 
 namespace Nork::Physics
 {
-	SAT::SAT(const Shape& shape1, const Shape& shape2)
+	SAT::SAT(const Collider& shape1, const Collider& shape2)
 	{
 		if (FacePhase(shape1, shape2, CollisionType::FaceVert) && FacePhase(shape2, shape1, CollisionType::VertFace) && EdgePhase(shape1, shape2))
 		{
 		}
 	}
 
-	bool SAT::FacePhase(const Shape& shape1, const Shape& shape2, CollisionType type)
+	bool SAT::FacePhase(const Collider& shape1, const Collider& shape2, CollisionType type)
 	{
 		glm::vec3 filterDir = shape2.center - shape1.center;
 
@@ -38,7 +38,7 @@ namespace Nork::Physics
 		}
 		return true;
 	}
-	bool SAT::EdgePhase(const Shape& shape1, const Shape& shape2)
+	bool SAT::EdgePhase(const Collider& shape1, const Collider& shape2)
 	{
 		//std::vector<Edge*> filteredEdges1, filteredEdges2;
 		std::vector<index_t> filteredEdges1, filteredEdges2;

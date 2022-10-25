@@ -16,7 +16,7 @@ namespace Nork::Physics
 	class AABBTest
 	{
 	public:
-		AABBTest(Shape& shape1, Shape& shape2)
+		AABBTest(Collider& shape1, Collider& shape2)
 			: aabb1(AABB(shape1.verts)), aabb2(AABB(shape1.verts)) {}
 		static std::vector<std::pair<uint32_t, uint32_t>> GetResult(World&);
 		static float GetDelta();

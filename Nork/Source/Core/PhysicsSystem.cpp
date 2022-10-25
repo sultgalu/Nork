@@ -14,7 +14,7 @@ namespace Nork {
 		}
 		to.faceVerts.reserve(from.Faces().size());
 		to.faces.reserve(from.Faces().size());
-		auto center = glm::vec3(Physics::Center(to.verts));
+		auto center = Physics::Center(to.verts);
 		for (auto& face : from.Faces())
 		{
 			to.faceVerts.push_back(face.points);
@@ -88,7 +88,7 @@ namespace Nork {
 
 		if (updatePoliesForPhysics) // bottleneck :)
 		{
-
+			Timer t;
 			pipeline.collidersLocal.clear();
 			collView.each([&](entt::entity id, Transform& tr, Kinematic& kin, Collider& coll)
 				{
@@ -99,15 +99,15 @@ namespace Nork {
 				{
 					pipeline.collidersLocal.push_back(Convert(coll, tr.Scale()));
 				});
-
-			pipeline.SetColliders();
+			Logger::Debug("elapsed: ", t.Elapsed(), "ms");
+		updatePoliesForPhysics = false;
 		}
 
-		pipeline.SetModels();
+		pipeline.SetColliders();
 
 		for (size_t i = 0; i < pWorld.kinems.size(); i++)
 		{
-			Physics::AABB aabb(pWorld.shapes[i].verts);
+			Physics::AABB aabb(pWorld.colliders[i].verts);
 			float sum = 0;
 			for (size_t i = 0; i < 3; i++)
 				sum += glm::pow(aabb.max[i] - aabb.min[i], 2);
@@ -118,7 +118,7 @@ namespace Nork {
 
 	void PhysicsSystem::DownloadInternal()
 	{
-		pipeline.SetModels();
+		pipeline.SetColliders();
 	}
 
 	void PhysicsSystem::Update2(entt::registry& reg)

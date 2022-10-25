@@ -5,7 +5,7 @@
 
 namespace Nork::Physics
 {
-	struct Shape
+	/*struct Shape
 	{
 		std::span<glm::vec3> colliderVerts; // locals ...
 		std::span<Face> colliderFaces;
@@ -53,7 +53,7 @@ namespace Nork::Physics
 			}
 			return res;
 		}
-		std::vector<Edge> Edges(glm::vec3& vert) const
+		std::vector<Edge> Edges(const glm::vec3& vert) const
 		{
 			std::vector<Edge> result;
 
@@ -67,11 +67,11 @@ namespace Nork::Physics
 
 			return result;
 		}
-		inline std::pair<glm::vec3&, glm::vec3&> Vertices(Edge& edge) const
+		inline std::pair<glm::vec3&, glm::vec3&> Vertices(const Edge& edge) const
 		{
 			return std::pair<glm::vec3&, glm::vec3&> { verts[edge[0]], verts[edge[1]] };
 		}
-		inline const glm::vec3& VertFromFace(Face& face) const
+		inline const glm::vec3& VertFromFace(const Face& face) const
 		{
 			return verts[face.vertIdx];
 		}
@@ -79,40 +79,28 @@ namespace Nork::Physics
 		{
 			return verts[faces[idx].vertIdx];
 		}
-		inline const glm::vec3& FirstVertFromEdge(Edge& edge) const
+		inline const glm::vec3& FirstVertFromEdge(const Edge& edge) const
 		{
 			return verts[edge[0]];
 		}
-		inline const glm::vec3& SecondVertFromEdge(Edge& edge) const
+		inline const glm::vec3& SecondVertFromEdge(const Edge& edge) const
 		{
 			return verts[edge[1]];
 		}
-		inline glm::vec3 EdgeDirection(Edge& edge) const
+		inline glm::vec3 EdgeDirection(const Edge& edge) const
 		{
 			return verts[edge[0]] - verts[edge[1]];
 		}
-		inline glm::vec3 EdgeMiddle(Edge& edge) const
+		inline glm::vec3 EdgeMiddle(const Edge& edge) const
 		{
 			return (verts[edge[0]] + verts[edge[1]]) / 2.0f;
 		}
-	};
+	};*/
 
 	class World
 	{
 	public:
-		std::vector<glm::vec3> colliderVerts;
-		std::vector<Face> colliderFaces;
-		std::vector<glm::vec3> verts;
-		std::vector<Edge> edges;
-		std::vector<Face> faces;
-		std::vector<std::vector<index_t>> faceVerts;
-
 		std::vector<KinematicData> kinems;
-		std::vector<Shape> shapes;
-
-		void ClearColliderData();
-		void AddCollider(const Collider& collider);
-		void UpdateTransform(Shape& shape, const glm::vec3& translate, const glm::quat& quaternion);
-		void Remove(Shape& shape);
+		std::vector<Collider> colliders;
 	};
 }

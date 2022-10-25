@@ -4,90 +4,90 @@
 namespace Nork::Physics 
 {
 	static glm::vec3 Interpolate(float sdStart, float sdEnd, const glm::vec3& start, const glm::vec3& end)
-{
-	float normalDistance = sdStart - sdEnd;
-	float startToFacePortion = sdStart / normalDistance;
-	glm::vec3 startToEnd = end - start;
-	glm::vec3 startToFace = startToEnd * startToFacePortion;
-	glm::vec3 pointOnFace = start + startToFace;
-	return pointOnFace;
-}
-	std::vector<glm::vec3> Clip::VertsOnEdge(glm::vec3 edgeNorm, glm::vec3 edgeVert, std::span<glm::vec3> pointsToClip)
-{
-	std::vector<glm::vec3> points;
-
-	uint32_t startIdx = pointsToClip.size() - 1;
-	uint32_t endIdx = 0;
-	float sdStart = SignedDistance(edgeNorm, edgeVert, pointsToClip[startIdx]);
-
-	while (endIdx < pointsToClip.size())
 	{
-		float sdEnd = SignedDistance(edgeNorm, edgeVert, pointsToClip[endIdx]);
-
-		if (sdStart > 0)
-		{
-			if (sdEnd <= 0)
-			{
-				points.push_back(Interpolate(sdStart, sdEnd, pointsToClip[startIdx], pointsToClip[endIdx]));
-				points.push_back(pointsToClip[endIdx]);
-			}
-		}
-		else
-		{
-			if (sdEnd > 0)
-				points.push_back(Interpolate(sdEnd, sdStart, pointsToClip[endIdx], pointsToClip[startIdx]));
-			else
-				points.push_back(pointsToClip[endIdx]);
-		}
-
-		startIdx = endIdx++;
-		sdStart = sdEnd;
+		float normalDistance = sdStart - sdEnd;
+		float startToFacePortion = sdStart / normalDistance;
+		glm::vec3 startToEnd = end - start;
+		glm::vec3 startToFace = startToEnd * startToFacePortion;
+		glm::vec3 pointOnFace = start + startToFace;
+		return pointOnFace;
 	}
-
-	return points;
-}
-	std::vector<glm::vec3> Clip::FaceOnPlane(glm::vec3& planeNorm, glm::vec3& planeVert, std::span<uint32_t> faceVerts, std::span<glm::vec3> verts)
-{
-	std::vector<glm::vec3> points;
-
-	uint32_t startIdx = faceVerts.size() - 1;
-	uint32_t endIdx = 0;
-	auto getVerts = [&](uint32_t idx)
+	std::vector<glm::vec3> Clip::VertsOnEdge(const glm::vec3 edgeNorm, const glm::vec3 edgeVert, const std::vector<glm::vec3>& pointsToClip)
 	{
-		return verts[idx]; // +vertOffs;
-	};
-	float sdStart = SignedDistance(planeNorm, planeVert, getVerts(faceVerts[startIdx]));
-	while (endIdx < faceVerts.size())
-	{
-		float sdEnd = SignedDistance(planeNorm, planeVert, getVerts(faceVerts[endIdx]));
-
-		if (sdStart > 0)
+		std::vector<glm::vec3> points;
+	
+		uint32_t startIdx = pointsToClip.size() - 1;
+		uint32_t endIdx = 0;
+		float sdStart = SignedDistance(edgeNorm, edgeVert, pointsToClip[startIdx]);
+	
+		while (endIdx < pointsToClip.size())
 		{
-			if (sdEnd <= 0)
+			float sdEnd = SignedDistance(edgeNorm, edgeVert, pointsToClip[endIdx]);
+	
+			if (sdStart > 0)
 			{
-				points.push_back(Interpolate(sdStart, sdEnd, getVerts(faceVerts[startIdx]), getVerts(faceVerts[endIdx])));
-				//points.push_back(getVerts(faceVerts[endIdx]) - planeNorm * sdEnd);
-			}
-		}
-		else
-		{
-			if (sdEnd >= 0)
-			{
-				points.push_back(Interpolate(sdEnd, sdStart, getVerts(faceVerts[endIdx]), getVerts(faceVerts[startIdx])));
+				if (sdEnd <= 0)
+				{
+					points.push_back(Interpolate(sdStart, sdEnd, pointsToClip[startIdx], pointsToClip[endIdx]));
+					points.push_back(pointsToClip[endIdx]);
+				}
 			}
 			else
 			{
-				// points.push_back(getVerts(faceVerts[endIdx]) - planeNorm * sdEnd);
+				if (sdEnd > 0)
+					points.push_back(Interpolate(sdEnd, sdStart, pointsToClip[endIdx], pointsToClip[startIdx]));
+				else
+					points.push_back(pointsToClip[endIdx]);
 			}
+	
+			startIdx = endIdx++;
+			sdStart = sdEnd;
 		}
-
-		startIdx = endIdx++;
-		sdStart = sdEnd;
+	
+		return points;
 	}
-
-	return points;
-}
-	std::vector<glm::vec3> Clip::PointsOnPlane(glm::vec3& planeNorm, glm::vec3& planeVert, const std::vector<glm::vec3>& points)
+		std::vector<glm::vec3> Clip::FaceOnPlane(const glm::vec3& planeNorm, const glm::vec3& planeVert, const std::vector<uint32_t>& faceVerts, const std::vector<glm::vec3>& verts)
+	{
+		std::vector<glm::vec3> points;
+	
+		uint32_t startIdx = faceVerts.size() - 1;
+		uint32_t endIdx = 0;
+		auto getVerts = [&](uint32_t idx)
+		{
+			return verts[idx]; // +vertOffs;
+		};
+		float sdStart = SignedDistance(planeNorm, planeVert, getVerts(faceVerts[startIdx]));
+		while (endIdx < faceVerts.size())
+		{
+			float sdEnd = SignedDistance(planeNorm, planeVert, getVerts(faceVerts[endIdx]));
+	
+			if (sdStart > 0)
+			{
+				if (sdEnd <= 0)
+				{
+					points.push_back(Interpolate(sdStart, sdEnd, getVerts(faceVerts[startIdx]), getVerts(faceVerts[endIdx])));
+					//points.push_back(getVerts(faceVerts[endIdx]) - planeNorm * sdEnd);
+				}
+			}
+			else
+			{
+				if (sdEnd >= 0)
+				{
+					points.push_back(Interpolate(sdEnd, sdStart, getVerts(faceVerts[endIdx]), getVerts(faceVerts[startIdx])));
+				}
+				else
+				{
+					// points.push_back(getVerts(faceVerts[endIdx]) - planeNorm * sdEnd);
+				}
+			}
+	
+			startIdx = endIdx++;
+			sdStart = sdEnd;
+		}
+	
+		return points;
+	}
+	std::vector<glm::vec3> Clip::PointsOnPlane(const glm::vec3& planeNorm, const glm::vec3& planeVert, const std::vector<glm::vec3>& points)
 {
 	std::vector<glm::vec3> clipped;
 
@@ -124,10 +124,10 @@ namespace Nork::Physics
 
 	return clipped;
 }
-	std::vector<glm::vec3> Clip::FaceOnFace(const Shape& faceShape, const Shape& faceShape2, const uint32_t faceIdx, const uint32_t faceIdx2, bool clipDepth)
+	std::vector<glm::vec3> Clip::FaceOnFace(const Collider& faceShape, const Collider& faceShape2, const uint32_t faceIdx, const uint32_t faceIdx2, bool clipDepth)
 	{
 		std::vector<glm::vec3> result;
-		glm::vec3& faceNorm = faceShape.faces[faceIdx].norm;
+		const glm::vec3& faceNorm = faceShape.faces[faceIdx].norm;
 		auto faceEdgeIdxs = faceShape.EdgesOnFace(faceIdx);
 	
 		std::vector<glm::vec3> contactPointsForFace;
@@ -150,7 +150,7 @@ namespace Nork::Physics
 			if (contactPointsForFace.size() == 0)
 				break;
 	
-			Edge& edge = faceShape.edges[faceEdgeIdxs[j]];
+			const Edge& edge = faceShape.edges[faceEdgeIdxs[j]];
 			glm::vec3 edgeNormal = glm::cross(faceNorm, faceShape.verts[edge.first] - faceShape.verts[edge.second]);
 	
 			{ // making sure the edgeNormal is pointing outwards
@@ -183,10 +183,10 @@ namespace Nork::Physics
 		}
 		return result;
 	}
-	std::vector<glm::vec3> Clip::PointsOnFace(const Shape& faceShape, const uint32_t faceIdx, const std::vector<glm::vec3>& points)
+	std::vector<glm::vec3> Clip::PointsOnFace(const Collider& faceShape, const uint32_t faceIdx, const std::vector<glm::vec3>& points)
 	{
 		auto contactPointsForFace = points;
-		glm::vec3& faceNorm = faceShape.faces[faceIdx].norm;
+		const glm::vec3& faceNorm = faceShape.faces[faceIdx].norm;
 		auto faceEdgeIdxs = faceShape.EdgesOnFace(faceIdx);
 
 		for (size_t j = 0; j < faceEdgeIdxs.size(); j++)
@@ -194,7 +194,7 @@ namespace Nork::Physics
 			if (contactPointsForFace.size() == 0)
 				break;
 
-			Edge& edge = faceShape.edges[faceEdgeIdxs[j]];
+			const Edge& edge = faceShape.edges[faceEdgeIdxs[j]];
 			glm::vec3 edgeNormal = glm::cross(faceNorm, faceShape.verts[edge.first] - faceShape.verts[edge.second]);
 
 			{ // making sure the edgeNormal is pointing outwards

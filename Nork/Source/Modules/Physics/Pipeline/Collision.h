@@ -20,8 +20,10 @@ namespace Nork::Physics
 		void _4ResolvePositions();
 		void _4ResolveAll();
 		World& GetWorld() const { return *world; }
-		const Shape& Shape1() const { return GetWorld().shapes[obj1Idx]; }
-		const Shape& Shape2() const { return GetWorld().shapes[obj2Idx]; }
+		const Collider& Collider1() const { return GetWorld().colliders[obj1Idx]; }
+		const Collider& Collider2() const { return GetWorld().colliders[obj2Idx]; }
+		// const Collision& Shape1() const { return GetWorld().shapes[obj1Idx]; }
+		// const Collision& Shape2() const { return GetWorld().shapes[obj2Idx]; }
 		const KinematicData& Kinem1() const { return GetWorld().kinems[obj1Idx]; }
 		const KinematicData& Kinem2() const { return GetWorld().kinems[obj2Idx]; }
 	private:

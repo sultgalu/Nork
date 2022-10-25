@@ -30,7 +30,7 @@ namespace Nork::Physics {
 		return res;
 	}
 
-	static std::vector<glm::vec3> FaceContactPoints(const Shape& faceShape, const Shape& vertShape, const uint32_t faceIdx, const uint32_t vertIdx)
+	static std::vector<glm::vec3> FaceContactPoints(const Collider& faceShape, const Collider& vertShape, const uint32_t faceIdx, const uint32_t vertIdx)
 	{
 		auto& faceNormal = faceShape.faces[faceIdx].norm;
 		auto& faceVert = faceShape.verts[faceShape.faces[faceIdx].vertIdx];
@@ -88,7 +88,7 @@ namespace Nork::Physics {
 
 	void Collision::_1NarrowPhase()
 	{
-		satRes = SAT(Shape1(), Shape2()).GetResult();
+		satRes = SAT(Collider1(), Collider2()).GetResult();
 		satRes.depth *= -1;
 		satRes.dir *= -1;
 		isColliding = satRes.depth >= 0;
@@ -101,28 +101,28 @@ namespace Nork::Physics {
 		constexpr float bias = 0.1f;
 		if (satRes.type == CollisionType::FaceVert)
 		{
-			contactPoints = FaceContactPoints(Shape1(), Shape2(), satRes.featureIdx1, satRes.featureIdx2);
+			contactPoints = FaceContactPoints(Collider1(), Collider2(), satRes.featureIdx1, satRes.featureIdx2);
 			contactCenter = Center(contactPoints);
 			if (glm::isnan(contactCenter.x))
 				Logger::Error("");
 		}
 		else if (satRes.type == CollisionType::VertFace)
 		{
-			contactPoints = FaceContactPoints(Shape2(), Shape1(), satRes.featureIdx1, satRes.featureIdx2);
+			contactPoints = FaceContactPoints(Collider2(), Collider1(), satRes.featureIdx1, satRes.featureIdx2);
 			contactCenter = Center(contactPoints);
 			if (glm::isnan(contactCenter.x))
 				Logger::Error("");
 		}
 		else if (satRes.type == CollisionType::EdgeEdge)
 		{
-			auto& edge1 = Shape1().edges[satRes.featureIdx1];
-			auto& edge2 = Shape2().edges[satRes.featureIdx2];
+			auto& edge1 = Collider1().edges[satRes.featureIdx1];
+			auto& edge2 = Collider2().edges[satRes.featureIdx2];
 
-			glm::vec3 edge1Dir = Shape1().EdgeDirection(edge1);
-			glm::vec3 edge2Dir = Shape2().EdgeDirection(edge2);
+			glm::vec3 edge1Dir = Collider1().EdgeDirection(edge1);
+			glm::vec3 edge2Dir = Collider2().EdgeDirection(edge2);
 
-			glm::vec3 edgePoint1 = Shape1().FirstVertFromEdge(edge1);
-			glm::vec3 edgePoint2 = Shape2().FirstVertFromEdge(edge2);
+			glm::vec3 edgePoint1 = Collider1().FirstVertFromEdge(edge1);
+			glm::vec3 edgePoint2 = Collider2().FirstVertFromEdge(edge2);
 
 			glm::vec3 planeNorm = satRes.dir;
 			float sd = SignedDistance(planeNorm, edgePoint1, edgePoint2);
@@ -150,8 +150,8 @@ namespace Nork::Physics {
 		float fr2 = 1.0f;
 		float bias = 0.1f;
 		const glm::vec3& contactPoint = contactCenter;
-		glm::vec3 r1 = contactPoint - Shape1().center;
-		glm::vec3 r2 = contactPoint - Shape2().center;
+		glm::vec3 r1 = contactPoint - Collider1().center;
+		glm::vec3 r2 = contactPoint - Collider2().center;
 		auto vel1 = kinem1.velocity + glm::cross(kinem1.w, r1);
 		auto vel2 = kinem2.velocity + glm::cross(kinem2.w, r2);
 		auto velDiffLenSquared = glm::dot(vel1 - vel2, vel1 - vel2);

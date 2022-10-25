@@ -32,12 +32,12 @@ namespace Nork::Physics
 	{
 		Timer t;
 		std::vector<AABB> aabbs;
-		aabbs.reserve(world.shapes.size());
+		aabbs.reserve(world.colliders.size());
 		std::vector<std::pair<uint32_t, uint32_t>> results;
 
-		for (size_t i = 0; i < world.shapes.size(); i++)
+		for (size_t i = 0; i < world.colliders.size(); i++)
 		{
-			aabbs.push_back(AABB(world.shapes[i].verts));
+			aabbs.push_back(AABB(world.colliders[i].verts));
 		}
 		for (size_t i = 0; i < aabbs.size(); i++)
 		{

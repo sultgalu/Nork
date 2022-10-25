@@ -6,11 +6,11 @@ namespace Nork::Physics
 	std::vector<std::pair<uint32_t, std::pair<float, float>>> SAP::GetMinMaxPairsOnAxis(uint32_t ax)
 	{
 		std::vector<std::pair<uint32_t, std::pair<float, float>>> res;
-		res.reserve(world.shapes.size());
+		res.reserve(world.colliders.size());
 
-		for (size_t i = 0; i < world.shapes.size(); i++)
+		for (size_t i = 0; i < world.colliders.size(); i++)
 		{
-			auto& verts = world.shapes[i].verts;
+			auto& verts = world.colliders[i].verts;
 			std::pair<float, float> minMax = { verts[0][ax], verts[0][ax] };
 
 			for (size_t j = 1; j < verts.size(); j++)
@@ -33,15 +33,15 @@ namespace Nork::Physics
 	std::vector<std::pair<uint32_t, AABB>> SAP::GetAABBs()
 	{
 		static std::vector<std::pair<uint32_t, AABB>> res;
-		if (counter.size() < world.shapes.size())
+		if (counter.size() < world.colliders.size())
 		{
-			counter.resize(world.shapes.size());
+			counter.resize(world.colliders.size());
 			gen(0);
 		}
-		res.resize(world.shapes.size());
-		std::for_each_n(std::execution::unseq, counter.begin(), world.shapes.size(), [&](auto i)
+		res.resize(world.colliders.size());
+		std::for_each_n(std::execution::unseq, counter.begin(), world.colliders.size(), [&](auto i)
 			{
-				res[i] = (std::pair(i, AABB(world.shapes[i].verts)));
+				res[i] = (std::pair(i, AABB(world.colliders[i].verts)));
 				constexpr float bias = 0.0f;
 				res[i].second.min -= glm::vec3(bias);
 				res[i].second.max += glm::vec3(bias);

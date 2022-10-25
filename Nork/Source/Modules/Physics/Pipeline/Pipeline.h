@@ -32,7 +32,6 @@ namespace Nork::Physics
 		void RotationUpdate(KinematicData& kinem, float delta);
 
 		void SetColliders();
-		void SetModels();
 
 		World world;
 	};
