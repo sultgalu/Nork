@@ -166,6 +166,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Modules\Physics\Pipeline\Collision.cpp" />
+    <ClCompile Include="Source\Modules\Physics\Utils\Clip.cpp" />
     <ClCompile Include="Source\Components\Impl\Collider.cpp" />
     <ClCompile Include="Source\Core\InputState.cpp" />
     <ClCompile Include="Source\Core\ScriptSystem.cpp" />
@@ -217,6 +219,8 @@
     <ClCompile Include="Source\Modules\Renderer\Window\Window.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Texture\Texture.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\VertexArray\VertexArray.cpp" />
+    <ClInclude Include="Source\Modules\Physics\Pipeline\Collision.h" />
+    <ClInclude Include="Source\Modules\Physics\Utils\Clip.h" />
     <ClInclude Include="Source\Components\Collider.h" />
     <ClInclude Include="Source\Core\ScriptSystem.h" />
     <ClInclude Include="Source\Editor\Editor.h" />
@@ -296,8 +300,6 @@
     <ClCompile Include="Source\Scene\Serialization\JsonSerializer.cpp" />
     <ClCompile Include="Source\Utils\Profiler.cpp" />
     <ClInclude Include="Source\Modules\Physics\Config.h" />
-    <ClInclude Include="Source\Modules\Physics\Pipeline\CollisionDetection.h" />
-    <ClInclude Include="Source\Modules\Physics\Pipeline\CollisionDetectionCPU.h" />
     <ClInclude Include="Source\Modules\Physics\Data\Common.h" />
     <ClInclude Include="Source\Modules\Physics\Data\GPU.h" />
     <ClInclude Include="Source\Modules\Physics\Data\SSBO.h" />
@@ -308,7 +310,6 @@
     <ClInclude Include="Source\Modules\Physics\Utils\SAT.h" />
     <ClInclude Include="Source\Core\PolygonMesh.h" />
     <ClCompile Include="Source\Core\PolygonMesh.cpp" />
-    <ClCompile Include="Source\Modules\Physics\Pipeline\CollisionDetectionCPU.cpp" />
     <ClCompile Include="Source\Modules\Physics\Utils\MD.cpp" />
     <ClCompile Include="Source\Modules\Physics\Utils\AABB.cpp" />
     <ClCompile Include="Source\Modules\Physics\Utils\GJK.cpp" />

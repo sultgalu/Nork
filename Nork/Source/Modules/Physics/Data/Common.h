@@ -45,7 +45,6 @@ namespace Nork::Physics
 	{
 		glm::vec3 dir;
 		float depth;
-		glm::uvec2 pair;
 		CollisionType type;
 		uint16_t featureIdx1;
 		uint16_t featureIdx2;

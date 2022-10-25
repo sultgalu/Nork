@@ -5,7 +5,7 @@
 #include "../Utils/GJK.h"
 #include "../Utils/SAT.h"
 #include "../Utils/SAP.h"
-#include "CollisionDetection.h"
+#include "Collision.h"
 
 namespace Nork::Physics
 {
@@ -13,10 +13,9 @@ namespace Nork::Physics
 	{
 
 	public:
-		Pipeline();
-
-		std::vector<Collider> colls;
-		CollisionDetection* collisionDetector;
+		// std::vector<Collider> colls;
+		std::vector<Collider> collidersLocal;
+		std::vector<Collision> collisions;
 
 		bool updateVelocities = true, updateRotation = true;
 		bool detectCollisions = true, handleCollisions = true;
@@ -25,17 +24,15 @@ namespace Nork::Physics
 		float g = 10;
 		float coefficient = 0.1f;
 
-		std::vector<glm::vec3> contactPoints;
+		std::vector<std::pair<index_t, index_t>> broadResults;
 
 		void Update(float delta);
 
-		void GenContactPoints();
-		void ResolveCollisions(float delta);
-		void VelocityUpdate(float delta);
-		void RotationUpdate(float delta);
+		void VelocityUpdate(KinematicData& kinem, float delta);
+		void RotationUpdate(KinematicData& kinem, float delta);
 
-		void SetColliders(std::span<Collider> colls);
-		void SetModels(std::span<glm::vec3> translate, std::span<glm::quat> quaternions);
+		void SetColliders();
+		void SetModels();
 
 		World world;
 	};

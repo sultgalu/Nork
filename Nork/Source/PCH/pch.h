@@ -39,6 +39,7 @@
 //----------ALGORITHMS-------------
 
 #include <algorithm>
+#include <execution>
 
 //-----------NUMERICS--------------
 

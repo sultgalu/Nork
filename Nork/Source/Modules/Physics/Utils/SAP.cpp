@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "SAP.h"
-#include <execution>
 
 namespace Nork::Physics
 {
@@ -26,17 +25,27 @@ namespace Nork::Physics
 		}
 		return res;
 	}
+	static std::vector<int> counter;
+	static void gen(int n)
+	{
+		std::ranges::generate(counter, [&n]() mutable { return n++; });
+	}
 	std::vector<std::pair<uint32_t, AABB>> SAP::GetAABBs()
 	{
 		static std::vector<std::pair<uint32_t, AABB>> res;
-		res.resize(world.shapes.size());
-		for (size_t i = 0; i < world.shapes.size(); i++)
+		if (counter.size() < world.shapes.size())
 		{
-			res[i] = (std::pair(i, AABB(world.shapes[i].verts)));
-			float bias = 0.0f;
-			res[i].second.min -= glm::vec3(bias);
-			res[i].second.max += glm::vec3(bias);
+			counter.resize(world.shapes.size());
+			gen(0);
 		}
+		res.resize(world.shapes.size());
+		std::for_each_n(std::execution::unseq, counter.begin(), world.shapes.size(), [&](auto i)
+			{
+				res[i] = (std::pair(i, AABB(world.shapes[i].verts)));
+				constexpr float bias = 0.0f;
+				res[i].second.min -= glm::vec3(bias);
+				res[i].second.max += glm::vec3(bias);
+			});
 		return res;
 	}
 	// Right now it produces out-of sync jumping bc of the random order of pairs it gives back (y-collision order)

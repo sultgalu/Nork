@@ -23,13 +23,10 @@ namespace Nork::Physics
 	public:
 		SAT(const Shape& shape1, const Shape& shape2);
 		CollisionResult GetResult();
-		static std::vector<std::pair<std::string, float>> GetDeltas();
 	private:
 		bool FacePhase(const Shape& useFaces, const Shape& useVerts, CollisionType resType);
-		bool EdgePhase();
+		bool EdgePhase(const Shape& shape1, const Shape& shape2);
 	private:
-		 const Shape& shape1;
-		 const Shape& shape2;
 		 CollisionResult state = CollisionResult{ .depth = -std::numeric_limits<float>::max() };
 	};
 

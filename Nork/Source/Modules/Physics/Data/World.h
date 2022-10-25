@@ -7,9 +7,9 @@ namespace Nork::Physics
 {
 	struct Shape
 	{
-		std::span<glm::vec3> colliderVerts;
+		std::span<glm::vec3> colliderVerts; // locals ...
 		std::span<Face> colliderFaces;
-		std::span<glm::vec3> verts;
+		std::span<glm::vec3> verts; // globals ...
 		std::span<Edge> edges;
 		std::span<Face> faces;
 		std::span<std::vector<index_t>> faceVerts;
@@ -112,7 +112,7 @@ namespace Nork::Physics
 
 		void ClearColliderData();
 		void AddCollider(const Collider& collider);
-		void UpdateTransforms(std::span<glm::vec3> translate, std::span<glm::quat> quaternions);
+		void UpdateTransform(Shape& shape, const glm::vec3& translate, const glm::quat& quaternion);
 		void Remove(Shape& shape);
 	};
 }

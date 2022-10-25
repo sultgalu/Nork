@@ -14,7 +14,7 @@ namespace Nork::Physics
 	}
 	void World::AddCollider(const Collider& collider)
 	{
-		bool expand = this->verts.size() + verts.size() > this->verts.capacity() ||
+		bool expand = this->verts.size() + collider.verts.size() > this->verts.capacity() ||
 			this->colliderVerts.size() + collider.verts.size() > this->verts.capacity() ||
 			this->colliderFaces.size() + collider.faces.size() > this->faces.capacity() ||
 			this->faces.size() + collider.faces.size() > this->faces.capacity() ||
@@ -81,31 +81,28 @@ namespace Nork::Physics
 		shapes.push_back(newShape);
 	}
 
-	void World::UpdateTransforms(std::span<glm::vec3> translate, std::span<glm::quat> quaternions)
+	void World::UpdateTransform(Shape& shape, const glm::vec3& translate, const glm::quat& quaternion)
 	{
-		for (size_t i = 0; i < shapes.size(); i++)
+		glm::mat4 rotation = glm::mat4_cast(quaternion);
+
+		// shapes[i].center = rotation * glm::vec4(shapes[i].center, 1);
+		// shapes[i].center += translate[i];
+		for (size_t j = 0; j < shape.verts.size(); j++)
 		{
-			glm::mat4 rotation = glm::mat4_cast(quaternions[i]);
-
-			// shapes[i].center = rotation * glm::vec4(shapes[i].center, 1);
-			// shapes[i].center += translate[i];
-			for (size_t j = 0; j < shapes[i].verts.size(); j++)
-			{
-				shapes[i].verts[j] = rotation * glm::vec4(shapes[i].colliderVerts[j], 1);
-				shapes[i].verts[j] += translate[i];
-			}
-			for (size_t j = 0; j < shapes[i].faces.size(); j++)
-			{
-				shapes[i].faces[j].norm = rotation * glm::vec4(shapes[i].colliderFaces[j].norm, 1);
-			}
-
-			shapes[i].center = glm::vec3(0);
-			for (auto& vert : shapes[i].verts)
-			{
-				shapes[i].center += vert;
-			}
-			shapes[i].center /= shapes[i].verts.size();
+			shape.verts[j] = rotation * glm::vec4(shape.colliderVerts[j], 1);
+			shape.verts[j] += translate;
 		}
+		for (size_t j = 0; j < shape.faces.size(); j++)
+		{
+			shape.faces[j].norm = rotation * glm::vec4(shape.colliderFaces[j].norm, 1);
+		}
+
+		shape.center = glm::vec3(0);
+		for (auto& vert : shape.verts)
+		{
+			shape.center += vert;
+		}
+		shape.center /= shape.verts.size();
 	}
 
 	void World::Remove(Shape& shape)

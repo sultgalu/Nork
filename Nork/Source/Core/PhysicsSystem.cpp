@@ -86,40 +86,24 @@ namespace Nork {
 					.torque = kin.torque, .I = kin.I });
 			});
 
-		if (updatePoliesForPhysics)
+		if (updatePoliesForPhysics) // bottleneck :)
 		{
-			std::vector<Physics::Collider> colls;
 
+			pipeline.collidersLocal.clear();
 			collView.each([&](entt::entity id, Transform& tr, Kinematic& kin, Collider& coll)
 				{
-					colls.push_back(Convert(coll, tr.Scale()));
+					pipeline.collidersLocal.push_back(Convert(coll, tr.Scale()));
 				});
-
+			
 			collOnlyView.each([&](entt::entity id, Transform& tr, Collider& coll)
 				{
-					colls.push_back(Convert(coll, tr.Scale()));
+					pipeline.collidersLocal.push_back(Convert(coll, tr.Scale()));
 				});
-			pipeline.SetColliders(colls);
+
+			pipeline.SetColliders();
 		}
-		static std::vector<glm::vec3> translations;
-		static std::vector<glm::quat> quaternions;
-		translations.clear();
-		translations.reserve(reg.view<Transform>().size());
-		quaternions.clear();
-		quaternions.reserve(reg.view<Transform>().size());
 
-		collView.each([&](entt::entity id, Transform& tr, Kinematic& kin, Collider& poly)
-			{
-				translations.push_back(tr.Position());
-				quaternions.push_back(tr.Quaternion());
-			});
-
-		collOnlyView.each([&](entt::entity id, Transform& tr, Collider& poly)
-			{
-				translations.push_back(tr.Position());
-				quaternions.push_back(tr.Quaternion());
-			});
-		pipeline.SetModels(translations, quaternions);
+		pipeline.SetModels();
 
 		for (size_t i = 0; i < pWorld.kinems.size(); i++)
 		{
@@ -134,19 +118,7 @@ namespace Nork {
 
 	void PhysicsSystem::DownloadInternal()
 	{
-		static std::vector<glm::vec3> translations;
-		static std::vector<glm::quat> quaternions;
-		translations.clear();
-		translations.reserve(pWorld.kinems.size());
-		quaternions.clear();
-		quaternions.reserve(pWorld.kinems.size());
-
-		for (size_t i = 0; i < pWorld.kinems.size(); i++)
-		{
-			translations.push_back(pWorld.kinems[i].position);
-			quaternions.push_back(pWorld.kinems[i].quaternion);
-		}
-		pipeline.SetModels(translations, quaternions);
+		pipeline.SetModels();
 	}
 
 	void PhysicsSystem::Update2(entt::registry& reg)
@@ -154,13 +126,11 @@ namespace Nork {
 		static Timer deltaTimer(-20);
 		float delta = deltaTimer.ElapsedSeconds();
 		deltaTimer.Restart();
-		//Logger::Info(std::to_string(delta));
 		if (delta > 0.2f)
 			return;
 
 		delta *= physicsSpeed;
 		pipeline.Update(delta);
-		//Logger::Info("Delta ", delta);
 	}
 
 }

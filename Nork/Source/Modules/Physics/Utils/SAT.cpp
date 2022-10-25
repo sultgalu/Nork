@@ -5,8 +5,10 @@
 namespace Nork::Physics
 {
 	SAT::SAT(const Shape& shape1, const Shape& shape2)
-		: shape1(shape1), shape2(shape2)
 	{
+		if (FacePhase(shape1, shape2, CollisionType::FaceVert) && FacePhase(shape2, shape1, CollisionType::VertFace) && EdgePhase(shape1, shape2))
+		{
+		}
 	}
 
 	bool SAT::FacePhase(const Shape& shape1, const Shape& shape2, CollisionType type)
@@ -36,7 +38,7 @@ namespace Nork::Physics
 		}
 		return true;
 	}
-	bool SAT::EdgePhase()
+	bool SAT::EdgePhase(const Shape& shape1, const Shape& shape2)
 	{
 		//std::vector<Edge*> filteredEdges1, filteredEdges2;
 		std::vector<index_t> filteredEdges1, filteredEdges2;
@@ -95,10 +97,6 @@ namespace Nork::Physics
 
 	CollisionResult SAT::GetResult()
 	{
-		if (FacePhase(shape1, shape2, CollisionType::FaceVert) && FacePhase(shape2, shape1, CollisionType::VertFace) && EdgePhase())
-		{
-			return state;
-		}
 		return state;
 	}
 }
