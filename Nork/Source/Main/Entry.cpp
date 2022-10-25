@@ -82,7 +82,7 @@ int main()
 	auto sun = engine.scene.CreateNode()->GetEntity();
 	sun.AddComponent<Components::DirLight>([](auto& l)
 		{
-			l.light->direction = { 0.3f, -0.05f, 0.0f };
+			l.light->direction = { -0.05f, -0.08f, -0.05f };
 			l.far = 100; l.near = -100; l.left = -100; l.right = 100; l.bottom = -100; l.top = 100;
 			l.RecalcVP();
 			l.sun = true;

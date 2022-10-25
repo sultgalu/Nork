@@ -30,7 +30,7 @@ namespace Nork::Physics
 
 		std::for_each_n(std::execution::seq, counter.begin(), broadResults.size(), [&](auto i)
 			{
-				collisions[i]._3CalculateForces(); // why is it buggy with execution:par??
+				collisions[i]._3CalculateForces(); // should be called together with _4 (resolve as soon as calculated)
 				collisions[i]._4ResolveAll();
 			});
 
