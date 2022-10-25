@@ -158,11 +158,20 @@ public:
 		return *this;
 	}
 	template<JsonDataType T>
-	JsonArray& Elements(T* data, int count)
+	JsonArray& Elements(const T* data, int count)
 	{
 		for (size_t i = 0; i < count; i++)
 		{
 			elements.push_back(JsonParser::Parse(data[i]));
+		}
+		return *this;
+	}
+	template<glm::length_t len, JsonDataType T>
+	JsonArray& Elements(const glm::vec<len, T>& vec)
+	{
+		for (size_t i = 0; i < len; i++)
+		{
+			elements.push_back(JsonParser::Parse(vec[i]));
 		}
 		return *this;
 	}
@@ -209,6 +218,14 @@ public:
 		for (size_t i = 0; i < Size(); i++)
 		{
 			vec.push_back(Get<T>(i));
+		}
+	}
+	template<glm::length_t len, JsonDataType T>
+	void Get(glm::vec<len, T>& vec) const
+	{
+		for (size_t i = 0; i < len; i++)
+		{
+			vec[i] = JsonParser::Get<T>(elements[i]);
 		}
 	}
 	template<JsonDataType T>

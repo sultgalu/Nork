@@ -45,6 +45,8 @@ namespace Nork
 		entt::observer transformObserver;
 	private:
 		void OnDrawableAdded(entt::registry& reg, entt::entity id);
+		void OnPhysicsAdded(entt::registry& reg, entt::entity id);
+		void OnPhysicsRemoved(entt::registry& reg, entt::entity id);
 		std::thread* LaunchPhysicsThread();
 		void UpdateGlobalTransforms();
 		void UpdateTransformMatrices();

@@ -12,6 +12,13 @@ namespace Nork::Physics
 
 	void Pipeline::Update(float delta)
 	{
+		std::for_each(std::execution::par, world.objs.begin(), world.objs.end(), [&](auto& obj)
+			{
+				VelocityUpdate(obj.kinem, delta);
+				RotationUpdate(obj.kinem, delta);
+				obj.UpdateCollider();
+			});
+
 		broadResults = SAP(world).Get();
 
 		if (counter.size() < broadResults.size())
@@ -28,16 +35,11 @@ namespace Nork::Physics
 				collisions[i]._2GenerateContactPoints();
 			});
 
-		std::for_each_n(std::execution::seq, counter.begin(), broadResults.size(), [&](auto i)
+		// works faster with ::par, but in theory data-races can occour
+		std::for_each_n(std::execution::par, counter.begin(), broadResults.size(), [&](auto i)
 			{
 				collisions[i]._3CalculateForces(); // should be called together with _4 (resolve as soon as calculated)
 				collisions[i]._4ResolveAll();
-			});
-
-		std::for_each(std::execution::seq, world.kinems.begin(), world.kinems.end(), [&](auto& kinem)
-			{
-				VelocityUpdate(kinem, delta);
-				RotationUpdate(kinem, delta);
 			});
 	}
 
@@ -47,44 +49,6 @@ namespace Nork::Physics
 		bool isStatic = false; // has a static object
 		KinematicData kinem;
 	};
-
-	void Pipeline::SetColliders()
-	{
-		world.colliders.resize(collidersLocal.size());
-		if (counter.size() < collidersLocal.size())
-		{
-			counter.resize(collidersLocal.size());
-			gen(0);
-		}
-		std::for_each_n(std::execution::par, counter.begin(), collidersLocal.size(), [&](auto i)
-			{
-				auto& colliderLocal = collidersLocal[i];
-				world.colliders[i] = Collider(colliderLocal);
-				auto& collider = world.colliders[i];
-
-				glm::mat4 rotation = glm::mat4_cast(world.kinems[i].quaternion);
-
-				// colliders[i].center = rotation * glm::vec4(colliders[i].center, 1);
-				// colliders[i].center += translate[i];
-				for (size_t j = 0; j < collider.verts.size(); j++)
-				{
-					collider.verts[j] = rotation * glm::vec4(colliderLocal.verts[j], 1);
-					collider.verts[j] += world.kinems[i].position;
-				}
-				for (size_t j = 0; j < collider.faces.size(); j++)
-				{
-					collider.faces[j].norm = rotation * glm::vec4(colliderLocal.faces[j].norm, 1);
-				}
-
-				collider.center = glm::vec3(0);
-				for (auto& vert : collider.verts)
-				{
-					collider.center += vert;
-				}
-				collider.center /= collider.verts.size();
-			});
-		// this->colls = std::vector<Collider>(colls.begin(), colls.end());
-	}
 
 	void Pipeline::VelocityUpdate(KinematicData& kinem, float delta)
 	{

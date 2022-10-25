@@ -30,12 +30,14 @@ namespace Nork::Physics
 
 	struct Collider
 	{
-		std::vector<glm::vec3> verts;
-		std::vector<Edge> edges;
-		std::vector<Face> faces;
-		std::vector<std::vector<index_t>> faceVerts;
-		glm::vec3 center;
-		glm::vec3 colliderCenter;
+		std::vector<glm::vec3> verts = {};
+		std::vector<Edge> edges = {};
+		std::vector<Face> faces = {};
+		std::vector<std::vector<index_t>> faceVerts = {};
+		glm::vec3 center = glm::vec3(0);
+		bool isActive = false;
+
+		static Collider Cube(glm::vec3 scale = glm::vec3(0));
 
 		std::vector<uint32_t> SideFacesOfVert(uint32_t vertIdx) const
 		{
@@ -134,14 +136,48 @@ namespace Nork::Physics
 
 	struct KinematicData
 	{
-		glm::vec3 position;
-		glm::quat quaternion;
-		glm::vec3 velocity;
-		glm::vec3 w;
-		float mass;
+		glm::vec3 position = glm::zero<glm::vec3>();
+		glm::vec3 velocity = glm::zero<glm::vec3>();
+		glm::vec3 forces = glm::zero<glm::vec3>();
+		float mass = 1;
+		
+		glm::quat quaternion = glm::quat(0, 0, 0, 1);
+		glm::vec3 w = glm::zero<glm::vec3>();
+		glm::vec3 torque = glm::zero<glm::vec3>();
+		float I = 1;
+		
 		bool isStatic = false;
-		glm::vec3 forces;
-		glm::vec3 torque = glm::vec3(0);
-		float I;
+	};
+
+	class Object
+	{
+	public:
+		Object(const KinematicData& kinem = KinematicData())
+			: kinem(kinem) {}
+
+		Object(const Collider& collider, const KinematicData& kinem = KinematicData())
+			: localColl(collider), collider(collider), kinem(kinem)
+		{
+			this->kinem.I = CalcInertia();
+			UpdateCollider();
+		}
+		void UpdateCollider();
+	private:
+		float CalcInertia();
+	public:
+		Collider localColl = Collider(); // const
+		Collider collider = Collider();
+		KinematicData kinem;
+	};
+
+	struct ObjectHandle
+	{
+		Object& Get() const;
+		bool operator==(const ObjectHandle& other) const 
+		{
+			return handle == other.handle;
+		}	
+	public:
+		uint64_t handle;
 	};
 }

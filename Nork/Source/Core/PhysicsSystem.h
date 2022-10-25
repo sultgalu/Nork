@@ -9,10 +9,9 @@ namespace Nork {
 	class PhysicsSystem
 	{
 	public:
-		void Upload(entt::registry& reg);
-		void Download(entt::registry& reg, bool updatePoliesForPhysics);
-		void DownloadInternal();
-		void Update2(entt::registry& reg);
+		void Download(entt::registry& reg);
+		void Upload(entt::registry& reg, bool updatePoliesForPhysics);
+		void Update(entt::registry& reg);
 
 		std::vector<std::pair<std::string, float>> deltas;
 		bool satRes = false, gjkRes = false, clipRes = false, aabbRes = false;

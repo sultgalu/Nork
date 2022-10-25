@@ -31,8 +31,6 @@ namespace Nork::Physics
 		void VelocityUpdate(KinematicData& kinem, float delta);
 		void RotationUpdate(KinematicData& kinem, float delta);
 
-		void SetColliders();
-
 		World world;
 	};
 }

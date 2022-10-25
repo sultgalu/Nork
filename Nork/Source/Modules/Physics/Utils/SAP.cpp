@@ -6,11 +6,11 @@ namespace Nork::Physics
 	std::vector<std::pair<uint32_t, std::pair<float, float>>> SAP::GetMinMaxPairsOnAxis(uint32_t ax)
 	{
 		std::vector<std::pair<uint32_t, std::pair<float, float>>> res;
-		res.reserve(world.colliders.size());
+		res.reserve(world.objs.size());
 
-		for (size_t i = 0; i < world.colliders.size(); i++)
+		for (size_t i = 0; i < world.objs.size(); i++)
 		{
-			auto& verts = world.colliders[i].verts;
+			auto& verts = world.objs[i].collider.verts;
 			std::pair<float, float> minMax = { verts[0][ax], verts[0][ax] };
 
 			for (size_t j = 1; j < verts.size(); j++)
@@ -33,15 +33,15 @@ namespace Nork::Physics
 	std::vector<std::pair<uint32_t, AABB>> SAP::GetAABBs()
 	{
 		static std::vector<std::pair<uint32_t, AABB>> res;
-		if (counter.size() < world.colliders.size())
+		if (counter.size() < world.objs.size())
 		{
-			counter.resize(world.colliders.size());
+			counter.resize(world.objs.size());
 			gen(0);
 		}
-		res.resize(world.colliders.size());
-		std::for_each_n(std::execution::unseq, counter.begin(), world.colliders.size(), [&](auto i)
+		res.resize(world.objs.size());
+		std::for_each_n(std::execution::unseq, counter.begin(), world.objs.size(), [&](auto i)
 			{
-				res[i] = (std::pair(i, AABB(world.colliders[i].verts)));
+				res[i] = (std::pair(i, AABB(world.objs[i].collider.verts)));
 				constexpr float bias = 0.0f;
 				res[i].second.min -= glm::vec3(bias);
 				res[i].second.max += glm::vec3(bias);
@@ -54,12 +54,13 @@ namespace Nork::Physics
 		std::vector<std::pair<uint32_t, uint32_t>> res;
 
 		auto aabbs = GetAABBs();
-		std::sort(std::execution::unseq, aabbs.begin(), aabbs.end(), [](auto& a, auto& b)
+		std::sort(std::execution::par_unseq, aabbs.begin(), aabbs.end(), [](auto& a, auto& b)
 			{
 				return a.second.min.x < b.second.min.x;
 			});
 		
 		// aabbs sorted now by x axis
+		Timer t;
 		std::vector<uint32_t> currentInterval = { 0 };
 		for (uint32_t i = 1; i < aabbs.size(); i++)
 		{
@@ -101,6 +102,7 @@ namespace Nork::Physics
 			}
 			currentInterval = newInterval;
 		}
+		Logger::Debug("elapsed: ", t.Elapsed(), "ms");
 		return res;
 	}
 }

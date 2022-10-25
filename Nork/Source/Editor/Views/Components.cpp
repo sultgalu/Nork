@@ -13,7 +13,7 @@ namespace Nork::Editor {
 	void SceneNodeView::Content()
 	{
 		using namespace Components;
-		Content<Transform, Drawable, DirLight, PointLight, Collider, Kinematic, Camera, Tag>();
+		Content<Transform, Drawable, DirLight, PointLight, Components::Physics, Camera, Tag>();
 	}
 	template<class... T>
 	void SceneNodeView::Content()
@@ -420,8 +420,9 @@ namespace Nork::Editor {
 			GetEngine().resourceManager.ExportModel(dr.model);
 		}
 	}
-	template<> void SceneNodeView::ShowComponent(Components::Kinematic& kin, bool& changed)
+	template<> void SceneNodeView::ShowComponent(Components::Physics& phx, bool& changed)
 	{
+		auto& kin = phx.handle.Get().kinem;
 		changed |= ImGui::DragFloat("Mass (kg)", &kin.mass, 0.01f);
 		changed |= ImGui::DragFloat3("Velocity", &kin.velocity.x, 0.001f);
 		auto axis = glm::normalize(kin.w);
@@ -549,8 +550,7 @@ namespace Nork::Editor {
 	template<> std::string componentName<Components::PointLight> = "Point Light";
 	template<> std::string componentName<Components::Transform> = "Transform";
 	template<> std::string componentName<Components::Camera> = "Camera";
-	template<> std::string componentName<Components::Collider> = "Collider";
 	template<> std::string componentName<Components::Drawable> = "Drawable";
-	template<> std::string componentName<Components::Kinematic> = "Kinematic";
+	template<> std::string componentName<Components::Physics> = "Physics";
 	template<> std::string componentName<Components::Tag> = "Tag";
 }

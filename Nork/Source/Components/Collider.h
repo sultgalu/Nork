@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Modules/Physics/Data/Common.h"
+
 namespace Nork::Components {
 	struct Collider
 	{
@@ -35,5 +37,13 @@ namespace Nork::Components {
 		std::vector<Face> faces;
 	private:
 		glm::vec3 FaceNormal(const Face&);
+	};
+
+	struct Physics
+	{
+		Physics() = default;
+		Nork::Physics::KinematicData& Kinem() const { return handle.Get().kinem; }
+		Nork::Physics::Collider& Collider() const { return handle.Get().collider; }
+		Nork::Physics::ObjectHandle handle;
 	};
 }

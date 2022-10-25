@@ -133,24 +133,158 @@ namespace Nork {
 			});
 		return comp;
 	}
-	template<> JsonObject JsonComponentSerializer<Kinematic>::Serialize(const Kinematic& component)
+	template<> JsonObject JsonComponentSerializer<Components::Physics>::Serialize(const Components::Physics& component)
 	{
-		return JsonObject()
-			.Property("forces", JsonArray().Elements(&component.forces.x, 3))
-			.Property("velocity", JsonArray().Elements(&component.velocity.x, 3))
-			.Property("w", JsonArray().Elements(&component.w.x, 3))
-			.Property("mass", component.mass);
-	}
-	template<> Kinematic& JsonComponentDeserializer<Kinematic>::Deserialize(const JsonObject& json)
-	{
-		auto& comp = entity.AddComponent<Kinematic>([&](Kinematic& comp)
+		auto& kinem = component.Kinem();
+		auto kinemJson = JsonObject()
+			.Property("forces", JsonArray().Elements(kinem.forces))
+			.Property("velocity", JsonArray().Elements(kinem.velocity))
+			.Property("w", JsonArray().Elements(kinem.w))
+			.Property("mass", kinem.mass);
+
+		JsonObject collJson;
+		JsonObject collLocalJson;
+
+		{
+			auto& coll = component.Collider();
+			JsonArray points;
+			JsonArray edges;
+			JsonArray faces;
+			JsonArray facesVerts;
+			for (auto& vert : coll.verts)
 			{
-				json.Get<JsonArray>("forces").Get(&comp.forces.x, 3);
-				json.Get<JsonArray>("velocity").Get(&comp.velocity.x, 3);
-				json.Get<JsonArray>("w").Get(&comp.w.x, 3);
-				json.Get("mass", comp.mass);
+				points.Element(JsonArray().Elements(vert));
+			}
+			for (auto& edge : coll.edges)
+			{
+				edges.Element(JsonArray().Elements(&edge.first, 2));
+			}
+			for (auto& face : coll.faces)
+			{
+				JsonObject f;
+				f.Property("normal", JsonArray().Elements(face.norm));
+				f.Property("vertIdx", face.vertIdx);
+				faces.Element(f);
+			}
+			for (auto& face : coll.faceVerts)
+			{
+				facesVerts.Element(JsonArray().Elements(face));
+			}
+			collJson = JsonObject()
+				.Property("verts", points)
+				.Property("edges", edges)
+				.Property("faces", faces)
+				.Property("faceVerts", facesVerts);
+		}
+		{
+			auto& coll = component.handle.Get().localColl;
+			JsonArray points;
+			JsonArray edges;
+			JsonArray faces;
+			JsonArray facesVerts;
+			for (auto& vert : coll.verts)
+			{
+				points.Element(JsonArray().Elements(vert));
+			}
+			for (auto& edge : coll.edges)
+			{
+				edges.Element(JsonArray().Elements(&edge.first, 2));
+			}
+			for (auto& face : coll.faces)
+			{
+				JsonObject f;
+				f.Property("normal", JsonArray().Elements(face.norm));
+				f.Property("vertIdx", face.vertIdx);
+				faces.Element(f);
+			}
+			for (auto& face : coll.faceVerts)
+			{
+				facesVerts.Element(JsonArray().Elements(face));
+			}
+			collLocalJson = JsonObject()
+				.Property("verts", points)
+				.Property("edges", edges)
+				.Property("faces", faces)
+				.Property("faceVerts", facesVerts);
+		}
+
+		return JsonObject()
+			.Property("kinem", kinemJson)
+			.Property("coll", collJson)
+			.Property("collLocal", collLocalJson);
+	}
+	template<> Components::Physics& JsonComponentDeserializer<Components::Physics>::Deserialize(const JsonObject& json)
+	{
+		return entity.AddComponent<Components::Physics>([&](Components::Physics& comp)
+			{
+				auto kinemComp = json.Get<JsonObject>("kinem");
+				auto& kinem = comp.Kinem();
+				kinemComp.Get<JsonArray>("forces").Get(kinem.forces);
+				kinemComp.Get<JsonArray>("velocity").Get(kinem.velocity);
+				kinemComp.Get<JsonArray>("w").Get(kinem.w);
+				kinemComp.Get("mass", kinem.mass);
+
+				{
+					auto collComp = json.Get<JsonObject>("collLocal");
+					auto& coll = comp.Collider();
+					auto verts = collComp.Get<JsonArray>("verts");
+					auto edges = collComp.Get<JsonArray>("edges");
+					auto faces = collComp.Get<JsonArray>("faces");
+					auto faceVerts = collComp.Get<JsonArray>("faceVerts");
+					coll.verts.resize(verts.Size());
+					for (size_t i = 0; i < verts.Size(); i++)
+					{
+						verts.Get<JsonArray>(i).Get(coll.verts[i]);
+					}
+					coll.edges.resize(edges.Size());
+					for (size_t i = 0; i < edges.Size(); i++)
+					{
+						edges.Get<JsonArray>(i).Get(&coll.edges[i].first, 2);
+					}
+					coll.faces.resize(faces.Size());
+					for (size_t i = 0; i < faces.Size(); i++)
+					{
+						JsonObject face = faces.Get<JsonObject>(i);
+						face.Get<JsonArray>("normal").Get(coll.faces[i].norm);
+						face.Get("vertIdx", coll.faces[i].vertIdx);
+					}
+					coll.faceVerts.resize(faceVerts.Size());
+					for (size_t i = 0; i < faceVerts.Size(); i++)
+					{
+						faceVerts.Get<JsonArray>(i).Get(coll.faceVerts[i]);
+					}
+				}
+				{
+					auto collComp = json.Get<JsonObject>("coll");
+					auto& coll = comp.handle.Get().localColl;
+					auto verts = collComp.Get<JsonArray>("verts");
+					auto edges = collComp.Get<JsonArray>("edges");
+					auto faces = collComp.Get<JsonArray>("faces");
+					auto faceVerts = collComp.Get<JsonArray>("faceVerts");
+					coll.verts.resize(verts.Size());
+					for (size_t i = 0; i < verts.Size(); i++)
+					{
+						verts.Get<JsonArray>(i).Get(coll.verts[i]);
+					}
+					coll.edges.resize(edges.Size());
+					for (size_t i = 0; i < edges.Size(); i++)
+					{
+						edges.Get<JsonArray>(i).Get(&coll.edges[i].first, 2);
+					}
+					coll.faces.resize(faces.Size());
+					for (size_t i = 0; i < faces.Size(); i++)
+					{
+						JsonObject face = faces.Get<JsonObject>(i);
+						face.Get<JsonArray>("normal").Get(coll.faces[i].norm);
+						face.Get("vertIdx", coll.faces[i].vertIdx);
+					}
+					coll.faceVerts.resize(faceVerts.Size());
+					for (size_t i = 0; i < faceVerts.Size(); i++)
+					{
+						faceVerts.Get<JsonArray>(i).Get(coll.faceVerts[i]);
+					}
+				}
 			});
-		return comp;
 	}
 
 	template<> JsonObject JsonComponentSerializer<Camera>::Serialize(const Camera& component)
@@ -215,58 +349,6 @@ namespace Nork {
 			});
 		return comp;
 	}
-	template<> JsonObject JsonComponentSerializer<Collider>::Serialize(const Collider& component)
-	{
-		JsonArray points;
-		JsonArray edges;
-		JsonArray faces;
-		for (auto& point : component.Points())
-		{
-			points.Element(JsonArray().Elements(&point.x, 3));
-		}
-		for (auto& edge : component.Edges())
-		{
-			edges.Element(JsonArray().Elements(&edge.first, 2));
-		}
-		for (auto& face : component.Faces())
-		{
-			JsonObject f;
-			f.Property("normal", JsonArray().Elements(&face.normal.x, 3));
-			f.Property("points", JsonArray().Elements(face.points));
-			faces.Element(f);
-		}
-		return JsonObject().Property("points", points).Property("edges", edges).Property("faces", faces);
-	}
-	template<> Collider& JsonComponentDeserializer<Collider>::Deserialize(const JsonObject& json)
-	{
-		auto& comp = entity.AddComponent<Collider>([&](Collider& comp)
-			{
-				auto points = json.Get<JsonArray>("points");
-				auto edges = json.Get<JsonArray>("edges");
-				auto faces = json.Get<JsonArray>("faces");
-				for (size_t i = 0; i < points.Size(); i++)
-				{
-					glm::vec3 p;
-					points.Get<JsonArray>(i).Get(&p.x, 3);
-					comp.AddPoint(p);
-				}
-				for (size_t i = 0; i < edges.Size(); i++)
-				{
-					Collider::Edge e;
-					edges.Get<JsonArray>(i).Get(&e.first, 2);
-					comp.AddEdge(e.first, e.second);
-				}
-				for (size_t i = 0; i < faces.Size(); i++)
-				{
-					Collider::Face f;
-					JsonObject face = faces.Get<JsonObject>(i);
-					face.Get<JsonArray>("normal").Get(&f.normal.x, 3);
-					face.Get<JsonArray>("points").Get(f.points);
-					comp.AddFace(f);
-				}
-			});
-		return comp;
-	}
 
 	template<class T>
 	static T DeserializeComponent(const JsonObject& json)
@@ -319,9 +401,8 @@ namespace Nork {
 		ser.TrySerializeComponent<Drawable>();
 		ser.TrySerializeComponent<DirLight>();
 		ser.TrySerializeComponent<PointLight>();
-		ser.TrySerializeComponent<Kinematic>();
+		ser.TrySerializeComponent<Components::Physics>();
 		ser.TrySerializeComponent<Camera>();
-		ser.TrySerializeComponent<Collider>();
 
 		JsonObject json;
 
@@ -363,11 +444,10 @@ namespace Nork {
 				Transform,
 				DirLight,
 				PointLight,
-				Kinematic,
+				Components::Physics,
 				Tag,
 				Drawable,
-				Camera,
-				Collider
+				Camera
 			>(entity, comp);
 		}
 		return entity;

@@ -285,31 +285,31 @@ namespace Nork::Physics {
 
 	void Collision::_4ResolveVelocities()
 	{
-		GetWorld().kinems[obj1Idx].velocity += this->deltaV1;
-		GetWorld().kinems[obj2Idx].velocity += this->deltaV2;
+		GetWorld().objs[obj1Idx].kinem.velocity += this->deltaV1;
+		GetWorld().objs[obj2Idx].kinem.velocity += this->deltaV2;
 	}
 	void Collision::_4ResolveAngularVelocities()
 	{
-		GetWorld().kinems[obj1Idx].w += this->deltaW1;
-		GetWorld().kinems[obj2Idx].w += this->deltaW2;
+		GetWorld().objs[obj1Idx].kinem.w += this->deltaW1;
+		GetWorld().objs[obj2Idx].kinem.w += this->deltaW2;
 	}
 	void Collision::_4ResolvePositions()
 	{
-		GetWorld().kinems[obj1Idx].position += this->deltaP1;
-		GetWorld().kinems[obj2Idx].position += this->deltaP2;
+		GetWorld().objs[obj1Idx].kinem.position += this->deltaP1;
+		GetWorld().objs[obj2Idx].kinem.position += this->deltaP2;
 	}
 	void Collision::_4ResolveAll()
 	{
 		if (!isColliding)
 			return;
 
-		GetWorld().kinems[obj1Idx].velocity += this->deltaV1;
-		GetWorld().kinems[obj2Idx].velocity += this->deltaV2;
+		GetWorld().objs[obj1Idx].kinem.velocity += this->deltaV1;
+		GetWorld().objs[obj2Idx].kinem.velocity += this->deltaV2;
 
-		GetWorld().kinems[obj1Idx].w += this->deltaW1;
-		GetWorld().kinems[obj2Idx].w += this->deltaW2;
+		GetWorld().objs[obj1Idx].kinem.w += this->deltaW1;
+		GetWorld().objs[obj2Idx].kinem.w += this->deltaW2;
 
-		GetWorld().kinems[obj1Idx].position += this->deltaP1;
-		GetWorld().kinems[obj2Idx].position += this->deltaP2;
+		GetWorld().objs[obj1Idx].kinem.position += this->deltaP1;
+		GetWorld().objs[obj2Idx].kinem.position += this->deltaP2;
 	}
 }

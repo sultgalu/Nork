@@ -19,25 +19,50 @@ int main()
 
 	//editor.SetDisplayTexture(engine.renderingSystem.deferredPipeline.lightFb->Color());
 
-	int dim = 10;
-	int sep = 3;
-	int start = -dim / 2;
-	int end = dim / 2 + dim % 2;
+	// int dim = 15;
+	// int sep = 3;
+	// int start = -dim / 2;
+	// int end = dim / 2 + dim % 2;
+	// 
+	// for (int i = start; i < end; i++)
+	// {
+	// 	for (int j = 0; j < dim; j++)
+	// 	{
+	// 		for (int k = start; k < end; k++)
+	// 		{
+	// 			auto ent = engine.scene.CreateNode()->GetEntity();
+	// 			ent.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
+	// 			ent.AddComponent<Components::Transform>([&](auto& tr) { tr.localPosition = glm::vec3(i * sep, j * sep, k * sep); });
+	// 			ent.AddComponent<Components::Physics>().Kinem().mass = 0.1f;
+	// 			ent.AddComponent<Components::Tag>().tag = std::to_string(i).append("-").append(std::to_string(j)).append("-").append(std::to_string(k));
+	// 		}
+	// 	}
+	// }
 
-	for (int i = start; i < end; i++)
+	int levels = 50;
+	int size = 10; // * 4 = one level
+	float sep = 2.1f;
+	int start = -size / 2;
+
+	auto add = [&](int i, int j, int k)
 	{
-		for (int j = 0; j < dim; j++)
-		{
-			for (int k = start; k < end; k++)
-			{
-				auto ent = engine.scene.CreateNode()->GetEntity();
-				ent.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
-				ent.AddComponent<Components::Transform>([&](auto& tr) { tr.localPosition = glm::vec3(i * sep, j * sep, k * sep); });
-				ent.AddComponent<Components::Kinematic>().mass = 0.1f;
-				ent.AddComponent<Components::Collider>() = Components::Collider::Cube();
-				ent.AddComponent<Components::Tag>().tag = std::to_string(i).append("-").append(std::to_string(j)).append("-").append(std::to_string(k));
-			}
-		}
+		auto ent = engine.scene.CreateNode()->GetEntity();
+		ent.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
+		ent.AddComponent<Components::Transform>([&](auto& tr) { tr.localPosition = glm::vec3(i * sep, j * sep, k * sep); });
+		ent.AddComponent<Components::Physics>().Kinem().mass = 0.1f;
+		ent.AddComponent<Components::Tag>().tag = std::to_string(i).append("-").append(std::to_string(j)).append("-").append(std::to_string(k));
+	};
+	for (int level = 0; level < levels; level++)
+	{
+		int i = -1, j = 0;
+		for (size_t _ = 0; _ < size; _++)
+			add(start + ++i, level, start + j);
+		for (size_t _ = 0; _ < size; _++)
+			add(start + i, level, start + ++j);
+		for (size_t _ = 0; _ < size; _++)
+			add(start + --i, level, start + j);
+		for (size_t _ = 0; _ < size; _++)
+			add(start + i, level, start + --j);
 	}
 
 	// SINGLE
@@ -61,8 +86,9 @@ int main()
 	ground.AddComponent<Components::Transform>([&](auto& tr) {
 		tr.localPosition = glm::vec3(0, -10, 0);
 		tr.localScale = scale;
+		tr.UpdateGlobalWithoutParent();
 		});
-	ground.AddComponent<Components::Collider>() = Components::Collider::Cube();
+	ground.AddComponent<Components::Physics>().Kinem().isStatic = true;
 	ground.AddComponent<Components::Tag>().tag = "GROUND";
 
 	/*auto node1 = engine.scene.CreateNode();

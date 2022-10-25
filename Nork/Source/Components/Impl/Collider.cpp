@@ -91,7 +91,7 @@ namespace Nork::Components {
 						else
 							face.points.push_back(edge2.second);
 						face.normal = FaceNormal(face);
-						if (Physics::SignedDistanceNormalized(face.normal, points[face.points[0]], center) > 0)
+						if (Nork::Physics::SignedDistanceNormalized(face.normal, points[face.points[0]], center) > 0)
 						{
 							std::swap(face.points[1], face.points[2]);
 							face.normal = FaceNormal(face);
@@ -115,11 +115,11 @@ namespace Nork::Components {
 				auto& point1 = points[face.points[i]];
 				auto& point2 = points[face.points[(i + 1) % face.points.size()]];
 				auto edgeNormal = glm::cross(face.normal, point1 - point2);
-				if (Physics::Sign(edgeNormal, point1, points[face.points[(i + 2) % face.points.size()]]) > 0)
+				if (Nork::Physics::Sign(edgeNormal, point1, points[face.points[(i + 2) % face.points.size()]]) > 0)
 				{
 					edgeNormal *= -1;
 				}
-				if (Physics::Sign(edgeNormal, point1, point) > 0)
+				if (Nork::Physics::Sign(edgeNormal, point1, point) > 0)
 				{
 					// remove broken edge from edges
 					auto idx1 = face.points[i];
@@ -311,7 +311,7 @@ namespace Nork::Components {
 					else
 						face.points.push_back(edge2.second);
 					face.normal = FaceNormal(face);
-					if (Physics::SignedDistanceNormalized(face.normal, points[face.points[0]], center) > 0)
+					if (Nork::Physics::SignedDistanceNormalized(face.normal, points[face.points[0]], center) > 0)
 					{
 						std::swap(face.points[1], face.points[2]);
 						face.normal = FaceNormal(face);
@@ -338,11 +338,11 @@ namespace Nork::Components {
 				auto& point1 = points[face.points[i]];
 				auto& point2 = points[face.points[(i + 1) % face.points.size()]];
 				auto edgeNormal = glm::cross(face.normal, point1 - point2);
-				if (Physics::Sign(edgeNormal, point1, points[face.points[(i + 2) % face.points.size()]]) > 0)
+				if (Nork::Physics::Sign(edgeNormal, point1, points[face.points[(i + 2) % face.points.size()]]) > 0)
 				{
 					edgeNormal *= -1;
 				}
-				if (Physics::Sign(edgeNormal, point1, point) > 0)
+				if (Nork::Physics::Sign(edgeNormal, point1, point) > 0)
 				{
 					return (i + 1) % face.points.size();
 				}

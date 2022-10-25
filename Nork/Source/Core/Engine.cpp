@@ -6,13 +6,13 @@
 
 namespace Nork
 {
-	static std::array<int, 2> c;
-
 	Engine::Engine()
 		: uploadSem(1), updateSem(1),
 		scriptSystem(scene)
 	{
 		scene.registry.on_construct<Components::Drawable>().connect<&Engine::OnDrawableAdded>(this);
+		scene.registry.on_construct<Components::Physics>().connect<&Engine::OnPhysicsAdded>(this);
+		scene.registry.on_destroy<Components::Physics>().connect<&Engine::OnPhysicsRemoved>(this);
 		transformObserver.connect(scene.registry, entt::collector.update<Components::Transform>());
 	}
 	void Engine::OnDrawableAdded(entt::registry& reg, entt::entity id)
@@ -23,25 +23,34 @@ namespace Nork
 		auto* tr = reg.try_get<Components::Transform>(id);
 		dr.modelMatrix = renderingSystem.drawState.modelMatrixBuffer.Add(glm::identity<glm::mat4>());
 	}
+	void Engine::OnPhysicsAdded(entt::registry& reg, entt::entity id)
+	{
+		auto& obj = reg.get<Components::Physics>(id);
+
+		if (reg.any_of<Components::Transform>(id))
+		{
+			auto& tr = reg.get<Components::Transform>(id);
+			obj.handle = physicsSystem.pWorld.AddObject(Physics::Object(Physics::Collider::Cube(tr.Scale()),
+				Physics::KinematicData { .position = tr.Position(), .quaternion = tr.Quaternion() }));
+		}
+		else
+		{
+			obj.handle = physicsSystem.pWorld.AddObject(Physics::Object(Physics::Collider::Cube()));
+		}
+	}
+	void Engine::OnPhysicsRemoved(entt::registry& reg, entt::entity id)
+	{
+		auto& dr = reg.get<Components::Drawable>(id);
+	}
 	void Engine::Update()
 	{
-		// if (c[0] % 100 == 0)
-		// {
-		// 	std::stringstream ss;
-		// 	for (size_t i = 0; i < c.size(); i++)
-		// 	{
-		// 		ss << (int)c[i] << ";";
-		// 	}
-		// 	Logger::Info(ss.str());
-		// }
 		if (physicsUpdate)
 		{
-			c[0]++;
 			uploadSem.acquire();
 			updateSem.acquire();
 
-			physicsSystem.Upload(scene.registry); // upload new data
-			UpdateGlobalTransforms();
+			physicsSystem.Download(scene.registry); // get changes from physics (writes to local Transform)
+			UpdateGlobalTransforms(); // apply local changes to global Transform
 
 			if (scriptUpdate)
 			{
@@ -55,7 +64,7 @@ namespace Nork
 		}
 		else
 		{
-			UpdateGlobalTransforms();
+			UpdateGlobalTransforms(); // Editor changes
 		}
 		renderingSystem.BeginFrame();
 		renderingSystem.Update(); // draw full updated data
@@ -73,7 +82,7 @@ namespace Nork
 			scriptSystem.Update();
 		}
 		// start physics thread
-		physicsSystem.Download(scene.registry, true);
+		physicsSystem.Upload(scene.registry, true);
 		physicsUpdate = true;
 		physicsThread = LaunchPhysicsThread();
 	}
@@ -91,20 +100,13 @@ namespace Nork
 			{
 				while (physicsUpdate)
 				{
-					c[1]++;
 					updateSem.acquire(); // don't let upload happen until done with updating
 					if (scriptUpdated) // if downloading 
 					{
-					// Timer t;
-						physicsSystem.Download(scene.registry, true);
-					//Logger::Debug("elapsed: ", t.Elapsed(), "ms");
+						physicsSystem.Upload(scene.registry, true);
 						scriptUpdated = false;
 					}
-					else
-					{
-						physicsSystem.DownloadInternal();
-					}
-					physicsSystem.Update2(scene.registry);
+					physicsSystem.Update(scene.registry);
 					updateSem.release();
 					uploadSem.acquire(); // wait until any uploading is done
 					uploadSem.release();
