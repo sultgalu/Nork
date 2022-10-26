@@ -14,11 +14,11 @@ namespace Nork::Physics
 	{
 		std::for_each(std::execution::par, world.objs.begin(), world.objs.end(), [&](auto& obj)
 			{
+				obj.UpdateInertia(); // only needed when mass or collider has changed
 				VelocityUpdate(obj.kinem, delta);
 				RotationUpdate(obj.kinem, delta);
-				obj.UpdateCollider();
+				obj.UpdateCollider(); // only needed when transform changed
 			});
-
 		broadResults = SAP(world).Get();
 
 		if (counter.size() < broadResults.size())
@@ -36,7 +36,7 @@ namespace Nork::Physics
 			});
 
 		// works faster with ::par, but in theory data-races can occour
-		std::for_each_n(std::execution::par, counter.begin(), broadResults.size(), [&](auto i)
+		std::for_each_n(std::execution::seq, counter.begin(), broadResults.size(), [&](auto i)
 			{
 				collisions[i]._3CalculateForces(); // should be called together with _4 (resolve as soon as calculated)
 				collisions[i]._4ResolveAll();
@@ -63,7 +63,8 @@ namespace Nork::Physics
 		if (glm::isnan(kinem.velocity.x))
 			Logger::Error("");
 		kinem.position += translate;
-		kinem.forces = g * kinem.mass * glm::vec3(0, -1, 0);
+		if (kinem.applyGravity)
+			kinem.forces = g * kinem.mass * glm::vec3(0, -1, 0);
 	}
 
 	void Pipeline::RotationUpdate(KinematicData& kinem, float delta)

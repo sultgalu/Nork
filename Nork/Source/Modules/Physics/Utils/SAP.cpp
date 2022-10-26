@@ -39,7 +39,7 @@ namespace Nork::Physics
 			gen(0);
 		}
 		res.resize(world.objs.size());
-		std::for_each_n(std::execution::unseq, counter.begin(), world.objs.size(), [&](auto i)
+		std::for_each_n(std::execution::par_unseq, counter.begin(), world.objs.size(), [&](auto i)
 			{
 				res[i] = (std::pair(i, AABB(world.objs[i].collider.verts)));
 				constexpr float bias = 0.0f;
@@ -60,7 +60,6 @@ namespace Nork::Physics
 			});
 		
 		// aabbs sorted now by x axis
-		Timer t;
 		std::vector<uint32_t> currentInterval = { 0 };
 		for (uint32_t i = 1; i < aabbs.size(); i++)
 		{
@@ -102,7 +101,6 @@ namespace Nork::Physics
 			}
 			currentInterval = newInterval;
 		}
-		Logger::Debug("elapsed: ", t.Elapsed(), "ms");
 		return res;
 	}
 }

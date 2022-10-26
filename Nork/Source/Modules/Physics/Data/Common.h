@@ -147,6 +147,7 @@ namespace Nork::Physics
 		float I = 1;
 		
 		bool isStatic = false;
+		bool applyGravity = true;
 	};
 
 	class Object
@@ -158,10 +159,11 @@ namespace Nork::Physics
 		Object(const Collider& collider, const KinematicData& kinem = KinematicData())
 			: localColl(collider), collider(collider), kinem(kinem)
 		{
-			this->kinem.I = CalcInertia();
+			UpdateInertia();
 			UpdateCollider();
 		}
 		void UpdateCollider();
+		void UpdateInertia() { this->kinem.I = CalcInertia(); }
 	private:
 		float CalcInertia();
 	public:

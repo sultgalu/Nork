@@ -39,24 +39,45 @@ int main()
 	// 	}
 	// }
 
-	int levels = 50;
-	int size = 10; // * 4 = one level
-	float sep = 2.1f;
+	constexpr int levels = 20;
+	constexpr int size = 3; // * 4 = one level
+	float sep = 2.0f;
+	constexpr float height = -10;
 	int start = -size / 2;
+	constexpr auto allCount = levels * 4 * size;
 
 	auto add = [&](int i, int j, int k)
 	{
 		auto ent = engine.scene.CreateNode()->GetEntity();
 		ent.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
-		ent.AddComponent<Components::Transform>([&](auto& tr) { tr.localPosition = glm::vec3(i * sep, j * sep, k * sep); });
-		ent.AddComponent<Components::Physics>().Kinem().mass = 0.1f;
+		ent.AddComponent<Components::Transform>([&](auto& tr) { tr.localPosition = glm::vec3(i * sep, height + 2 + j * sep, k * sep); });
+		ent.AddComponent<Components::Physics>().Kinem().mass = 0.01f;
 		ent.AddComponent<Components::Tag>().tag = std::to_string(i).append("-").append(std::to_string(j)).append("-").append(std::to_string(k));
 	};
+
+	auto bullet = engine.scene.CreateNode()->GetEntity();
+	bullet.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
+	bullet.AddComponent<Components::Transform>([&](auto& tr) 
+		{
+			tr.localPosition = glm::vec3(start - 30, levels * sep / 2 + 10, 0);
+			tr.localScale = glm::vec3(1, 15, 5);
+			tr.UpdateGlobalWithoutParent();
+		});
+	bullet.AddComponent<Components::Physics>([&](Components::Physics& phx)
+		{
+			auto& kinem = phx.Kinem();
+			kinem.mass = 50.0f;
+			kinem.velocity.x = 20.0f;
+			kinem.w.z = -1.0f;
+			// kinem.applyGravity = false;
+		});
+	bullet.AddComponent<Components::Tag>().tag = "bullet";
+
 	for (int level = 0; level < levels; level++)
 	{
 		int i = -1, j = 0;
 		for (size_t _ = 0; _ < size; _++)
-			add(start + ++i, level, start + j);
+			add(start + ++i,level, start + j);
 		for (size_t _ = 0; _ < size; _++)
 			add(start + i, level, start + ++j);
 		for (size_t _ = 0; _ < size; _++)

@@ -276,9 +276,9 @@ namespace Nork::Physics {
 			}
 			else if (!kinem1.isStatic && !kinem2.isStatic)
 			{
-				glm::vec3 translate = satRes.dir * (satRes.depth / 2);
-				this->deltaP1 = translate;
-				this->deltaP2 = -translate;
+				glm::vec3 translate = satRes.dir * (satRes.depth / 2) / (kinem1.mass + kinem2.mass);
+				this->deltaP1 = translate * kinem2.mass;
+				this->deltaP2 = -translate * kinem1.mass;
 			}
 		}
 	}
