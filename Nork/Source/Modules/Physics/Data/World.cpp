@@ -12,7 +12,7 @@ namespace Nork::Physics
 
 	Object& ObjectHandle::Get() const
 	{
-		return (*world).objs[this->handle];
+		return world->objs[world->handleObjIdxMap[*this]];
 	}
 
 	float Object::CalcInertia()
@@ -23,6 +23,19 @@ namespace Nork::Physics
 			sum += glm::pow(aabb.max[i] - aabb.min[i], 2);
 		sum /= 18.0f;
 		return sum * kinem.mass;
+	}
+	void Object::SetColliderSize(const glm::vec3& size)
+	{
+		if (size == this->size)
+			return;
+
+		auto scale = size / this->size;
+		this->size = size;
+		
+		for (size_t j = 0; j < localColl.verts.size(); j++)
+		{
+			localColl.verts[j] *= scale;
+		}
 	}
 	void Object::UpdateCollider()
 	{
@@ -51,10 +64,10 @@ namespace Nork::Physics
 		collider.center /= collider.verts.size();
 	}
 
-	Collider Collider::Cube(glm::vec3 scale)
+	Collider Collider::Cube()
 	{
 		constexpr float size = 1;
-		scale *= size;
+		constexpr auto scale = glm::vec3(size);
 
 		return Collider{ .verts = {
 			glm::vec3(-scale.x, -scale.y, -scale.z),

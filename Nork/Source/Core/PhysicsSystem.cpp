@@ -43,8 +43,8 @@ namespace Nork {
 		reg.view<Transform, Components::Physics>()
 			.each([&](entt::entity id, Transform& tr, Components::Physics& phx)
 				{
-					tr.localPosition += phx.handle.Get().kinem.position - tr.Position();
-					tr.localQuaternion += phx.handle.Get().kinem.quaternion - tr.Quaternion();
+					tr.localPosition += phx.Kinem().position - tr.Position();
+					tr.localQuaternion += phx.Kinem().quaternion - tr.Quaternion();
 				});
 	}
 	void PhysicsSystem::Upload(entt::registry& reg, bool updatePoliesForPhysics)
@@ -54,8 +54,9 @@ namespace Nork {
 		reg.view<Components::Transform, Components::Physics>()
 			.each([&](entt::entity id, Transform& tr, Components::Physics& phx)
 				{
-					phx.handle.Get().kinem.position = tr.Position();
-					phx.handle.Get().kinem.quaternion = tr.Quaternion();
+					phx.handle.Get().SetColliderSize(tr.Scale());
+					phx.Kinem().position = tr.Position();
+					phx.Kinem().quaternion = tr.Quaternion();
 				});
 	}
 

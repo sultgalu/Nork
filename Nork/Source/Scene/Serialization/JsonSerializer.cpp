@@ -60,6 +60,7 @@ namespace Nork {
 		auto json = JsonObject()
 			.Property("color", JsonArray().Elements(&component.light->color.x, 3))
 			.Property("direction", JsonArray().Elements(&component.light->direction.x, 3))
+			.Property("lrbtnf", JsonArray().Elements(&component.left, 6))
 			.Property("outOfProj", component.light->outOfProjValue)
 			.Property("sun", component.sun);
 		if (component.shadow != nullptr)
@@ -76,6 +77,7 @@ namespace Nork {
 			{
 				json.Get<JsonArray>("color").Get(&comp.light->color.x, 3);
 				json.Get<JsonArray>("direction").Get(&comp.light->direction.x, 3);
+				json.Get<JsonArray>("lrbtnf").Get(&comp.left, 6);
 				json.Get("outOfProj", comp.light->outOfProjValue);
 				json.GetIfContains("sun", comp.sun);
 				if (json.Contains("shadow"))
@@ -137,81 +139,53 @@ namespace Nork {
 	{
 		auto& kinem = component.Kinem();
 		auto kinemJson = JsonObject()
-			.Property("forces", JsonArray().Elements(kinem.forces))
+			.Property("position", JsonArray().Elements(kinem.position))
 			.Property("velocity", JsonArray().Elements(kinem.velocity))
+			.Property("forces", JsonArray().Elements(kinem.forces))
+			.Property("quaternion", JsonArray().Elements(&kinem.quaternion.x, 4))
 			.Property("w", JsonArray().Elements(kinem.w))
-			.Property("mass", kinem.mass);
+			.Property("torque", JsonArray().Elements(kinem.torque))
+			.Property("mass", kinem.mass)
+			.Property("I", kinem.I)
+			.Property("friction", kinem.friction)
+			.Property("elasticity", kinem.elasticity)
+			.Property("isStatic", kinem.isStatic)
+			.Property("applyGravity", kinem.applyGravity);
 
-		JsonObject collJson;
-		JsonObject collLocalJson;
-
+		auto& coll = component.handle.Get().localColl;
+		JsonArray points;
+		JsonArray edges;
+		JsonArray faces;
+		JsonArray facesVerts;
+		for (auto& vert : coll.verts)
 		{
-			auto& coll = component.Collider();
-			JsonArray points;
-			JsonArray edges;
-			JsonArray faces;
-			JsonArray facesVerts;
-			for (auto& vert : coll.verts)
-			{
-				points.Element(JsonArray().Elements(vert));
-			}
-			for (auto& edge : coll.edges)
-			{
-				edges.Element(JsonArray().Elements(&edge.first, 2));
-			}
-			for (auto& face : coll.faces)
-			{
-				JsonObject f;
-				f.Property("normal", JsonArray().Elements(face.norm));
-				f.Property("vertIdx", face.vertIdx);
-				faces.Element(f);
-			}
-			for (auto& face : coll.faceVerts)
-			{
-				facesVerts.Element(JsonArray().Elements(face));
-			}
-			collJson = JsonObject()
-				.Property("verts", points)
-				.Property("edges", edges)
-				.Property("faces", faces)
-				.Property("faceVerts", facesVerts);
+			points.Element(JsonArray().Elements(vert));
 		}
+		for (auto& edge : coll.edges)
 		{
-			auto& coll = component.handle.Get().localColl;
-			JsonArray points;
-			JsonArray edges;
-			JsonArray faces;
-			JsonArray facesVerts;
-			for (auto& vert : coll.verts)
-			{
-				points.Element(JsonArray().Elements(vert));
-			}
-			for (auto& edge : coll.edges)
-			{
-				edges.Element(JsonArray().Elements(&edge.first, 2));
-			}
-			for (auto& face : coll.faces)
-			{
-				JsonObject f;
-				f.Property("normal", JsonArray().Elements(face.norm));
-				f.Property("vertIdx", face.vertIdx);
-				faces.Element(f);
-			}
-			for (auto& face : coll.faceVerts)
-			{
-				facesVerts.Element(JsonArray().Elements(face));
-			}
-			collLocalJson = JsonObject()
-				.Property("verts", points)
-				.Property("edges", edges)
-				.Property("faces", faces)
-				.Property("faceVerts", facesVerts);
+			edges.Element(JsonArray().Elements(&edge.first, 2));
 		}
+		for (auto& face : coll.faces)
+		{
+			JsonObject f;
+			f.Property("normal", JsonArray().Elements(face.norm));
+			f.Property("vertIdx", face.vertIdx);
+			faces.Element(f);
+		}
+		for (auto& face : coll.faceVerts)
+		{
+			facesVerts.Element(JsonArray().Elements(face));
+		}
+		JsonObject collJson = JsonObject()
+			.Property("verts", points)
+			.Property("edges", edges)
+			.Property("faces", faces)
+			.Property("faceVerts", facesVerts);
 
 		return JsonObject()
 			.Property("kinem", kinemJson)
 			.Property("coll", collJson)
-			.Property("collLocal", collLocalJson);
+			.Property("size", JsonArray().Elements(component.handle.Get().size));
 	}
 	template<> Components::Physics& JsonComponentDeserializer<Components::Physics>::Deserialize(const JsonObject& json)
 	{
@@ -219,71 +193,51 @@ namespace Nork {
 			{
 				auto kinemComp = json.Get<JsonObject>("kinem");
 				auto& kinem = comp.Kinem();
-				kinemComp.Get<JsonArray>("forces").Get(kinem.forces);
+				kinemComp.Get<JsonArray>("position").Get(kinem.position);
 				kinemComp.Get<JsonArray>("velocity").Get(kinem.velocity);
+				kinemComp.Get<JsonArray>("forces").Get(kinem.forces);
+				kinemComp.Get<JsonArray>("quaternion").Get(&kinem.quaternion.x, 4);
 				kinemComp.Get<JsonArray>("w").Get(kinem.w);
+				kinemComp.Get<JsonArray>("torque").Get(kinem.torque);
 				kinemComp.Get("mass", kinem.mass);
+				kinemComp.Get("I", kinem.I);
+				kinemComp.Get("friction", kinem.friction);
+				kinemComp.Get("elasticity", kinem.elasticity);
+				kinemComp.Get("isStatic", kinem.isStatic);
+				kinemComp.Get("applyGravity", kinem.applyGravity);
 
+				auto collComp = json.Get<JsonObject>("coll");
+				auto coll = Nork::Physics::Collider();
+				auto verts = collComp.Get<JsonArray>("verts");
+				auto edges = collComp.Get<JsonArray>("edges");
+				auto faces = collComp.Get<JsonArray>("faces");
+				auto faceVerts = collComp.Get<JsonArray>("faceVerts");
+				coll.verts.resize(verts.Size());
+				for (size_t i = 0; i < verts.Size(); i++)
 				{
-					auto collComp = json.Get<JsonObject>("collLocal");
-					auto& coll = comp.Collider();
-					auto verts = collComp.Get<JsonArray>("verts");
-					auto edges = collComp.Get<JsonArray>("edges");
-					auto faces = collComp.Get<JsonArray>("faces");
-					auto faceVerts = collComp.Get<JsonArray>("faceVerts");
-					coll.verts.resize(verts.Size());
-					for (size_t i = 0; i < verts.Size(); i++)
-					{
-						verts.Get<JsonArray>(i).Get(coll.verts[i]);
-					}
-					coll.edges.resize(edges.Size());
-					for (size_t i = 0; i < edges.Size(); i++)
-					{
-						edges.Get<JsonArray>(i).Get(&coll.edges[i].first, 2);
-					}
-					coll.faces.resize(faces.Size());
-					for (size_t i = 0; i < faces.Size(); i++)
-					{
-						JsonObject face = faces.Get<JsonObject>(i);
-						face.Get<JsonArray>("normal").Get(coll.faces[i].norm);
-						face.Get("vertIdx", coll.faces[i].vertIdx);
-					}
-					coll.faceVerts.resize(faceVerts.Size());
-					for (size_t i = 0; i < faceVerts.Size(); i++)
-					{
-						faceVerts.Get<JsonArray>(i).Get(coll.faceVerts[i]);
-					}
+					verts.Get<JsonArray>(i).Get(coll.verts[i]);
 				}
+				coll.edges.resize(edges.Size());
+				for (size_t i = 0; i < edges.Size(); i++)
 				{
-					auto collComp = json.Get<JsonObject>("coll");
-					auto& coll = comp.handle.Get().localColl;
-					auto verts = collComp.Get<JsonArray>("verts");
-					auto edges = collComp.Get<JsonArray>("edges");
-					auto faces = collComp.Get<JsonArray>("faces");
-					auto faceVerts = collComp.Get<JsonArray>("faceVerts");
-					coll.verts.resize(verts.Size());
-					for (size_t i = 0; i < verts.Size(); i++)
-					{
-						verts.Get<JsonArray>(i).Get(coll.verts[i]);
-					}
-					coll.edges.resize(edges.Size());
-					for (size_t i = 0; i < edges.Size(); i++)
-					{
-						edges.Get<JsonArray>(i).Get(&coll.edges[i].first, 2);
-					}
-					coll.faces.resize(faces.Size());
-					for (size_t i = 0; i < faces.Size(); i++)
-					{
-						JsonObject face = faces.Get<JsonObject>(i);
-						face.Get<JsonArray>("normal").Get(coll.faces[i].norm);
-						face.Get("vertIdx", coll.faces[i].vertIdx);
-					}
-					coll.faceVerts.resize(faceVerts.Size());
-					for (size_t i = 0; i < faceVerts.Size(); i++)
-					{
-						faceVerts.Get<JsonArray>(i).Get(coll.faceVerts[i]);
-					}
+					edges.Get<JsonArray>(i).Get(&coll.edges[i].first, 2);
 				}
+				coll.faces.resize(faces.Size());
+				for (size_t i = 0; i < faces.Size(); i++)
+				{
+					JsonObject face = faces.Get<JsonObject>(i);
+					face.Get<JsonArray>("normal").Get(coll.faces[i].norm);
+					face.Get("vertIdx", coll.faces[i].vertIdx);
+				}
+				coll.faceVerts.resize(faceVerts.Size());
+				for (size_t i = 0; i < faceVerts.Size(); i++)
+				{
+					faceVerts.Get<JsonArray>(i).Get(coll.faceVerts[i]);
+				}
+
+				comp.handle.Get().localColl = coll;
+				json.Get<JsonArray>("size").Get(comp.handle.Get().size);
+				comp.handle.Get().UpdateCollider();
 			});
 	}
 

@@ -274,5 +274,5 @@ vec3 pLightShadow(PointLight light, Materials material, vec3 normal, vec3 viewDi
 	float shad = pShadow(shadow, bias, worldPos, light.position);
 
 	float attenuation = CalcLuminosity(light.position, worldPos, light.linear, light.quadratic);
-	return attenuation * (0 * ambient + shad * (diffuse + specular));
+	return attenuation * (ambient + shad * (diffuse + specular));
 }

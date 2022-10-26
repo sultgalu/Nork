@@ -37,7 +37,7 @@ namespace Nork::Physics
 		glm::vec3 center = glm::vec3(0);
 		bool isActive = false;
 
-		static Collider Cube(glm::vec3 scale = glm::vec3(0));
+		static Collider Cube();
 
 		std::vector<uint32_t> SideFacesOfVert(uint32_t vertIdx) const
 		{
@@ -158,12 +158,14 @@ namespace Nork::Physics
 		Object(const KinematicData& kinem = KinematicData())
 			: kinem(kinem) {}
 
-		Object(const Collider& collider, const KinematicData& kinem = KinematicData())
+		Object(const Collider& collider, const glm::vec3& size = glm::vec3(1), const KinematicData& kinem = KinematicData())
 			: localColl(collider), collider(collider), kinem(kinem)
 		{
 			UpdateInertia();
+			SetColliderSize(size);
 			UpdateCollider();
 		}
+		void SetColliderSize(const glm::vec3& scale);
 		void UpdateCollider();
 		void UpdateInertia() { this->kinem.I = CalcInertia(); }
 	private:
@@ -172,6 +174,7 @@ namespace Nork::Physics
 		Collider localColl = Collider(); // const
 		Collider collider = Collider();
 		KinematicData kinem;
+		glm::vec3 size = glm::vec3(1);
 	};
 
 	struct ObjectHandle

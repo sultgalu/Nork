@@ -30,7 +30,7 @@ namespace Nork
 		if (reg.any_of<Components::Transform>(id))
 		{
 			auto& tr = reg.get<Components::Transform>(id);
-			obj.handle = physicsSystem.pWorld.AddObject(Physics::Object(Physics::Collider::Cube(tr.Scale()),
+			obj.handle = physicsSystem.pWorld.AddObject(Physics::Object(Physics::Collider::Cube(), tr.Scale(),
 				Physics::KinematicData { .position = tr.Position(), .quaternion = tr.Quaternion() }));
 		}
 		else
@@ -40,7 +40,8 @@ namespace Nork
 	}
 	void Engine::OnPhysicsRemoved(entt::registry& reg, entt::entity id)
 	{
-		auto& dr = reg.get<Components::Drawable>(id);
+		auto& obj = reg.get<Components::Physics>(id);
+		physicsSystem.pWorld.RemoveObject(obj.handle);
 	}
 	void Engine::Update()
 	{
