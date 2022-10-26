@@ -19,29 +19,29 @@ int main()
 
 	//editor.SetDisplayTexture(engine.renderingSystem.deferredPipeline.lightFb->Color());
 
-	// int dim = 15;
-	// int sep = 3;
-	// int start = -dim / 2;
-	// int end = dim / 2 + dim % 2;
-	// 
-	// for (int i = start; i < end; i++)
-	// {
-	// 	for (int j = 0; j < dim; j++)
-	// 	{
-	// 		for (int k = start; k < end; k++)
-	// 		{
-	// 			auto ent = engine.scene.CreateNode()->GetEntity();
-	// 			ent.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
-	// 			ent.AddComponent<Components::Transform>([&](auto& tr) { tr.localPosition = glm::vec3(i * sep, j * sep, k * sep); });
-	// 			ent.AddComponent<Components::Physics>().Kinem().mass = 0.1f;
-	// 			ent.AddComponent<Components::Tag>().tag = std::to_string(i).append("-").append(std::to_string(j)).append("-").append(std::to_string(k));
-	// 		}
-	// 	}
-	// }
+	/*int dim = 10;
+	int sep = 3;
+	int start = -dim / 2;
+	int end = dim / 2 + dim % 2;
+	
+	for (int i = start; i < end; i++)
+	{
+		for (int j = 0; j < dim; j++)
+		{
+			for (int k = start; k < end; k++)
+			{
+				auto ent = engine.scene.CreateNode()->GetEntity();
+				ent.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
+				ent.AddComponent<Components::Transform>([&](auto& tr) { tr.localPosition = glm::vec3(i * sep, j * sep, k * sep); });
+				ent.AddComponent<Components::Physics>().Kinem().mass = 0.1f;
+				ent.AddComponent<Components::Tag>().tag = std::to_string(i).append("-").append(std::to_string(j)).append("-").append(std::to_string(k));
+			}
+		}
+	}*/
 
 	constexpr int levels = 20;
 	constexpr int size = 3; // * 4 = one level
-	float sep = 2.0f;
+	float sep = 2.1f;
 	constexpr float height = -10;
 	int start = -size / 2;
 	constexpr auto allCount = levels * 4 * size;
@@ -87,19 +87,28 @@ int main()
 	}
 
 	// SINGLE
-	//   auto ent = engine.scene.CreateNode()->GetEntity();
-	//   ent.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
-	//   ent.AddComponent<Components::Transform>([&](auto& tr) { tr.position = glm::vec3(0); });
-	//   ent.AddComponent<Components::Kinematic>().mass = 0.1f;
-	//   ent.AddComponent<Components::Collider>() = Components::Collider::Cube();
-	//   ent.AddComponent<Components::Tag>().tag = "SINGLE";
-	//   
-	//   auto ent2 = engine.scene.CreateNode()->GetEntity();
-	//   ent2.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
-	//   ent2.AddComponent<Components::Transform>([&](auto& tr) { tr.position = glm::vec3(0, 2, 0.5f); });
-	//   ent2.AddComponent<Components::Kinematic>().mass = 0.1f;
-	//   ent2.AddComponent<Components::Collider>() = Components::Collider::Cube();
-	//   ent2.AddComponent<Components::Tag>().tag = "SINGLE2";
+	// auto ent = engine.scene.CreateNode()->GetEntity();
+	// ent.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
+	// ent.AddComponent<Components::Transform>([&](Components::Transform& tr)
+	// 	{
+	// 		tr.position = glm::vec3(0);
+	// 		tr.Rotate(glm::vec3(0, 0, 1), -30);
+	// 	});
+	// ent.AddComponent<Components::Physics>([&](Components::Physics& phx)
+	// 	{
+	// 		phx.Kinem().mass = 100000.0f;
+	// 		// phx.Kinem().mass = 1.0f;
+	// 		phx.Kinem().w.z = 10.0f;
+	// 	});
+	// ent.AddComponent<Components::Collider>() = Components::Collider::Cube();
+	// ent.AddComponent<Components::Tag>().tag = "SINGLE";
+	
+	// auto ent2 = engine.scene.CreateNode()->GetEntity();
+	// ent2.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
+	// ent2.AddComponent<Components::Transform>([&](auto& tr) { tr.position = glm::vec3(0, 2, 0.5f); });
+	// ent2.AddComponent<Components::Physics>().Kinem().mass = 0.1f;
+	// ent2.AddComponent<Components::Collider>() = Components::Collider::Cube();
+	// ent2.AddComponent<Components::Tag>().tag = "SINGLE2";
 
 	glm::vec3 scale = glm::vec3(100, 1, 100);
 	auto ground = engine.scene.CreateNode()->GetEntity();
@@ -109,7 +118,11 @@ int main()
 		tr.localScale = scale;
 		tr.UpdateGlobalWithoutParent();
 		});
-	ground.AddComponent<Components::Physics>().Kinem().isStatic = true;
+	ground.AddComponent<Components::Physics>([&](Components::Physics& phx)
+		{
+			phx.Kinem().isStatic = true;
+			phx.Kinem().mass = 1.0f;
+		});
 	ground.AddComponent<Components::Tag>().tag = "GROUND";
 
 	/*auto node1 = engine.scene.CreateNode();

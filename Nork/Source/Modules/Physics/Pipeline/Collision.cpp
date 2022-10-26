@@ -201,12 +201,10 @@ namespace Nork::Physics {
 				// fr = 0.0f;
 			}
 
-			float resulting = (1 + actualCoefficient) * glm::dot(kinem1.velocity - kinem2.velocity, satRes.dir) / (1 / kinem1.mass + 1 / kinem2.mass /* + angularPart*/);
-
 			auto angularPart1 = glm::cross((1 / kinem1.I) * (glm::cross(r1, satRes.dir)), r1);
 			auto angularPart2 = glm::cross((1 / kinem2.I) * (glm::cross(r2, satRes.dir)), r2);
-
-			float angularPart = glm::dot(angularPart1 + angularPart2, satRes.dir);
+			constexpr auto vec0 = glm::zero<glm::vec3>();
+			float angularPart = glm::dot((kinem1.isStatic ? vec0 : angularPart1) + (kinem2.isStatic ? vec0 : angularPart2), satRes.dir);
 
 			t = vel1 - vel2;
 			if (t != glm::vec3(0))
@@ -215,54 +213,21 @@ namespace Nork::Physics {
 				t = glm::cross(t, satRes.dir);
 			}
 
-			float resultingA = -(1 + actualCoefficient) * glm::dot(vel1 - vel2, satRes.dir) / (1 / kinem1.mass + 1 / kinem2.mass + angularPart);
-			resulting = resultingA;
-			glm::vec3 deltaW1 = (1.0f / kinem1.I + (kinem2.isStatic ? 1.0f / kinem2.I : 0)) * glm::cross(r1, resultingA * (satRes.dir + fr * t));
-			glm::vec3 deltaW2 = -(1.0f / kinem2.I + (kinem1.isStatic ? 1.0f / kinem1.I : 0)) * glm::cross(r2, resultingA * (satRes.dir + fr * t));
-			if (glm::isnan(deltaW1.x) || glm::isnan(deltaW2.x))
-				Logger::Error("");
-			if (kinem1.isStatic)
-			{
-				deltaW1 = glm::vec3(0);
-			}
-			if (kinem2.isStatic)
-			{
-				deltaW2 = glm::vec3(0);
-			}
-			this->deltaW1 = deltaW1;
-			this->deltaW2 = deltaW2;
+			float resulting = -(1 + actualCoefficient) * glm::dot(vel1 - vel2, satRes.dir)
+				/ ((kinem1.isStatic ? 0 : 1 / kinem1.mass) + (kinem2.isStatic ? 0 : 1 / kinem2.mass) + angularPart);
 
-			float deltaV1 = 1.0f / kinem1.mass + (kinem2.isStatic ? 1.0f / kinem2.mass : 0);
-			float deltaV2 = -(1.0f / kinem2.mass + (kinem1.isStatic ? 1.0f / kinem1.mass : 0));
-			if (kinem1.isStatic)
-			{
-				deltaV1 = 0;
-			}
-			if (kinem2.isStatic)
-			{
-				deltaV2 = 0;
-			}
+			this->deltaW1 = kinem1.isStatic ? vec0 : (1.0f / kinem1.I) * glm::cross(r1, resulting * (satRes.dir + fr * t));
+			this->deltaW2 = kinem2.isStatic ? vec0 : (-1.0f / kinem2.I) * glm::cross(r2, resulting * (satRes.dir + fr * t));
+			if (glm::isnan(this->deltaW1.x) || glm::isnan(this->deltaW2.x))
+				Logger::Error("glm::isnan(this->deltaW1.x) || glm::isnan(this->deltaW2.x)");
+
 			if (satRes.depth > 0 && glm::dot(satRes.dir, kinem1.velocity - kinem2.velocity) <= 0)
 			{
-				this->deltaV1 = resulting * deltaV1 * (satRes.dir + fr * t);
-				this->deltaV2 = resulting * deltaV2 * (satRes.dir + fr * t);
+				this->deltaV1 = kinem1.isStatic ? vec0 : (1.0f / kinem1.mass) * resulting * (satRes.dir + fr * t);
+				this->deltaV2 = kinem2.isStatic ? vec0 : (-1.0f / kinem2.mass) * resulting * (satRes.dir + fr * t);
 			}
-
 			if (glm::isnan(kinem1.velocity.x) || glm::isnan(kinem2.velocity.x))
-				Logger::Error("");
-
-			auto newVel1 = kinem1.velocity + glm::cross(kinem1.w, r1);
-			auto newVel2 = kinem2.velocity + glm::cross(kinem2.w, r2);
-
-			auto cr = -glm::dot((newVel1 - newVel2), satRes.dir) / glm::dot((vel1 - vel2), satRes.dir);
-			if (cr == actualCoefficient)
-			{
-				actualCoefficient = 0;
-			}
-			else
-			{
-				actualCoefficient = 0;
-			}
+				Logger::Error("glm::isnan(kinem1.velocity.x) || glm::isnan(kinem2.velocity.x)");
 		}
 		if (satRes.depth > 0)
 		{
@@ -276,9 +241,11 @@ namespace Nork::Physics {
 			}
 			else if (!kinem1.isStatic && !kinem2.isStatic)
 			{
-				glm::vec3 translate = satRes.dir * (satRes.depth / 2) / (kinem1.mass + kinem2.mass);
-				this->deltaP1 = translate * kinem2.mass;
-				this->deltaP2 = -translate * kinem1.mass;
+				auto part1 = kinem2.mass;
+				auto part2 = kinem1.mass;
+				glm::vec3 translate = satRes.dir * satRes.depth / (part1 + part2);
+				this->deltaP1 = translate * (part1);
+				this->deltaP2 = -translate * (part2);
 			}
 		}
 	}
