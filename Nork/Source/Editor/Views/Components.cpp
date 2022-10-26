@@ -424,6 +424,9 @@ namespace Nork::Editor {
 	{
 		auto& kin = phx.handle.Get().kinem;
 		changed |= ImGui::DragFloat("Mass (kg)", &kin.mass, 0.01f);
+		changed |= ImGui::DragFloat("Elasticity", &kin.elasticity, 0.01f, 0, 2);
+		changed |= ImGui::DragFloat("Friction", &kin.friction, 0.01f, 0, 2);
+		changed |= ImGui::Checkbox("Gravity", &kin.applyGravity);
 		changed |= ImGui::DragFloat3("Velocity", &kin.velocity.x, 0.001f);
 		auto axis = glm::normalize(kin.w);
 		auto angle = glm::length(kin.w);

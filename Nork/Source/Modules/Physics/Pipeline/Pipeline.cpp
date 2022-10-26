@@ -30,7 +30,7 @@ namespace Nork::Physics
 
 		std::for_each_n(std::execution::par, counter.begin(), broadResults.size(), [&](auto i)
 			{
-				collisions[i] = Collision(world, broadResults[i].first, broadResults[i].second, coefficient);
+				collisions[i] = Collision(world, broadResults[i].first, broadResults[i].second);
 				collisions[i]._1NarrowPhase();
 				collisions[i]._2GenerateContactPoints();
 			});

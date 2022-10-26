@@ -140,15 +140,7 @@ namespace Nork::Physics {
 		const auto& kinem1 = Kinem1();
 		const auto& kinem2 = Kinem2();
 
-		// if (kinem1.isStatic)
-		// 	kinem1.mass = 100000000.0f;
-		// if (kinem2.isStatic)
-		// 	kinem2.mass = 100000000.0f;
-
 		glm::vec3 t = glm::vec3(0);
-		float fr = -0.9f;
-		float fr2 = 1.0f;
-		float bias = 0.1f;
 		const glm::vec3& contactPoint = contactCenter;
 		glm::vec3 r1 = contactPoint - Collider1().center;
 		glm::vec3 r2 = contactPoint - Collider2().center;
@@ -156,75 +148,35 @@ namespace Nork::Physics {
 		auto vel2 = kinem2.velocity + glm::cross(kinem2.w, r2);
 		auto velDiffLenSquared = glm::dot(vel1 - vel2, vel1 - vel2);
 
-		auto applyForce = [&](KinematicData& kinem, const glm::vec3& r, const glm::vec3& collDir)
-		{
-			if (glm::dot(kinem.velocity, kinem.forces) >= 0)
-			{
-				// auto forceDirVel = glm::dot(kinem.forces, kinem.velocity);
-				// if (forceDirVel < 0.001f)
-				// {
-				// 	kinem.velocity -= forceDirVel * kinem.forces;
-				// }
-				auto counterForce = glm::dot(kinem.forces, collDir);
-				auto perpForce = (kinem.forces - counterForce) * fr2;
-				auto counterTorque = glm::cross(r, counterForce * kinem.forces);
-				auto frictionTorque = glm::cross(r, perpForce * kinem.forces);
-				// kinem.forces += counterForce * collDir;
-				// kinem.forces += perpForce * (kinem.forces - collDir * counterForce);
-				kinem.torque += counterTorque;
-				// kinem.torque += frictionTorque;
-				if (glm::isnan(kinem.torque.x))
-					Logger::Error("");
-
-			}
-		};
-		// applyForce(kinem1, r1, coll.dir);
-		// applyForce(kinem2, r2, coll.dir);
-
-		// if (velDiffLenSquared < 0.01f)
-		// {
-		// 	kinem1.velocity -= coll.dir * glm::dot(kinem1.velocity, coll.dir);
-		// 	kinem2.velocity -= coll.dir * glm::dot(kinem2.velocity, coll.dir);
-		// 	kinem1.w = coll.dir * glm::dot(kinem1.w, coll.dir);
-		// 	kinem2.w = coll.dir * glm::dot(kinem2.w, coll.dir);
-		// }
-		if (satRes.depth == 0)
-		{
-			satRes.depth = 0;
-		}
 		if (satRes.depth > 0)
 		{
-			float actualCoefficient = coefficient;
-			if (velDiffLenSquared < 0.01f)
-			{
-				actualCoefficient = 0;
-				// fr = 0.0f;
-			}
-
 			auto angularPart1 = glm::cross((1 / kinem1.I) * (glm::cross(r1, satRes.dir)), r1);
 			auto angularPart2 = glm::cross((1 / kinem2.I) * (glm::cross(r2, satRes.dir)), r2);
 			constexpr auto vec0 = glm::zero<glm::vec3>();
 			float angularPart = glm::dot((kinem1.isStatic ? vec0 : angularPart1) + (kinem2.isStatic ? vec0 : angularPart2), satRes.dir);
 
 			t = vel1 - vel2;
-			if (t != glm::vec3(0))
+			if (t != glm::zero<glm::vec3>())
 			{
 				t = glm::cross(satRes.dir, glm::normalize(t));
 				t = glm::cross(t, satRes.dir);
 			}
 
-			float resulting = -(1 + actualCoefficient) * glm::dot(vel1 - vel2, satRes.dir)
+			float coefficient = velDiffLenSquared < 0.01f ? 0 : glm::min((kinem1.elasticity + kinem2.elasticity) / 2, 1.0f);
+			float friction = glm::min((kinem1.friction + kinem2.friction) / 2.0f, 1.0f);
+			float resulting = -(1 + coefficient) * glm::dot(vel1 - vel2, satRes.dir)
 				/ ((kinem1.isStatic ? 0 : 1 / kinem1.mass) + (kinem2.isStatic ? 0 : 1 / kinem2.mass) + angularPart);
+			glm::vec3 resultingVec = resulting * (satRes.dir - friction * t);
 
-			this->deltaW1 = kinem1.isStatic ? vec0 : (1.0f / kinem1.I) * glm::cross(r1, resulting * (satRes.dir + fr * t));
-			this->deltaW2 = kinem2.isStatic ? vec0 : (-1.0f / kinem2.I) * glm::cross(r2, resulting * (satRes.dir + fr * t));
+			this->deltaW1 = kinem1.isStatic ? vec0 : (1.0f / kinem1.I) * glm::cross(r1, resultingVec);
+			this->deltaW2 = kinem2.isStatic ? vec0 : (-1.0f / kinem2.I) * glm::cross(r2, resultingVec);
 			if (glm::isnan(this->deltaW1.x) || glm::isnan(this->deltaW2.x))
 				Logger::Error("glm::isnan(this->deltaW1.x) || glm::isnan(this->deltaW2.x)");
 
 			if (satRes.depth > 0 && glm::dot(satRes.dir, kinem1.velocity - kinem2.velocity) <= 0)
 			{
-				this->deltaV1 = kinem1.isStatic ? vec0 : (1.0f / kinem1.mass) * resulting * (satRes.dir + fr * t);
-				this->deltaV2 = kinem2.isStatic ? vec0 : (-1.0f / kinem2.mass) * resulting * (satRes.dir + fr * t);
+				this->deltaV1 = kinem1.isStatic ? vec0 : (1.0f / kinem1.mass) * resultingVec;
+				this->deltaV2 = kinem2.isStatic ? vec0 : (-1.0f / kinem2.mass) * resultingVec;
 			}
 			if (glm::isnan(kinem1.velocity.x) || glm::isnan(kinem2.velocity.x))
 				Logger::Error("glm::isnan(kinem1.velocity.x) || glm::isnan(kinem2.velocity.x)");

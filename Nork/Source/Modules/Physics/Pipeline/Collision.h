@@ -7,8 +7,8 @@ namespace Nork::Physics
 	class Collision
 	{
 	public:
-		Collision(World& world, uint32_t obj1Idx, uint32_t obj2Idx, float coefficient = 0.1f)
-			: world(&world), obj1Idx(obj1Idx), obj2Idx(obj2Idx), coefficient(coefficient)
+		Collision(World& world, uint32_t obj1Idx, uint32_t obj2Idx)
+			: world(&world), obj1Idx(obj1Idx), obj2Idx(obj2Idx)
 		{}
 		Collision() = default;
 		Collision& operator=(const Collision&) = default;
@@ -22,15 +22,11 @@ namespace Nork::Physics
 		World& GetWorld() const { return *world; }
 		const Collider& Collider1() const { return GetWorld().objs[obj1Idx].collider; }
 		const Collider& Collider2() const { return GetWorld().objs[obj2Idx].collider; }
-		// const Collision& collider1() const { return GetWorld().colliders[obj1Idx]; }
-		// const Collision& collider2() const { return GetWorld().colliders[obj2Idx]; }
 		const KinematicData& Kinem1() const { return GetWorld().objs[obj1Idx].kinem; }
 		const KinematicData& Kinem2() const { return GetWorld().objs[obj2Idx].kinem; }
-	private:
-		void GenContactPoints();
+		const Object& Obj1() const { return GetWorld().objs[obj1Idx]; }
+		const Object& Obj2() const { return GetWorld().objs[obj2Idx]; }
 	public:
-		float coefficient;
-
 		uint32_t obj1Idx, obj2Idx;
 		World* world;
 
