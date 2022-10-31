@@ -84,6 +84,6 @@ namespace Nork {
 
 			playerTr.localQuaternion = q;
 		}
-		*engine.renderingSystem.viewports[0]->camera = cam;
+		*engine.renderingSystem.sceneViews.begin()._Ptr->_Myval->camera = cam;
 	}
 }

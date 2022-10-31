@@ -3,15 +3,12 @@
 #version 330 core
 
 layout(location = 0) in vec3 vPos;
-layout(location = 1) in float isSelected;
 
 uniform mat4 VP;
-out float sel;
 
 void main()
 {
 	gl_Position = VP * vec4(vPos, 1.0f);
-	sel = isSelected;
 }
 
 #type geometry
@@ -19,9 +16,7 @@ void main()
 layout(lines) in;
 layout(triangle_strip, max_vertices = 6) out;
 
-in float sel[];
 uniform float width;
-out float selected;
 
 void main()
 {
@@ -30,8 +25,6 @@ void main()
 
 	float depth1 = gl_in[0].gl_Position.z / gl_in[0].gl_Position.w;
 	float depth2 = gl_in[1].gl_Position.z / gl_in[1].gl_Position.w;
-
-	selected = sel[0] * sel[1];
 
 	vec2 dir = p1 - p2;
 	vec2 norm1 = normalize(vec2(dir.y, -dir.x)); // left
@@ -62,14 +55,19 @@ void main()
 #type fragment
 #version 330 core
 
-in float selected;
 out vec4 fColor;
 
 uniform vec4 colorDefault;
 uniform vec4 colorSelected;
 
+uniform int selected = 0;
+
 void main()
 {
 	fColor = selected * colorSelected + (1.0f - selected) * colorDefault;
+	if (selected > 0)
+	{
+		fColor = colorSelected;
+	}
 	//fColor = colorDefault;
 }

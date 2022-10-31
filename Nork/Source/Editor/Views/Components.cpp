@@ -1,6 +1,8 @@
 #include "include/Components.h"
 #include "../Views/include/Helpers.h"
 #include "Platform/FileDialog.h"
+#include "Editor/Editor.h"
+#include "../Panels/include/ColliderEditorPanel.h"
 
 namespace Nork::Editor {
 
@@ -138,7 +140,7 @@ namespace Nork::Editor {
 		{
 			tr.SetRotation(glm::normalize(rotationAxis), glm::radians(angle));
 		}
-		if (ImGui::DragFloat4("Quaternion", &tr.localQuaternion.w, 0.1f) && (changed = true))
+		if (ImGui::DragFloat4("Quaternion", &tr.localQuaternion.x, 0.1f) && (changed = true))
 		{
 			tr.localQuaternion = glm::normalize(tr.localQuaternion);
 		}
@@ -424,9 +426,11 @@ namespace Nork::Editor {
 	{
 		auto& kin = phx.handle.Get().kinem;
 		changed |= ImGui::DragFloat("Mass (kg)", &kin.mass, 0.01f);
+		changed |= ImGui::DragFloat("I", &kin.I, 0.01f);
 		changed |= ImGui::DragFloat("Elasticity", &kin.elasticity, 0.01f, 0, 2);
 		changed |= ImGui::DragFloat("Friction", &kin.friction, 0.01f, 0, 2);
 		changed |= ImGui::Checkbox("Gravity", &kin.applyGravity);
+		changed |= ImGui::Checkbox("Static", &kin.isStatic);
 		changed |= ImGui::DragFloat3("Velocity", &kin.velocity.x, 0.001f);
 		auto axis = glm::normalize(kin.w);
 		auto angle = glm::length(kin.w);
@@ -498,6 +502,13 @@ namespace Nork::Editor {
 				std::function<void(T& comp, bool& changed)> fun = [&](T& copy, bool& changed)
 				{
 					ShowComponent(copy, changed);
+					if constexpr (std::is_same<T, Components::Physics>::value)
+					{
+						if (ImGui::Button("Edit Collider"))
+						{
+							Editor::Get().AddPanel(std::make_shared<ColliderEditorPanel>(ent));
+						}
+					}
 				};
 				bool edited = _EditComponent(ent.GetComponent<T>(), ent, fun);
 				ImGui::TreePop();

@@ -8,7 +8,15 @@ namespace Nork::Editor {
 	public:
 		ViewportView();
 		void Content() override;
+		struct MouseState
+		{
+			int mousePosX = 0, mousePosY = 0;
+			bool isViewportHovered = false;
+			bool isViewportDoubleClicked = false;
+			bool isViewportClicked = false;
+		};
 	public:
-		std::shared_ptr<Viewport> viewport;
+		MouseState mouseState;
+		std::shared_ptr<SceneView> sceneView;
 	};
 }

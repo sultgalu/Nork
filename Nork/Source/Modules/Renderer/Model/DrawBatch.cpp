@@ -1,7 +1,7 @@
 #include "DrawBatch.h"
 
 namespace Nork::Renderer {
-	DrawBatch::DrawBatch(MatrixUBO& modelUBO, MaterialUBO& materialUBO, VAO& vao)
+	DrawBatch::DrawBatch(MatrixUBO& modelUBO, MaterialUBO& materialUBO, DefaultVAO& vao)
 		: modelUBO(modelUBO), materialUBO(materialUBO), vao(vao)
 	{
 		using enum BufferStorageFlags;

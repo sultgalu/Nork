@@ -13,8 +13,6 @@ namespace Nork::Components
 
 		this->up = glm::vec3(0.0f, 1.0f, 0.0f);
 		this->position = glm::vec3(0.0f, 0.0f, 0.0f);
-		this->pitch = 0;
-		this->yaw = 0;
 
 		this->UpdateFrontRight();
 		this->UpdateView();

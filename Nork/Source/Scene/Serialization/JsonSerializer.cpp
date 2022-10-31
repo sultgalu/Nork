@@ -41,7 +41,7 @@ namespace Nork {
 		return JsonObject()
 			.Property("position", JsonArray().Elements(&pos.x, 3))
 			.Property("scale", JsonArray().Elements(&scale.x, 3))
-			.Property("quaternion", JsonArray().Elements(&rot.w, 4));
+			.Property("quaternion", JsonArray().Elements(&rot.x, 4));
 	}
 	template<> Transform& JsonComponentDeserializer<Transform>::Deserialize(const JsonObject& json)
 	{
@@ -49,7 +49,7 @@ namespace Nork {
 			{
 				json.Get<JsonArray>("position").Get(&tr.localPosition.x, 3);
 				json.Get<JsonArray>("scale").Get(&tr.localScale.x, 3);
-				json.Get<JsonArray>("quaternion").Get(&tr.localQuaternion.w, 4);
+				json.Get<JsonArray>("quaternion").Get(&tr.localQuaternion.x, 4);
 				tr.RecalcModelMatrix();
 			});
 		return tr;

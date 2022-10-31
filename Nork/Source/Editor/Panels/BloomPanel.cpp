@@ -9,7 +9,7 @@ namespace Nork::Editor {
 	}
 	void BloomPanel::Content()
 	{
-		auto& b = GetEngine().renderingSystem.bloom;
+		/* auto& b = GetEngine().renderingSystem.bloom;
 		static int size = 10;
 
 		if (ImGui::BeginMenuBar())
@@ -64,6 +64,6 @@ namespace Nork::Editor {
 					size = 1;
 				}
 			}
-		}
+		}*/
 	}
 }

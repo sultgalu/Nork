@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "DeferredPipeline.h"
 #include "../../State/Capabilities.h"
 #include "../../Objects/Framebuffer/GeometryFramebufferBuilder.h"
@@ -6,27 +5,21 @@
 #include "../../DrawUtils.h"
 
 namespace Nork::Renderer {
-	DeferredPipeline::DeferredPipeline(std::shared_ptr<Shader> geomatryShader, std::shared_ptr<Shader> lightShader, uint32_t width, uint32_t height)
-		: geomatryShader(geomatryShader), lightShader(lightShader)
+	DeferredPipeline::DeferredPipeline(std::shared_ptr<Texture2D> depth)
 	{
 		using enum Renderer::TextureFormat;
 		geometryFb = GeometryFramebufferBuilder()
-			.Width(width).Height(height)
 			.Position(RGB16F)
 			.Normal(RGB16F)
 			.Diffuse(RGB16F)
 			.Specular(RGB16F)
-			.Depth(Depth32)
-			.Create();
-		lightFb = LightFramebufferBuilder()
-			.DepthTexture(geometryFb->Depth())
-			.ColorFormat(Renderer::TextureFormat::RGBA16F)
+			.Depth(depth)
 			.Create();
 	}
-	void DeferredPipeline::GeometryPass(const std::vector<DrawCommandMultiIndirect>& drawCommands)
+	void DeferredPipeline::GeometryPass(Shader& shader, const std::vector<DrawCommandMultiIndirect>& drawCommands)
 	{
-		geometryFb->Bind().SetViewport().Clear();
-		geomatryShader->Use();
+		geometryFb->Bind().SetViewport().ClearColor();
+		shader.Use();
 
 		Capabilities()
 			.Enable().DepthTest().CullFace()
@@ -34,18 +27,18 @@ namespace Nork::Renderer {
 
 		for (auto& command : drawCommands)
 		{
-			command.Draw(*geomatryShader);
+			command.Draw(shader);
 		}
 	}
-	void DeferredPipeline::LightPass()
+	void DeferredPipeline::LightPass(Shader& shader, MainFramebuffer& fb)
 	{
 		geometryFb->Position()->Bind(0);
 		geometryFb->Diffuse()->Bind(1);
 		geometryFb->Normal()->Bind(2);
 		geometryFb->Specular()->Bind(3);
 
-		lightFb->Bind().SetViewport().Clear();
-		lightShader->Use();
+		fb.Bind().SetViewport();
+		shader.Use();
 
 		Capabilities()
 			.Disable().DepthTest().Blend();

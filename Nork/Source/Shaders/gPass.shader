@@ -81,7 +81,7 @@ void main()
 #extension ARB_bindless_texture : require
 //#extension ARB_shader_draw_parameters : require
 
-layout(location = 0) out vec3 pos; // 3 used
+layout(location = 0) out vec4 pos; // 3 used
 layout(location = 1) out vec3 diffuse_spec;
 layout(location = 2) out vec3 normal; // 3 used
 layout(location = 3) out vec2 specular; // 2 used
@@ -106,7 +106,7 @@ in vec3 vNorm;
 
 void main()
 {
-	pos = worldPos;
+	pos = vec4(worldPos, 1.0f);
 	diffuse_spec = texture(material.diffuseMap, texCoord).rgb * material.diffuse;
 	specular = vec2((1 - texture(material.roughnessMap, texCoord).r) * material.specular, material.specularExponent);
 	

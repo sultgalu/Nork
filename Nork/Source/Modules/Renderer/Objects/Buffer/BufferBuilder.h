@@ -7,7 +7,7 @@ namespace Nork::Renderer {
 	class BufferBuilder
 	{
 	public:
-		BufferBuilder& Data(void* data, size_t size)
+		BufferBuilder& Data(const void* data, size_t size)
 		{
 			this->data = data;
 			this->size = size;
@@ -49,7 +49,7 @@ namespace Nork::Renderer {
 		}
 	private:
 		GLuint handle;
-		void* data;
+		const void* data;
 		size_t size;
 		BufferTarget target = BufferTarget::None;
 		BufferStorageFlags flags = BufferStorageFlags::None;

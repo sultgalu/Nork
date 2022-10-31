@@ -23,23 +23,23 @@ namespace Nork::Renderer {
 			this->color = color;
 			return *this;
 		}
-		LightFramebufferBuilder& DepthTexture(std::shared_ptr<Texture2D> depth)
+		LightFramebufferBuilder& DepthFormat(TextureFormat depth)
 		{
 			this->depth = depth;
 			return *this;
 		}
-		std::shared_ptr<LightFramebuffer> Create();
+		std::shared_ptr<MainFramebuffer> Create();
 	private:
 		void Validate()
 		{
-			if (depth == nullptr || color == TextureFormat::None)
+			if (depth == TextureFormat::None || color == TextureFormat::None)
 			{
 				std::abort();
 			}
 		}
 		void CreateAttachments();
 	private:
-		std::shared_ptr<Texture2D> depth = nullptr;
+		TextureFormat depth = TextureFormat::None;
 		TextureFormat color = TextureFormat::None;
 	};
 }

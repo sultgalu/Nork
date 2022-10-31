@@ -17,6 +17,7 @@ namespace Nork
 	{
 	public:
 		Engine();
+		static Engine& Get();
 		Engine(Engine&&) = delete;
 		void Update();
 		void StartPhysics(bool startScript = true);
@@ -50,5 +51,17 @@ namespace Nork
 		std::thread* LaunchPhysicsThread();
 		void UpdateGlobalTransforms();
 		void UpdateTransformMatrices();
+	};
+
+	class CollidersStage : public Renderer::Stage
+	{
+	public:
+		CollidersStage(Scene& scene, Shaders& shaders);
+		bool Execute(Renderer::Framebuffer& src, Renderer::Framebuffer& dst) override;
+	public:
+		Scene& scene;
+		Shaders& shaders;
+		std::shared_ptr<Renderer::VertexArray> vao;
+		std::shared_ptr<Renderer::Framebuffer> fb;
 	};
 }

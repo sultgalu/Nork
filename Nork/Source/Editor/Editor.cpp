@@ -158,14 +158,18 @@ namespace Nork::Editor
 		_editor = this;
 
 		InitImGui();
-		panels.push_back(std::make_unique<HierarchyPanel>());
-		panels.push_back(std::make_unique<InspectorPanel>());
-		panels.push_back(std::make_unique<PhysicsSettingsPanel>());
-		panels.push_back(std::make_unique<GraphicsSettingsPanel>());
-		panels.push_back(std::make_unique<BloomPanel>());
+		panels.push_back(std::make_shared<HierarchyPanel>());
+		panels.push_back(std::make_shared<InspectorPanel>());
+		panels.push_back(std::make_shared<PhysicsSettingsPanel>());
+		panels.push_back(std::make_shared<GraphicsSettingsPanel>());
+		panels.push_back(std::make_shared<BloomPanel>());
 		// AddViewportPanel();
 		menus.push_back(std::make_unique<FileMenu>());
 		ImGui::SetColorEditOptions(ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB | ImGuiColorEditFlags_PickerHueBar | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
+	}
+	Editor& Editor::Get()
+	{
+		return *_editor;
 	}
 
 	void Editor::Render()
@@ -318,7 +322,7 @@ namespace Nork::Editor
 
 		return selected;
 	}
-	int FindShaderPanelBy(std::vector<std::unique_ptr<Panel>>& panels, std::shared_ptr<Renderer::Shader> shader)
+	int FindShaderPanelBy(std::vector<std::shared_ptr<Panel>>& panels, std::shared_ptr<Renderer::Shader> shader)
 	{
 		for (int i = 0; i < panels.size(); i++)
 		{
@@ -348,6 +352,10 @@ namespace Nork::Editor
 			{
 				AddViewportPanel();
 			}
+			// if (ImGui::MenuItem("New ColliderPanel"))
+			// {
+			// 	panels.push_back(std::make_shared<ColliderEditorPanel>());
+			// }
 			if (ImGui::BeginMenu("Shaders"))
 			{
 				auto shader = SelectShaderFromRenderer(engine);
@@ -360,7 +368,7 @@ namespace Nork::Editor
 					}
 					else
 					{
-						panels.push_back(std::make_unique<ShadersPanel>(shader.first, shader.second));
+						panels.push_back(std::make_shared<ShadersPanel>(shader.first, shader.second));
 					}
 				}
 				ImGui::EndMenu();
@@ -370,8 +378,12 @@ namespace Nork::Editor
 	}
 	void Editor::AddViewportPanel()
 	{
-		auto panel = std::make_unique<ViewportPanel>();
+		auto panel = std::make_shared<ViewportPanel>();
 		panel->SetIndex(viewportPanelCount++);
 		panels.push_back(std::move(panel));
+	}
+	void Editor::AddPanel(std::shared_ptr<Panel> panel)
+	{
+		panels.push_back(panel);
 	}
 }

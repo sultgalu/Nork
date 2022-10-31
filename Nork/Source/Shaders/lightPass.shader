@@ -132,7 +132,10 @@ void main()
 
 	uvec2 range = ranges[j * int(cullConfig.cullRes.x) + i];*/
 	//----------------------------NEW-----------------------------
-	vec3 worldPos = texture(gPos, texCoord).rgb;
+	vec4 pos = texture(gPos, texCoord).rgba;
+	if (pos.a == 0.0f)
+		discard;
+	vec3 worldPos = pos.rgb;
 	vec3 diff = texture(gDiff, texCoord).rgb;
 	vec3 normal = texture(gNorm, texCoord).rgb;
 	vec2 spec = texture(gSpec, texCoord).rg;

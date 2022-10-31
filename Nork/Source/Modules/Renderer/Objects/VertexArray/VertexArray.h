@@ -38,9 +38,13 @@ namespace Nork::Renderer {
 		{
 			glDrawArrays(std::to_underlying(mode), 0, vbo->GetSize() / stride);
 		}
+		void DrawIndexed(uint32_t* indices, size_t count, DrawMode mode = DrawMode::Triangles)
+		{
+			glDrawElements(std::to_underlying(mode), count, GL_UNSIGNED_INT, indices);
+		}
 		void DrawIndexed(std::span<uint32_t> indices, DrawMode mode = DrawMode::Triangles)
 		{
-			glDrawElements(std::to_underlying(mode), indices.size(), GL_UNSIGNED_INT, indices.data());
+			DrawIndexed(indices.data(), indices.size(), mode);
 		}
 		void DrawIndexed(DrawMode mode = DrawMode::Triangles)
 		{

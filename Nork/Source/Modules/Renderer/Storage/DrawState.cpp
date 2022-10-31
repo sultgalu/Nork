@@ -4,7 +4,7 @@
 
 namespace Nork::Renderer {
 	DrawState::DrawState()
-		: vaoWrapper(1000 * 1000, 1000 * 1000),
+		: vaoWrapper(),
 		materialBuffer(1), modelMatrixBuffer(1)	
 	{
 		lightCountUBO = BufferBuilder()

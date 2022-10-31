@@ -17,11 +17,11 @@ namespace Nork::Physics
 
 	float Object::CalcInertia()
 	{
-		AABB aabb(collider.verts);
+		AABB aabb(localColl.verts);
 		float sum = 0;
 		for (size_t i = 0; i < 3; i++)
-			sum += glm::pow(aabb.max[i] - aabb.min[i], 2);
-		sum /= 18.0f;
+			sum += aabb.max[i] - aabb.min[i];
+		sum = glm::pow(sum / 3, 2) / 6;
 		return sum * kinem.mass;
 	}
 	void Object::SetColliderSize(const glm::vec3& size)
@@ -42,26 +42,26 @@ namespace Nork::Physics
 		if (!collider.isActive)
 			return;
 
+		localColl.center = glm::vec3(0);
+		for (auto& vert : localColl.verts)
+		{
+			localColl.center += vert;
+		}
+		localColl.center /= localColl.verts.size();
+		collider.center = localColl.center + kinem.position;
+
 		glm::mat4 rotation = glm::mat4_cast(kinem.quaternion);
 
-		// colliders[i].center = rotation * glm::vec4(colliders[i].center, 1);
-		// colliders[i].center += translate[i];
 		for (size_t j = 0; j < collider.verts.size(); j++)
 		{
-			collider.verts[j] = rotation * glm::vec4(localColl.verts[j], 1);
+			// make it rotate around it's center, not the (0;0;0) coordinate
+			collider.verts[j] = rotation * glm::vec4(localColl.verts[j] - localColl.center, 1);
 			collider.verts[j] += kinem.position;
 		}
 		for (size_t j = 0; j < collider.faces.size(); j++)
 		{
 			collider.faces[j].norm = rotation * glm::vec4(localColl.faces[j].norm, 1);
 		}
-
-		collider.center = glm::vec3(0);
-		for (auto& vert : collider.verts)
-		{
-			collider.center += vert;
-		}
-		collider.center /= collider.verts.size();
 	}
 
 	Collider Collider::Cube()

@@ -148,8 +148,8 @@ namespace Nork::Physics
 		
 		bool isStatic = false;
 		bool applyGravity = true;
-		float elasticity = 0.2f;
-		float friction = 0.8f;
+		float elasticity = 0.0f;
+		float friction = 1.0f;
 	};
 
 	class Object

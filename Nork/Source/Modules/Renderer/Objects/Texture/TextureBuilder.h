@@ -20,7 +20,7 @@ namespace Nork::Renderer {
 			data2D = data;
 			return Create2D();
 		}
-		std::shared_ptr<TextureCube> CreateCubeWithData(const std::array<void*, 6>& data)
+		std::shared_ptr<TextureCube> CreateCubeWithData(std::array<const void*, 6>& data)
 		{
 			dataCube = data;
 			return CreateCube();
@@ -52,7 +52,7 @@ namespace Nork::Renderer {
 	private:
 		GLuint handle;
 		GLuint64 bindlessHandle;
-		std::array<void*, 6> dataCube;
+		std::array<const void*, 6> dataCube;
 		void* data2D = nullptr;
 		TextureParams params;
 		TextureAttributes attributes;

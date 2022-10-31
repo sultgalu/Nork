@@ -35,12 +35,8 @@ namespace Nork::Components {
 		std::vector<uint32_t> indices;
 		for (auto& face : faces)
 		{
-			for (size_t i = 1; i < face.points.size() - 1; i++)
-			{
-				indices.push_back(face.points[0]);
-				indices.push_back(face.points[i]);
-				indices.push_back(face.points[i + 1]);
-			}
+			auto tri = TriangulateFace(face);
+			indices.insert(indices.end(), tri.begin(), tri.end());
 		}
 		return indices;
 	}
@@ -58,6 +54,45 @@ namespace Nork::Components {
 		std::vector<uint32_t> result(edges.size() * 2);
 		std::memcpy(result.data(), edges.data(), result.size() * sizeof(uint32_t));
 		return result;
+	}
+	std::vector<uint32_t> Collider::TriangulateFace(const Face& face) const 
+	{
+		auto& verts = face.points;
+		if (verts.size() < 3) return {};
+		uint32_t pivot = verts[0];
+		uint32_t current, next;
+
+		auto find_next = [&](uint32_t curr, uint32_t exception)
+		{
+			auto& edge = *std::find_if(edges.begin(), edges.end(), [&](auto edge)
+				{
+					if (edge.second == curr)
+						std::swap(edge.first, edge.second);
+					return edge.first == curr && edge.second != exception
+						&& std::find(verts.begin(), verts.end(), edge.second) != verts.end();
+				});
+			return edge.first == curr ? edge.second : edge.first;
+		};
+
+		next = find_next(pivot, (uint32_t)-1);
+		current = pivot;
+		std::vector<uint32_t> res;
+		while (true)
+		{
+			auto prev = current;
+			current = next;
+			next = find_next(current, prev);
+			if (next == pivot) 
+				break;
+			res.insert(res.end(), { pivot, current, next });
+		}
+		//check for clockwise
+		auto norm = glm::cross(this->points[res[1]] - this->points[res[0]], this->points[res[2]] - this->points[res[0]]);
+		if (glm::dot(norm, face.normal) < 0)
+		{
+			std::reverse(res.begin(), res.end());
+		}
+		return res;
 	}
 	void Collider::BuildTriangleFaces()
 	{
@@ -198,9 +233,14 @@ namespace Nork::Components {
 	}
 	glm::vec3 Collider::FaceNormal(const Face& face)
 	{
-		return glm::normalize(glm::cross(
+		auto norm = glm::normalize(glm::cross(
 			points[face.points[0]] - points[face.points[1]],
 			points[face.points[0]] - points[face.points[2]]));
+		if (glm::dot(norm, points[face.points[0]] - Center()) < 0)
+		{
+			norm *= -1;
+		}
+		return norm;
 	}
 	Collider Collider::Cube()
 	{
@@ -245,6 +285,47 @@ namespace Nork::Components {
 		collider.CombineFaces();
 
 		return collider;
+	}
+	Collider::Collider(const Nork::Physics::Collider& source)
+	{
+		points = source.verts;
+		// for (auto& edge : source.edges)
+		// {
+		// 	edges.push_back(Edge(edge.first, edge.second));
+		// }
+		edges.resize(source.edges.size());
+		std::transform(source.edges.begin(), source.edges.end(), edges.begin(), [](const Nork::Physics::Edge& edge)
+			{
+				return Edge(edge.first, edge.second);
+			});
+		std::sort(edges.begin(), edges.end(), [](const Edge& edge1, const Edge& edge2)
+			{
+				if (edge1.first == edge2.first)
+					return edge1.second > edge2.second;
+				return edge1.first > edge2.first;
+			});
+		faces.reserve(source.faces.size());
+		for (size_t i = 0; i < source.faces.size(); i++)
+		{
+			faces.push_back(Face{ .points = source.faceVerts[i], .normal = source.faces[i].norm });
+		}
+	}
+	Nork::Physics::Collider Collider::ToPhysicsCollider()
+	{
+		Nork::Physics::Collider dest;
+		
+		dest.verts = points;
+		dest.edges.resize(edges.size());
+		std::transform(edges.begin(), edges.end(), dest.edges.begin(), [](const Edge& edge)
+			{
+				return Nork::Physics::Edge {.first = edge.first, .second = edge.second };
+			});
+		for (auto& face : faces)
+		{
+			dest.faces.push_back(Nork::Physics::Face{ .norm = FaceNormal(face) , .vertIdx = face.points[0] });
+			dest.faceVerts.push_back(face.points);
+		}
+		return dest;
 	}
 	uint32_t Collider::AddPoint(const glm::vec3& p)
 	{

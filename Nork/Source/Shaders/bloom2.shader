@@ -18,8 +18,8 @@ void main()
 
 in vec2 fTex;
 out vec3 fColor;
-layout(bindless_sampler) uniform sampler2D tex;
-layout(bindless_sampler) uniform sampler2D tex2;
+uniform sampler2D tex;
+uniform sampler2D tex2;
 
 void main()
 {

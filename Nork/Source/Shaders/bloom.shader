@@ -18,7 +18,7 @@ void main()
 
 in vec2 fTex;
 out vec3 fColor;
-layout(bindless_sampler) uniform sampler2D tex;
+uniform sampler2D tex;
 
 void main()
 {

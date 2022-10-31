@@ -7,6 +7,8 @@ namespace Nork::Renderer {
 	std::shared_ptr<GeometryFramebuffer> GeometryFramebufferBuilder::Create()
 	{
 		Validate();
+		width = depth->GetWidth();
+		height = depth->GetHeight();
 		CreateAttachments();
 		FramebufferBuilder::Validate();
 		glGenFramebuffers(1, &handle);
@@ -31,6 +33,6 @@ namespace Nork::Renderer {
 			.Color(createTexture(diffuse), 1)
 			.Color(createTexture(normal), 2)
 			.Color(createTexture(specular), 3)
-			.Depth(createTexture(depth));
+			.Depth(depth);
 	}
 }

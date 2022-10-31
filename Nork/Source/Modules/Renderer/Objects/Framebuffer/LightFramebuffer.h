@@ -3,13 +3,13 @@
 #include "GeometryFramebuffer.h"
 
 namespace Nork::Renderer {
-	class LightFramebuffer : public Framebuffer
+	// TODO: rename to MainFramebuffer or smt, it has the structure of a main pipeline framebuffer that is the source/target for every render stage
+	class MainFramebuffer : public Framebuffer
 	{
 	public:
-		LightFramebuffer(GLuint handle, int width, int height, FramebufferAttachments attachments)
+		MainFramebuffer(GLuint handle, int width, int height, FramebufferAttachments attachments)
 			: Framebuffer(handle, width, height, attachments)
 		{
-			clearBits = GL_COLOR_BUFFER_BIT;
 		}
 		std::shared_ptr<Texture2D> Color()
 		{

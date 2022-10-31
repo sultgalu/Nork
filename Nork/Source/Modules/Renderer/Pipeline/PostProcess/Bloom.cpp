@@ -9,25 +9,15 @@
 namespace Nork::Renderer {
 	static constexpr size_t maxTexCount = 20;
 
-	Bloom::Bloom()
+	Bloom::Bloom(uint32_t width)
 	{
-		// using enum BufferStorageFlags;
-		// ubo = BufferBuilder().Target(BufferTarget::UBO)
-		// 	.Flags(WriteAccess | Coherent | Persistent)
-		// 	.Data(nullptr, 20 * sizeof(uint64_t))
-		// 	.Create();
-		// ubo->BindBase(10).Map(BufferAccess::Write);
-	}
-	void Bloom::InitTextures()
-	{
+		highResY = width;
+
 		if (divider < 1.1f || lowResY < 1)
 		{
 			MetaLogger().Error("Bad Params");
 			return;
 		}
-
-		fbs.clear();
-		fbs2.clear();
 
 		uint32_t x = highResY * ratio;
 		uint32_t y = highResY;
@@ -51,23 +41,18 @@ namespace Nork::Renderer {
 			y /= divider;
 		}
 
-		auto params = TextureParams::FramebufferTex2DParams();
-		//params.magLinear = false;
-		auto tex = TextureBuilder()
-			.Params(params)
-			.Attributes(TextureAttributes{ .width = (uint32_t)(highResY * ratio), .height = (uint32_t)highResY, .format = TextureFormat::RGB16F })
+		blackTex = TextureBuilder()
+			.Params(TextureParams::FramebufferTex2DParams())
+			.Attributes(TextureAttributes{ .width = 1, .height = 1, .format = TextureFormat::RGB8 })
 			.Create2DEmpty();
-
-		dest = FramebufferBuilder().Attachments(FramebufferAttachments().Color(tex, 0))
-			.Create();
 	}
-	void Bloom::Apply(std::shared_ptr<Texture2D> sourceTex, std::shared_ptr<Shader> shader1, std::shared_ptr<Shader> shader3, std::shared_ptr<Shader> shader2)
+	void Bloom::Apply(std::shared_ptr<MainFramebuffer> mainFb, std::shared_ptr<Shader> shader1, std::shared_ptr<Shader> shader3, std::shared_ptr<Shader> shader2)
 	{
 		Capabilities().Disable().DepthTest().Blend();
 
 		shader1->Use()
 			.SetInt("tex", 0);
-		sourceTex->Bind();
+		mainFb->Color()->Bind();
 		fbs[0]->Bind().Clear().SetViewport();
 		DrawUtils::DrawQuad();
 		fbs[0]->GetAttachments().colors[0].first->Bind2D();
@@ -91,8 +76,8 @@ namespace Nork::Renderer {
 			fbs2[i]->GetAttachments().colors[0].first->Bind2D();
 		}
 
-		dest->Bind().Clear().SetViewport();
-		sourceTex->Bind(1);
+		mainFb->Bind().SetViewport();
+		blackTex->Bind(1);
 		DrawUtils::DrawQuad();
 	}
 }

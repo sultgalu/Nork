@@ -16,13 +16,17 @@ namespace Nork::Renderer {
 			depth = texture;
 			return *this;
 		}
+		GLenum ClearBits() const
+		{
+			return (depth == nullptr ? 0 : GL_DEPTH_BUFFER_BIT) | (colors.empty() ? 0 : GL_COLOR_BUFFER_BIT);
+		}
 	};
 
 	class Framebuffer: public GLObject
 	{
 	public:
 		Framebuffer(GLuint handle, int width, int height, FramebufferAttachments attachments)
-			: GLObject(handle), width(width), height(height), attachments(attachments), clearBits(GetClearBits(attachments))
+			: GLObject(handle), width(width), height(height), attachments(attachments)
 		{}
 		~Framebuffer()
 		{
@@ -33,9 +37,9 @@ namespace Nork::Renderer {
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
-		Framebuffer& Bind()
+		Framebuffer& Bind(GLenum target = GL_FRAMEBUFFER)
 		{
-			glBindFramebuffer(GL_FRAMEBUFFER, handle);
+			glBindFramebuffer(target, handle);
 			return *this;
 		}
 		Framebuffer& SetViewport()
@@ -45,23 +49,39 @@ namespace Nork::Renderer {
 		}
 		Framebuffer& Clear()
 		{
-			glClear(clearBits);
+			glClear(attachments.ClearBits());
 			return *this;
 		}
+		Framebuffer& ClearColor()
+		{
+			if (attachments.ClearBits() & GL_COLOR_BUFFER_BIT)
+				glClear(GL_COLOR_BUFFER_BIT);
+			return *this;
+		}
+		Framebuffer& ClearDepth()
+		{
+			if (attachments.ClearBits() & GL_DEPTH_BUFFER_BIT)
+				glClear(GL_DEPTH_BUFFER_BIT);
+			return *this;
+		}
+		std::shared_ptr<Texture> Color(int idx = 0)
+		{
+			for (auto& att : attachments.colors)
+			{
+				if (att.second == idx)
+					return att.first;
+			}
+			return nullptr;
+		}
+		std::shared_ptr<Texture> Depth()
+		{
+			return attachments.depth;
+		}
+		int Width() { return width; }
+		int Height() { return height; }
 		const FramebufferAttachments& GetAttachments() { return attachments; }
 	protected:
-		static GLenum GetClearBits(FramebufferAttachments& attachments)
-		{
-			GLenum clearBits = 0;
-			if (attachments.depth != nullptr)
-				clearBits |= GL_DEPTH_BUFFER_BIT;
-			if (!attachments.colors.empty())
-				clearBits |= GL_COLOR_BUFFER_BIT;
-			return clearBits;
-		}
-	protected:
 		const int width, height;
-		GLenum clearBits;
 		const FramebufferAttachments attachments;
 	private:
 		GLenum GetIdentifier() override
@@ -69,6 +89,5 @@ namespace Nork::Renderer {
 			return GL_FRAMEBUFFER;
 		}
 	};
-
 }
 

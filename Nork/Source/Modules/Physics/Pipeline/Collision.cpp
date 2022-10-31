@@ -88,14 +88,25 @@ namespace Nork::Physics {
 
 	void Collision::_1NarrowPhase()
 	{
+		if (Kinem1().isStatic && Kinem2().isStatic)
+			return;
 		satRes = SAT(Collider1(), Collider2()).GetResult();
 		satRes.depth *= -1;
 		satRes.dir *= -1;
 		isColliding = satRes.depth >= 0;
+
+		if (satRes.type == CollisionType::VertFace)
+		{
+			std::swap(obj1Idx, obj2Idx);
+			satRes.type = CollisionType::FaceVert;
+			satRes.dir *= -1;
+		}
 	}
 	void Collision::_2GenerateContactPoints()
 	{
 		if (!isColliding)
+			return;
+		if (Kinem1().isStatic && Kinem2().isStatic)
 			return;
 
 		constexpr float bias = 0.1f;
@@ -106,13 +117,13 @@ namespace Nork::Physics {
 			if (glm::isnan(contactCenter.x))
 				Logger::Error("");
 		}
-		else if (satRes.type == CollisionType::VertFace)
-		{
-			contactPoints = FaceContactPoints(Collider2(), Collider1(), satRes.featureIdx1, satRes.featureIdx2);
-			contactCenter = Center(contactPoints);
-			if (glm::isnan(contactCenter.x))
-				Logger::Error("");
-		}
+		// else if (satRes.type == CollisionType::VertFace)
+		// {
+		// 	contactPoints = FaceContactPoints(Collider2(), Collider1(), satRes.featureIdx1, satRes.featureIdx2);
+		// 	contactCenter = Center(contactPoints);
+		// 	if (glm::isnan(contactCenter.x))
+		// 		Logger::Error("");
+		// }
 		else if (satRes.type == CollisionType::EdgeEdge)
 		{
 			auto& edge1 = Collider1().edges[satRes.featureIdx1];
@@ -140,6 +151,9 @@ namespace Nork::Physics {
 		const auto& kinem1 = Kinem1();
 		const auto& kinem2 = Kinem2();
 
+		if (kinem1.isStatic && kinem2.isStatic)
+			return;
+
 		glm::vec3 t = glm::vec3(0);
 		const glm::vec3& contactPoint = contactCenter;
 		glm::vec3 r1 = contactPoint - Collider1().center;
@@ -166,7 +180,7 @@ namespace Nork::Physics {
 			float friction = glm::min((kinem1.friction + kinem2.friction) / 2.0f, 1.0f);
 			float resulting = -(1 + coefficient) * glm::dot(vel1 - vel2, satRes.dir)
 				/ ((kinem1.isStatic ? 0 : 1 / kinem1.mass) + (kinem2.isStatic ? 0 : 1 / kinem2.mass) + angularPart);
-			glm::vec3 resultingVec = resulting * (satRes.dir - friction * t);
+			glm::vec3 resultingVec = resulting * (satRes.dir -friction * t);
 
 			this->deltaW1 = kinem1.isStatic ? vec0 : (1.0f / kinem1.I) * glm::cross(r1, resultingVec);
 			this->deltaW2 = kinem2.isStatic ? vec0 : (-1.0f / kinem2.I) * glm::cross(r2, resultingVec);
@@ -180,6 +194,15 @@ namespace Nork::Physics {
 			}
 			if (glm::isnan(kinem1.velocity.x) || glm::isnan(kinem2.velocity.x))
 				Logger::Error("glm::isnan(kinem1.velocity.x) || glm::isnan(kinem2.velocity.x)");
+
+			auto afterV1 = kinem1.velocity + this->deltaV1;
+			auto afterV2 = kinem2.velocity + this->deltaV2;
+			auto afterW1 = kinem1.w + this->deltaW1;
+			auto afterW2 = kinem2.w + this->deltaW2;
+			auto afterVel1 = afterV1 + glm::cross(afterW1, r1);
+			auto afterVel2 = afterV2 + glm::cross(afterW2, r2);
+			auto cr = -glm::dot(afterVel1 - afterVel2, satRes.dir) / glm::dot(vel1 - vel2, satRes.dir);
+			auto diff = glm::abs(coefficient - cr);
 		}
 		if (satRes.depth > 0)
 		{

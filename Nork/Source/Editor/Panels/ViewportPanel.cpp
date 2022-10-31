@@ -1,5 +1,8 @@
-#include "pch.h"
 #include "include/ViewportPanel.h"
+#include "Modules/Renderer/Pipeline/Stages/BloomStage.h"
+#include "Modules/Renderer/Pipeline/Stages/SkyStage.h"
+#include "Modules/Renderer/Pipeline/Stages/SkyboxStage.h"
+#include "Modules/Renderer/Pipeline/Stages/PostProcessStage.h"
 
 namespace Nork::Editor {
 	ViewportPanel::ViewportPanel()
@@ -7,10 +10,15 @@ namespace Nork::Editor {
 		camera = std::make_shared<Components::Camera>();
 		GetCommonData().editorCameras.push_back(camera);
 
-		viewport = std::make_shared<Viewport>(camera);
-		GetRenderer().viewports.push_back(viewport);
+		sceneView = std::make_shared<SceneView>(1920, 1080, Renderer::TextureFormat::RGBA16F);
+		sceneView->pipeline->stages.push_back(GetRenderer().CreateStage<Renderer::DeferredStage>(*sceneView->pipeline));
+		//sceneView->pipeline->stages.push_back(GetRenderer().CreateStage<Renderer::SkyStage>(*sceneView->pipeline));
+		// sceneView->pipeline->stages.push_back(GetRenderer().CreateStage<Renderer::BloomStage>(*sceneView->pipeline));
+		//sceneView->pipeline->stages.push_back(GetRenderer().CreateStage<Renderer::PostProcessStage>(*sceneView->pipeline));
+		//sceneView->pipeline->stages.push_back(std::make_shared<CollidersStage>(GetScene(), GetRenderer().shaders));
+		GetRenderer().sceneViews.insert(sceneView);
 
-		viewportView.viewport = viewport;
+		viewportView.sceneView = sceneView;
 
 		panelState.windowFlags = ImGuiWindowFlags_::ImGuiWindowFlags_NoScrollWithMouse |
 			ImGuiWindowFlags_MenuBar |
@@ -19,19 +27,38 @@ namespace Nork::Editor {
 	}
 	ViewportPanel::~ViewportPanel()
 	{
-		for (size_t i = 0; i < GetRenderer().viewports.size(); i++)
-		{
-			if (GetRenderer().viewports[i] == viewport)
-			{
-				GetRenderer().viewports.erase(GetRenderer().viewports.begin() + i);
-			}
-		}
+		GetRenderer().sceneViews.erase(sceneView);
 		for (size_t i = 0; i < GetCommonData().editorCameras.size(); i++)
 		{
 			if (GetCommonData().editorCameras[i] == camera)
 			{
 				GetCommonData().editorCameras.erase(GetCommonData().editorCameras.begin() + i);
 			}
+		}
+	}
+	static const char* NameForStage(const type_info& type)
+	{
+		if (typeid(Renderer::DeferredStage) == type) return "Deferred";
+		if (typeid(Renderer::BloomStage) == type) return "Bloom";
+		if (typeid(Renderer::SkyStage) == type) return "Sky";
+		if (typeid(Renderer::SkyboxStage) == type) return "Skybox";
+		if (typeid(Renderer::PostProcessStage) == type) return "Post Process";
+		return "NOT_FOUND";
+	}
+	static const char* NameForStage(const Renderer::Stage* stage)
+	{
+		return NameForStage(typeid(*stage));
+	}
+	template<std::derived_from<Renderer::Stage> T> static const char* NameForStage()
+	{
+		return NameForStage(typeid(T));
+	}
+	template<std::derived_from<Renderer::Stage> T> static void AddStageItem(RenderingSystem& renderingSystem, Renderer::Pipeline& pipeline)
+	{
+		auto name = NameForStage(typeid(T));
+		if (ImGui::Selectable((name + std::string("##stage")).c_str(), false, ImGuiSelectableFlags_DontClosePopups))
+		{
+			pipeline.stages.push_back(renderingSystem.CreateStage<T>(pipeline));
 		}
 	}
 	void ViewportPanel::Content()
@@ -44,36 +71,54 @@ namespace Nork::Editor {
 				{
 					if (ImGui::Selectable(std::to_string(i).c_str()))
 					{
-						viewport->camera = GetCommonData().editorCameras[i];
+						sceneView->camera = GetCommonData().editorCameras[i];
 					}
 				}
 				ImGui::EndMenu();
 			}
-			if (ImGui::BeginMenu("Phases"))
+			if (ImGui::BeginMenu("Stages"))
 			{
-				auto checkbox = [&](Viewport::Source source, const char* label)
+				for (auto it = sceneView->pipeline->stages.begin(); it != sceneView->pipeline->stages.end(); it++)
 				{
-					bool enabled = (viewport->source & source) == source;
-					if (ImGui::Checkbox(label, &enabled))
+					auto id = NameForStage((*it).get()) + std::string("#") + std::to_string((int)(it._Ptr));
+					if (ImGui::SmallButton(("X##" + id).c_str()))
 					{
-						if (enabled)
-							viewport->source |= source;
-						else
-							viewport->source &= ~source;
+						auto toRemove = it--;
+						sceneView->pipeline->stages.erase(toRemove);
+						continue;
 					}
-				};
-				checkbox(Viewport::Source::Deferred, "Deferred");
-				checkbox(Viewport::Source::Bloom, "Bloom");
-				checkbox(Viewport::Source::Sky, "Sky");
-				checkbox(Viewport::Source::Tonemap, "Tonemap");
-				checkbox(Viewport::Source::Colliders, "Colliders");
+					ImGui::SameLine();
+					ImGui::Selectable(id.c_str(), false, ImGuiSelectableFlags_DontClosePopups);
+					if (ImGui::IsItemActive() && !ImGui::IsItemHovered())
+					{
+						bool up = ImGui::GetMouseDragDelta(0).y < 0.0f;
+						if ((up && it != sceneView->pipeline->stages.begin()) || !up && it != --sceneView->pipeline->stages.end())
+						{
+							auto itOther = it;
+							if (up)
+								itOther--;
+							else
+							{
+								++(++itOther);
+							}
+							sceneView->pipeline->stages.splice(itOther, sceneView->pipeline->stages, it);
+							ImGui::ResetMouseDragDelta();
+						}
+					}
+				}
 				ImGui::Separator();
-				checkbox(Viewport::Source::Default, "Default");
-				checkbox(Viewport::Source::PostProcess, "PostProcess");
-				checkbox(Viewport::Source::Debug, "Debug");
+				if (ImGui::BeginMenu("Add"))
+				{
+					AddStageItem<Renderer::DeferredStage>(GetRenderer(), *sceneView->pipeline);
+					AddStageItem<Renderer::BloomStage>(GetRenderer(), *sceneView->pipeline);
+					AddStageItem<Renderer::SkyStage>(GetRenderer(), *sceneView->pipeline);
+					AddStageItem<Renderer::SkyboxStage>(GetRenderer(), *sceneView->pipeline);
+					AddStageItem<Renderer::PostProcessStage>(GetRenderer(), *sceneView->pipeline);
+					ImGui::EndMenu();
+				}
 				ImGui::EndMenu();
 			}
-			if (ImGui::BeginMenu("Texture"))
+			/*if (ImGui::BeginMenu("Texture"))
 			{
 				if (ImGui::MenuItem("Default"))
 				{
@@ -127,18 +172,18 @@ namespace Nork::Editor {
 					}
 				}
 				ImGui::EndMenu();
-			}
-			ImGui::DragFloat("Cam Base Speed", &viewport->camera->moveSpeed, 0.001f);
-			ImGui::Text(("texture ID: " + std::to_string(viewport->Texture()->GetHandle())).c_str());
+			}*/
+			ImGui::DragFloat("Cam Base Speed", &sceneView->camera->moveSpeed, 0.001f);
+			ImGui::Text(("texture ID: " + std::to_string(sceneView->fb->Color()->GetHandle())).c_str());
 			ImGui::EndMenuBar();
 		}
 
-		viewportView.viewport->active = true;
+		//viewportView.viewport->active = true;
 		viewportView.Content();
 
 	}
 	void ViewportPanel::OnContentSkipped()
 	{
-		viewportView.viewport->active = false;
+		// viewportView.viewport->active = false;
 	}
 }

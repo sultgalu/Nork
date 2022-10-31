@@ -30,7 +30,8 @@ namespace Nork::Physics
 				state.depth = pointDistanceFromFaceOutwards;
 				state.type = type;
 				state.dir = glm::normalize(collider1.faces[i].norm);
-				if (type == CollisionType::VertFace) state.dir *= -1;
+				if (type == CollisionType::VertFace) 
+					state.dir *= -1;
 
 				if (pointDistanceFromFaceOutwards > 0)
 					return false; // no collision, but set a separating face,

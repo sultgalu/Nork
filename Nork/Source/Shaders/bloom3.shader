@@ -20,7 +20,7 @@ uniform int dim = 1;
 uniform int step = 3;
 uniform float power = 1.2f;
 out vec3 fColor;
-layout(bindless_sampler) uniform sampler2D tex;
+uniform sampler2D tex;
 in vec2 fTex;
 
 void main()

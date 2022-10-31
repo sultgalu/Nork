@@ -17,7 +17,7 @@ void main()
 #extension ARB_bindless_texture : require
 
 out vec4 fColor;
-layout(bindless_sampler) uniform sampler2D tex;
+uniform sampler2D tex;
 in vec2 fTex;
 
 void main()

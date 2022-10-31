@@ -8,17 +8,7 @@ namespace Nork::Renderer {
 	class GeometryFramebufferBuilder : FramebufferBuilder
 	{
 	public:
-		GeometryFramebufferBuilder& Width(int width)
-		{
-			this->width = width;
-			return *this;
-		}
-		GeometryFramebufferBuilder& Height(int height)
-		{
-			this->height = height;
-			return *this;
-		}
-		GeometryFramebufferBuilder& Depth(TextureFormat depth)
+		GeometryFramebufferBuilder& Depth(std::shared_ptr<Texture2D> depth)
 		{
 			this->depth = depth;
 			return *this;
@@ -47,7 +37,7 @@ namespace Nork::Renderer {
 	private:
 		void Validate()
 		{
-			if (depth == TextureFormat::None || position == TextureFormat::None || diffuse == TextureFormat::None ||
+			if (depth == nullptr || position == TextureFormat::None || diffuse == TextureFormat::None ||
 				normal == TextureFormat::None || specular == TextureFormat::None)
 			{
 				std::abort();
@@ -56,10 +46,10 @@ namespace Nork::Renderer {
 		void CreateAttachments();
 	private:
 		TextureFormat
-			depth = TextureFormat::None,
 			position = TextureFormat::None,
 			diffuse = TextureFormat::None,
 			normal = TextureFormat::None,
 			specular = TextureFormat::None;
+		std::shared_ptr<Texture2D> depth = nullptr;
 	};
 }

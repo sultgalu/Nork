@@ -166,6 +166,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Editor\Panels\ColliderEditorPanel.cpp" />
     <ClCompile Include="Source\Modules\Physics\Pipeline\Collision.cpp" />
     <ClCompile Include="Source\Modules\Physics\Utils\Clip.cpp" />
     <ClCompile Include="Source\Components\Impl\Collider.cpp" />
@@ -187,7 +188,13 @@
     <ClCompile Include="Source\Modules\Renderer\gltf\GLTFBuilder.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Model\DrawBatch.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Model\MeshFactory.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\RenderPipeline.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Pipeline\PostProcess\Bloom.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\Stages\BloomStage.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\Stages\DeferredStage.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\Stages\PostProcessStage.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\Stages\SkyboxStage.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Pipeline\Stages\SkyStage.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Storage\BufferWrapper.cpp" />
     <ClCompile Include="Source\Components\Impl\Common.cpp" />
     <ClCompile Include="Source\Components\Impl\Lights.cpp" />
@@ -197,7 +204,7 @@
     <ClCompile Include="Source\Modules\Renderer\Objects\Buffer\BufferBuilder.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Framebuffer\FramebufferBuilder.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Framebuffer\GeometryFramebufferBuilder.cpp" />
-    <ClCompile Include="Source\Modules\Renderer\Objects\Framebuffer\LightFramebufferBuilder.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Objects\Framebuffer\MainFramebufferBuilder.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\GLManager.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Shader\ShaderBuilder.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Texture\TextureBuilder.cpp" />
@@ -219,6 +226,7 @@
     <ClCompile Include="Source\Modules\Renderer\Window\Window.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Texture\Texture.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\VertexArray\VertexArray.cpp" />
+    <ClInclude Include="Source\Editor\Panels\include\ColliderEditorPanel.h" />
     <ClInclude Include="Source\Modules\Physics\Pipeline\Collision.h" />
     <ClInclude Include="Source\Modules\Physics\Utils\Clip.h" />
     <ClInclude Include="Source\Components\Collider.h" />
@@ -246,7 +254,14 @@
     <ClInclude Include="Source\Modules\Renderer\GLTF\GLTFBuilder.h" />
     <ClInclude Include="Source\Modules\Renderer\Model\DrawBatch.h" />
     <ClInclude Include="Source\Modules\Renderer\Model\Light.h" />
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\Pipeline.h" />
     <ClInclude Include="Source\Modules\Renderer\Pipeline\PostProcess\Bloom.h" />
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\Stages\BloomStage.h" />
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\Stages\DeferredStage.h" />
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\Stages\PostProcessStage.h" />
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\Stages\SkyboxStage.h" />
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\Stages\SkyStage.h" />
+    <ClInclude Include="Source\Modules\Renderer\Pipeline\Stages\Stage.h" />
     <ClInclude Include="Source\Modules\Renderer\Storage\BufferWrapper.h" />
     <ClInclude Include="Source\Modules\Renderer\Model\MeshFactory.h" />
     <ClInclude Include="Source\Modules\Renderer\Data\Material.h" />

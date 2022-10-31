@@ -4,9 +4,12 @@
 #include "Modules/Renderer/Objects/Shader/ShaderBuilder.h"
 #include "Modules/Renderer/Pipeline/PostProcess/SkyRenderer.h"
 #include "Modules/Renderer/LoadUtils.h"
-#include "Modules/Renderer/Objects/Texture/TextureBuilder.h"
 #include "Modules/Renderer/Objects/Buffer/BufferBuilder.h"
 #include "Modules/Renderer/Objects/VertexArray/VertexArrayBuilder.h"
+#include "Modules/Renderer/Pipeline/Stages/BloomStage.h"
+#include "Modules/Renderer/Pipeline/Stages/PostProcessStage.h"
+#include "Modules/Renderer/Pipeline/Stages/SkyStage.h"
+#include "Modules/Renderer/Pipeline/Stages/SkyboxStage.h"
 
 namespace Nork {
 	void RenderingSystem::OnDLightAdded(entt::registry& reg, entt::entity id)
@@ -63,7 +66,6 @@ namespace Nork {
 	}
 	RenderingSystem::RenderingSystem(entt::registry& registry)
 		: registry(registry),
-		deferredPipeline(shaders.gPassShader, shaders.lPassShader, resolution.x, resolution.y),
 		drawBatch(drawState.modelMatrixBuffer, drawState.materialBuffer, drawState.vaoWrapper)
 	{
 		registry.on_construct<Components::DirShadowRequest>().connect<&RenderingSystem::OnDShadAdded>(this);
@@ -80,33 +82,18 @@ namespace Nork {
 
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 		UpdateGlobalUniform();
-
-		bloom.InitTextures();
-		auto image = Renderer::LoadUtils::LoadCubemapImages("Resources/Textures/skybox", ".jpg");
-		std::array<void*, 6> data;
-		for (size_t i = 0; i < data.size(); i++)
-		{
-			data[i] = image[i].data.data();
-		}
-		using namespace Renderer;
-		skybox = TextureBuilder()
-			.Attributes(TextureAttributes{ .width = image[0].width, .height = image[0].height, .format = image[0].format })
-			.Params(TextureParams::CubeMapParams())
-			.CreateCubeWithData(data);
-
-		using namespace Renderer;
-		target = FramebufferBuilder().Attachments(FramebufferAttachments().Color(
-			TextureBuilder()
-			.Params(TextureParams::FramebufferTex2DParams())
-			.Attributes(TextureAttributes{ .width = 1920, .height = 1080, .format = TextureFormat::RGB16F })
-			.Create2DEmpty(), 0))
-			.Create();
-
+		
 		CreateCollidersVao(1);
 
 		dirLightObserver.connect(registry, entt::collector.update<Components::DirLight>());
 		pointLightObserver.connect(registry, entt::collector.update<Components::Transform>()
 			.where<Components::PointLight>().update<Components::PointLight>());
+
+		// auto sceneView = std::make_shared<SceneView>(1920, 1080);
+		// sceneView->pipeline->stages.push_back(CreateStage<Renderer::SkyStage>(*sceneView->pipeline));
+		// sceneView->pipeline->stages.push_back(CreateStage<Renderer::BloomStage>(*sceneView->pipeline));
+		// sceneView->pipeline->stages.push_back(CreateStage<Renderer::PostProcessStage>(*sceneView->pipeline));
+		//sceneViews.insert(sceneView);
 	}
 	void RenderingSystem::DrawBatchUpdate()
 	{
@@ -134,6 +121,7 @@ namespace Nork {
 		shaders.pointShader->Use()
 			.SetFloat("aa", globalShaderUniform.pointAA)
 			.SetFloat("size", globalShaderUniform.pointInternalSize)
+			.SetFloat("bias", globalShaderUniform.pointBias)
 			.SetVec4("colorDefault", globalShaderUniform.pointColor)
 			.SetVec4("colorSelected", glm::vec4(globalShaderUniform.selectedColor, globalShaderUniform.pointAlpha));
 		shaders.lineShader->Use()
@@ -209,19 +197,6 @@ namespace Nork {
 		shaders.skyboxShader->Use().SetMat4("VP", vp);
 		shaders.skyShader->Use().SetMat4("VP", vp);
 	}
-	void RenderingSystem::RenderScene(Viewport& viewport)
-	{
-		deferredPipeline.GeometryPass({ drawBatch.GetDrawCommand() });
-		deferredPipeline.LightPass();
-		if (viewport.Renders(Viewport::Source::Sky))
-		{
-			Renderer::Capabilities()
-				.Enable().DepthTest(Renderer::DepthFunc::LessOrEqual)
-				.Disable().CullFace();
-			shaders.skyShader->Use();
-			Renderer::DrawUtils::DrawCube();
-		}
-	}
 	void RenderingSystem::BeginFrame()
 	{
 		UpdateLights();
@@ -235,65 +210,23 @@ namespace Nork {
 	void RenderingSystem::Update()
 	{
 		Timer t;
-		for (auto& viewport : viewports)
+		for (auto& sceneView : sceneViews)
 		{
-			if (viewport->active)
-			{
-				Update(*viewport);
-			}
+			if (globalShaderUniform.IsChanged())
+				UpdateGlobalUniform();
+			ViewProjectionUpdate(*sceneView->camera);
+			// needs to be done only if multiple views have the same pipeline, but not expensive anyway
+			sceneView->pipeline->Run();
+			// sceneView->pipeline->FinalTexture()->Bind2D();
+			// sceneView->fb->Bind().SetViewport();
+			// shaders.textureShader->Use();
+			// Renderer::Capabilities()
+			// 	.Disable().DepthTest().Blend();
+			// Renderer::DrawUtils::DrawQuad();
+
+			sceneView->fb = sceneView->pipeline->source;
 		}
 		delta = t.Elapsed();
-	}
-	void RenderingSystem::Update(Viewport& viewport)
-	{
-		ViewProjectionUpdate(*viewport.camera);
-		if (viewport.Renders(Viewport::Source::Deferred))
-		{
-			RenderScene(viewport);
-			if (viewport.Renders(Viewport::Source::Bloom))
-			{
-				bloom.Apply(deferredPipeline.lightFb->Color(), shaders.bloomShader, shaders.bloom3Shader, shaders.bloom2Shader);
-			}
-			// Draw on target
-		}
-		target->Bind().Clear().SetViewport();
-		if (viewport.Renders(Viewport::Source::Deferred))
-		{
-			if (viewport.Renders(Viewport::Source::Bloom))
-				bloom.dest->GetAttachments().colors[0].first->Bind2D();
-			else
-				deferredPipeline.lightFb->Color()->Bind();
-
-			if (viewport.Renders(Viewport::Source::Tonemap))
-			{
-				shaders.tonemapShader->Use().SetInt("tex", 0);
-			}
-			else
-			{
-				shaders.textureShader->Use().SetInt("tex", 0);
-			}
-			Renderer::DrawUtils::DrawQuad();
-		}
-
-		if (viewport.Renders(Viewport::Source::Colliders))
-		{
-			if (colliderVao != nullptr)
-			{
-				RenderColliders();
-			}
-		}
-
-		if (viewport.target)
-		{
-			viewport.target->Bind2D();
-		}
-		else
-		{
-			target->GetAttachments().colors[0].first->Bind2D();
-		}
-		shaders.textureShader->Use().SetInt("tex", 0);
-		viewport.fb->Bind().Clear().SetViewport();
-		Renderer::DrawUtils::DrawQuad();
 	}
 	void RenderingSystem::EndFrame()
 	{
@@ -304,8 +237,7 @@ namespace Nork {
 		Renderer::Capabilities()
 			.Disable().DepthTest().CullFace().Blend();
 
-		//deferredPipeline.lightFb->Color()->Bind();
-		target->GetAttachments().colors[0].first->Bind2D();
+		(*sceneViews.begin()).get()->fb->Color()->Bind2D();
 		shaders.textureShader->Use()
 			.SetInt("tex", 0);
 
@@ -313,7 +245,6 @@ namespace Nork {
 		glViewport(0, 0, w, h);
 		Renderer::DrawUtils::DrawQuad();
 	}
-	
 	void RenderingSystem::RenderColliders()
 	{
 		Renderer::Capabilities()
@@ -382,6 +313,59 @@ namespace Nork {
 		{
 			colliderVao = nullptr;
 		}
+	}
+
+	static std::string GetFileContent(std::string path)
+	{
+		std::ifstream ifs(path);
+		std::stringstream ss;
+		ss << ifs.rdbuf();
+		return ss.str();
+	}
+	static Renderer::ShaderType GetTypeByString(std::string_view str)
+	{
+		using enum Renderer::ShaderType;
+		if (str._Equal("vertex")) [[likely]]
+			return Vertex;
+		else if (str._Equal("fragment"))
+			return Fragment;
+		else if (str._Equal("geometry"))
+			return Geometry;
+		else if (str._Equal("compute"))
+			return Compute;
+
+		Logger::Error("ERR:: Unkown shader type ", str);
+		std::abort(); // :(
+	}
+	static std::unordered_map<Renderer::ShaderType, std::string> SplitShaders(std::string content)
+	{
+		const char* label = "#type";
+		size_t labelLen = strlen(label);
+
+		std::unordered_map<Renderer::ShaderType, std::string> shaderSrcs;
+
+		size_t pos = content.find(label, 0);
+		Renderer::ShaderType shadType;
+		do
+		{ // the file must start with #type
+			size_t start = pos;
+			size_t eol = content.find_first_of("\r\n", pos); // idx of the end of the "#type" line
+
+			pos += labelLen + 1; // the first idx of "vertex"
+			std::string type = content.substr(pos, eol - pos); // must be "#type vertex" with whitespaces exactly like that.
+			shadType = GetTypeByString(type);
+
+			//size_t nextLinePos = s.find_first_not_of("\r\n", eol); // filtering out spaces
+			pos = content.find(label, eol); // next idx starting with #type
+			if (pos == std::string::npos) // no more shaders
+			{
+				shaderSrcs[shadType] = content.substr(eol);
+				break;
+			}
+			shaderSrcs[shadType] = content.substr(eol, pos - eol); // more shaders ahead
+
+		} while (true);
+		return shaderSrcs;
 	}
 	std::shared_ptr<Renderer::Shader> Shaders::InitShaderFromSource(const std::string& path)
 	{
@@ -463,15 +447,38 @@ namespace Nork {
 			.SetInt("gSpec", 3);
 	}
 
-	Viewport::Viewport(std::shared_ptr<Components::Camera> camera)
-		:camera(camera)
+	template<> std::shared_ptr<Renderer::BloomStage> RenderingSystem::ConstructStage(Renderer::Pipeline& dest)
+	{
+		return std::make_shared<Renderer::BloomStage>(shaders.bloomShader, shaders.bloom3Shader, shaders.bloom2Shader, dest.FinalTexture()->GetHeight());
+	}
+	template<> std::shared_ptr<Renderer::DeferredStage> RenderingSystem::ConstructStage(Renderer::Pipeline& dest)
+	{
+		return std::make_shared<Renderer::DeferredStage>(std::dynamic_pointer_cast<Renderer::Texture2D>(dest.source->Depth()),
+			shaders.gPassShader, shaders.lPassShader, this);
+	}
+	template<> std::shared_ptr<Renderer::PostProcessStage> RenderingSystem::ConstructStage(Renderer::Pipeline& dest)
+	{
+		return std::make_shared<Renderer::PostProcessStage>(shaders.tonemapShader);
+	}
+	template<> std::shared_ptr<Renderer::SkyStage> RenderingSystem::ConstructStage(Renderer::Pipeline& dest)
+	{
+		return std::make_shared<Renderer::SkyStage>(shaders.skyShader);
+	}
+	template<> std::shared_ptr<Renderer::SkyboxStage> RenderingSystem::ConstructStage(Renderer::Pipeline& dest)
+	{
+		auto images = Renderer::LoadUtils::LoadCubemapImages("Resources/Textures/skybox", ".jpg");
+		return std::make_shared<Renderer::SkyboxStage>(shaders.skyboxShader, images);
+	}
+
+	void SceneView::CreateFb()
 	{
 		using namespace Renderer;
-		fb = FramebufferBuilder().Attachments(FramebufferAttachments().Color(
-			TextureBuilder()
-			.Params(TextureParams::FramebufferTex2DParams())
-			.Attributes(TextureAttributes{ .width = 1920, .height = 1080, .format = TextureFormat::RGB16F })
-			.Create2DEmpty(), 0))
+		fb = Renderer::FramebufferBuilder()
+			.Attachments(FramebufferAttachments()
+				.Color(TextureBuilder()
+					.Attributes(pipeline->source->GetAttachments().colors[0].first->GetAttributes())
+					.Params(TextureParams::FramebufferTex2DParams())
+					.Create2DEmpty(), 0))
 			.Create();
 	}
 }

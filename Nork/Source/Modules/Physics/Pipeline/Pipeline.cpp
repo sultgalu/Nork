@@ -1,6 +1,8 @@
 #include "Pipeline.h"
 #include "../Config.h"
 #include "../Utils/Clip.h"
+#include "Pipeline.h"
+#include "Pipeline.h"
 
 namespace Nork::Physics
 {

@@ -13,14 +13,15 @@ namespace Nork::Editor {
 	{
 	public:
 		Editor(Engine& engine);
+		static Editor& Get();
 		void Render();
 		void Update();
 		void UpdateImguiInputs();
 		void AddViewportPanel();
+		void AddPanel(std::shared_ptr<Panel>);
 	private:
 		void DrawPanelManager();
-		template<std::derived_from<Panel> T>
-		std::shared_ptr<T> GetPanel()
+		template<std::derived_from<Panel> T> std::shared_ptr<T> GetPanel()
 		{
 			for (auto& panel : panels)
 			{
@@ -32,9 +33,9 @@ namespace Nork::Editor {
 			return nullptr;
 		}
 	private:
-		std::vector<std::unique_ptr<Panel>> panels;
-		std::vector<std::unique_ptr<ShadersPanel>> shaderPanels;
-		std::vector<std::unique_ptr<Menu>> menus;
+		std::vector<std::shared_ptr<Panel>> panels;
+		std::vector<std::shared_ptr<ShadersPanel>> shaderPanels;
+		std::vector<std::shared_ptr<Menu>> menus;
 		CommonData data;
 		Engine& engine;
 		int viewportPanelCount = 0;

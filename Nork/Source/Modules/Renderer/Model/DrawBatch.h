@@ -44,7 +44,7 @@ namespace Nork::Renderer {
 	};
 	struct DrawBatch
 	{
-		DrawBatch(MatrixUBO& modelUBO, MaterialUBO& materialUBO, VAO& vao);
+		DrawBatch(MatrixUBO& modelUBO, MaterialUBO& materialUBO, DefaultVAO& vao);
 		void Clear() { elements.clear(); drawCommand.indirects.clear(); }
 		void AddElement(const BatchElement& element) { elements.push_back(element); }
 		std::vector<BatchElement>& GetElements() { return elements; }
@@ -64,6 +64,6 @@ namespace Nork::Renderer {
 
 		MatrixUBO& modelUBO;
 		MaterialUBO& materialUBO;
-		VAO& vao;
+		DefaultVAO& vao;
 	};
 }

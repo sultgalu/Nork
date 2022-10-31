@@ -19,11 +19,15 @@ void main()
 out vec4 fColor;
 uniform vec4 colorDefault;
 uniform vec4 colorSelected;
-//in float selected;
+uniform int selected = 0;
 
 void main()
 {
 	//int sel = int(selected);
 	//fColor = sel * colorSelected + (1 - sel) * colorDefault;
 	fColor = colorDefault;
+	if (selected > 0)
+	{
+		fColor = colorSelected;
+	}
 }

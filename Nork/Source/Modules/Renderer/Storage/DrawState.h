@@ -28,7 +28,7 @@ namespace Nork::Renderer {
 		PointLightUBO pointLightUBO;
 		PointShadowUBO pointShadowUBO;
 
-		VAO vaoWrapper;
+		DefaultVAO vaoWrapper;
 		
 	private:
 		struct LightCount

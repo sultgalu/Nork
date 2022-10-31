@@ -39,8 +39,8 @@ int main()
 		}
 	}*/
 
-	constexpr int levels = 20;
-	constexpr int size = 3; // * 4 = one level
+	constexpr int levels = 50; //20;
+	constexpr int size = 20; // * 4 = one level
 	float sep = 2.1f;
 	constexpr float height = -10;
 	int start = -size / 2;
@@ -51,7 +51,7 @@ int main()
 		auto ent = engine.scene.CreateNode()->GetEntity();
 		ent.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
 		ent.AddComponent<Components::Transform>([&](auto& tr) { tr.localPosition = glm::vec3(i * sep, height + 2 + j * sep, k * sep); });
-		ent.AddComponent<Components::Physics>().Kinem().mass = 0.01f;
+		ent.AddComponent<Components::Physics>().Kinem().applyGravity = true;
 		ent.AddComponent<Components::Tag>().tag = std::to_string(i).append("-").append(std::to_string(j)).append("-").append(std::to_string(k));
 	};
 
@@ -66,8 +66,9 @@ int main()
 	bullet.AddComponent<Components::Physics>([&](Components::Physics& phx)
 		{
 			auto& kinem = phx.Kinem();
-			kinem.mass = 50.0f;
+			kinem.mass = 1000.0f;
 			kinem.velocity.x = 20.0f;
+			kinem.applyGravity = false;
 			kinem.w.z = -1.0f;
 			// kinem.applyGravity = false;
 		});
@@ -147,6 +148,14 @@ int main()
 			l.RecalcVP();
 			l.sun = true;
 		});
+	auto sun2 = engine.scene.CreateNode()->GetEntity();
+	sun2.AddComponent<Components::DirLight>([](auto& l)
+		{
+			l.light->direction = { 0.05f, -0.08f, 0.05f };
+			l.light->color = glm::vec4(1, 1, 1, 1.0f);
+			l.far = 100; l.near = -100; l.left = -100; l.right = 100; l.bottom = -100; l.top = 100;
+			l.RecalcVP();
+		});
 	//l.light->color = glm::vec4(0.5f, 0.4f, 0.25f, 1);
 	//l.SetColor(glm::vec4(0.0f));
 
@@ -186,6 +195,7 @@ int main()
 	// glfwSetInputMode(Application::Get().engine.window.Underlying().GetContext().glfwWinPtr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	// engine.renderingSystem.viewports.push_back(std::make_shared<Viewport>(std::make_shared<Components::Camera>()));
 	// engine.StartPhysics();
+	// engine.scene.Load("C:/Users/Norbi/source/repos/Nork/Nork/Assets/scenes/coll.json");
 	while (!Application::Get().engine.window.ShouldClose())
 	{
 		editor.Update();

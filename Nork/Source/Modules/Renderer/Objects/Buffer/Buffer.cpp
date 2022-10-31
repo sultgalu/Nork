@@ -62,7 +62,9 @@ namespace Nork::Renderer {
 			std::abort();
 		}
 		this->access = access;
-		persistent = glMapBufferRange(static_cast<GLenum>(target), 0, size, static_cast<GLenum>(access) | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+		auto mapFlags = this->flags & ~(BufferStorageFlags::ReadAccess | BufferStorageFlags::WriteAccess);
+		mapFlags |= static_cast<BufferStorageFlags>(access);
+		persistent = glMapBufferRange(static_cast<GLenum>(target), 0, size, mapFlags);
 		return persistent;
 	}
 	void Buffer::Unmap()
@@ -83,8 +85,9 @@ namespace Nork::Renderer {
 
 	void MutableBuffer::Allocate(size_t capacitiy, const void* data, BufferUsage usage)
 	{
-		Logger::Debug("alloc");
+		// Logger::Debug("alloc");
 		glBufferData(static_cast<GLenum>(target), capacitiy, data, static_cast<GLenum>(usage));
+		this->usage = usage;
 		this->size = capacitiy;
 	}
 	void MutableBuffer::Allocate(size_t capacitiy, const void* data)

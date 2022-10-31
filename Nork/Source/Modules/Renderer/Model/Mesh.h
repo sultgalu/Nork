@@ -6,7 +6,7 @@ namespace Nork::Renderer {
 	class Mesh
 	{
 	public:
-		Mesh(VAO& vaoWrapper,
+		Mesh(DefaultVAO& vaoWrapper,
 			std::shared_ptr<Data::Vertex*> vertexIdx, std::shared_ptr<uint32_t*> indexIdx,
 			size_t vertexCount, size_t indexCount)
 			: vaoWrapper(vaoWrapper),
@@ -20,12 +20,12 @@ namespace Nork::Renderer {
 		size_t GetVertexCount() { return vertexCount; }
 		size_t GetIndexCount() { return indexCount; }
 
-		VAO& GetVaoWrapper() { return vaoWrapper; }
+		DefaultVAO& GetVaoWrapper() { return vaoWrapper; }
 	private:
 		std::shared_ptr<Data::Vertex*> vertexIdx;
 		std::shared_ptr<uint32_t*> indexIdx;
 		size_t vertexCount;
 		size_t indexCount;
-		VAO& vaoWrapper;
+		DefaultVAO& vaoWrapper;
 	};
 }

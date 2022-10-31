@@ -19,6 +19,7 @@ namespace Nork::Editor {
 			ImGui::DragFloat("Point Anti-Aliasing", &g.pointAA, 0.001, 0, 1, "%.3f");
 			ImGui::ColorEdit4("Point Color", &g.pointColor.r, colorOptions);
 			ImGui::SliderFloat("Point alpha (focused)", &g.pointAlpha, 0, 1, "%.2f");
+			ImGui::SliderFloat("Point bias", &g.pointBias, 0, 1, "%.2f");
 
 			ImGui::SliderFloat("Line Width", &g.lineWidth, 0, 1, "%.3f", ImGuiSliderFlags_Logarithmic);
 			ImGui::ColorEdit4("Line Color", &g.lineColor.r, colorOptions);
