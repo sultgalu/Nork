@@ -31,8 +31,8 @@ namespace Nork::Editor {
 		
 		if (ImGui::IsItemHovered())
 		{
-			CameraController::UpdateByKeyInput(*sceneView->camera, ImGui::GetIO().DeltaTime * 500);
-			CameraController::UpdateByMouseInput(*sceneView->camera, ImGui::GetIO().DeltaTime * 500);
+			camController->UpdateByKeyInput(*sceneView->camera, ImGui::GetIO().DeltaTime * 500);
+			camController->UpdateByMouseInput(*sceneView->camera, ImGui::GetIO().DeltaTime * 500);
 		}
 
 		mouseState.isViewportHovered = ImGui::IsItemHovered();

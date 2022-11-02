@@ -35,7 +35,7 @@ namespace Nork::Physics
 		std::vector<Face> faces = {};
 		std::vector<std::vector<index_t>> faceVerts = {};
 		glm::vec3 center = glm::vec3(0);
-		bool isActive = false;
+		bool isActive = true;
 
 		static Collider Cube();
 

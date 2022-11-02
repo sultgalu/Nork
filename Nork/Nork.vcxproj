@@ -169,7 +169,6 @@
     <ClCompile Include="Source\Editor\Panels\ColliderEditorPanel.cpp" />
     <ClCompile Include="Source\Modules\Physics\Pipeline\Collision.cpp" />
     <ClCompile Include="Source\Modules\Physics\Utils\Clip.cpp" />
-    <ClCompile Include="Source\Components\Impl\Collider.cpp" />
     <ClCompile Include="Source\Core\InputState.cpp" />
     <ClCompile Include="Source\Core\ScriptSystem.cpp" />
     <ClCompile Include="Source\Editor\Editor.cpp" />
@@ -323,8 +322,8 @@
     <ClInclude Include="Source\Modules\Physics\Utils\GJK.h" />
     <ClInclude Include="Source\Modules\Physics\Utils\SAP.h" />
     <ClInclude Include="Source\Modules\Physics\Utils\SAT.h" />
-    <ClInclude Include="Source\Core\PolygonMesh.h" />
-    <ClCompile Include="Source\Core\PolygonMesh.cpp" />
+    <ClInclude Include="Source\Core\PolygonBuilder.h" />
+    <ClCompile Include="Source\Core\PolygonBuilder.cpp" />
     <ClCompile Include="Source\Modules\Physics\Utils\MD.cpp" />
     <ClCompile Include="Source\Modules\Physics\Utils\AABB.cpp" />
     <ClCompile Include="Source\Modules\Physics\Utils\GJK.cpp" />

@@ -161,64 +161,6 @@ namespace Nork::Editor {
 		changed |= ImGui::DragFloat("moveSpeed", &cam.moveSpeed);
 		changed |= ImGui::DragFloat3("position#camera", &cam.position.x);
 	}
-	template<> void SceneNodeView::ShowComponent(Components::Collider& coll, bool& changed)
-	{
-		auto flags = ImGuiTableFlags_Reorderable | ImGuiTableFlags_Resizable | ImGuiTableFlags_Hideable | ImGuiTableFlags_ContextMenuInBody
-			| ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuterH
-			; // | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY;
-		if (ImGui::BeginTable("Points##Table", 2, flags))
-		{
-			ImGui::TableSetupColumn("id");
-			ImGui::TableSetupColumn("pos");
-			ImGui::TableHeadersRow();
-
-			auto& points = coll.PointsMutable();
-			for (size_t i = 0; i < points.size(); i++)
-			{
-				ImGui::TableNextRow();
-				ImGui::TableSetColumnIndex(0);
-				std::string idx = std::to_string(i);
-				ImGui::Text(idx.c_str());
-				ImGui::TableSetColumnIndex(1);
-				//ImGui::Text(idx.c_str());
-				changed |= ImGui::DragFloat3(("##ASD" + idx).c_str(), &points[i].x, 0.001f);
-			}
-			ImGui::EndTable();
-			if (changed |= ImGui::Button("Add##ColliderPoint"))
-			{
-				coll.AddPoint(glm::vec3(0));
-			}
-			if (ImGui::TreeNode("Faces##OfCollider"))
-			{
-				auto faces = coll.Faces();
-				for (size_t i = 0; i < faces.size(); i++)
-				{
-					if (ImGui::TreeNode((std::to_string(i)).c_str()))
-					{
-						auto& face = faces[i];
-						std::string normStr = "normal: ";
-						for (size_t j = 0; j < 3; j++)
-						{
-							normStr += std::to_string(face.normal[j]).substr(0, 5) + ";";
-						}
-						ImGui::Text(normStr.c_str());
-						auto& points = coll.PointsMutable();
-						for (auto idx : face.points)
-						{
-							changed |= ImGui::DragFloat3(("##ASD2" + std::to_string(idx)).c_str(), &points[idx].x, 0.001f);
-						}
-						ImGui::TreePop();
-					}
-				}
-				ImGui::TreePop();
-			}
-			if (changed)
-			{
-				coll.BuildTriangleFaces();
-				coll.CombineFaces();
-			}
-		}
-	}
 	template<> void SceneNodeView::ShowComponent(Components::Drawable& dr, bool& changed)
 	{
 		static int imgSize = 100;
@@ -504,9 +446,32 @@ namespace Nork::Editor {
 					ShowComponent(copy, changed);
 					if constexpr (std::is_same<T, Components::Physics>::value)
 					{
-						if (ImGui::Button("Edit Collider"))
+						if (ImGui::Button(std::string("Edit Collider").append(std::to_string((size_t)ent.Id())).c_str()))
 						{
 							Editor::Get().AddPanel(std::make_shared<ColliderEditorPanel>(ent));
+						}
+						if (ImGui::Button(std::string("Convert").append(std::to_string((size_t)ent.Id())).c_str()))
+						{
+							auto& coll = ent.GetComponent<Components::Physics>().LocalCollider();
+							auto poly = PolygonBuilder(coll).BuildMesh();
+							std::vector<Renderer::Data::Vertex> vertices;
+							for (auto& vert : poly.vertices)
+							{
+								vertices.push_back(Renderer::Data::Vertex{
+									.position = vert,
+									.normal = glm::vec3(0, 1, 0),
+									.texCoords = glm::vec2(0),
+									.tangent = glm::vec3(1, 0, 0),
+									});
+							}
+							//GetEngine().resourceManager.drawState.vaoWrapper
+							auto& mesh = ent.GetComponent<Components::Drawable>().model->meshes[0].mesh;
+							// mesh->GetVaoWrapper().GetVertexWrapper().Erase(mesh->GetVertexPtr());
+							// mesh->GetVaoWrapper().GetIndexWrapper().Erase(mesh->GetIndexPtr());
+							auto vertPtr = mesh->GetVaoWrapper().GetVertexWrapper().Add(vertices.data(), vertices.size());
+							auto idxPtr = mesh->GetVaoWrapper().GetIndexWrapper().Add((uint32_t*)poly.triangles.data(), poly.triangles.size() * 3);
+							mesh = std::make_shared<Renderer::Mesh>(mesh->GetVaoWrapper(), vertPtr, idxPtr, vertices.size(), poly.triangles.size() * 3);
+							// vbo.Erase()
 						}
 					}
 				};

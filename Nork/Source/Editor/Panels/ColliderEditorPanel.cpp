@@ -15,8 +15,8 @@ namespace Nork::Editor {
 			uint32_t x = 0, y = 0;
 			uint32_t id = INVALID_IDX;
 		};
-		ColliderStage(Components::Collider& coll, RenderingSystem& system, ViewportView::MouseState& mouseState)
-			: system(system), mouseState(mouseState), coll(coll)
+		ColliderStage(PolygonBuilder& polyBuilder, RenderingSystem& system, ViewportView::MouseState& mouseState)
+			: system(system), mouseState(mouseState), polyBuilder(polyBuilder)
 		{
 			pointShader = system.shaders.pointShader;
 			lineShader = system.shaders.lineShader;
@@ -25,7 +25,7 @@ namespace Nork::Editor {
 			vao = VertexArrayBuilder().Attributes({ 3, 1 })
 				.VBO(BufferBuilder()
 					.Target(BufferTarget::Vertex)
-					.Data(coll.Points().data(), coll.Points().size() * sizeof(glm::vec3))
+					.Data(polyBuilder.vertices.data(), polyBuilder.vertices.size() * sizeof(glm::vec3))
 					.CreateMutable(BufferUsage::StreamDraw))
 				.Create();
 			UboData uboData;
@@ -48,10 +48,9 @@ namespace Nork::Editor {
 
 			uboData->x = mouseState.mousePosX;
 			uboData->y = mouseState.mousePosY;
-			Logger::Debug(uboData->id);
-			std::vector<VertexData> data(coll.Points().size());
+			std::vector<VertexData> data(polyBuilder.vertices.size());
 			uint32_t id = 0;
-			std::transform(coll.Points().begin(), coll.Points().end(), data.begin(), [&id](const glm::vec3 pos)
+			std::transform(polyBuilder.vertices.begin(), polyBuilder.vertices.end(), data.begin(), [&id](const glm::vec3 pos)
 				{
 					return VertexData{ .pos = pos, .id = id++ };
 				});
@@ -106,19 +105,18 @@ namespace Nork::Editor {
 			Renderer::Capabilities()
 				.Enable().Blend().DepthTest(Renderer::DepthFunc::Less);
 			lineShader->Use();
-			std::vector<uint32_t> v = coll.EdgeIndices();
-			vao->Bind().DrawIndexed(v.data(), v.size(), Renderer::DrawMode::Lines);
+			vao->Bind().DrawIndexed((uint32_t*)polyBuilder.edges.data(), polyBuilder.edges.size() * 2, Renderer::DrawMode::Lines);
 		}
 		void RenderSelectedEdges()
 		{
 			std::vector<uint32_t> edgeIndices;
-			for (auto& edge : coll.Edges())
+			for (auto& edge : polyBuilder.edges)
 			{
-				if (std::find(selectedVerts.begin(), selectedVerts.end(), edge.first) != selectedVerts.end() &&
-					std::find(selectedVerts.begin(), selectedVerts.end(), edge.second) != selectedVerts.end())
+				if (std::find(selectedVerts.begin(), selectedVerts.end(), edge[0]) != selectedVerts.end() &&
+					std::find(selectedVerts.begin(), selectedVerts.end(), edge[1]) != selectedVerts.end())
 				{
-					edgeIndices.push_back(edge.first);
-					edgeIndices.push_back(edge.second);
+					edgeIndices.push_back(edge[0]);
+					edgeIndices.push_back(edge[1]);
 				}
 			}
 			Renderer::Capabilities()
@@ -129,11 +127,11 @@ namespace Nork::Editor {
 		}
 		void RenderSelectedFaces()
 		{
-			std::vector<uint32_t> faceIndices;
-			for (auto& face : coll.Faces())
+			std::vector<std::array<uint32_t, 3>> faceIndices;
+			for (auto& face : polyBuilder.BuildMesh().triangles)
 			{
 				bool contained = true;
-				for (auto idx : face.points)
+				for (auto idx : face)
 				{
 					if (std::find(selectedVerts.begin(), selectedVerts.end(), idx) == selectedVerts.end())
 					{
@@ -143,14 +141,13 @@ namespace Nork::Editor {
 				}
 				if (contained)
 				{
-					auto tris = coll.TriangulateFace(face);
-					faceIndices.insert(faceIndices.end(), tris.begin(), tris.end());
+					faceIndices.push_back(face);
 				}
 			}
-			Renderer::Capabilities()
-				.Disable().Blend().DepthTest();
+			Renderer::Capabilities().Enable().Blend()
+				.Disable().DepthTest();
 			triShader->Use().SetInt("selected", 1);
-			vao->Bind().DrawIndexed(faceIndices.data(), faceIndices.size(), Renderer::DrawMode::Triangles);
+			vao->Bind().DrawIndexed((uint32_t*)faceIndices.data(), faceIndices.size() * 3, Renderer::DrawMode::Triangles);
 			triShader->SetInt("selected", 0);
 		}
 		void RenderFaces()
@@ -159,8 +156,8 @@ namespace Nork::Editor {
 				.Enable().CullFace().Blend().DepthTest(Renderer::DepthFunc::Less)
 				.Disable();
 			triShader->Use();
-			std::vector<uint32_t> v = coll.TriangleIndices();
-			vao->Bind().DrawIndexed(v.data(), v.size(), Renderer::DrawMode::Triangles);
+			auto tris = polyBuilder.BuildMesh().triangles;
+			vao->Bind().DrawIndexed((uint32_t*)tris.data(), tris.size() * 3, Renderer::DrawMode::Triangles);
 		}
 		void Render()
 		{
@@ -203,7 +200,7 @@ namespace Nork::Editor {
 		std::shared_ptr<Renderer::VertexArray> vao;
 		std::shared_ptr<Renderer::Buffer> ubo;
 		UboData* uboData;
-		Components::Collider& coll;
+		PolygonBuilder& polyBuilder;
 		static constexpr uint32_t INVALID_IDX = std::numeric_limits<uint32_t>().max();
 		uint32_t hoveredVert = INVALID_IDX;
 		std::vector<uint32_t> selectedVerts;
@@ -212,24 +209,21 @@ namespace Nork::Editor {
 	};
 
 	ColliderEditorPanel::ColliderEditorPanel(Entity& ent)
-		: ViewportPanel(), ent(ent)
+		: ViewportPanel(false), ent(ent)
 	{
+		viewportView.camController = std::make_shared<EditorCameraController>(glm::vec3(0, 0, 0));
+		camera->moveSpeed = 0.15f;
+
 		auto& coll = ent.GetComponent<Components::Physics>().LocalCollider();
-		collider = Components::Collider(coll);
+		polyBuilder = PolygonBuilder(coll);
+		Physics::AABB aabb(coll.verts);
+		float maxLen = 0;
+		for (size_t i = 0; i < 3; i++)
+			maxLen = std::max(aabb.max[i] - aabb.min[i], maxLen);
+		camera->position = glm::vec3(0, 0, -maxLen * 2.0f);
 
-		camera = std::make_shared<Components::Camera>();
-		GetCommonData().editorCameras.push_back(camera);
-
-		sceneView = std::make_shared<SceneView>(1920, 1080, Renderer::TextureFormat::RGBA16F);
-		sceneView->pipeline->stages.push_back(std::make_shared<ColliderStage>(collider, GetRenderer(), viewportView.mouseState));
-		GetRenderer().sceneViews.insert(sceneView);
-
-		viewportView.sceneView = sceneView;
-
-		panelState.windowFlags = ImGuiWindowFlags_::ImGuiWindowFlags_NoScrollWithMouse |
-			ImGuiWindowFlags_MenuBar |
-			ImGuiWindowFlags_NoScrollbar;
-
+		sceneView->pipeline->stages.push_back(std::make_shared<ColliderStage>(polyBuilder, GetRenderer(), viewportView.mouseState));
+		
 		GetRenderer().GetGlobalShaderUniform().lineColor = glm::vec4(0.2, 0.5, 1, 0.7f);
 		GetRenderer().GetGlobalShaderUniform().triColor = glm::vec4(0, 1, 0, 0.7f);
 		GetRenderer().GetGlobalShaderUniform().pointColor = glm::vec4(1, 0, 0, 1.0f);
@@ -277,17 +271,78 @@ namespace Nork::Editor {
 			}
 		}
 		glm::vec3 move = glm::vec3(0);
-		if (ImGui::DragFloat3("move##collPoints", &move.x))
+		if (ImGui::DragFloat3("move##collPoints", &move.x, 0.01f))
 		{
 			for (auto& idx : stage->selectedVerts)
 			{
-				collider.PointsMutable()[idx] += move;
+				polyBuilder.vertices[idx] += move;
 			}
+		}
+		if (stage->selectedVerts.size() == 2)
+		{
+			auto it = std::find_if(polyBuilder.edges.begin(), polyBuilder.edges.end(), [&](auto& edge)
+				{
+					return
+						(edge[0] == stage->selectedVerts[0] && edge[1] == stage->selectedVerts[1]) ||
+						(edge[1] == stage->selectedVerts[0] && edge[0] == stage->selectedVerts[1]);
+			});
+			if (it != polyBuilder.edges.end())
+			{
+				if (ImGui::Button("Insert Vertex##Collider"))
+				{
+					polyBuilder.edges.erase(it);
+					polyBuilder.vertices.push_back((polyBuilder.vertices[stage->selectedVerts[0]] + polyBuilder.vertices[stage->selectedVerts[1]]) / 2.0f);
+					polyBuilder.edges.push_back({ stage->selectedVerts[0], (uint32_t)polyBuilder.vertices.size() - 1 });
+					polyBuilder.edges.push_back({ stage->selectedVerts[1], (uint32_t)polyBuilder.vertices.size() - 1 });
+				}
+				if (ImGui::Button("Disconnect##Collider"))
+				{
+					polyBuilder.edges.erase(it);
+				}
+			}
+			else
+			{
+				if (ImGui::Button("Connect##Collider"))
+				{
+					polyBuilder.edges.push_back({ stage->selectedVerts[0], stage->selectedVerts[1] });
+				}
+			}
+		}
+		if (ImGui::Button("Add Vertex##Collider"))
+		{
+			polyBuilder.vertices.push_back(glm::vec3(0));
+		}
+		for (int i = stage->selectedVerts.size() - 1; i >= 0; i--)
+		{
+			auto& idx = stage->selectedVerts[i];
+			auto& vert = polyBuilder.vertices[idx];
+			std::stringstream ss;
+			ss << "#" << idx << ": (" << vert.x << ";" << vert.y << ";" << vert.z << ")";
+			ImGui::Text(ss.str().c_str());
+			ImGui::SameLine();
+			if (ImGui::Button(std::string("Deselect##Collider").append(std::to_string(idx)).c_str()))
+			{
+				stage->selectedVerts.erase(stage->selectedVerts.begin() + i);
+			}
+		}
+		if (ImGui::Button("Select All##Collider"))
+		{
+			uint32_t i = 0;
+			stage->selectedVerts.resize(polyBuilder.vertices.size());
+			std::ranges::generate(stage->selectedVerts, [&i]() { return i++; });
 		}
 		if (ImGui::Button("Save##Collider"))
 		{
-			auto& coll = ent.GetComponent<Components::Physics>().LocalCollider();
-			coll = collider.ToPhysicsCollider();
+			auto& phx = ent.GetComponent<Components::Physics>();
+			phx.LocalCollider() = polyBuilder.BuildCollider();
+			phx.Collider() = phx.LocalCollider();
+		}
+		if (viewportView.mouseState.isViewportHovered)
+		{
+			if (GetInput().IsJustPressed(Key::Esc))
+			{
+				stage->selectedVerts.clear();
+			}
 		}
 	}
 }

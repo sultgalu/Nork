@@ -6,11 +6,12 @@
 #include "Modules/Renderer/State/Capabilities.h"
 #include "Modules/Renderer/Objects/Framebuffer/FramebufferBuilder.h"
 #include "Modules/Renderer/DrawUtils.h"
+#include "PolygonBuilder.h"
 
 namespace Nork
 {
 	Engine* _engine;
-	static constexpr bool MULTITHREAD_PHX = true;
+	static constexpr bool MULTITHREAD_PHX = false;
 	Engine& Engine::Get()
 	{
 		return *_engine;
@@ -212,27 +213,25 @@ namespace Nork
 
 		using namespace Components;
 		//std::vector<Collider> colls;
-		std::vector<uint32_t> tris;
-		std::vector<uint32_t> edges;
+		std::vector<std::array<uint32_t, 3>> tris;
+		std::vector<std::array<uint32_t, 2>> edges;
 		std::vector<glm::vec3> verts;
 		scene.registry.view<Transform, Components::Physics>()
 			.each([&](entt::entity id, Transform& tr, Components::Physics& phx)
 				{
 					//colls.push_back(Collider(phx.Collider()));
 					auto& coll = phx.Collider();
-					auto compColl = Components::Collider(phx.Collider());
-					auto tri = compColl.TriangleIndices();
-					tris.resize(tris.size() + tri.size());
-					std::transform(tri.begin(), tri.end(), tris.begin() + tris.size() - tri.size(), [&verts](uint32_t i)
+					auto poly = PolygonBuilder(phx.Collider()).BuildMesh();
+					tris.resize(tris.size() + poly.triangles.size());
+					std::transform(poly.triangles.begin(), poly.triangles.end(), tris.begin() + tris.size() - poly.triangles.size(), [&verts](const std::array<uint32_t, 3>& tri)
 						{
-							return i + verts.size();
+							return std::array<uint32_t, 3> { tri[0] + (uint32_t)verts.size(), tri[1] + (uint32_t)verts.size(), tri[2] + (uint32_t)verts.size() };
 						});
 					// tris.insert(tris.end(), tri.begin(), tri.end());
-					auto e = compColl.EdgeIndices();
-					edges.resize(edges.size() + e.size());
-					std::transform(e.begin(), e.end(), edges.begin() + edges.size() - e.size(), [&verts](uint32_t i)
+					edges.resize(edges.size() + poly.edges.size());
+					std::transform(poly.edges.begin(), poly.edges.end(), edges.begin() + edges.size() - poly.edges.size(), [&verts](const std::array<uint32_t, 2>& edge)
 						{
-							return i + verts.size();
+							return std::array<uint32_t, 2> { edge[0] + (uint32_t)verts.size(), edge[1] + (uint32_t)verts.size() };
 						});
 					verts.insert(verts.end(), coll.verts.begin(), coll.verts.end());
 				});
@@ -243,12 +242,13 @@ namespace Nork
 		Renderer::Capabilities()
 			.Enable().Blend().DepthTest(Renderer::DepthFunc::Less);
 		shaders.lineShader->Use().SetVec4("colorDefault", glm::vec4(0.1f, 0.3f, 1, 0.6f));
-		vao->Bind().DrawIndexed(edges.data(), edges.size(), Renderer::DrawMode::Lines);
+		vao->Bind().DrawIndexed((uint32_t*)edges.data(), edges.size() * 2, Renderer::DrawMode::Lines);
 
- 		Capabilities()
-			.Enable().CullFace().Blend().DepthTest(Renderer::DepthFunc::Less);
+		Capabilities()
+			.Enable().CullFace().Blend().DepthTest(Renderer::DepthFunc::Less)
+			.Disable();
 		shaders.colliderShader->Use();
-		vao->Bind().DrawIndexed(tris.data(), tris.size(), Renderer::DrawMode::Triangles);
+		vao->Bind().DrawIndexed((uint32_t*)tris.data(), tris.size() * 3, Renderer::DrawMode::Triangles);
 		// ---------- Contact Points -------------
 		auto& pipeline = Engine::Get().physicsSystem.pipeline;
 		verts.clear();

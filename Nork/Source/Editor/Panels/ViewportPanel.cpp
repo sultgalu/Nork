@@ -5,18 +5,20 @@
 #include "Modules/Renderer/Pipeline/Stages/PostProcessStage.h"
 
 namespace Nork::Editor {
-	ViewportPanel::ViewportPanel()
+	ViewportPanel::ViewportPanel(bool autoStages)
 	{
-		camera = std::make_shared<Components::Camera>();
-		GetCommonData().editorCameras.push_back(camera);
-
 		sceneView = std::make_shared<SceneView>(1920, 1080, Renderer::TextureFormat::RGBA16F);
-		sceneView->pipeline->stages.push_back(GetRenderer().CreateStage<Renderer::DeferredStage>(*sceneView->pipeline));
-		//sceneView->pipeline->stages.push_back(GetRenderer().CreateStage<Renderer::SkyStage>(*sceneView->pipeline));
-		// sceneView->pipeline->stages.push_back(GetRenderer().CreateStage<Renderer::BloomStage>(*sceneView->pipeline));
-		//sceneView->pipeline->stages.push_back(GetRenderer().CreateStage<Renderer::PostProcessStage>(*sceneView->pipeline));
-		//sceneView->pipeline->stages.push_back(std::make_shared<CollidersStage>(GetScene(), GetRenderer().shaders));
+		if (autoStages)
+		{
+			//sceneView->pipeline->stages.push_back(GetRenderer().CreateStage<Renderer::DeferredStage>(*sceneView->pipeline));
+			//sceneView->pipeline->stages.push_back(GetRenderer().CreateStage<Renderer::SkyStage>(*sceneView->pipeline));
+			// sceneView->pipeline->stages.push_back(GetRenderer().CreateStage<Renderer::BloomStage>(*sceneView->pipeline));
+			//sceneView->pipeline->stages.push_back(GetRenderer().CreateStage<Renderer::PostProcessStage>(*sceneView->pipeline));
+			sceneView->pipeline->stages.push_back(std::make_shared<CollidersStage>(GetScene(), GetRenderer().shaders));
+		}
 		GetRenderer().sceneViews.insert(sceneView);
+		camera = sceneView->camera;
+		GetCommonData().editorCameras.push_back(camera);
 
 		viewportView.sceneView = sceneView;
 

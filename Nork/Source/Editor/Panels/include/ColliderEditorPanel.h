@@ -2,6 +2,7 @@
 
 #include "ViewportPanel.h"
 #include "../../Views/include/Viewport.h"
+#include "Core/PolygonBuilder.h"
 
 namespace Nork::Editor {
 	class ColliderEditorPanel : public ViewportPanel
@@ -11,7 +12,7 @@ namespace Nork::Editor {
 		~ColliderEditorPanel();
 		virtual void Content() override;
 	private:
-		Components::Collider collider;
+		PolygonBuilder polyBuilder;
 		Entity& ent;
 	};
 }

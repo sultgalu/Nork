@@ -82,8 +82,6 @@ namespace Nork {
 
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 		UpdateGlobalUniform();
-		
-		CreateCollidersVao(1);
 
 		dirLightObserver.connect(registry, entt::collector.update<Components::DirLight>());
 		pointLightObserver.connect(registry, entt::collector.update<Components::Transform>()
@@ -244,75 +242,6 @@ namespace Nork {
 		Renderer::Framebuffer::BindDefault();
 		glViewport(0, 0, w, h);
 		Renderer::DrawUtils::DrawQuad();
-	}
-	void RenderingSystem::RenderColliders()
-	{
-		Renderer::Capabilities()
-			.Enable().Blend(Renderer::BlendFunc::SrcAlpha_1MinuseSrcAlpha).CullFace()
-			.Disable().DepthTest();
-		shaders.colliderShader->Use();
-
-		auto count = 0;
-		auto triCount = 0;
-		for (auto [id, coll] : registry.view<Components::Collider>().each())
-		{
-			count += coll.Points().size();
-			triCount += coll.TriangleCount() * 3;
-		}
-		if (!colliderVao || count * sizeof(glm::vec3) > colliderVao->GetVBO()->GetSize())
-		{
-			CreateCollidersVao(count);
-		}
-		auto view = registry.view<Components::Collider, Components::Transform>();
-		auto ptr = (glm::vec3*)colliderVao->GetVBO()->GetPersistentPtr();
-		static std::vector<uint32_t> inds;
-		inds.resize(triCount);
-
-		int idx = 0;
-		int triIdx = 0;
-		int triBase = 0;
-		for (auto [id, coll, tr] : view.each())
-		{
-			for (auto& p : coll.Points())
-			{
-				ptr[idx++] = tr.modelMatrix * glm::vec4(p, 1.0f);
-			}
-			//std::memcpy(&inds[triIdx], poly.tris.data(), poly.tris.size() * 3 * sizeof(uint32_t));
-			
-			for (auto& idx : coll.TriangleIndices())
-			{
-				inds[triIdx++] = triBase + idx;
-			}
-			triBase += coll.Points().size();
-		}
-		colliderVao->Bind().DrawIndexed(std::span(inds));
-		//shaders.pointShader->Use();
-		//colliderVao->Bind().Draw(Renderer::DrawMode::Points);
-	}
-	void RenderingSystem::CreateCollidersVao(size_t count)
-	{
-		if (count == 0)
-		{
-			colliderVao = nullptr;
-			return;
-		}
-		using namespace Renderer;
-		using enum BufferStorageFlags;
-		auto vbo = BufferBuilder().Target(BufferTarget::Vertex)
-			.Flags(WriteAccess | Persistent | Coherent).Data(nullptr, count * sizeof(glm::vec3)).Create();
-		vbo->Bind().Map(BufferAccess::Write);
-		colliderVao = VertexArrayBuilder().VBO(vbo).Attributes({ 3 }).Create();
-	}
-	void RenderingSystem::SetRenderColliders(bool opt)
-	{
-		if (opt)
-		{
-			CreateCollidersVao(registry.view<Components::Collider>().size());
-		}
-		else
-		{
-			colliderVao = nullptr;
-		}
 	}
 
 	static std::string GetFileContent(std::string path)

@@ -84,7 +84,7 @@
     <ClCompile Include="Source\Modules\Physics\Utils\MD.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\PolygonMesh.cpp">
+    <ClCompile Include="Source\Core\PolygonBuilder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Utils\Profiler.cpp">
@@ -207,9 +207,6 @@
     <ClCompile Include="Source\Utils\FileUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Components\Impl\Collider.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Core\ScriptSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -329,7 +326,7 @@
     <ClInclude Include="Source\Utils\Template.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\PolygonMesh.h">
+    <ClInclude Include="Source\Core\PolygonBuilder.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Modules\Physics\Utils\SAT.h">

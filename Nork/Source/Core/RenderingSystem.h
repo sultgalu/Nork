@@ -109,8 +109,6 @@ namespace Nork {
 	private:
 		void UpdateGlobalUniform();
 		template<std::derived_from<Renderer::Stage> T> std::shared_ptr<T> ConstructStage(Renderer::Pipeline& dest);
-		void RenderColliders();
-		void CreateCollidersVao(size_t count);
 		void UpdateLights();
 		void ViewProjectionUpdate(Components::Camera& camera);
 		void DrawBatchUpdate();

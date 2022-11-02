@@ -7,7 +7,7 @@ namespace Nork::Editor {
 	class ViewportPanel : public Panel
 	{
 	public:
-		ViewportPanel();
+		ViewportPanel(bool autoStages = true);
 		~ViewportPanel();
 		virtual void Content() override;
 		const char* GetName() override { return name.c_str(); };

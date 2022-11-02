@@ -11,7 +11,6 @@ namespace Nork {
 		static auto& playerTr = player.AddComponent<Components::Transform>();
 		static auto& dr = player.AddComponent<Components::Drawable>();
 		static auto& playerKin = player.AddComponent<Components::Physics>().Kinem();
-		static auto& coll = player.AddComponent<Components::Collider>() = Components::Collider::Cube();
 		static auto& cam = player.AddComponent<Components::Camera>();
 		static auto& playerPl = player.AddComponent<Components::PointLight>();
 		

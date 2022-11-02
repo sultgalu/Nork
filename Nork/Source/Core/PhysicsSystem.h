@@ -2,7 +2,6 @@
 
 #include "Modules/Physics/Pipeline/Pipeline.h"
 #include "Components/Common.h"
-#include "PolygonMesh.h"
 
 namespace Nork {
 

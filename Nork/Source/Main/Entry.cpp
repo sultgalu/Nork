@@ -39,7 +39,7 @@ int main()
 		}
 	}*/
 
-	constexpr int levels = 50; //20;
+	constexpr int levels = 0; //20;
 	constexpr int size = 20; // * 4 = one level
 	float sep = 2.1f;
 	constexpr float height = -10;
@@ -190,7 +190,6 @@ int main()
 	engine.physicsUpdate = false;
 	//engine.Launch();
 	Timer t;
-	CameraController camContr;
 
 	// glfwSetInputMode(Application::Get().engine.window.Underlying().GetContext().glfwWinPtr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	// engine.renderingSystem.viewports.push_back(std::make_shared<Viewport>(std::make_shared<Components::Camera>()));

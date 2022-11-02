@@ -108,6 +108,8 @@ namespace Nork::Components
 
 	void Camera::Rotate(float deltaPitch, float deltaYaw)
 	{
+		if (deltaPitch == 0 && deltaYaw == 0)
+			return;
 		this->pitch += (deltaPitch * rotationSpeed);
 		if (this->pitch > 89)
 		{
