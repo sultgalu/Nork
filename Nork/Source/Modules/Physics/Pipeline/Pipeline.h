@@ -1,10 +1,6 @@
 #pragma once
 
-#include "../Data/World.h"
-#include "../Utils/AABB.h"
-#include "../Utils/GJK.h"
-#include "../Utils/SAT.h"
-#include "../Utils/SAP.h"
+#include "../World.h"
 #include "Collision.h"
 
 namespace Nork::Physics

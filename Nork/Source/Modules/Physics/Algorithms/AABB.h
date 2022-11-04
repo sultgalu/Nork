@@ -1,7 +1,6 @@
 #pragma once
 
-#include "../Data/World.h"
-#include "Modules/Renderer/Objects/Shader/Shader.h"
+#include "../Data/Object.h"
 
 namespace Nork::Physics
 {
@@ -18,7 +17,7 @@ namespace Nork::Physics
 	public:
 		AABBTest(Collider& collider1, Collider& collider2)
 			: aabb1(AABB(collider1.verts)), aabb2(AABB(collider1.verts)) {}
-		static std::vector<std::pair<uint32_t, uint32_t>> GetResult(World&);
+		static std::vector<std::pair<uint32_t, uint32_t>> GetResult(const std::span<Object> objs);
 		static float GetDelta();
 		static uint32_t Intersecting(AABB& aabb1, AABB& aabb2);
 	private:

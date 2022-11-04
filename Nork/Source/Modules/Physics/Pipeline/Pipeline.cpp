@@ -1,8 +1,5 @@
 #include "Pipeline.h"
-#include "../Config.h"
-#include "../Utils/Clip.h"
-#include "Pipeline.h"
-#include "Pipeline.h"
+#include "../Algorithms/SAP.h"
 
 namespace Nork::Physics
 {
@@ -21,7 +18,7 @@ namespace Nork::Physics
 				RotationUpdate(obj.kinem, delta);
 				obj.UpdateCollider(); // only needed when transform changed
 			});
-		broadResults = SAP(world).Get();
+		broadResults = SAP(world.objs).Get();
 
 		if (counter.size() < broadResults.size())
 		{

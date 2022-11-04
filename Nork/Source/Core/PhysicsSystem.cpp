@@ -1,6 +1,5 @@
-#include "pch.h"
 #include "PhysicsSystem.h"
-#include "Components/Collider.h"
+#include "Components/Physics.h"
 
 namespace Nork {
 	void PhysicsSystem::Download(entt::registry& reg)

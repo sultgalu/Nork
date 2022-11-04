@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Modules/Physics/Data/World.h"
+#include "Modules/Physics/Data/Collider.h"
 
 namespace Nork
 {

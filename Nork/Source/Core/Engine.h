@@ -2,7 +2,6 @@
 #include "NorkWindow.h"
 #include "Core/CameraController.h"
 #include "Scene/Scene.h"
-#include "Modules/Physics/Data/World.h"
 #include "Modules/Renderer/Objects/Shader/Shader.h"
 #include "RenderingSystem.h"
 #include "PhysicsSystem.h"

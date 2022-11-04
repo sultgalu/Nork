@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "GJK.h"
 
 namespace Nork::Physics

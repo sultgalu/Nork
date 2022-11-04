@@ -1,6 +1,7 @@
 #include "Collision.h"
-#include "../Utils/Clip.h"
-#include "../Utils/SAT.h"
+#include "../Algorithms/Clip.h"
+#include "../Algorithms/SAT.h"
+#include "../Utils.h"
 
 namespace Nork::Physics {
 	static glm::vec3 GetIntersectionPoint(glm::vec3 p1, glm::vec3 p2, glm::vec3 v1, glm::vec3 v2)

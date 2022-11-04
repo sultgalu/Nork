@@ -40,18 +40,15 @@ layout(std140, binding = 6) uniform asd6
 };
 layout(std140, binding = 7) uniform asd8
 {
-	uvec4 modelMatIndexes[1];
+	uvec4 modelMatIndexes[1]; // uvec2 and uvec4 have the same stride, so using the latter is more memory efficient, just a little more complicated in indexing
 };
 flat out Material material;
 
 void main()
 {
 	uint drawIdx = gl_BaseInstance + gl_InstanceID;
-	// uint matIdx = materialIndices[drawIdx / 4][drawIdx % 4]; // needed because of int[] padding (pads it up to a vec4)
-	// uint modelIdx = modelIndexes[drawIdx / 4][drawIdx % 4];
 	uint modelIdx = modelMatIndexes[drawIdx / 2][(drawIdx % 2) * 2];
 	uint matIdx =   modelMatIndexes[drawIdx / 2][(drawIdx % 2) * 2 + 1];
-	//uint matIdx = modelMatIndexes[drawIdx].y;
 	material = materials[matIdx];
 	mat4 _model = models[modelIdx];
 

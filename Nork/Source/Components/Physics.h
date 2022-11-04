@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Modules/Physics/Data/Common.h"
+#include "Modules/Physics/Data/Object.h"
 
 namespace Nork::Components {
 	struct Physics

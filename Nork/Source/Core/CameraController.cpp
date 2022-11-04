@@ -36,7 +36,7 @@ namespace Nork
 			camera.moveSpeed /= 10.f;
 		}
 	}
-	void FpsCameraController::UpdateByMouseInput(Components::Camera& camera, float delta)
+	void FpsCameraController::UpdateByMouseInput(Components::Camera& camera)
 	{
 		auto& input = Application::Get().engine.window.Input();
 
@@ -83,7 +83,7 @@ namespace Nork
 			camera.moveSpeed /= 10.f;
 		}
 	}
-	void EditorCameraController::UpdateByMouseInput(Components::Camera& camera, float delta)
+	void EditorCameraController::UpdateByMouseInput(Components::Camera& camera)
 	{
 		auto& input = Application::Get().engine.window.Input();
 		
@@ -98,6 +98,7 @@ namespace Nork
 			auto a = dir.x / glm::cos(glm::radians(camera.pitch));
 			auto yaw = glm::degrees(glm::acos(a));
 			camera.SetRotation(pitch, yaw);
+			camera.SetPosition(center + -camera.front * distance);
 		}
 		if (input.DidScroll())
 		{
@@ -107,7 +108,7 @@ namespace Nork
 		if (input.IsDown(Button::Left))
 		{
 			camera.Rotate(input.CursorYOffs(), -input.CursorXOffs());
-			camera.SetPosition(glm::normalize(center - camera.front) * distance);
+			camera.SetPosition(center + -camera.front * distance);
 		}
 	}
 }

@@ -1,5 +1,5 @@
 #include "World.h"
-#include "../Utils/AABB.h"
+#include "Algorithms/AABB.h"
 
 namespace Nork::Physics
 {

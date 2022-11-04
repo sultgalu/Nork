@@ -60,28 +60,28 @@
     <ClCompile Include="Source\Platform\Windows\FileDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Physics\Utils\SAT.cpp">
+    <ClCompile Include="Source\Modules\Physics\Algorithms\SAT.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Modules\Physics\Utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Physics\Data\World.cpp">
+    <ClCompile Include="Source\Modules\Physics\World.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Physics\Utils\GJK.cpp">
+    <ClCompile Include="Source\Modules\Physics\Algorithms\GJK.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Physics\Utils\AABB.cpp">
+    <ClCompile Include="Source\Modules\Physics\Algorithms\AABB.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Modules\Physics\Pipeline\Pipeline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Physics\Utils\SAP.cpp">
+    <ClCompile Include="Source\Modules\Physics\Algorithms\SAP.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Physics\Utils\MD.cpp">
+    <ClCompile Include="Source\Modules\Physics\Algorithms\MD.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\PolygonBuilder.cpp">
@@ -252,7 +252,7 @@
     <ClCompile Include="Source\Editor\Views\ShaderView.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Physics\Utils\Clip.cpp">
+    <ClCompile Include="Source\Modules\Physics\Algorithms\Clip.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Modules\Physics\Pipeline\Collision.cpp">
@@ -329,40 +329,28 @@
     <ClInclude Include="Source\Core\PolygonBuilder.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Physics\Utils\SAT.h">
+    <ClInclude Include="Source\Modules\Physics\Algorithms\SAT.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Physics\Data\World.h">
+    <ClInclude Include="Source\Modules\Physics\World.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Modules\Physics\Utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Physics\Utils\GJK.h">
+    <ClInclude Include="Source\Modules\Physics\Algorithms\GJK.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Physics\Utils\AABB.h">
+    <ClInclude Include="Source\Modules\Physics\Algorithms\AABB.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Modules\Physics\Pipeline\Pipeline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Physics\Utils\SAP.h">
+    <ClInclude Include="Source\Modules\Physics\Algorithms\SAP.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Physics\Utils\MD.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Physics\Data\Common.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Physics\Data\SSBO.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Physics\Data\GPU.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Physics\Config.h">
+    <ClInclude Include="Source\Modules\Physics\Algorithms\MD.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Utils\Profiler.h">
@@ -536,7 +524,7 @@
     <ClInclude Include="Source\Utils\FileUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Components\Collider.h">
+    <ClInclude Include="Source\Components\Physics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\ScriptSystem.h">
@@ -602,7 +590,7 @@
     <ClInclude Include="Source\Editor\Utils\Utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Physics\Utils\Clip.h">
+    <ClInclude Include="Source\Modules\Physics\Algorithms\Clip.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Modules\Physics\Pipeline\Collision.h">
@@ -630,6 +618,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Modules\Renderer\Pipeline\Stages\SkyStage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Physics\Data\Collider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Physics\Data\Kinematic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Physics\Data\Object.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Physics\Data\CollisionResult.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

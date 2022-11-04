@@ -39,7 +39,7 @@ int main()
 		}
 	}*/
 
-	constexpr int levels = 0; //20;
+	constexpr int levels = 40; //20;
 	constexpr int size = 20; // * 4 = one level
 	float sep = 2.1f;
 	constexpr float height = -10;
@@ -51,7 +51,7 @@ int main()
 		auto ent = engine.scene.CreateNode()->GetEntity();
 		ent.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
 		ent.AddComponent<Components::Transform>([&](auto& tr) { tr.localPosition = glm::vec3(i * sep, height + 2 + j * sep, k * sep); });
-		ent.AddComponent<Components::Physics>().Kinem().applyGravity = true;
+		ent.AddComponent<Components::Physics>().Kinem().applyGravity = false;
 		ent.AddComponent<Components::Tag>().tag = std::to_string(i).append("-").append(std::to_string(j)).append("-").append(std::to_string(k));
 	};
 

@@ -10,7 +10,7 @@ namespace Nork
 	{
 	public:
 		virtual void UpdateByKeyInput(Components::Camera&, float delta) = 0;
-		virtual void UpdateByMouseInput(Components::Camera&, float delta) = 0;
+		virtual void UpdateByMouseInput(Components::Camera&) = 0;
 	};
 	class FpsCameraController : public CameraController
 	{
@@ -18,7 +18,7 @@ namespace Nork
 		FpsCameraController()
 		{}
 		void UpdateByKeyInput(Components::Camera&, float delta) override;
-		void UpdateByMouseInput(Components::Camera&, float delta) override;
+		void UpdateByMouseInput(Components::Camera&) override;
 	};
 	class EditorCameraController : public CameraController
 	{
@@ -27,7 +27,7 @@ namespace Nork
 			: center(center)
 		{}
 		void UpdateByKeyInput(Components::Camera&, float delta) override;
-		void UpdateByMouseInput(Components::Camera&, float delta) override;
+		void UpdateByMouseInput(Components::Camera&) override;
 	public:
 		glm::vec3 center;
 	};

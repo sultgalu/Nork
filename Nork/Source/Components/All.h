@@ -4,7 +4,7 @@
 #include "Common.h"
 #include "Lights.h"
 #include "Drawable.h"
-#include "Collider.h"
+#include "Physics.h"
 
 namespace Nork
 {

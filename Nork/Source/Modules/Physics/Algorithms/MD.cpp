@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "MD.h"
 
 namespace Nork::Physics

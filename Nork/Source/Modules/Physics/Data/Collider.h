@@ -7,7 +7,6 @@ namespace Nork::Physics
 		glm::vec3 norm;
 		uint32_t vertIdx;
 	};
-
 	using index_t = uint32_t;
 	struct Edge
 	{
@@ -22,7 +21,7 @@ namespace Nork::Physics
 			index_t y;
 		};
 
-		index_t& operator[](uint32_t idx) const 
+		index_t& operator[](uint32_t idx) const
 		{
 			return ((index_t*)this)[idx];
 		}
@@ -118,73 +117,5 @@ namespace Nork::Physics
 		{
 			return (verts[edge[0]] + verts[edge[1]]) / 2.0f;
 		}
-	};
-
-	enum class CollisionType : uint32_t
-	{
-		FaceVert, VertFace, EdgeEdge
-	};
-
-	struct CollisionResult
-	{
-		glm::vec3 dir;
-		float depth;
-		CollisionType type;
-		uint16_t featureIdx1;
-		uint16_t featureIdx2;
-	};
-
-	struct KinematicData
-	{
-		glm::vec3 position = glm::zero<glm::vec3>();
-		glm::vec3 velocity = glm::zero<glm::vec3>();
-		glm::vec3 forces = glm::zero<glm::vec3>();
-		float mass = 1;
-		
-		glm::quat quaternion = glm::quat(0, 0, 0, 1);
-		glm::vec3 w = glm::zero<glm::vec3>();
-		glm::vec3 torque = glm::zero<glm::vec3>();
-		float I = 1;
-		
-		bool isStatic = false;
-		bool applyGravity = true;
-		float elasticity = 0.0f;
-		float friction = 1.0f;
-	};
-
-	class Object
-	{
-	public:
-		Object(const KinematicData& kinem = KinematicData())
-			: kinem(kinem) {}
-
-		Object(const Collider& collider, const glm::vec3& size = glm::vec3(1), const KinematicData& kinem = KinematicData())
-			: localColl(collider), collider(collider), kinem(kinem)
-		{
-			UpdateInertia();
-			SetColliderSize(size);
-			UpdateCollider();
-		}
-		void SetColliderSize(const glm::vec3& scale);
-		void UpdateCollider();
-		void UpdateInertia() { this->kinem.I = CalcInertia(); }
-	private:
-		float CalcInertia();
-	public:
-		Collider localColl = Collider(); // const
-		Collider collider = Collider();
-		KinematicData kinem;
-		glm::vec3 size = glm::vec3(1);
-	};
-
-	struct ObjectHandle
-	{
-		Object& Get() const;
-		bool operator==(const ObjectHandle& other) const 
-		{
-			return handle == other.handle;
-		}	
-	public:
-		uint64_t handle;
 	};
 }

@@ -1,5 +1,5 @@
-#include "pch.h"
 #include "Clip.h"
+#include "../Utils.h"
 
 namespace Nork::Physics 
 {

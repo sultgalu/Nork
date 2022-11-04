@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../Data/World.h"
+#include "../World.h"
+#include "../Data/CollisionResult.h"
 
 namespace Nork::Physics
 {

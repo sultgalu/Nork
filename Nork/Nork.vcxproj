@@ -168,7 +168,7 @@
   <ItemGroup>
     <ClCompile Include="Source\Editor\Panels\ColliderEditorPanel.cpp" />
     <ClCompile Include="Source\Modules\Physics\Pipeline\Collision.cpp" />
-    <ClCompile Include="Source\Modules\Physics\Utils\Clip.cpp" />
+    <ClCompile Include="Source\Modules\Physics\Algorithms\Clip.cpp" />
     <ClCompile Include="Source\Core\InputState.cpp" />
     <ClCompile Include="Source\Core\ScriptSystem.cpp" />
     <ClCompile Include="Source\Editor\Editor.cpp" />
@@ -226,9 +226,13 @@
     <ClCompile Include="Source\Modules\Renderer\Objects\Texture\Texture.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\VertexArray\VertexArray.cpp" />
     <ClInclude Include="Source\Editor\Panels\include\ColliderEditorPanel.h" />
+    <ClInclude Include="Source\Modules\Physics\Data\Collider.h" />
+    <ClInclude Include="Source\Modules\Physics\Data\CollisionResult.h" />
+    <ClInclude Include="Source\Modules\Physics\Data\Kinematic.h" />
+    <ClInclude Include="Source\Modules\Physics\Data\Object.h" />
     <ClInclude Include="Source\Modules\Physics\Pipeline\Collision.h" />
-    <ClInclude Include="Source\Modules\Physics\Utils\Clip.h" />
-    <ClInclude Include="Source\Components\Collider.h" />
+    <ClInclude Include="Source\Modules\Physics\Algorithms\Clip.h" />
+    <ClInclude Include="Source\Components\Physics.h" />
     <ClInclude Include="Source\Core\ScriptSystem.h" />
     <ClInclude Include="Source\Editor\Editor.h" />
     <ClInclude Include="Source\Editor\Menus\include\All.h" />
@@ -313,23 +317,19 @@
     <ClCompile Include="Source\Scene\SceneNode.cpp" />
     <ClCompile Include="Source\Scene\Serialization\JsonSerializer.cpp" />
     <ClCompile Include="Source\Utils\Profiler.cpp" />
-    <ClInclude Include="Source\Modules\Physics\Config.h" />
-    <ClInclude Include="Source\Modules\Physics\Data\Common.h" />
-    <ClInclude Include="Source\Modules\Physics\Data\GPU.h" />
-    <ClInclude Include="Source\Modules\Physics\Data\SSBO.h" />
-    <ClInclude Include="Source\Modules\Physics\Utils\MD.h" />
-    <ClInclude Include="Source\Modules\Physics\Utils\AABB.h" />
-    <ClInclude Include="Source\Modules\Physics\Utils\GJK.h" />
-    <ClInclude Include="Source\Modules\Physics\Utils\SAP.h" />
-    <ClInclude Include="Source\Modules\Physics\Utils\SAT.h" />
+    <ClInclude Include="Source\Modules\Physics\Algorithms\MD.h" />
+    <ClInclude Include="Source\Modules\Physics\Algorithms\AABB.h" />
+    <ClInclude Include="Source\Modules\Physics\Algorithms\GJK.h" />
+    <ClInclude Include="Source\Modules\Physics\Algorithms\SAP.h" />
+    <ClInclude Include="Source\Modules\Physics\Algorithms\SAT.h" />
     <ClInclude Include="Source\Core\PolygonBuilder.h" />
     <ClCompile Include="Source\Core\PolygonBuilder.cpp" />
-    <ClCompile Include="Source\Modules\Physics\Utils\MD.cpp" />
-    <ClCompile Include="Source\Modules\Physics\Utils\AABB.cpp" />
-    <ClCompile Include="Source\Modules\Physics\Utils\GJK.cpp" />
-    <ClCompile Include="Source\Modules\Physics\Utils\SAP.cpp" />
-    <ClCompile Include="Source\Modules\Physics\Utils\SAT.cpp" />
-    <ClCompile Include="Source\Modules\Physics\Data\World.cpp" />
+    <ClCompile Include="Source\Modules\Physics\Algorithms\MD.cpp" />
+    <ClCompile Include="Source\Modules\Physics\Algorithms\AABB.cpp" />
+    <ClCompile Include="Source\Modules\Physics\Algorithms\GJK.cpp" />
+    <ClCompile Include="Source\Modules\Physics\Algorithms\SAP.cpp" />
+    <ClCompile Include="Source\Modules\Physics\Algorithms\SAT.cpp" />
+    <ClCompile Include="Source\Modules\Physics\World.cpp" />
     <ClCompile Include="Source\Modules\Physics\Pipeline\Pipeline.cpp" />
     <ClCompile Include="Source\Modules\Physics\Utils.cpp" />
     <ClCompile Include="Source\Platform\Windows\FileDialog.cpp" />
@@ -411,7 +411,7 @@
     <ClInclude Include="Source\Modules\Renderer\Objects\VertexArray\VertexArray.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Source\Modules\Physics\Data\World.h" />
+    <ClInclude Include="Source\Modules\Physics\World.h" />
     <ClInclude Include="Source\Modules\Physics\Pipeline\Pipeline.h" />
     <ClInclude Include="Source\Modules\Physics\Utils.h" />
     <ClInclude Include="Source\Platform\FileDialog.h" />

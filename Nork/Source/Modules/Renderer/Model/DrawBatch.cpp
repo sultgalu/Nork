@@ -49,7 +49,7 @@ namespace Nork::Renderer {
 					vao.GetIndexWrapper().GetIdxFor(mesh->GetIndexPtr()), mesh->GetIndexCount(), 1, vao.GetVertexWrapper().GetIdxFor(mesh->GetVertexPtr()), baseInstance));
 			}
 		}
-		while (count % 4 != 0)
+		if (count % 4 != 0)
 		{ // padding up to a uvec4
 			modelMatIdxs[count++] = 0;
 			modelMatIdxs[count++] = 0;

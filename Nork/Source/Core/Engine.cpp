@@ -11,7 +11,7 @@
 namespace Nork
 {
 	Engine* _engine;
-	static constexpr bool MULTITHREAD_PHX = false;
+	static constexpr bool MULTITHREAD_PHX = true;
 	Engine& Engine::Get()
 	{
 		return *_engine;

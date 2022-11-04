@@ -1,5 +1,4 @@
-﻿#include "pch.h"
-#include "AABB.h"
+﻿#include "AABB.h"
 
 namespace Nork::Physics
 {
@@ -28,16 +27,16 @@ namespace Nork::Physics
 		return 3;
 	}
 
-	std::vector<std::pair<uint32_t, uint32_t>> AABBTest::GetResult(World& world)
+	std::vector<std::pair<uint32_t, uint32_t>> AABBTest::GetResult(const std::span<Object> objs)
 	{
 		Timer t;
 		std::vector<AABB> aabbs;
-		aabbs.reserve(world.objs.size());
+		aabbs.reserve(objs.size());
 		std::vector<std::pair<uint32_t, uint32_t>> results;
 
-		for (size_t i = 0; i < world.objs.size(); i++)
+		for (size_t i = 0; i < objs.size(); i++)
 		{
-			aabbs.push_back(AABB(world.objs[i].collider.verts));
+			aabbs.push_back(AABB(objs[i].collider.verts));
 		}
 		for (size_t i = 0; i < aabbs.size(); i++)
 		{

@@ -10,11 +10,11 @@ namespace Nork::Editor {
 		sceneView = std::make_shared<SceneView>(1920, 1080, Renderer::TextureFormat::RGBA16F);
 		if (autoStages)
 		{
-			//sceneView->pipeline->stages.push_back(GetRenderer().CreateStage<Renderer::DeferredStage>(*sceneView->pipeline));
+			sceneView->pipeline->stages.push_back(GetRenderer().CreateStage<Renderer::DeferredStage>(*sceneView->pipeline));
 			//sceneView->pipeline->stages.push_back(GetRenderer().CreateStage<Renderer::SkyStage>(*sceneView->pipeline));
 			// sceneView->pipeline->stages.push_back(GetRenderer().CreateStage<Renderer::BloomStage>(*sceneView->pipeline));
 			//sceneView->pipeline->stages.push_back(GetRenderer().CreateStage<Renderer::PostProcessStage>(*sceneView->pipeline));
-			sceneView->pipeline->stages.push_back(std::make_shared<CollidersStage>(GetScene(), GetRenderer().shaders));
+			// sceneView->pipeline->stages.push_back(std::make_shared<CollidersStage>(GetScene(), GetRenderer().shaders));
 		}
 		GetRenderer().sceneViews.insert(sceneView);
 		camera = sceneView->camera;
@@ -69,6 +69,47 @@ namespace Nork::Editor {
 		{
 			if (ImGui::BeginMenu("Camera"))
 			{
+				if (ImGui::BeginMenu("Behaviour"))
+				{
+					if (ImGui::MenuItem("FPS", 0, std::dynamic_pointer_cast<FpsCameraController>(viewportView.camController) != nullptr))
+						viewportView.camController = std::make_shared<FpsCameraController>();
+					auto editorController = std::dynamic_pointer_cast<EditorCameraController>(viewportView.camController);
+					if (ImGui::MenuItem("Editor", 0, editorController != nullptr))
+						viewportView.camController = std::make_shared<EditorCameraController>(glm::vec3(0, 0, 0));
+					if (editorController != nullptr)
+						if (ImGui::DragFloat3("Center##editorController", &editorController->center.x, 0.1f))
+						{
+							editorController->UpdateByMouseInput(*camera);
+						}
+					ImGui::EndMenu();
+				}
+				ImGui::DragFloat("Movement Speed", &camera->moveSpeed, 0.01f, 0.001f);
+				ImGui::DragFloat("Zoom Speed", &camera->zoomSpeed, 0.01f, 0.001f);
+				ImGui::DragFloat("Rotation Speed", &camera->rotationSpeed, 0.01f, 0.001f);
+				auto fov = glm::degrees(camera->FOV);
+				if (ImGui::DragFloat("FOV", &fov, 0.01f, 0.00f, 180.0f))
+				{
+					camera->FOV = glm::radians(fov);
+					camera->Update();
+				}
+				// ImGui::DragFloat("Near clip", &camera->nearClip, 0.01f, 0, 0, "%.3f", ImGuiSliderFlags_Logarithmic);
+				// ImGui::DragFloat("Far clip", &camera->farClip, 1.0f, 0, 0, "%.3f", ImGuiSliderFlags_Logarithmic);
+				if (ImGui::BeginMenu("Aspect Ratio"))
+				{
+					auto choice = [&](int w, int h)
+					{
+						float val = w / (float)h;
+						if (ImGui::MenuItem(std::to_string(w).append(":").append(std::to_string(h)).c_str(), 0, camera->ratio == val))
+						{
+							camera->ratio = val;
+							camera->Update();
+						}
+					};
+					choice(16, 9);
+					choice(4, 3);
+					choice(1, 1);
+					ImGui::EndMenu();
+				}
 				for (size_t i = 0; i < GetCommonData().editorCameras.size(); i++)
 				{
 					if (ImGui::Selectable(std::to_string(i).c_str()))

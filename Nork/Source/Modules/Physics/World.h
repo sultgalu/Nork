@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Common.h"
-#include "../Utils.h"
+#include "Data/Object.h"
 
 namespace std {
 	template <>

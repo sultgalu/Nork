@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Data/World.h"
+#include "../Data/Collider.h"
 
 namespace Nork::Physics {
 	class Clip
