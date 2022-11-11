@@ -10,8 +10,8 @@ namespace Nork::Renderer {
 		LightPass(source);
 		return false;
 	}
-	DeferredStage::DeferredStage(std::shared_ptr<Texture2D> depth, std::shared_ptr<Shader> gShader, std::shared_ptr<Shader> lShader, DrawCommandProvider* provider)
-		: gShader(gShader), lShader(lShader), drawCommandProvider(provider)
+	DeferredStage::DeferredStage(std::shared_ptr<Texture2D> depth, std::shared_ptr<Shader> gShader, std::shared_ptr<Shader> lShader, DrawCommand* drawCommand)
+		: gShader(gShader), lShader(lShader), drawCommand(drawCommand)
 	{
 		using enum Renderer::TextureFormat;
 		geometryFb = GeometryFramebufferBuilder()
@@ -31,10 +31,7 @@ namespace Nork::Renderer {
 			.Enable().DepthTest().CullFace()
 			.Disable().Blend(); //.CullFace();
 
-		for (auto& command : (*drawCommandProvider)())
-		{
-			command.Draw(*gShader);
-		}
+		drawCommand->operator()();
 	}
 	void DeferredStage::LightPass(Framebuffer& fb)
 	{

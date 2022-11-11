@@ -76,6 +76,7 @@ namespace Nork::Renderer {
 		{
 			return ibo != nullptr;
 		}
+		void ChangeBuffers(std::shared_ptr<Buffer> vbo, std::shared_ptr<Buffer> ibo = nullptr);
 	private:
 		const std::vector<int> attrLens;
 		const int stride;

@@ -2,7 +2,7 @@
 
 #include "../Objects/Texture/Texture.h"
 #include "../Data/Material.h"
-#include "../Storage/TypedBuffers.h"
+#include "../Storage/SmartMappedBuffer.h"
 
 namespace Nork::Renderer {
 	enum class TextureMap: uint8_t
@@ -10,14 +10,11 @@ namespace Nork::Renderer {
 		Diffuse = 0, Normal, Roughness, Reflection, COUNT
 	};
 
-	struct Material : Data::Material
+	struct Material
 	{
-		Material(std::shared_ptr<Data::Material*> ptr);
-		void Update()
-		{
-			**ptr = *(Data::Material*)this;
-		}
-		std::shared_ptr<Texture2D> GetTextureMap(TextureMap type)
+		Material() = default;
+		Material(SmartMappedBuffer<Data::Material>::Element);
+		std::shared_ptr<Texture2D> GetTextureMap(TextureMap type) const
 		{
 			return textureMaps[std::to_underlying(type)];
 		}
@@ -28,25 +25,30 @@ namespace Nork::Renderer {
 			switch (type)
 			{
 			case Diffuse:
-				diffuseMap = tex->GetBindlessHandle();
+				material->diffuseMap = tex->GetBindlessHandle();
 				break;
 			case Normal:
-				normalsMap = tex->GetBindlessHandle();
+				material->normalsMap = tex->GetBindlessHandle();
 				break;
 			case Roughness:
-				roughnessMap = tex->GetBindlessHandle();
+				material->roughnessMap = tex->GetBindlessHandle();
 				break;
 			case Reflection:
-				reflectMap = tex->GetBindlessHandle();
+				material->reflectMap = tex->GetBindlessHandle();
 				break;
 			case COUNT:
 				break;
 			}
 		}
+		bool operator==(const Material& other) const { return other.material == material; }
+		const Data::Material* operator->() const { return &material.Get(); }
+		Data::Material* operator->() { return &material.Get(); }
+		
 		void SetDefaultTexture(TextureMap type);
-		std::shared_ptr<Data::Material*> GetPtr() { return ptr; }
+		SmartMappedBuffer<Data::Material>::Element Element() { return material; }
+		const SmartMappedBuffer<Data::Material>::Element Element() const { return material; }
 	private:
-		std::shared_ptr<Data::Material*> ptr;
+		SmartMappedBuffer<Data::Material>::Element material;
 		std::array<std::shared_ptr<Texture2D>, std::to_underlying(TextureMap::COUNT)> textureMaps;
 	};
 

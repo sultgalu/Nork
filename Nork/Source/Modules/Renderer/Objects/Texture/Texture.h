@@ -17,14 +17,14 @@ namespace Nork::Renderer {
 			Logger::Info("Deleting texture ", handle, ".");
 			glDeleteTextures(1, &handle);
 		}
-		Texture& Bind2D(int idx = 0);
-		Texture& BindCube(int idx = 0);
-		GLuint64 GetBindlessHandle() { return bindlessHandle; }
-		const TextureAttributes& GetAttributes() { return attributes; }
-		const TextureParams& GetParams() { return params; }
-		uint32_t GetWidth() { return attributes.width; }
-		uint32_t GetHeight() { return attributes.height; }
-		void GetData2D(void*);
+		const Texture& Bind2D(int idx = 0) const;
+		const Texture& BindCube(int idx = 0) const;
+		GLuint64 GetBindlessHandle() const { return bindlessHandle; }
+		const TextureAttributes& GetAttributes() const { return attributes; }
+		const TextureParams& GetParams() const { return params; }
+		uint32_t GetWidth() const { return attributes.width; }
+		uint32_t GetHeight() const { return attributes.height; }
+		void GetData2D(void*) const;
 	protected:
 		const TextureParams params;
 		const TextureAttributes attributes;
@@ -40,14 +40,14 @@ namespace Nork::Renderer {
 	{
 	public:
 		using Texture::Texture;
-		Texture2D& Bind(int idx = 0);
+		const Texture2D& Bind(int idx = 0) const;
 	};
 
 	class TextureCube: public Texture
 	{
 	public:
 		using Texture::Texture;
-		TextureCube& Bind(int idx = 0);
+		const TextureCube& Bind(int idx = 0) const;
 	};
 }
 

@@ -5,6 +5,7 @@
 #include "Modules/Renderer/Pipeline/Stages/PostProcessStage.h"
 #include "Modules/Renderer/State/Capabilities.h"
 #include "Modules/Renderer/Objects/Buffer/BufferBuilder.h"
+#include "Modules/Renderer/Objects/VertexArray/VertexArrayBuilder.h"
 #include "Modules/Physics/Algorithms/AABB.h"
 
 namespace Nork::Editor {

@@ -3,6 +3,7 @@
 #include "Modules/Renderer/Pipeline/Stages/SkyStage.h"
 #include "Modules/Renderer/Pipeline/Stages/SkyboxStage.h"
 #include "Modules/Renderer/Pipeline/Stages/PostProcessStage.h"
+#include "Modules/Renderer/Pipeline/Stages/ShadowMapStage.h"
 
 namespace Nork::Editor {
 	ViewportPanel::ViewportPanel(bool autoStages)
@@ -11,6 +12,7 @@ namespace Nork::Editor {
 		if (autoStages)
 		{
 			sceneView->pipeline->stages.push_back(GetRenderer().CreateStage<Renderer::DeferredStage>(*sceneView->pipeline));
+			sceneView->pipeline->stages.push_back(GetRenderer().CreateStage<Renderer::ShadowMapStage>(*sceneView->pipeline));
 			//sceneView->pipeline->stages.push_back(GetRenderer().CreateStage<Renderer::SkyStage>(*sceneView->pipeline));
 			// sceneView->pipeline->stages.push_back(GetRenderer().CreateStage<Renderer::BloomStage>(*sceneView->pipeline));
 			//sceneView->pipeline->stages.push_back(GetRenderer().CreateStage<Renderer::PostProcessStage>(*sceneView->pipeline));
@@ -45,6 +47,7 @@ namespace Nork::Editor {
 		if (typeid(Renderer::SkyStage) == type) return "Sky";
 		if (typeid(Renderer::SkyboxStage) == type) return "Skybox";
 		if (typeid(Renderer::PostProcessStage) == type) return "Post Process";
+		if (typeid(Renderer::ShadowMapStage) == type) return "Shadow Maps";
 		return "NOT_FOUND";
 	}
 	static const char* NameForStage(const Renderer::Stage* stage)
@@ -157,6 +160,7 @@ namespace Nork::Editor {
 					AddStageItem<Renderer::SkyStage>(GetRenderer(), *sceneView->pipeline);
 					AddStageItem<Renderer::SkyboxStage>(GetRenderer(), *sceneView->pipeline);
 					AddStageItem<Renderer::PostProcessStage>(GetRenderer(), *sceneView->pipeline);
+					AddStageItem<Renderer::ShadowMapStage>(GetRenderer(), *sceneView->pipeline);
 					ImGui::EndMenu();
 				}
 				ImGui::EndMenu();
@@ -217,7 +221,7 @@ namespace Nork::Editor {
 				ImGui::EndMenu();
 			}*/
 			ImGui::DragFloat("Cam Base Speed", &sceneView->camera->moveSpeed, 0.001f);
-			ImGui::Text(("texture ID: " + std::to_string(sceneView->fb->Color()->GetHandle())).c_str());
+			ImGui::Text(("texture ID: " + std::to_string(sceneView->pipeline->FinalTexture()->GetHandle())).c_str());
 			ImGui::EndMenuBar();
 		}
 

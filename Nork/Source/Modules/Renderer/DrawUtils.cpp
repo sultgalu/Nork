@@ -4,7 +4,7 @@
 
 namespace Nork::Renderer {
 
-	std::vector<float> DrawUtils::GetQuadVertices()
+	static std::vector<float> GetQuadVertices()
 	{
 		return {
 				-1.0f, -1.0f, 0.0f, 0.0f,
@@ -14,7 +14,7 @@ namespace Nork::Renderer {
 		};
 	}
 
-	std::vector<GLuint> DrawUtils::GetQuadIndices()
+	static std::vector<GLuint> GetQuadIndices()
 	{
 		return {
 				0, 1, 3,
@@ -22,7 +22,7 @@ namespace Nork::Renderer {
 		};
 	}
 
-	std::vector<float> DrawUtils::GetCubeVertices()
+	static std::vector<float> GetCubeVertices()
 	{
 		return std::vector<float> {
 			   -1.0f, -1.0f, -1.0f,
@@ -37,7 +37,7 @@ namespace Nork::Renderer {
 		};
 	}
 
-	std::vector<GLuint> DrawUtils::GetCubeIndices()
+	static std::vector<GLuint> GetCubeIndices()
 	{
 		std::vector<GLuint> indices(36);
 		unsigned int offset = 0, i = 0;
@@ -105,8 +105,8 @@ namespace Nork::Renderer {
 
 	static std::shared_ptr<VertexArray> GetQuadVao()
 	{
-		auto verts = DrawUtils::GetQuadVertices();
-		auto inds = DrawUtils::GetQuadIndices();
+		auto verts = GetQuadVertices();
+		auto inds = GetQuadIndices();
 		auto flags = BufferStorageFlags::None;
 		auto vbo = BufferBuilder().Target(BufferTarget::Vertex).Flags(flags).Data(verts.data(), verts.size() * sizeof(float)).Create();
 		auto ibo = BufferBuilder().Target(BufferTarget::Index).Flags(flags).Data(inds.data(), inds.size() * sizeof(GLuint)).Create();
@@ -116,8 +116,8 @@ namespace Nork::Renderer {
 
 	static std::shared_ptr<VertexArray> GetCubeVao()
 	{
-		auto verts = DrawUtils::GetCubeVertices();
-		auto inds = DrawUtils::GetCubeIndices();
+		auto verts = GetCubeVertices();
+		auto inds = GetCubeIndices();
 		auto flags = BufferStorageFlags::None;
 		auto vbo = BufferBuilder().Target(BufferTarget::Vertex).Flags(flags).Data(verts.data(), verts.size() * sizeof(float)).Create();
 		auto ibo = BufferBuilder().Target(BufferTarget::Index).Flags(flags).Data(inds.data(), inds.size() * sizeof(GLuint)).Create();

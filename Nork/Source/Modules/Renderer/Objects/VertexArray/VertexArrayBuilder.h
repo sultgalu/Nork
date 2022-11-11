@@ -26,8 +26,7 @@ namespace Nork::Renderer {
 		void SetAttribs();
 		void Validate()
 		{
-			if (vbo == nullptr
-				|| attrLens.size() == 0)
+			if (attrLens.size() == 0)
 			{
 				std::abort();
 			}

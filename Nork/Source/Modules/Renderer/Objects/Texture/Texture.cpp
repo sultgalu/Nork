@@ -4,7 +4,7 @@
 namespace Nork::Renderer {
 	static GLuint boundTextures[32]{0};
 
-	Texture& Nork::Renderer::Texture::Bind2D(int idx)
+	const Texture& Nork::Renderer::Texture::Bind2D(int idx) const
 	{
 		if (true || boundTextures[idx] != handle)
 		{
@@ -15,7 +15,7 @@ namespace Nork::Renderer {
 		return *this;
 	}
 
-	Texture& Nork::Renderer::Texture::BindCube(int idx)
+	const Texture& Nork::Renderer::Texture::BindCube(int idx) const
 	{
 		if (true || boundTextures[idx] != handle)
 		{
@@ -26,17 +26,17 @@ namespace Nork::Renderer {
 		return *this;
 	}
 
-	void Texture::GetData2D(void* ptr)
+	void Texture::GetData2D(void* ptr) const
 	{
 		glGetTexImage(GL_TEXTURE_2D, 0, GetTextureFormat(attributes.format), GetTextureType(attributes.format), ptr);
 	}
 
-	Texture2D& Texture2D::Bind(int idx)
+	const Texture2D& Texture2D::Bind(int idx) const
 	{
 		Bind2D(idx);
 		return *this;
 	}
-	TextureCube& TextureCube::Bind(int idx)
+	const TextureCube& TextureCube::Bind(int idx) const
 	{
 		BindCube(idx);
 		return *this;

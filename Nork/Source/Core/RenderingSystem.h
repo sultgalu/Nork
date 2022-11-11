@@ -2,14 +2,11 @@
 
 #include "Scene/Scene.h"
 #include "Modules/Renderer/Objects/Shader/Shader.h"
-#include "Modules/Renderer/Pipeline/Light/DirShadowMap.h"
-#include "Modules/Renderer/Pipeline/Light/PointShadowMap.h"
-#include "Modules/Renderer/Config.h"
-#include "Modules/Renderer/Model/DrawBatch.h"
-#include "Modules/Renderer/Storage/DrawState.h"
 #include "Modules/Renderer/Pipeline/Pipeline.h"
 #include "Modules/Renderer/Pipeline/Stages/DeferredStage.h"
-#include "Modules/Renderer/Objects/Texture/TextureBuilder.h"
+#include "Modules/Renderer/Pipeline/DrawCommands/DrawObjectsCommand.h"
+#include "Modules/Renderer/Pipeline/Stages/ShadowMapStage.h"
+#include "Core/ResourceManager.h"
 
 namespace Nork {
 	class Shaders
@@ -53,13 +50,11 @@ namespace Nork {
 		{
 			camera = std::make_shared<Components::Camera>();
 			pipeline = std::make_shared<Renderer::Pipeline>(width, height, format);
-			CreateFb();
 		}
 		SceneView& operator=(const SceneView& other)
 		{
 			camera = other.camera;
 			pipeline = other.pipeline;
-			CreateFb();
 		}
 		SceneView(const SceneView& other)
 		{
@@ -67,11 +62,8 @@ namespace Nork {
 		}
 		std::shared_ptr<Components::Camera> camera;
 		std::shared_ptr<Renderer::Pipeline> pipeline;
-		std::shared_ptr<Renderer::Framebuffer> fb;
-	private:
-		void CreateFb();
 	};
-	class RenderingSystem : public Renderer::DrawCommandProvider
+	class RenderingSystem
 	{
 	public:
 		RenderingSystem(entt::registry& registry);
@@ -100,41 +92,54 @@ namespace Nork {
 			}
 			return ConstructStage<T>(dest);
 		}
-		const std::vector<Renderer::DrawCommandMultiIndirect>& operator()() override
-		{
-			static std::vector<Renderer::DrawCommandMultiIndirect> commands;
-			commands = { drawBatch.GetDrawCommand() };
-			return commands;
-		}
 	private:
 		void UpdateGlobalUniform();
 		template<std::derived_from<Renderer::Stage> T> std::shared_ptr<T> ConstructStage(Renderer::Pipeline& dest);
 		void UpdateLights();
 		void ViewProjectionUpdate(Components::Camera& camera);
-		void DrawBatchUpdate();
 
 	private:
 		glm::uvec2 resolution = { 1920, 1080 };
 		entt::observer dirLightObserver;
 		entt::observer pointLightObserver;
 	public:
+		struct ShadowMapProvider : Renderer::ShadowMapProvider
+		{
+			std::span<Renderer::PointShadowMap> PointShadowMaps() override { return pShadMaps; }
+			std::span<Renderer::DirShadowMap> DirShadowMaps() override { return dShadMaps; }
+			std::vector<Renderer::PointShadowMap> pShadMaps;
+			std::vector<Renderer::DirShadowMap> dShadMaps;
+		};
 		entt::registry& registry;
 		Shaders shaders;
-		Renderer::DrawState drawState;
-		Renderer::DrawBatch drawBatch;
+		Renderer::World world;
+		ResourceManager resourceManager = ResourceManager(world);
+		Renderer::DrawObjectsCommand deferredDrawCommand;
+		Renderer::DrawObjectsCommand shadowMapDrawCommand;
+		ShadowMapProvider shadowMapProvider;
 		Observed<GlobalShaderUniform> globalShaderUniform;
 		std::shared_ptr<Renderer::VertexArray> colliderVao = nullptr;
 		std::unordered_set<std::shared_ptr<SceneView>> sceneViews;
 		float delta;
 	private:
-		void OnDShadAdded(entt::registry& reg, entt::entity id);
-		void OnPShadAdded(entt::registry& reg, entt::entity id);
+		bool shouldUpdateDrawCommands = false;
+		void UpdateDrawCommands();
+		void OnDrawableAdded(entt::registry& reg, entt::entity id);
+		void OnDrawableUpdated(entt::registry& reg, entt::entity id);
+
+		bool shouldUpdateDirLightAndShadows = false;
+		bool shouldUpdatePointLightAndShadows = false;
+		void UpdateDirLightShadows(); // updates UBO idxs and shadowMapProvider
+		void UpdatePointLightShadows();
+
 		void OnDShadRemoved(entt::registry& reg, entt::entity id);
 		void OnPShadRemoved(entt::registry& reg, entt::entity id);
+		void OnDLightRemoved(entt::registry& reg, entt::entity id);
+		void OnPLightRemoved(entt::registry& reg, entt::entity id);
 
 		void OnDLightAdded(entt::registry& reg, entt::entity id);
 		void OnPLightAdded(entt::registry& reg, entt::entity id);
-		void OnDLightRemoved(entt::registry& reg, entt::entity id);
-		void OnPLightRemoved(entt::registry& reg, entt::entity id);
+		void OnDShadAdded(entt::registry& reg, entt::entity id);
+		void OnPShadAdded(entt::registry& reg, entt::entity id);
 	};
 }

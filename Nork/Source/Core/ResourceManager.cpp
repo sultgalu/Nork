@@ -1,15 +1,14 @@
-
 #include "ResourceManager.h"
 #include "Modules/Renderer/LoadUtils.h"
 #include "Modules/Renderer/Objects/Texture/TextureBuilder.h"
-
 #include "Modules/Renderer/GLTF/GLTFBuilder.h"
+#include "Modules/Renderer/MeshFactory.h"
 
 namespace Nork {
 	namespace fs = std::filesystem;
 
-	ResourceManager::ResourceManager(Renderer::DrawState& drawState)
-		: drawState(drawState)
+	ResourceManager::ResourceManager(Renderer::World& world)
+		: rendererWorld(world)
 	{
 		assetsPath = fs::current_path().append("Assets");
 		fs::create_directory(assetsPath);
@@ -52,8 +51,10 @@ namespace Nork {
 
 		for (auto& meshData : meshDatas)
 		{
-			auto mesh = Renderer::MeshFactory(drawState.vaoWrapper).Create(meshData.vertices, meshData.indices);
-			auto material = drawState.AddMaterial();
+			auto mesh = rendererWorld.AddMesh(meshData.vertices.size(), meshData.indices.size());
+			mesh.Vertices().CopyFrom(meshData.vertices.data(), meshData.vertices.size());
+			mesh.Indices().CopyFrom(meshData.indices.data(), meshData.indices.size());
+			auto material = rendererWorld.AddMaterial();
 
 			material->diffuse = meshData.material.diffuse;
 			material->specular = meshData.material.specular;
@@ -61,9 +62,8 @@ namespace Nork {
 			for (auto& pair : meshData.material.textureMaps)
 			{
 				auto texId = ImportTexture(pair.second);
-				material->SetTextureMap(GetTexture(texId), pair.first);
+				material.SetTextureMap(GetTexture(texId), pair.first);
 			}
-			material->Update();
 
 			MeshResource meshResource{ .mesh = meshData.meshName, .material = meshData.materialName };
 			meshes[meshResource.mesh] = mesh;
@@ -100,10 +100,10 @@ namespace Nork {
 			std::vector<std::pair<Renderer::TextureMap, std::string>> imageUris;
 			auto tryAddTex = [&](Renderer::TextureMap type)
 			{
-				auto texId = IdFor(meshMat.material->GetTextureMap(type));
+				auto texId = IdFor(meshMat.material.GetTextureMap(type));
 				if (texId.has_value())
 				{
-					SaveImage(meshMat.material->GetTextureMap(type), fs::path(dir).append(*texId).string());
+					SaveImage(*meshMat.material.GetTextureMap(type), fs::path(dir).append(*texId).string());
 					imageUris.push_back({ type, *texId });
 				}
 			};
@@ -133,7 +133,7 @@ namespace Nork {
 		}
 		return models[id];
 	}
-	std::shared_ptr<Renderer::Mesh> ResourceManager::GetMesh(const std::string& id)
+	Renderer::Mesh ResourceManager::GetMesh(const std::string& id)
 	{
 		auto opt = meshes.find(id);
 		if (opt == meshes.end())
@@ -141,19 +141,6 @@ namespace Nork {
 			LoadMesh(id);
 		}
 		return meshes[id];
-	}
-	std::shared_ptr<Renderer::Texture2D> ResourceManager::GetTextureByPath(const std::string& path)
-	{
-		return GetTexture(fs::path(path).filename().string());
-	}
-	std::shared_ptr<Renderer::Material> ResourceManager::GetMaterial(const std::string& id)
-	{
-		auto opt = materials.find(id);
-		if (opt == materials.end())
-		{
-			LoadMaterial(id);
-		}
-		return materials[id];
 	}
 	std::shared_ptr<Renderer::Texture2D> ResourceManager::GetTexture(const std::string& id)
 	{
@@ -164,8 +151,20 @@ namespace Nork {
 		}
 		return textures[id];
 	}
-
-	std::shared_ptr<Renderer::Material> ResourceManager::GetMaterialByPath(const std::string& path)
+	std::shared_ptr<Renderer::Texture2D> ResourceManager::GetTextureByPath(const std::string& path)
+	{
+		return GetTexture(fs::path(path).filename().string());
+	}
+	Renderer::Material ResourceManager::GetMaterial(const std::string& id)
+	{
+		auto opt = materials.find(id);
+		if (opt == materials.end())
+		{
+			LoadMaterial(id);
+		}
+		return materials[id];
+	}
+	Renderer::Material ResourceManager::GetMaterialByPath(const std::string& path)
 	{
 		return GetMaterial(fs::path(path).filename().string());
 	}
@@ -213,7 +212,7 @@ namespace Nork {
 			].buffer
 		];
 
-		auto mesh = Renderer::MeshFactory(drawState.vaoWrapper).Create(
+		auto mesh = rendererWorld.AddMesh(
 			FileUtils::ReadBinary<Renderer::Data::Vertex>(MeshesPath().append(vertsBufs.uri).string(), vertsBufs.byteLength),
 			FileUtils::ReadBinary<uint32_t>(MeshesPath().append(indsBufs.uri).string(), indsBufs.byteLength));
 
@@ -229,7 +228,7 @@ namespace Nork {
 			return;
 		}
 
-		auto material = drawState.AddMaterial();
+		auto material = rendererWorld.AddMaterial();
 		auto& mat = gltf.materials.back();
 
 		material->diffuse = mat.pbrMetallicRoughness.baseColorFactor;
@@ -238,19 +237,18 @@ namespace Nork {
 		if (mat.pbrMetallicRoughness.baseColorTexture.Validate())
 		{
 			auto texId = gltf.images[mat.pbrMetallicRoughness.baseColorTexture.index].uri;
-			material->SetTextureMap(GetTexture(texId), Renderer::TextureMap::Diffuse);
+			material.SetTextureMap(GetTexture(texId), Renderer::TextureMap::Diffuse);
 		}
 		if (mat.pbrMetallicRoughness.metallicRoughnessTexture.Validate())
 		{
 			auto texId = gltf.images[mat.pbrMetallicRoughness.metallicRoughnessTexture.index].uri;
-			material->SetTextureMap(GetTexture(texId), Renderer::TextureMap::Roughness);
+			material.SetTextureMap(GetTexture(texId), Renderer::TextureMap::Roughness);
 		}
 		if (mat.normalTexture.Validate())
 		{
 			auto texId = gltf.images[mat.normalTexture.index].uri;
-			material->SetTextureMap(GetTexture(texId), Renderer::TextureMap::Normal);
+			material.SetTextureMap(GetTexture(texId), Renderer::TextureMap::Normal);
 		}
-		material->Update();
 
 		materials[id] = material;
 		Logger::Info("Loaded material ", id);
@@ -259,8 +257,8 @@ namespace Nork {
 	{
 		if (id == "")
 		{
-			auto defaultMesh = Renderer::MeshFactory(drawState.vaoWrapper).CreateCube();
-			auto defaultMaterial = drawState.AddMaterial();
+			auto defaultMesh = rendererWorld.AddMesh(Renderer::MeshFactory::CubeVertices(), Renderer::MeshFactory::CubeIndices());
+			auto defaultMaterial = rendererWorld.AddMaterial();
 			meshes[""] = defaultMesh;
 			materials[""] = defaultMaterial;
 			models[""] = std::make_shared<Components::Model>();
@@ -314,30 +312,29 @@ namespace Nork {
 		Logger::Info("Saving Model to ", path);
 		FileUtils::WriteString(json.ToStringFormatted(), path);
 	}
-	std::shared_ptr<Renderer::Material> Nork::ResourceManager::CloneMaterial(std::shared_ptr<Renderer::Material> source, const std::string& id)
+	Renderer::Material Nork::ResourceManager::CloneMaterial(const Renderer::Material& source, const std::string& id)
 	{
 		auto path = AssetIdToMaterialPath(id);
 		if (materials.contains(id) || fs::exists(path))
 		{
 			Logger::Error("Material Asset with the same id already exists at \"", path, "\"");
-			return nullptr;
+			return source;
 		}
-		auto clone = drawState.AddMaterial();
+		auto clone = rendererWorld.AddMaterial();
 		clone->diffuse = source->diffuse;
 		clone->specular = source->specular;
 		clone->specularExponent = source->specularExponent;
 		using enum Renderer::TextureMap;
-		clone->SetTextureMap(source->GetTextureMap(Diffuse), Diffuse);
-		clone->SetTextureMap(source->GetTextureMap(Normal), Normal);
-		clone->SetTextureMap(source->GetTextureMap(Roughness), Roughness);
-		clone->SetTextureMap(source->GetTextureMap(Reflection), Reflection);
-		clone->Update();
+		clone.SetTextureMap(source.GetTextureMap(Diffuse), Diffuse);
+		clone.SetTextureMap(source.GetTextureMap(Normal), Normal);
+		clone.SetTextureMap(source.GetTextureMap(Roughness), Roughness);
+		clone.SetTextureMap(source.GetTextureMap(Reflection), Reflection);
 
 		materials[id] = clone;
 		SaveMaterial(clone);
 		return clone;
 	}
-	void ResourceManager::SaveMaterial(std::shared_ptr<Renderer::Material> material)
+	void ResourceManager::SaveMaterial(const Renderer::Material& material)
 	{
 		auto path = PathFor(material);
 		if (!path.has_value())
@@ -348,7 +345,7 @@ namespace Nork {
 		std::vector<std::pair<Renderer::TextureMap, std::string>> imageUris;
 		auto tryAddTex = [&](Renderer::TextureMap type)
 		{
-			auto tex = IdFor(material->GetTextureMap(type));
+			auto tex = IdFor(material.GetTextureMap(type));
 			if (tex.has_value())
 			{
 				imageUris.push_back({ type, *tex });
@@ -365,7 +362,7 @@ namespace Nork {
 			.Get();
 		SaveGLTF(gltf, *path);
 	}
-	void ResourceManager::SaveMesh(std::shared_ptr<Renderer::Mesh> mesh)
+	void ResourceManager::SaveMesh(const Renderer::Mesh& mesh)
 	{
 		auto path = PathFor(mesh);
 		if (!path.has_value())
@@ -378,15 +375,15 @@ namespace Nork {
 			.Get();
 		SaveGLTF(gltf, *path);
 	}
-	void ResourceManager::SaveImage(std::shared_ptr<Renderer::Texture2D> tex, const std::string& path)
+	void ResourceManager::SaveImage(const Renderer::Texture2D& tex, const std::string& path)
 	{
 		Renderer::Image image;
-		image.format = tex->GetAttributes().format;
-		image.width = tex->GetWidth();
-		image.height = tex->GetHeight();
+		image.format = tex.GetAttributes().format;
+		image.width = tex.GetWidth();
+		image.height = tex.GetHeight();
 		image.channels = Renderer::GetTextureChannelCount(image.format);
 		image.data.resize(Renderer::GetTexturePixelSize(image.format) * image.width * image.height, 0);
-		tex->Bind().GetData2D(image.data.data());
+		tex.Bind().GetData2D(image.data.data());
 		Renderer::LoadUtils::WriteImage(image, path);
 		Logger::Info("Saved Image (", image.width, "x", image.height, "x", image.channels, ", ", Renderer::TextureFormatToString(image.format), ") to ", path);
 	}
@@ -412,18 +409,18 @@ namespace Nork {
 		}
 		return std::nullopt;
 	}
-	std::optional<std::string> ResourceManager::PathFor(std::shared_ptr<Renderer::Material> materialPtr)
+	std::optional<std::string> ResourceManager::PathFor(const Renderer::Material& material)
 	{
-		for (auto [id, ptr] : materials)
+		for (auto [id, mat] : materials)
 		{
-			if (materialPtr == ptr)
+			if (material == mat)
 			{
 				return AssetIdToMaterialPath(id).string();
 			}
 		}
 		return std::nullopt;
 	}
-	std::optional<std::string> ResourceManager::PathFor(std::shared_ptr<Renderer::Mesh> meshPtr)
+	std::optional<std::string> ResourceManager::PathFor(const Renderer::Mesh& meshPtr)
 	{
 		for (auto [id, ptr] : meshes)
 		{
@@ -447,7 +444,7 @@ namespace Nork {
 	}
 	std::optional<std::string> ResourceManager::IdFor(std::shared_ptr<Renderer::Texture2D> texturePtr)
 	{
-		for (auto [id, ptr] : textures)
+		for (auto& [id, ptr] : textures)
 		{
 			if (texturePtr == ptr)
 			{
@@ -456,7 +453,7 @@ namespace Nork {
 		}
 		return std::nullopt;
 	}
-	std::optional<std::string> ResourceManager::IdFor(std::shared_ptr<Renderer::Material> materialPtr)
+	std::optional<std::string> ResourceManager::IdFor(const Renderer::Material& materialPtr)
 	{
 		for (auto [id, ptr] : materials)
 		{
@@ -467,7 +464,7 @@ namespace Nork {
 		}
 		return std::nullopt;
 	}
-	std::optional<std::string> ResourceManager::IdFor(std::shared_ptr<Renderer::Mesh> meshPtr)
+	std::optional<std::string> ResourceManager::IdFor(const Renderer::Mesh& meshPtr)
 	{
 		for (auto [id, ptr] : meshes)
 		{

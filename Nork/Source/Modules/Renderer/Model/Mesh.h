@@ -1,31 +1,23 @@
 #pragma once
 
-#include "../Storage/VertexArrayWrapper.h"
+#include "../Storage/SmartMappedBuffer.h"
+#include "../Data/Vertex.h"
 
 namespace Nork::Renderer {
 	class Mesh
 	{
 	public:
-		Mesh(DefaultVAO& vaoWrapper,
-			std::shared_ptr<Data::Vertex*> vertexIdx, std::shared_ptr<uint32_t*> indexIdx,
-			size_t vertexCount, size_t indexCount)
-			: vaoWrapper(vaoWrapper),
-			vertexIdx(vertexIdx), indexIdx(indexIdx),
-			vertexCount(vertexCount), indexCount(indexCount)
+		Mesh() = default;
+		Mesh(const SmartMappedBuffer<Data::Vertex>::Array& vertices, const SmartMappedBuffer<uint32_t>::Array indices)
+			: vertices(vertices), indices(indices)
 		{}
-		Mesh(Mesh&&) = delete;
-
-		std::shared_ptr<Data::Vertex*> GetVertexPtr() { return vertexIdx; }
-		std::shared_ptr<uint32_t*> GetIndexPtr() { return indexIdx; }
-		size_t GetVertexCount() { return vertexCount; }
-		size_t GetIndexCount() { return indexCount; }
-
-		DefaultVAO& GetVaoWrapper() { return vaoWrapper; }
+		bool operator==(const Mesh& other) const { return other.vertices == vertices && other.indices == indices; }
+		SmartMappedBuffer<Data::Vertex>::Array& Vertices() { return vertices; }
+		const SmartMappedBuffer<Data::Vertex>::Array& Vertices() const { return vertices; }
+		SmartMappedBuffer<uint32_t>::Array& Indices() { return indices; }
+		const SmartMappedBuffer<uint32_t>::Array& Indices() const { return indices; }
 	private:
-		std::shared_ptr<Data::Vertex*> vertexIdx;
-		std::shared_ptr<uint32_t*> indexIdx;
-		size_t vertexCount;
-		size_t indexCount;
-		DefaultVAO& vaoWrapper;
+		SmartMappedBuffer<Data::Vertex>::Array vertices;
+		SmartMappedBuffer<uint32_t>::Array indices;
 	};
 }

@@ -5,7 +5,6 @@
 #include "Modules/Renderer/Objects/Shader/Shader.h"
 #include "RenderingSystem.h"
 #include "PhysicsSystem.h"
-#include "Core/ResourceManager.h"
 #include "ScriptSystem.h"
 
 namespace Nork
@@ -25,8 +24,7 @@ namespace Nork
 		Scene scene;
 
 		RenderingSystem renderingSystem = RenderingSystem(scene.registry);
-		ResourceManager resourceManager = ResourceManager(renderingSystem.drawState);
-		
+		ResourceManager& resourceManager = renderingSystem.resourceManager; // temp
 		PhysicsSystem physicsSystem;
 		std::thread* physicsThread;
 		bool physicsUpdate = false;
@@ -43,7 +41,6 @@ namespace Nork
 
 		entt::observer transformObserver;
 	private:
-		void OnDrawableAdded(entt::registry& reg, entt::entity id);
 		void OnPhysicsAdded(entt::registry& reg, entt::entity id);
 		void OnPhysicsRemoved(entt::registry& reg, entt::entity id);
 		std::thread* LaunchPhysicsThread();

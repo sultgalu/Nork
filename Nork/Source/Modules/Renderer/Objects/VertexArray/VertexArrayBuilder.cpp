@@ -16,24 +16,28 @@ namespace Nork::Renderer {
 	void VertexArrayBuilder::SetAttribs()
 	{
 		this->attrLens = attrLens;
-		glBindVertexArray(handle);
-		vbo->Bind(BufferTarget::Vertex);
-		if (ibo != nullptr)
-		{
-			ibo->Bind(BufferTarget::Index);
-		}
-
 		stride = 0;
 		for (int i = 0; i < attrLens.size(); i++)
 			stride += attrLens[i];
 		stride *= sizeof(float);
 
-		int offset = 0;
-		for (int i = 0; i < attrLens.size(); i++)
+		if (vbo)
 		{
-			glVertexAttribPointer(i, attrLens[i], GL_FLOAT, false, stride, (void*)(offset * sizeof(float)));
-			glEnableVertexAttribArray(i);
-			offset += attrLens[i];
-		}
+			glBindVertexArray(handle);
+
+			vbo->Bind(BufferTarget::Vertex);
+			if (ibo != nullptr)
+			{
+				ibo->Bind(BufferTarget::Index);
+			}
+
+			int offset = 0;
+			for (int i = 0; i < attrLens.size(); i++)
+			{
+				glVertexAttribPointer(i, attrLens[i], GL_FLOAT, false, stride, (void*)(offset * sizeof(float)));
+				glEnableVertexAttribArray(i);
+				offset += attrLens[i];
+			}
+		}	
 	}
 }

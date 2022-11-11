@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Modules/Renderer/Model/Mesh.h"
-#include "Modules/Renderer/Model/Material.h"
+#include "Modules/Renderer/World.h"
 
 namespace Nork {
 }
@@ -10,8 +9,8 @@ namespace Nork::Components
 {
 	struct Mesh
 	{
-		std::shared_ptr<Renderer::Mesh> mesh;
-		std::shared_ptr<Renderer::Material> material;
+		Renderer::Mesh mesh; // assigne only with entt::patch
+		Renderer::Material material; // assigne only with entt::patch
 	};
 
 	struct Model
@@ -22,6 +21,6 @@ namespace Nork::Components
 	struct Drawable
 	{
 		std::shared_ptr<Model> model;
-		std::shared_ptr<glm::mat4*> modelMatrix;
+		Renderer::ModelMatrix modelMatrix;
 	};
 }

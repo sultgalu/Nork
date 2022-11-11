@@ -57,83 +57,87 @@ namespace Nork {
 
 	template<> JsonObject JsonComponentSerializer<DirLight>::Serialize(const DirLight& component)
 	{
-		auto json = JsonObject()
-			.Property("color", JsonArray().Elements(&component.light->color.x, 3))
-			.Property("direction", JsonArray().Elements(&component.light->direction.x, 3))
-			.Property("lrbtnf", JsonArray().Elements(&component.left, 6))
+		return JsonObject()
+			.Property("color", JsonArray().Elements(component.light->color))
+			.Property("direction", JsonArray().Elements(component.light->direction))
+			.Property("pos", JsonArray().Elements(component.position))
+			.Property("rectangle", JsonArray().Elements(component.rectangle))
 			.Property("outOfProj", component.light->outOfProjValue)
 			.Property("sun", component.sun);
-		if (component.shadow != nullptr)
-		{
-			json.Property("shadow", JsonObject()
-				.Property("bias", component.shadow->bias)
-				.Property("biasMin", component.shadow->biasMin));
-		}
-		return json;
 	}
 	template<> DirLight& JsonComponentDeserializer<DirLight>::Deserialize(const JsonObject& json)
 	{
-		auto& comp = entity.AddComponent<DirLight>([&](DirLight& comp)
+		return entity.AddComponent<DirLight>([&](DirLight& comp)
 			{
-				json.Get<JsonArray>("color").Get(&comp.light->color.x, 3);
-				json.Get<JsonArray>("direction").Get(&comp.light->direction.x, 3);
-				json.Get<JsonArray>("lrbtnf").Get(&comp.left, 6);
+				json.Get<JsonArray>("color").Get(comp.light->color);
+				json.Get<JsonArray>("direction").Get(comp.light->direction);
+				json.Get<JsonArray>("pos").Get(comp.position);
+				json.Get<JsonArray>("rectangle").Get(comp.rectangle);
 				json.Get("outOfProj", comp.light->outOfProjValue);
 				json.GetIfContains("sun", comp.sun);
-				if (json.Contains("shadow"))
-				{
-					entity.AddComponent<DirShadowRequest>();
-					json.Get<JsonObject>("shadow")
-						.Get("bias", comp.shadow->bias)
-						.Get("biasMin", comp.shadow->biasMin);
-					comp.shadow->Update();
-				}
-				comp.RecalcVP();
-				comp.light->Update();
 			});
-		return comp;
+	}
+	template<> JsonObject JsonComponentSerializer<DirShadowMap>::Serialize(const DirShadowMap& component)
+	{
+		return JsonObject()
+			.Property("bias", component.map.shadow->bias)
+			.Property("bibiasMinas", component.map.shadow->biasMin)
+			.Property("fbWidth", component.map.fb->Width())
+			.Property("fbHeight", component.map.fb->Height())
+			.Property("fbDepth", (int)component.map.fb->Depth()->GetAttributes().format);
+	}
+	template<> DirShadowMap& JsonComponentDeserializer<DirShadowMap>::Deserialize(const JsonObject& json)
+	{
+		return entity.AddComponent<DirShadowMap>([&](DirShadowMap& comp)
+			{
+				json.Get("bias", comp.map.shadow->bias)
+					.Get("biasMin", comp.map.shadow->biasMin);
+				comp.map.SetFramebuffer(json.Get<uint32_t>("fbWidth"), json.Get<uint32_t>("fbHeight"),
+					(Renderer::TextureFormat)json.Get<int>("fbDepth"));
+			});
 	}
 
 	template<> JsonObject JsonComponentSerializer<PointLight>::Serialize(const PointLight& component)
 	{
-		auto json = JsonObject()
+		return JsonObject()
 			.Property("color", JsonArray().Elements(&component.light->color.x, 3))
 			.Property("position", JsonArray().Elements(&component.light->position.x, 3))
 			.Property("linear", component.light->linear)
 			.Property("quadratic", component.light->quadratic)
 			.Property("intensity", component.GetIntensity());
-		if (component.shadow != nullptr)
-		{
-			json.Property("shadow", JsonObject()
-				.Property("bias", component.shadow->bias)
-				.Property("biasMin", component.shadow->biasMin)
-				.Property("far", component.shadow->far)
-				.Property("near", component.shadow->near));
-		}
-		return json;
 	}
 	template<> PointLight& JsonComponentDeserializer<PointLight>::Deserialize(const JsonObject& json)
 	{
-		auto& comp = entity.AddComponent<PointLight>([&](PointLight& comp)
+		return entity.AddComponent<PointLight>([&](PointLight& comp)
 			{
 				json.Get<JsonArray>("color").Get(&comp.light->color.x, 3);
 				json.Get<JsonArray>("position").Get(&comp.light->position.x, 3);
 				json.Get("linear", comp.light->linear);
 				json.Get<float>("quadratic", comp.light->quadratic);
 				comp.SetIntensity(json.Get<float>("intensity"));
-				comp.light->Update();
-				if (json.Contains("shadow"))
-				{
-					entity.AddComponent<PointShadowRequest>();
-					json.Get<JsonObject>("shadow")
-						.Get("bias", comp.shadow->bias)
-						.Get("biasMin", comp.shadow->biasMin)
-						.Get("far", comp.shadow->far)
-						.Get("near", comp.shadow->near);
-					comp.shadow->Update();
-				}
 			});
-		return comp;
+	}
+	template<> JsonObject JsonComponentSerializer<PointShadowMap>::Serialize(const PointShadowMap& component)
+	{
+		return JsonObject()
+			.Property("bias", component.map.shadow->bias)
+			.Property("biasMin", component.map.shadow->biasMin)
+			.Property("far", component.map.shadow->far)
+			.Property("near", component.map.shadow->near)
+			.Property("fbSize", component.map.fb->Width())
+			.Property("fbDepth", (int)component.map.fb->Depth()->GetAttributes().format);
+	}
+	template<> PointShadowMap& JsonComponentDeserializer<PointShadowMap>::Deserialize(const JsonObject& json)
+	{
+		return entity.AddComponent<PointShadowMap>([&](PointShadowMap& comp)
+			{
+				json.Get("bias", comp.map.shadow->bias)
+					.Get("biasMin", comp.map.shadow->biasMin)
+					.Get("far", comp.map.shadow->far)
+					.Get("near", comp.map.shadow->near);
+				comp.map.SetFramebuffer(json.Get<uint32_t>("fbSize"), 
+					(Renderer::TextureFormat)json.Get<int>("fbDepth"));
+			});
 	}
 	template<> JsonObject JsonComponentSerializer<Components::Physics>::Serialize(const Components::Physics& component)
 	{

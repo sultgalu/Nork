@@ -31,37 +31,77 @@ namespace Nork::Editor {
 		auto dir = dirLight.light->direction;
 		changed |= ImGui::Checkbox("Sun", &dirLight.sun);
 		changed |= ImGui::SliderFloat3("Direction", &dirLight.light->direction.x, -1.01, 1.01);
-		changed |= ImGui::SliderFloat("outOfProjValue", &dirLight.light->outOfProjValue, 0, 1);
+		changed |= ImGui::SliderFloat("Out Of Proj Value", &dirLight.light->outOfProjValue, 0, 1);
 		changed |= ImGui::ColorEdit3("Color", &(dirLight.light->color.r));
-		changed |= ImGui::DragFloat2("Left, Right", &dirLight.left);
-		changed |= ImGui::DragFloat2("Bottom, Top", &dirLight.bottom);
-		changed |= ImGui::DragFloat2("Near, Far", &dirLight.near);
-
-		if (dirLight.shadow == nullptr)
+		changed |= ImGui::DragFloat3("Position", &dirLight.position.x);
+		changed |= ImGui::DragFloat3("Rectangle", &dirLight.rectangle.x);
+		
+		if (!node->GetEntity().HasComponent<Components::DirShadowMap>())
 		{
 			if (ImGui::Button("Add shadow"))
 			{
-				node->GetEntity().AddComponent<Components::DirShadowRequest>();
+				node->GetEntity().AddComponent<Components::DirShadowMap>();
 			}
 		}
 		else if (ImGui::TreeNode("Shadow"))
 		{
-			changed |= ImGui::DragFloat("Bias", (float*)&(dirLight.shadow->bias), 0.001f);
-			changed |= ImGui::DragFloat("min Bias", (float*)&(dirLight.shadow->biasMin), 0.001f);
+			auto& shadowMap = node->GetEntity().GetComponent<Components::DirShadowMap>().map;
+			ImGui::DragFloat("Bias", (float*)&(shadowMap.shadow->bias), 0.001f);
+			ImGui::DragFloat("min Bias", (float*)&(shadowMap.shadow->biasMin), 0.001f);
 
+			auto tex = shadowMap.fb->Depth();
 			static auto imgSize = 100;
-			auto tex = dirLight.shadow->shadowMap.Get();
 			ImGui::Image((ImTextureID)tex->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
 				ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
 			ImGui::DragInt("Image Size", &imgSize, 1, 50, 500);
 			ImGui::Text("Width: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->GetWidth()).c_str());
 			ImGui::Text("Height: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->GetHeight()).c_str());
 			ImGui::Text("Format: "); ImGui::SameLine(); ImGui::Text(Renderer::TextureFormatToString(tex->GetAttributes().format));
-
-			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
-			if (ImGui::Button("Delete"))
+			static bool fix = false;
+			static glm::ivec2 newSize;
+			static Renderer::TextureFormat newFormat;
+			if (ImGui::Button("Change Resolution##DirLi"))
 			{
-				node->GetEntity().RemoveComponent<Components::DirShadowRequest>();
+				ImGui::OpenPopup("chgrespshad##dir");
+				newSize = { tex->GetWidth() , tex->GetHeight() };
+				newFormat = tex->GetAttributes().format;
+			}
+			if (ImGui::BeginPopup("chgrespshad##dir"))
+			{
+				auto formatSelector = [&](Renderer::TextureFormat format)
+				{
+					ImGui::RadioButton(Renderer::TextureFormatToString(format), (int*)&newFormat, (int)format);
+				};
+				formatSelector(Renderer::TextureFormat::Depth16); ImGui::SameLine();
+				formatSelector(Renderer::TextureFormat::Depth24);
+				formatSelector(Renderer::TextureFormat::Depth32); ImGui::SameLine();
+				formatSelector(Renderer::TextureFormat::Depth32F);
+				ImGui::Checkbox("Fix to VP ratio", &fix);
+				if (fix)
+				{
+					ImGui::InputInt("New Size (1 Dimension)", &newSize.x);
+					if (ImGui::Button("OK"))
+					{
+						node->GetEntity().AddComponent<Components::DirShadowMap>().FixTextureRatio(dirLight, glm::pow(newSize.x, 2));
+						ImGui::CloseCurrentPopup();
+					}
+				}
+				else
+				{
+					ImGui::InputInt("New Width", &newSize.x);
+					ImGui::InputInt("New Height", &newSize.y);
+					if (ImGui::Button("OK"))
+					{
+						shadowMap.SetFramebuffer(newSize.x, newSize.y, newFormat);
+						ImGui::CloseCurrentPopup();
+					}
+				}
+				ImGui::EndPopup();
+			}
+			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
+			if (ImGui::Button("Remove Shadow Map##Dir"))
+			{
+				node->GetEntity().RemoveComponent<Components::DirShadowMap>();
 			}
 			ImGui::PopStyleColor();
 
@@ -76,29 +116,55 @@ namespace Nork::Editor {
 		if (changed |= ImGui::DragInt("Intensity", &(pow), 1, 0, 10000))
 			pointLight.SetIntensity(pow);
 
-		if (pointLight.shadow == nullptr)
+		if (!node->GetEntity().HasComponent<Components::PointShadowMap>())
 		{
 			if (ImGui::Button("Add shadow"))
 			{
-				node->GetEntity().AddComponent<Components::PointShadowRequest>();
+				node->GetEntity().AddComponent<Components::PointShadowMap>();
 			}
 		}
 		else if (ImGui::TreeNode("Shadow"))
 		{
-			changed |= ImGui::SliderFloat("Bias", (float*)&(pointLight.shadow->bias), 0, 1);
-			changed |= ImGui::SliderFloat("min Bias", (float*)&(pointLight.shadow->biasMin), 0, 1);
-			changed |= ImGui::SliderFloat("Near", (float*)&(pointLight.shadow->near), 0, 1);
-			changed |= ImGui::SliderFloat("Far", (float*)&(pointLight.shadow->far), 0, 1000, "%.1f", ImGuiSliderFlags_Logarithmic);
+			auto& shadowMap = node->GetEntity().GetComponent<Components::PointShadowMap>().map;
+			ImGui::SliderFloat("Bias", (float*)&(shadowMap.shadow->bias), 0, 1);
+			ImGui::SliderFloat("min Bias", (float*)&(shadowMap.shadow->biasMin), 0, 1);
+			ImGui::SliderFloat("Near", (float*)&(shadowMap.shadow->near), 0, 1);
+			ImGui::SliderFloat("Far", (float*)&(shadowMap.shadow->far), 0, 1000, "%.1f", ImGuiSliderFlags_Logarithmic);
 
-			auto tex = pointLight.shadow->shadowMap.Get();
-			ImGui::Text("Width: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->GetWidth()).c_str());
-			ImGui::Text("Height: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->GetHeight()).c_str());
+			auto tex = shadowMap.fb->Depth();
+			ImGui::Text("Size: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->GetWidth()).c_str());
 			ImGui::Text("Format: "); ImGui::SameLine(); ImGui::Text(Renderer::TextureFormatToString(tex->GetAttributes().format));
+			static int newSize;
+			static Renderer::TextureFormat newFormat;
+			if (ImGui::Button("Change Resolution"))
+			{
+				ImGui::OpenPopup("chgrespshad");
+				newSize = tex->GetWidth();
+				newFormat = tex->GetAttributes().format;
+			}
+			if (ImGui::BeginPopup("chgrespshad"))
+			{
+				ImGui::InputInt("New Size", &newSize);
+				auto formatSelector = [&](Renderer::TextureFormat format)
+				{
+					ImGui::RadioButton(Renderer::TextureFormatToString(format), (int*)&newFormat, (int)format);
+				};
+				formatSelector(Renderer::TextureFormat::Depth16); ImGui::SameLine();
+				formatSelector(Renderer::TextureFormat::Depth24);
+				formatSelector(Renderer::TextureFormat::Depth32); ImGui::SameLine();
+				formatSelector(Renderer::TextureFormat::Depth32F);
+				if (ImGui::Button("OK"))
+				{
+					shadowMap.SetFramebuffer(newSize, newFormat);
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::EndPopup();
+			}
 
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 			if (ImGui::Button("Remove Shadow"))
 			{
-				pointLight.shadow = nullptr;
+				node->GetEntity().RemoveComponent<Components::PointShadowMap>();
 			}
 			ImGui::PopStyleColor();
 
@@ -182,22 +248,10 @@ namespace Nork::Editor {
 				ImGui::Text("Material ID:"); ImGui::SameLine();
 				ImGui::Text(matPath.has_value() ? (*matPath).c_str() : "unkown");
 
-				if (ImGui::ColorEdit3("diffuse", &dr.model->meshes[meshIdx].material->diffuse.r, ImGuiColorEditFlags_DefaultOptions_ | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float))
-				{
-					dr.model->meshes[meshIdx].material->Update();
-				}
-				// if (ImGui::SliderFloat3("diffuse", &dr.model->meshes[meshIdx].material->diffuse.r, 0, 1))
-				// {
-				// 	dr.model->meshes[meshIdx].material->Update();
-				// }
-				if (ImGui::SliderFloat("specular", &dr.model->meshes[meshIdx].material->specular, 0, 10))
-				{
-					dr.model->meshes[meshIdx].material->Update();
-				}
-				if (ImGui::SliderFloat("spec-exp", &dr.model->meshes[meshIdx].material->specularExponent, 0, 1024, "%.0f", ImGuiSliderFlags_Logarithmic))
-				{
-					dr.model->meshes[meshIdx].material->Update();
-				}
+				ImGui::ColorEdit3("diffuse", &dr.model->meshes[meshIdx].material->diffuse.r, ImGuiColorEditFlags_DefaultOptions_ | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
+				ImGui::SliderFloat("specular", &dr.model->meshes[meshIdx].material->specular, 0, 10);
+				ImGui::SliderFloat("spec-exp", &dr.model->meshes[meshIdx].material->specularExponent, 0, 1024, "%.0f", ImGuiSliderFlags_Logarithmic);
+				
 				if (ImGui::Button("Save Material"))
 				{
 					GetEngine().resourceManager.SaveMaterial(dr.model->meshes[meshIdx].material);
@@ -206,7 +260,7 @@ namespace Nork::Editor {
 				{
 					auto displayTex = [&](Renderer::TextureMap type)
 					{
-						auto tex = dr.model->meshes[meshIdx].material->GetTextureMap(type);
+						auto tex = dr.model->meshes[meshIdx].material.GetTextureMap(type);
 						ImGui::Image((ImTextureID)tex->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
 							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
 						ImGui::Text("Width: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->GetWidth()).c_str());
@@ -216,8 +270,7 @@ namespace Nork::Editor {
 						ImGui::EndTabItem();
 						if (ImGui::Button("Default"))
 						{
-							dr.model->meshes[meshIdx].material->SetDefaultTexture(type);
-							dr.model->meshes[meshIdx].material->Update();
+							dr.model->meshes[meshIdx].material.SetDefaultTexture(type);
 						}
 						if (ImGui::Button("Load texture"))
 						{
@@ -227,8 +280,7 @@ namespace Nork::Editor {
 								auto newTex = GetEngine().resourceManager.GetTextureByPath(p);
 								if (newTex != nullptr)
 								{
-									dr.model->meshes[meshIdx].material->SetTextureMap(newTex, type);
-									dr.model->meshes[meshIdx].material->Update();
+									dr.model->meshes[meshIdx].material.SetTextureMap(newTex, type);
 								}
 							}
 						}
@@ -241,8 +293,7 @@ namespace Nork::Editor {
 								auto newTex = GetEngine().resourceManager.GetTexture(p);
 								if (newTex != nullptr)
 								{
-									dr.model->meshes[meshIdx].material->SetTextureMap(newTex, type);
-									dr.model->meshes[meshIdx].material->Update();
+									dr.model->meshes[meshIdx].material.SetTextureMap(newTex, type);
 								}
 							}
 						}
@@ -297,7 +348,7 @@ namespace Nork::Editor {
 					if (ImGui::InputText("", matNameBuf, sizeof(matNameBuf), ImGuiInputTextFlags_EnterReturnsTrue))
 					{
 						auto clone = GetEngine().resourceManager.CloneMaterial(dr.model->meshes[meshIdx].material, matNameBuf);
-						if (clone != nullptr)
+						if (clone != dr.model->meshes[meshIdx].material)
 							dr.model->meshes[meshIdx].material = clone;
 						ImGui::CloseCurrentPopup();
 					}
@@ -400,11 +451,8 @@ namespace Nork::Editor {
 		bool changed = false;
 		fun(copy, changed);
 		if (changed)
-		{
 			ent.ReplaceComponent(copy);
-			return true;
-		}
-		return false;
+		return changed;
 	}
 
 	template<class T>
@@ -468,9 +516,9 @@ namespace Nork::Editor {
 							auto& mesh = ent.GetComponent<Components::Drawable>().model->meshes[0].mesh;
 							// mesh->GetVaoWrapper().GetVertexWrapper().Erase(mesh->GetVertexPtr());
 							// mesh->GetVaoWrapper().GetIndexWrapper().Erase(mesh->GetIndexPtr());
-							auto vertPtr = mesh->GetVaoWrapper().GetVertexWrapper().Add(vertices.data(), vertices.size());
-							auto idxPtr = mesh->GetVaoWrapper().GetIndexWrapper().Add((uint32_t*)poly.triangles.data(), poly.triangles.size() * 3);
-							mesh = std::make_shared<Renderer::Mesh>(mesh->GetVaoWrapper(), vertPtr, idxPtr, vertices.size(), poly.triangles.size() * 3);
+							// auto vertPtr = mesh->GetVaoWrapper().GetVertexWrapper().Add(vertices.data(), vertices.size());
+							// auto idxPtr = mesh->GetVaoWrapper().GetIndexWrapper().Add((uint32_t*)poly.triangles.data(), poly.triangles.size() * 3);
+							// mesh = std::make_shared<Renderer::Mesh>(mesh->GetVaoWrapper(), vertPtr, idxPtr, vertices.size(), poly.triangles.size() * 3);
 							// vbo.Erase()
 						}
 					}

@@ -19,7 +19,7 @@ namespace Nork::Editor {
 
 	void ViewportView::Content()
 	{
-		auto texture = sceneView->fb->Color();
+		auto texture = sceneView->pipeline->FinalTexture();
 
 		glm::vec2 texSize(texture->GetWidth(), texture->GetHeight());
 		glm::vec2 displaySize = GetDisplaySize(texSize);

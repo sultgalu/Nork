@@ -15,7 +15,6 @@ out vec4 lightViewPos; // new
 out mat3 TBN;
 out vec3 vNorm;
 
-uniform mat4 model;
 uniform mat4 VP;
 
 layout(std140, binding = 5) uniform asd5
@@ -40,7 +39,7 @@ layout(std140, binding = 6) uniform asd6
 };
 layout(std140, binding = 7) uniform asd8
 {
-	uvec4 modelMatIndexes[1]; // uvec2 and uvec4 have the same stride, so using the latter is more memory efficient, just a little more complicated in indexing
+	uvec4 modelMatIndexes[10]; // uvec2 and uvec4 have the same stride, so using the latter is more memory efficient, just a little more complicated in indexing
 };
 flat out Material material;
 
@@ -48,7 +47,7 @@ void main()
 {
 	uint drawIdx = gl_BaseInstance + gl_InstanceID;
 	uint modelIdx = modelMatIndexes[drawIdx / 2][(drawIdx % 2) * 2];
-	uint matIdx =   modelMatIndexes[drawIdx / 2][(drawIdx % 2) * 2 + 1];
+	uint matIdx = modelMatIndexes[drawIdx / 2][(drawIdx % 2) * 2 + 1];
 	material = materials[matIdx];
 	mat4 _model = models[modelIdx];
 

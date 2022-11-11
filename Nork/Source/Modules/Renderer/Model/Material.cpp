@@ -17,19 +17,18 @@ namespace Nork::Renderer {
 		static auto rough = CreateTexture2D(TextureFormat::R32F, { 0.5f });
 		return { diff, norm, rough, refl };
 	}
-	Material::Material(std::shared_ptr<Data::Material*> ptr)
-		: ptr(ptr)
+	Material::Material(SmartMappedBuffer<Data::Material>::Element element)
+		: material(element)
 	{
 		textureMaps = GetDefaultTextureMaps();
 
-		diffuseMap = textureMaps[std::to_underlying(TextureMap::Diffuse)]->GetBindlessHandle();
-		normalsMap = textureMaps[std::to_underlying(TextureMap::Normal)]->GetBindlessHandle();
-		roughnessMap = textureMaps[std::to_underlying(TextureMap::Roughness)]->GetBindlessHandle();
-		reflectMap = textureMaps[std::to_underlying(TextureMap::Reflection)]->GetBindlessHandle();
-		diffuse = { 1, 1, 1 };
-		specular = 1;
-		specularExponent = 128;
-		Update();
+		material->diffuseMap = textureMaps[std::to_underlying(TextureMap::Diffuse)]->GetBindlessHandle();
+		material->normalsMap = textureMaps[std::to_underlying(TextureMap::Normal)]->GetBindlessHandle();
+		material->roughnessMap = textureMaps[std::to_underlying(TextureMap::Roughness)]->GetBindlessHandle();
+		material->reflectMap = textureMaps[std::to_underlying(TextureMap::Reflection)]->GetBindlessHandle();
+		material->diffuse = { 1, 1, 1 };
+		material->specular = 1;
+		material->specularExponent = 128;
 	}
 	void Material::SetDefaultTexture(TextureMap type)
 	{

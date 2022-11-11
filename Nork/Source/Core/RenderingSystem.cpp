@@ -2,81 +2,162 @@
 #include "Modules/Renderer/Objects/Framebuffer/GeometryFramebufferBuilder.h"
 #include "Modules/Renderer/Objects/Framebuffer/LightFramebufferBuilder.h"
 #include "Modules/Renderer/Objects/Shader/ShaderBuilder.h"
-#include "Modules/Renderer/Pipeline/PostProcess/SkyRenderer.h"
 #include "Modules/Renderer/LoadUtils.h"
-#include "Modules/Renderer/Objects/Buffer/BufferBuilder.h"
 #include "Modules/Renderer/Objects/VertexArray/VertexArrayBuilder.h"
 #include "Modules/Renderer/Pipeline/Stages/BloomStage.h"
 #include "Modules/Renderer/Pipeline/Stages/PostProcessStage.h"
 #include "Modules/Renderer/Pipeline/Stages/SkyStage.h"
 #include "Modules/Renderer/Pipeline/Stages/SkyboxStage.h"
+#include "Modules/Renderer/Pipeline/Stages/ShadowMapStage.h"
 
 namespace Nork {
+	void RenderingSystem::UpdateDrawCommands()
+	{
+		std::vector<Renderer::Object> deferredObjects;
+		std::vector<Renderer::Object> shadowedObjects;
+		auto group = registry.group<Components::Drawable, Components::Transform>();
+		deferredObjects.reserve(group.size());
+		shadowedObjects.reserve(group.size());
+		auto add = [&](const Components::Drawable& dr, std::vector<Renderer::Object>& to)
+		{
+			for (auto& mesh : dr.model->meshes)
+			{
+				to.push_back(Renderer::Object{ .mesh = mesh.mesh, .material = mesh.material, .modelMatrix = dr.modelMatrix });
+			}
+		};
+		for (auto [id, dr, tr] : group.each())
+		{
+			if (true) // eg.: its material has a deferredShader
+			{
+				add(dr, deferredObjects);
+			}
+			if (true) // eg.: not opaque
+			{
+				add(dr, shadowedObjects);
+			}
+		}
+		deferredDrawCommand = Renderer::DrawObjectsCommand(world.vao, deferredObjects);
+		shadowMapDrawCommand = Renderer::DrawObjectsCommand(world.vao, shadowedObjects);
+	}
+	void RenderingSystem::OnDrawableUpdated(entt::registry& reg, entt::entity id)
+	{
+		shouldUpdateDrawCommands = true;
+	}
+	void RenderingSystem::OnDrawableAdded(entt::registry& reg, entt::entity id)
+	{
+		auto& dr = reg.get<Components::Drawable>(id);
+		auto tr = reg.try_get<Components::Transform>(id);
+		dr.modelMatrix = world.AddModel();
+		if (tr)
+			*dr.modelMatrix = tr->RecalcModelMatrix();
+		if (dr.model == nullptr || dr.model->meshes.empty())
+			dr.model = resourceManager.GetModel("");
+		shouldUpdateDrawCommands = true;
+	}
+	void RenderingSystem::UpdateDirLightShadows()
+	{
+		Renderer::LightShadowIndices idxs;
+		shadowMapProvider.dShadMaps.clear();
+
+		auto ls = registry.view<Components::DirShadowMap>();
+		auto l = registry.view<Components::DirLight>(entt::exclude<Components::DirShadowMap>);
+		idxs.lightAndShadows.reserve(ls.size());
+		idxs.lights.reserve(l.size_hint());
+		for (auto [id, shadMap] : ls.each())
+		{
+			idxs.lightAndShadows.push_back({ shadMap.map.light.Index(), shadMap.map.shadow.Index() });
+			shadowMapProvider.dShadMaps.push_back(shadMap.map);
+		}
+		for (auto [id, light] : l.each())
+		{
+			idxs.lights.push_back(light.light.Index());
+		}
+		world.DirLightIndices(idxs);
+	}
+	void RenderingSystem::UpdatePointLightShadows()
+	{
+		Renderer::LightShadowIndices idxs;
+		shadowMapProvider.pShadMaps.clear();
+
+		auto ls = registry.view<Components::PointShadowMap>();
+		auto l = registry.view<Components::PointLight>(entt::exclude<Components::PointShadowMap>);
+		idxs.lightAndShadows.reserve(ls.size());
+		idxs.lights.reserve(l.size_hint());
+		for (auto [id, shadMap] : ls.each())
+		{
+			idxs.lightAndShadows.push_back({ shadMap.map.light.Index(), shadMap.map.shadow.Index() });
+			shadowMapProvider.pShadMaps.push_back(shadMap.map);
+		}
+		for (auto [id, light] : l.each())
+		{
+			idxs.lights.push_back(light.light.Index());
+		}
+		world.PointLightIndices(idxs);
+	}
 	void RenderingSystem::OnDLightAdded(entt::registry& reg, entt::entity id)
 	{
 		auto& light = reg.get<Components::DirLight>(id);
-		light.light = drawState.AddDirLight();
-		light.light->Update();
+		light.light = world.AddDirLight();
+		light.RecalcVP();
+		shouldUpdateDirLightAndShadows = true;
 	}
 	void RenderingSystem::OnPLightAdded(entt::registry& reg, entt::entity id)
 	{
 		auto& light = reg.get<Components::PointLight>(id);
-		light.light = drawState.AddPointLight();
+		light.light = world.AddPointLight();
 		light.SetIntensity(50);
-		light.light->Update();
+		shouldUpdatePointLightAndShadows = true;
 	}
 	void RenderingSystem::OnDShadAdded(entt::registry& reg, entt::entity id)
 	{
 		auto& light = reg.get<Components::DirLight>(id);
-		light.shadow = drawState.AddDirShadow(light.light, shaders.dShadowShader, { 4000, 4000 }, Renderer::TextureFormat::Depth16);
-		//reg.remove<Components::DirShadowRequest>(id);
+		auto shadow = world.AddDirShadow();
+		Renderer::DirShadowMap map(light.light, shadow);
+		map.SetFramebuffer(4000, 4000, Renderer::TextureFormat::Depth16);
+		reg.get<Components::DirShadowMap>(id).map = map;
+		shouldUpdateDirLightAndShadows = true;
 	}
 	void RenderingSystem::OnPShadAdded(entt::registry& reg, entt::entity id)
 	{
 		auto& light = reg.get<Components::PointLight>(id);
-		light.shadow = drawState.AddPointShadow(light.light, shaders.pShadowShader, 100, Renderer::TextureFormat::Depth16);
-		//reg.remove<Components::PointShadowRequest>(id);
+		auto shadow = world.AddPointShadow();
+		Renderer::PointShadowMap map(light.light, shadow);
+		map.SetFramebuffer(100, Renderer::TextureFormat::Depth16);
+		reg.get<Components::PointShadowMap>(id).map = map;
+		shouldUpdatePointLightAndShadows = true;
 	}
 
 	void RenderingSystem::OnDShadRemoved(entt::registry& reg, entt::entity id)
 	{
-		auto& light = reg.get<Components::DirLight>(id);
-		drawState.RemoveDirShadow(light.shadow);
-		light.shadow = nullptr;
+		shouldUpdateDirLightAndShadows = true;
 	}
 	void RenderingSystem::OnPShadRemoved(entt::registry& reg, entt::entity id)
 	{
-		auto& light = reg.get<Components::PointLight>(id);
-		drawState.RemovePointShadow(light.shadow);
-		light.shadow = nullptr;
+		shouldUpdatePointLightAndShadows = true;
 	}
 	void RenderingSystem::OnDLightRemoved(entt::registry& reg, entt::entity id)
 	{
-		reg.remove<Components::DirShadowRequest>(id); // remove shadow first from UBO
-		auto& light = reg.get<Components::DirLight>(id);
-		drawState.RemoveDirLight(light.light);
-		light.shadow = nullptr;
+		reg.remove<Components::DirShadowMap>(id);
+		shouldUpdateDirLightAndShadows = true;
 	}
 	void RenderingSystem::OnPLightRemoved(entt::registry & reg, entt::entity id)
 	{
-		reg.remove<Components::PointShadowRequest>(id); // remove shadow first from UBO
-		auto& light = reg.get<Components::PointLight>(id);
-		drawState.RemovePointLight(light.light);
-		light.shadow = nullptr;
+		reg.remove<Components::PointShadowMap>(id);
+		shouldUpdatePointLightAndShadows = true;
 	}
 	RenderingSystem::RenderingSystem(entt::registry& registry)
-		: registry(registry),
-		drawBatch(drawState.modelMatrixBuffer, drawState.materialBuffer, drawState.vaoWrapper)
+		: registry(registry)
 	{
-		registry.on_construct<Components::DirShadowRequest>().connect<&RenderingSystem::OnDShadAdded>(this);
-		registry.on_construct<Components::PointShadowRequest>().connect<&RenderingSystem::OnPShadAdded>(this);
+		registry.on_update<Components::Drawable>().connect<&RenderingSystem::OnDrawableUpdated>(this);
+		registry.on_construct<Components::Drawable>().connect<&RenderingSystem::OnDrawableAdded>(this);
+		
+		registry.on_construct<Components::DirShadowMap>().connect<&RenderingSystem::OnDShadAdded>(this);
+		registry.on_construct<Components::PointShadowMap>().connect<&RenderingSystem::OnPShadAdded>(this);
+		registry.on_destroy<Components::DirShadowMap>().connect<&RenderingSystem::OnDShadRemoved>(this);
+		registry.on_destroy<Components::PointShadowMap>().connect<&RenderingSystem::OnPShadRemoved>(this);
 
 		registry.on_construct<Components::DirLight>().connect<&RenderingSystem::OnDLightAdded>(this);
 		registry.on_construct<Components::PointLight>().connect<&RenderingSystem::OnPLightAdded>(this);
-
-		registry.on_destroy<Components::DirShadowRequest>().connect<&RenderingSystem::OnDShadRemoved>(this);
-		registry.on_destroy<Components::PointShadowRequest>().connect<&RenderingSystem::OnPShadRemoved>(this);
-
 		registry.on_destroy<Components::DirLight>().connect<&RenderingSystem::OnDLightRemoved>(this);
 		registry.on_destroy<Components::PointLight>().connect<&RenderingSystem::OnPLightRemoved>(this);
 
@@ -92,26 +173,6 @@ namespace Nork {
 		// sceneView->pipeline->stages.push_back(CreateStage<Renderer::BloomStage>(*sceneView->pipeline));
 		// sceneView->pipeline->stages.push_back(CreateStage<Renderer::PostProcessStage>(*sceneView->pipeline));
 		//sceneViews.insert(sceneView);
-	}
-	void RenderingSystem::DrawBatchUpdate()
-	{
-		drawBatch.Clear();
-		auto group = registry.group<Components::Drawable, Components::Transform>();
-
-		for (auto [id, dr, tr] : registry.group<Components::Drawable, Components::Transform>().each())
-		{
-			**dr.modelMatrix = tr.modelMatrix;
-			for (auto& mesh : dr.model->meshes)
-			{
-				drawBatch.AddElement(Renderer::BatchElement{
-					.mesh = mesh.mesh,
-					.material = mesh.material,
-					.modelMatrix = dr.modelMatrix
-					});
-			}
-		}
-
-		drawBatch.GenerateDrawCommand();
 	}
 	void RenderingSystem::UpdateGlobalUniform()
 	{
@@ -132,16 +193,10 @@ namespace Nork {
 	}
 	void RenderingSystem::UpdateLights()
 	{
-		using namespace Components;
-
 		for (const auto ent : dirLightObserver)
 		{
-			auto& dl = registry.get<DirLight>(ent);
+			auto& dl = registry.get<Components::DirLight>(ent);
 			dl.RecalcVP();
-			if (dl.shadow)
-			{
-				dl.shadow->Update();
-			}
 			if (dl.sun)
 			{
 				float height = glm::normalize(-dl.light->direction).y;
@@ -152,35 +207,14 @@ namespace Nork {
 				dl.light->color.a = std::clamp(height + 0.2f, 0.0f, 0.3f) * 2.0f;
 				shaders.skyShader->Use().SetVec3("lightPos", -dl.light->direction);
 			}
-			dl.light->Update();
 		}
 		dirLightObserver.clear();
 		for (const auto ent : pointLightObserver)
 		{
-			auto& pl= registry.get<PointLight>(ent);
-			pl.light->position = registry.get<Transform>(ent).Position();
-			pl.light->Update();
-			if (pl.shadow)
-			{
-				pl.shadow->Update();
-			}
+			auto& pl= registry.get<Components::PointLight>(ent);
+			pl.light->position = registry.get<Components::Transform>(ent).Position();
 		}
 		pointLightObserver.clear();
-
-		for (auto [id, light] : registry.view<DirLight>().each())
-		{
-			if (light.shadow != nullptr)
-			{
-				light.shadow->shadowMap.Render(*light.light, *light.shadow, { drawBatch.GetDrawCommand() });
-			}
-		}
-		for (auto [id, light] : registry.view<PointLight>().each())
-		{
-			if (light.shadow != nullptr)
-			{
-				light.shadow->shadowMap.Render(*light.light, *light.shadow, { drawBatch.GetDrawCommand() });
-			}
-		}
 	}
 	void RenderingSystem::ViewProjectionUpdate(Components::Camera& camera)
 	{
@@ -198,12 +232,30 @@ namespace Nork {
 	void RenderingSystem::BeginFrame()
 	{
 		UpdateLights();
+		if (shouldUpdateDrawCommands)
+		{
+			UpdateDrawCommands();
+			shouldUpdateDrawCommands = false;
+		}
+		if (shouldUpdateDirLightAndShadows)
+		{
+			UpdateDirLightShadows();
+			shouldUpdateDirLightAndShadows = false;
+		}
+		if (shouldUpdatePointLightAndShadows)
+		{
+			UpdatePointLightShadows();
+			shouldUpdatePointLightAndShadows = false;
+		}
 		if (globalShaderUniform.IsChanged())
 		{
 			UpdateGlobalUniform();
 			Logger::Info("Updating");
 		}
-		DrawBatchUpdate();
+		for (auto [id, dr, tr] : registry.group<Components::Drawable, Components::Transform>().each())
+		{
+			*dr.modelMatrix = tr.modelMatrix;
+		}
 	}
 	void RenderingSystem::Update()
 	{
@@ -213,16 +265,7 @@ namespace Nork {
 			if (globalShaderUniform.IsChanged())
 				UpdateGlobalUniform();
 			ViewProjectionUpdate(*sceneView->camera);
-			// needs to be done only if multiple views have the same pipeline, but not expensive anyway
 			sceneView->pipeline->Run();
-			// sceneView->pipeline->FinalTexture()->Bind2D();
-			// sceneView->fb->Bind().SetViewport();
-			// shaders.textureShader->Use();
-			// Renderer::Capabilities()
-			// 	.Disable().DepthTest().Blend();
-			// Renderer::DrawUtils::DrawQuad();
-
-			sceneView->fb = sceneView->pipeline->source;
 		}
 		delta = t.Elapsed();
 	}
@@ -232,16 +275,17 @@ namespace Nork {
 	}
 	void RenderingSystem::DrawToScreen(int w, int h)
 	{
-		Renderer::Capabilities()
-			.Disable().DepthTest().CullFace().Blend();
-
-		(*sceneViews.begin()).get()->fb->Color()->Bind2D();
-		shaders.textureShader->Use()
-			.SetInt("tex", 0);
-
-		Renderer::Framebuffer::BindDefault();
-		glViewport(0, 0, w, h);
-		Renderer::DrawUtils::DrawQuad();
+		std::abort(); // make a static method Framebuffer::Default(), use that as target in a pipeline
+		// Renderer::Capabilities()
+		// 	.Disable().DepthTest().CullFace().Blend();
+		// 
+		// (*sceneViews.begin()).get()->fb->Color()->Bind2D();
+		// shaders.textureShader->Use()
+		// 	.SetInt("tex", 0);
+		// 
+		// Renderer::Framebuffer::BindDefault();
+		// glViewport(0, 0, w, h);
+		// Renderer::DrawUtils::DrawQuad();
 	}
 
 	static std::string GetFileContent(std::string path)
@@ -251,16 +295,16 @@ namespace Nork {
 		ss << ifs.rdbuf();
 		return ss.str();
 	}
-	static Renderer::ShaderType GetTypeByString(std::string_view str)
+	static Renderer::ShaderType GetTypeByString(const std::string& str)
 	{
 		using enum Renderer::ShaderType;
-		if (str._Equal("vertex")) [[likely]]
+		if (str == "vertex") [[likely]]
 			return Vertex;
-		else if (str._Equal("fragment"))
+		else if (str == "fragment") [[likely]]
 			return Fragment;
-		else if (str._Equal("geometry"))
+		else if (str == "geometry")
 			return Geometry;
-		else if (str._Equal("compute"))
+		else if (str == "compute")
 			return Compute;
 
 		Logger::Error("ERR:: Unkown shader type ", str);
@@ -383,7 +427,7 @@ namespace Nork {
 	template<> std::shared_ptr<Renderer::DeferredStage> RenderingSystem::ConstructStage(Renderer::Pipeline& dest)
 	{
 		return std::make_shared<Renderer::DeferredStage>(std::dynamic_pointer_cast<Renderer::Texture2D>(dest.source->Depth()),
-			shaders.gPassShader, shaders.lPassShader, this);
+			shaders.gPassShader, shaders.lPassShader, &deferredDrawCommand);
 	}
 	template<> std::shared_ptr<Renderer::PostProcessStage> RenderingSystem::ConstructStage(Renderer::Pipeline& dest)
 	{
@@ -398,16 +442,8 @@ namespace Nork {
 		auto images = Renderer::LoadUtils::LoadCubemapImages("Resources/Textures/skybox", ".jpg");
 		return std::make_shared<Renderer::SkyboxStage>(shaders.skyboxShader, images);
 	}
-
-	void SceneView::CreateFb()
+	template<> std::shared_ptr<Renderer::ShadowMapStage> RenderingSystem::ConstructStage(Renderer::Pipeline& dest)
 	{
-		using namespace Renderer;
-		fb = Renderer::FramebufferBuilder()
-			.Attachments(FramebufferAttachments()
-				.Color(TextureBuilder()
-					.Attributes(pipeline->source->GetAttachments().colors[0].first->GetAttributes())
-					.Params(TextureParams::FramebufferTex2DParams())
-					.Create2DEmpty(), 0))
-			.Create();
+		return std::make_shared<Renderer::ShadowMapStage>(shaders.dShadowShader, shaders.pShadowShader, &shadowMapDrawCommand, &shadowMapProvider);
 	}
 }

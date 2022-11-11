@@ -5,6 +5,9 @@
 #include "App/Application.h"
 #include "Modules/Renderer/State/Capabilities.h"
 #include "Modules/Renderer/Objects/Framebuffer/FramebufferBuilder.h"
+#include "Modules/Renderer/Objects/VertexArray/VertexArrayBuilder.h"
+#include "Modules/Renderer/Objects/Texture/TextureBuilder.h"
+#include "Modules/Renderer/Objects/Buffer/BufferBuilder.h"
 #include "Modules/Renderer/DrawUtils.h"
 #include "PolygonBuilder.h"
 
@@ -21,7 +24,6 @@ namespace Nork
 		scriptSystem(scene)
 	{
 		_engine = this;
-		scene.registry.on_construct<Components::Drawable>().connect<&Engine::OnDrawableAdded>(this);
 		scene.registry.on_construct<Components::Physics>().connect<&Engine::OnPhysicsAdded>(this);
 		scene.registry.on_destroy<Components::Physics>().connect<&Engine::OnPhysicsRemoved>(this);
 		transformObserver.connect(scene.registry, entt::collector.update<Components::Transform>());
@@ -29,14 +31,6 @@ namespace Nork
 		renderingSystem.globalShaderUniform.lineColor.r += 0.1f;
 		renderingSystem.globalShaderUniform.lineColor.g += 0.2f;
 		renderingSystem.globalShaderUniform.triColor.a = 0.8f;
-	}
-	void Engine::OnDrawableAdded(entt::registry& reg, entt::entity id)
-	{
-		auto& dr = reg.get<Components::Drawable>(id);
-		dr.model = resourceManager.GetModel("");
-	
-		auto* tr = reg.try_get<Components::Transform>(id);
-		dr.modelMatrix = renderingSystem.drawState.modelMatrixBuffer.Add(glm::identity<glm::mat4>());
 	}
 	void Engine::OnPhysicsAdded(entt::registry& reg, entt::entity id)
 	{

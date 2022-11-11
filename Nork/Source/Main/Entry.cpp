@@ -39,8 +39,8 @@ int main()
 		}
 	}*/
 
-	constexpr int levels = 40; //20;
-	constexpr int size = 20; // * 4 = one level
+	constexpr int levels = 5; //20;
+	constexpr int size = 4; // * 4 = one level
 	float sep = 2.1f;
 	constexpr float height = -10;
 	int start = -size / 2;
@@ -49,8 +49,8 @@ int main()
 	auto add = [&](int i, int j, int k)
 	{
 		auto ent = engine.scene.CreateNode()->GetEntity();
-		ent.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
 		ent.AddComponent<Components::Transform>([&](auto& tr) { tr.localPosition = glm::vec3(i * sep, height + 2 + j * sep, k * sep); });
+		ent.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
 		ent.AddComponent<Components::Physics>().Kinem().applyGravity = false;
 		ent.AddComponent<Components::Tag>().tag = std::to_string(i).append("-").append(std::to_string(j)).append("-").append(std::to_string(k));
 	};
@@ -115,9 +115,9 @@ int main()
 	auto ground = engine.scene.CreateNode()->GetEntity();
 	ground.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
 	ground.AddComponent<Components::Transform>([&](auto& tr) {
-		tr.localPosition = glm::vec3(0, -10, 0);
-		tr.localScale = scale;
-		tr.UpdateGlobalWithoutParent();
+			tr.localPosition = glm::vec3(0, -10, 0);
+			tr.localScale = scale;
+			tr.UpdateGlobalWithoutParent();
 		});
 	ground.AddComponent<Components::Physics>([&](Components::Physics& phx)
 		{
@@ -141,25 +141,26 @@ int main()
 	engine.scene.AddComponent<Components::Tag>(node2).tag = "NODE 2";*/
 
 	auto sun = engine.scene.CreateNode()->GetEntity();
-	sun.AddComponent<Components::DirLight>([](auto& l)
+	sun.AddComponent<Components::DirLight>([](Components::DirLight& l)
 		{
 			l.light->direction = { -0.05f, -0.08f, -0.05f };
-			l.far = 100; l.near = -100; l.left = -100; l.right = 100; l.bottom = -100; l.top = 100;
-			l.RecalcVP();
+			l.light->color = glm::vec4(1, 1, 1, 1);
+			l.position = { 0, 0, -100 };
+			l.rectangle = { 200, 200, 200 };
 			l.sun = true;
 		});
 	auto sun2 = engine.scene.CreateNode()->GetEntity();
-	sun2.AddComponent<Components::DirLight>([](auto& l)
+	sun2.AddComponent<Components::DirLight>([](Components::DirLight& l)
 		{
 			l.light->direction = { 0.05f, -0.08f, 0.05f };
 			l.light->color = glm::vec4(1, 1, 1, 1.0f);
-			l.far = 100; l.near = -100; l.left = -100; l.right = 100; l.bottom = -100; l.top = 100;
-			l.RecalcVP();
+			l.position = { 0, 0, -100 };
+			l.rectangle = { 200, 200, 200 };
 		});
 	//l.light->color = glm::vec4(0.5f, 0.4f, 0.25f, 1);
 	//l.SetColor(glm::vec4(0.0f));
 
-	sun.AddComponent<Components::DirShadowRequest>();
+	sun.AddComponent<Components::DirShadowMap>();
 	sun.AddComponent<Components::Tag>().tag = "SUN";
 	
 	int offsX = 10;
@@ -180,7 +181,7 @@ int main()
 				pl.AddComponent<Components::Drawable>();
 				pl.AddComponent<Components::PointLight>().SetIntensity(10);
 				//if (shadows-- > 0)
-					pl.AddComponent<Components::PointShadowRequest>();
+					pl.AddComponent<Components::PointShadowMap>();
 				pl.AddComponent<Components::Tag>().tag = "pointLight" + std::to_string((k-startP) + j * dimP + (i-startP) * dimP * dimP);
 			}
 		}

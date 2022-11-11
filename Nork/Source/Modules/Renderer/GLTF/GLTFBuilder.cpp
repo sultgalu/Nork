@@ -1,16 +1,16 @@
 #include "GLTFBuilder.h"
 
 namespace Nork::Renderer {
-	static GLTF::Buffer WriteIndexBuffer(std::shared_ptr<Renderer::Mesh> mesh, GLTF::Buffer& buffer, const std::string& path)
+	static GLTF::Buffer WriteIndexBuffer(const Renderer::Mesh& mesh, GLTF::Buffer& buffer, const std::string& path)
 	{
-		buffer.byteLength = mesh->GetIndexCount() * sizeof(uint32_t);
-		FileUtils::WriteBinary(*mesh->GetIndexPtr().get(), buffer.byteLength, path);
+		buffer.byteLength = mesh.Indices().SizeBytes() * sizeof(uint32_t);
+		FileUtils::WriteBinary(mesh.Indices().Data(), buffer.byteLength, path);
 		return buffer;
 	}
-	static GLTF::Buffer WriteVertexBuffer(std::shared_ptr<Renderer::Mesh> mesh, GLTF::Buffer& buffer, const std::string& path)
+	static GLTF::Buffer WriteVertexBuffer(const Renderer::Mesh& mesh, GLTF::Buffer& buffer, const std::string& path)
 	{
-		buffer.byteLength = mesh->GetVertexCount() * sizeof(Renderer::Data::Vertex);
-		FileUtils::WriteBinary(*mesh->GetVertexPtr().get(), buffer.byteLength, path);
+		buffer.byteLength = mesh.Vertices().SizeBytes();
+		FileUtils::WriteBinary(mesh.Vertices().Data(), buffer.byteLength, path);
 		return buffer;
 	}
 
@@ -34,13 +34,13 @@ namespace Nork::Renderer {
 		return *this;
 	}
 
-	GLTFBuilder& GLTFBuilder::AddMesh(std::shared_ptr<Mesh> mesh, const std::string& name, int matIdx)
+	GLTFBuilder& GLTFBuilder::AddMesh(const Mesh& mesh, const std::string& name, int matIdx)
     {
 		glm::vec3 posMin = glm::vec3(std::numeric_limits<float>::max());
 		glm::vec3 posMax = glm::vec3(-std::numeric_limits<float>::max());
-		for (size_t i = 0; i < mesh->GetVertexCount(); i++)
+		for (size_t i = 0; i < mesh.Vertices().Count(); i++)
 		{
-			auto& vertex = (*mesh->GetVertexPtr())[i];
+			auto& vertex = mesh.Vertices()[i];
 			if (vertex.position.x > posMax.x) posMax.x = vertex.position.x;
 			if (vertex.position.y > posMax.y) posMax.y = vertex.position.y;
 			if (vertex.position.z > posMax.z) posMax.z = vertex.position.z;
@@ -92,7 +92,7 @@ namespace Nork::Renderer {
 		auto setBufferView = [&](GLTF::BufferView& bufferView, int size, int offset)
 		{
 			bufferView.buffer = bufIdx(0);
-			bufferView.byteLength = mesh->GetVertexCount() * sizeof(Vertex) - offset;
+			bufferView.byteLength = mesh.Vertices().SizeBytes() - offset;
 			bufferView.byteOffset = offset;
 			bufferView.byteStride = sizeof(Vertex);
 			bufferView.target = GL_ARRAY_BUFFER;
@@ -113,7 +113,7 @@ namespace Nork::Renderer {
 			accessor.byteOffset = 0;
 			accessor.type = type;
 			accessor.componentType = comp;
-			accessor.count = mesh->GetVertexCount();
+			accessor.count = mesh.Vertices().Count();
 		};
 		setAccessor(posAcc, bufViewIdx(0), GLTF::Accessor::VEC3);
 		posAcc.min = posMin;
@@ -125,7 +125,7 @@ namespace Nork::Renderer {
 		indAcc.byteOffset = 0;
 		indAcc.type = GLTF::Accessor::SCALAR;
 		indAcc.componentType = GL_UNSIGNED_INT;
-		indAcc.count = mesh->GetIndexCount();
+		indAcc.count = mesh.Indices().Count();
 
 		gltf.buffers.push_back(verticesBuffer);
 		gltf.buffers.push_back(indicesBuffer);
@@ -146,7 +146,7 @@ namespace Nork::Renderer {
 
 		return *this;
     }
-    GLTFBuilder& GLTFBuilder::AddMaterial(std::shared_ptr<Material> material, const std::string& name, std::vector<std::pair<TextureMap, std::string>> imageUris)
+    GLTFBuilder& GLTFBuilder::AddMaterial(const Material& material, const std::string& name, std::vector<std::pair<TextureMap, std::string>> imageUris)
     {
 		GLTF::Material mat;
 		mat.name = name;

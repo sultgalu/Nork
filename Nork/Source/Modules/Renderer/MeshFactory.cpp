@@ -1,51 +1,6 @@
 #include "MeshFactory.h"
-#include "../Objects/Buffer/BufferBuilder.h"
-#include "../Objects/VertexArray/VertexArrayBuilder.h"
 
 namespace Nork::Renderer {
-	std::vector<unsigned int> GetCubeIndices();
-	std::vector<Data::Vertex> GetCubeVertices();
-	std::shared_ptr<Mesh> MeshFactory::Create(const std::vector<Data::Vertex>& vertices, const std::vector<uint32_t>& indices)
-	{
-		auto vertexIdx = vaoWrapper.GetVertexWrapper().Add(vertices);
-		auto indexIdx = vaoWrapper.GetIndexWrapper().Add(indices);
-		return std::make_shared<Mesh>(vaoWrapper, vertexIdx, indexIdx, vertices.size(), indices.size());
-	}
-	std::shared_ptr<Mesh> MeshFactory::CreateCube()
-	{
-		return Create(GetCubeVertices(), GetCubeIndices());
-	}
-	static std::vector<unsigned int> GetCubeIndices()
-	{
-		std::vector<unsigned int> indices;
-		indices.reserve(6 * 6);
-
-		auto addFaceCCw = [&](int a, int b, int c, int d)
-		{
-			indices.push_back(a);
-			indices.push_back(b);
-			indices.push_back(d);
-
-			indices.push_back(d);
-			indices.push_back(b);
-			indices.push_back(c);
-		};
-
-		// FACE #1 (front)
-		addFaceCCw(0, 1, 2, 3);
-		// FACE #4 (right)
-		addFaceCCw(4, 5, 6, 7);
-		// FACE #2 (left)
-		addFaceCCw(8, 9, 10, 11);
-		// FACE #5 (top)
-		addFaceCCw(12, 13, 14, 15);
-		// FACE #3 (bottom)
-		addFaceCCw(16, 17, 18, 19);
-		// FACE #6 (back)
-		addFaceCCw(20, 21, 22, 23);
-
-		return indices;
-	}
 	static std::vector<float> GetCubeVertexPositions()
 	{
 		std::vector<float> vertices;
@@ -246,7 +201,7 @@ namespace Nork::Renderer {
 
 		return bitangents;
 	}
-	static std::vector<Data::Vertex> GetCubeVertices()
+	std::vector<Data::Vertex> MeshFactory::CubeVertices()
 	{
 		auto positions = GetCubeVertexPositions();
 		auto texCoords = GetCubeVertexTexCoords();
@@ -266,5 +221,36 @@ namespace Nork::Renderer {
 			vertices.push_back(vertex);
 		}
 		return vertices;
+	}
+	std::vector<unsigned int> MeshFactory::CubeIndices()
+	{
+		std::vector<unsigned int> indices;
+		indices.reserve(6 * 6);
+
+		auto addFaceCCw = [&](int a, int b, int c, int d)
+		{
+			indices.push_back(a);
+			indices.push_back(b);
+			indices.push_back(d);
+
+			indices.push_back(d);
+			indices.push_back(b);
+			indices.push_back(c);
+		};
+
+		// FACE #1 (front)
+		addFaceCCw(0, 1, 2, 3);
+		// FACE #4 (right)
+		addFaceCCw(4, 5, 6, 7);
+		// FACE #2 (left)
+		addFaceCCw(8, 9, 10, 11);
+		// FACE #5 (top)
+		addFaceCCw(12, 13, 14, 15);
+		// FACE #3 (bottom)
+		addFaceCCw(16, 17, 18, 19);
+		// FACE #6 (back)
+		addFaceCCw(20, 21, 22, 23);
+
+		return indices;
 	}
 }
