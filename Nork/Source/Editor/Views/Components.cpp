@@ -32,7 +32,8 @@ namespace Nork::Editor {
 		changed |= ImGui::Checkbox("Sun", &dirLight.sun);
 		changed |= ImGui::SliderFloat3("Direction", &dirLight.light->direction.x, -1.01, 1.01);
 		changed |= ImGui::SliderFloat("Out Of Proj Value", &dirLight.light->outOfProjValue, 0, 1);
-		changed |= ImGui::ColorEdit3("Color", &(dirLight.light->color.r));
+		changed |= ImGui::ColorEdit3("Color (diffuse)", &(dirLight.light->color2.r));
+		changed |= ImGui::ColorEdit3("Color (ambient)", &(dirLight.light->color.r));
 		changed |= ImGui::DragFloat3("Position", &dirLight.position.x);
 		changed |= ImGui::DragFloat3("Rectangle", &dirLight.rectangle.x);
 		
@@ -80,9 +81,9 @@ namespace Nork::Editor {
 				if (fix)
 				{
 					ImGui::InputInt("New Size (1 Dimension)", &newSize.x);
-					if (ImGui::Button("OK"))
+					if (changed |= ImGui::Button("OK"))
 					{
-						node->GetEntity().AddComponent<Components::DirShadowMap>().FixTextureRatio(dirLight, glm::pow(newSize.x, 2));
+						node->GetEntity().GetComponent<Components::DirShadowMap>().FixTextureRatio(dirLight, glm::pow(newSize.x, 2));
 						ImGui::CloseCurrentPopup();
 					}
 				}
@@ -90,7 +91,7 @@ namespace Nork::Editor {
 				{
 					ImGui::InputInt("New Width", &newSize.x);
 					ImGui::InputInt("New Height", &newSize.y);
-					if (ImGui::Button("OK"))
+					if (changed |= ImGui::Button("OK"))
 					{
 						shadowMap.SetFramebuffer(newSize.x, newSize.y, newFormat);
 						ImGui::CloseCurrentPopup();
@@ -153,7 +154,7 @@ namespace Nork::Editor {
 				formatSelector(Renderer::TextureFormat::Depth24);
 				formatSelector(Renderer::TextureFormat::Depth32); ImGui::SameLine();
 				formatSelector(Renderer::TextureFormat::Depth32F);
-				if (ImGui::Button("OK"))
+				if (changed |= ImGui::Button("OK"))
 				{
 					shadowMap.SetFramebuffer(newSize, newFormat);
 					ImGui::CloseCurrentPopup();

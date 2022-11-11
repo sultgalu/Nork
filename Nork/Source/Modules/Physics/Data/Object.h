@@ -22,6 +22,12 @@ namespace Nork::Physics
 		void SetColliderSize(const glm::vec3& scale);
 		void UpdateCollider();
 		void UpdateInertia() { this->kinem.I = CalcInertia(); }
+		bool TransformChanged() // returns and resets the flag
+		{
+			bool val = transformChanged;
+			transformChanged = false;
+			return val;
+		}
 	private:
 		float CalcInertia();
 	public:
@@ -29,6 +35,7 @@ namespace Nork::Physics
 		Collider collider = Collider();
 		KinematicData kinem;
 		glm::vec3 size = glm::vec3(1);
+		bool transformChanged = false; // position or orientation
 	};
 
 	struct ObjectHandle

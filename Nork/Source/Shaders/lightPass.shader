@@ -80,12 +80,14 @@ layout(std140, binding = 4) uniform asd4
 layout(std140, binding = 8) uniform asd5
 {
 	uint dLightCount, dShadowCount;
-	uint dirIdxs[1];
+	uint pad0, pad1;
+	uvec4 dirIdxs[1];
 };
 layout(std140, binding = 9) uniform asd6
 {
 	uint pLightCount, pShadowCount;
-	uint pointIdxs[1];
+	uint pad2, pad3;
+	uvec4 pointIdxs[1];
 };
 //layout(std430, binding = 10) buffer Buf0
 //{
@@ -154,13 +156,17 @@ void main()
 	material.specularExponent = spec.g;
 	
 	vec3 result = vec3(0.0f);
-	for (uint i = uint(0); i < dShadowCount; i+=2)
+	for (uint i = uint(0); i < dShadowCount; i++)
 	{
-		result += dLightShadow(dLs[dirIdxs[i]], material, normal, viewDir, dLSs[dirIdxs[i + 1]], worldPos);
+		uint j = i * 2;
+		uint li = dirIdxs[j / 4][j % 4];
+		uint si = dirIdxs[j / 4][j % 4 + 1];
+		result += dLightShadow(dLs[li], material, normal, viewDir, dLSs[si], worldPos);
 	}
-	for (uint i = dShadowCount; i < dLightCount; i++)
+	for (uint i = dShadowCount * 2; i < dShadowCount * 2 + (dLightCount - dShadowCount); i++)
 	{
-		result += dLight(dLs[dirIdxs[i]], material, normal, viewDir, worldPos);
+		uint li = dirIdxs[i / 4][i % 4];
+		result += dLight(dLs[li], material, normal, viewDir, worldPos);
 	}
 	
 	//for (uint i = range.x; i < range.x + range.y; i++)
@@ -175,15 +181,19 @@ void main()
 	//		result += pLight(pLs[idx], material, worldPos, normal, viewDir);
 	//	}
 	//}
-	for (uint i = uint(0); i < pShadowCount; i+=2)
+	for (uint i = uint(0); i < pShadowCount; i++)
 	{
-		result += pLightShadow(pLs[pointIdxs[i]], material, normal, viewDir, pLSs[pointIdxs[i + 1]], worldPos);
+		uint j = i * 2;
+		uint li = pointIdxs[j / 4][j % 4];
+		uint si = pointIdxs[j / 4][j % 4 + 1];
+		result += pLightShadow(pLs[li], material, normal, viewDir, pLSs[si], worldPos);
 	}
 	if (pShadowCount < pLightCount) // if left out, weird rendering happens (can't handle for loop below)
 	{
-		for (uint i = pShadowCount; i < pLightCount; i++)
+		for (uint i = pShadowCount * 2; i < pShadowCount * 2 + (pLightCount - pShadowCount); i++)
 		{
-			result += pLight(pLs[pointIdxs[i]], material, worldPos, normal, viewDir);
+			uint li = pointIdxs[i / 4][i % 4];
+			result += pLight(pLs[li], material, worldPos, normal, viewDir);
 		}
 	}
 	fColor = vec4(result, 1.0f);

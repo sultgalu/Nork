@@ -21,7 +21,7 @@ namespace Nork
 	}
 	Engine::Engine()
 		: uploadSem(1), updateSem(1),
-		scriptSystem(scene)
+		scriptSystem(scene), physicsSystem(scene.registry)
 	{
 		_engine = this;
 		scene.registry.on_construct<Components::Physics>().connect<&Engine::OnPhysicsAdded>(this);
@@ -65,13 +65,13 @@ namespace Nork
 			{
 				if (scriptUpdated)
 				{
-					physicsSystem.Upload(scene.registry, true);
+					physicsSystem.Upload();
 					scriptUpdated = false;
 				}
-				physicsSystem.Update(scene.registry);
+				physicsSystem.Update();
 			}
 
-			physicsSystem.Download(scene.registry); // get changes from physics (writes to local Transform)
+			physicsSystem.Download(); // get changes from physics (writes to local Transform)
 			UpdateGlobalTransforms(); // apply local changes to global Transform
 
 			if (scriptUpdate)
@@ -107,7 +107,7 @@ namespace Nork
 			scriptSystem.Update();
 		}
 		// start physics thread
-		physicsSystem.Upload(scene.registry, true);
+		physicsSystem.Upload();
 		physicsUpdate = true;
 		if (MULTITHREAD_PHX)
 		{
@@ -134,10 +134,10 @@ namespace Nork
 					updateSem.acquire(); // don't let upload happen until done with updating
 					if (scriptUpdated) // if downloading 
 					{
-						physicsSystem.Upload(scene.registry, true);
+						physicsSystem.Upload();
 						scriptUpdated = false;
 					}
-					physicsSystem.Update(scene.registry);
+					physicsSystem.Update();
 					updateSem.release();
 					uploadSem.acquire(); // wait until any uploading is done
 					uploadSem.release();
@@ -172,10 +172,9 @@ namespace Nork
 
 	void Engine::UpdateTransformMatrices()
 	{
-		auto& reg = scene.registry;
 		for (auto entity : transformObserver)
 		{
-			reg.get<Components::Transform>(entity).RecalcModelMatrix();
+			scene.registry.get<Components::Transform>(entity).RecalcModelMatrix();
 		}
 	}
 

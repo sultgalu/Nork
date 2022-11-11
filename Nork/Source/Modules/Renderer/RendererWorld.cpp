@@ -76,12 +76,14 @@ namespace Nork::Renderer {
 		data.reserve(2 + idxs.lightAndShadows.size() * 2 + idxs.lights.size());
 		data.push_back(idxs.lights.size() + idxs.lightAndShadows.size());
 		data.push_back(idxs.lightAndShadows.size());
+		data.push_back(0);
+		data.push_back(0);
 		for (auto& idx : idxs.lightAndShadows)
 		{ // first add lights with shadows
 			data.push_back(idx[0]);
 			data.push_back(idx[1]);
 		}
-		data.insert(data.begin(), idxs.lights.begin(), idxs.lights.end());
+		data.insert(data.end(), idxs.lights.begin(), idxs.lights.end());
 		return data;
 	}
 	void World::DirLightIndices(const LightShadowIndices& idxs)

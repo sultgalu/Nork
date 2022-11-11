@@ -8,14 +8,17 @@ namespace Nork {
 	class PhysicsSystem
 	{
 	public:
-		void Download(entt::registry& reg);
-		void Upload(entt::registry& reg, bool updatePoliesForPhysics);
-		void Update(entt::registry& reg);
+		PhysicsSystem(entt::registry& reg);
+		void Download();
+		void Upload();
+		void Update();
 
 		float physicsSpeed = 1.0f;
 
 		Physics::Pipeline pipeline;
 		Physics::World& pWorld = pipeline.world;
+		entt::registry& reg;
+		entt::observer transformObserver;
 	};
 }
 

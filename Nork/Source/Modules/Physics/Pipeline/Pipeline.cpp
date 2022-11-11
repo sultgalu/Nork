@@ -14,8 +14,8 @@ namespace Nork::Physics
 		std::for_each(std::execution::par, world.objs.begin(), world.objs.end(), [&](auto& obj)
 			{
 				obj.UpdateInertia(); // only needed when mass or collider has changed
-				VelocityUpdate(obj.kinem, delta);
-				RotationUpdate(obj.kinem, delta);
+				VelocityUpdate(obj, delta);
+				RotationUpdate(obj, delta);
 				obj.UpdateCollider(); // only needed when transform changed
 			});
 		broadResults = SAP(world.objs).Get();
@@ -42,15 +42,9 @@ namespace Nork::Physics
 			});
 	}
 
-	struct Island
+	void Pipeline::VelocityUpdate(Object& obj, float delta)
 	{
-		std::unordered_set<int> objects;
-		bool isStatic = false; // has a static object
-		KinematicData kinem;
-	};
-
-	void Pipeline::VelocityUpdate(KinematicData& kinem, float delta)
-	{
+		auto& kinem = obj.kinem;
 		if (kinem.isStatic) 
 			return;
 
@@ -61,13 +55,18 @@ namespace Nork::Physics
 		kinem.velocity += deltaV;
 		if (glm::isnan(kinem.velocity.x))
 			Logger::Error("");
-		kinem.position += translate;
+		if (translate != glm::zero<glm::vec3>())
+		{
+			kinem.position += translate;
+			obj.transformChanged = true;
+		}
 		if (kinem.applyGravity)
 			kinem.forces = g * kinem.mass * glm::vec3(0, -1, 0);
 	}
 
-	void Pipeline::RotationUpdate(KinematicData& kinem, float delta)
+	void Pipeline::RotationUpdate(Object& obj, float delta)
 	{
+		auto& kinem = obj.kinem;
 		if (kinem.isStatic || glm::dot(kinem.w, kinem.w) == 0)
 			return;
 
@@ -76,7 +75,11 @@ namespace Nork::Physics
 		{
 			glm::quat rot(2, kinem.w * delta);
 			rot = glm::normalize(rot);
-			kinem.quaternion = rot * kinem.quaternion;
+			if (rot != glm::identity<glm::quat>())
+			{
+				kinem.quaternion = rot * kinem.quaternion;
+				obj.transformChanged = true;
+			}
 
 			if (glm::isnan(kinem.torque.x))
 				Logger::Error("");

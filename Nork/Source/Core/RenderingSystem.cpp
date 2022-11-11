@@ -104,8 +104,10 @@ namespace Nork {
 	void RenderingSystem::OnPLightAdded(entt::registry& reg, entt::entity id)
 	{
 		auto& light = reg.get<Components::PointLight>(id);
+		auto& tr = reg.get_or_emplace<Components::Transform>(id);
 		light.light = world.AddPointLight();
 		light.SetIntensity(50);
+		light.light->position = tr.Position();
 		shouldUpdatePointLightAndShadows = true;
 	}
 	void RenderingSystem::OnDShadAdded(entt::registry& reg, entt::entity id)
@@ -196,6 +198,7 @@ namespace Nork {
 		for (const auto ent : dirLightObserver)
 		{
 			auto& dl = registry.get<Components::DirLight>(ent);
+			auto ds = registry.try_get<Components::DirShadowMap>(ent);
 			dl.RecalcVP();
 			if (dl.sun)
 			{
@@ -207,12 +210,29 @@ namespace Nork {
 				dl.light->color.a = std::clamp(height + 0.2f, 0.0f, 0.3f) * 2.0f;
 				shaders.skyShader->Use().SetVec3("lightPos", -dl.light->direction);
 			}
+			if (ds)
+			{
+				for (auto& map : shadowMapProvider.dShadMaps)
+				{ // change shadow FBs in provider
+					if (map.light == dl.light && map.fb != ds->map.fb)
+						map.fb = ds->map.fb;
+				}
+			}
 		}
 		dirLightObserver.clear();
 		for (const auto ent : pointLightObserver)
 		{
 			auto& pl= registry.get<Components::PointLight>(ent);
+			auto ps = registry.try_get<Components::PointShadowMap>(ent);
 			pl.light->position = registry.get<Components::Transform>(ent).Position();
+			if (ps)
+			{
+				for (auto& map : shadowMapProvider.pShadMaps)
+				{ // change shadow FBs in provider
+					if (map.light == pl.light && map.fb != ps->map.fb)
+						map.fb = ps->map.fb;
+				}
+			}
 		}
 		pointLightObserver.clear();
 	}

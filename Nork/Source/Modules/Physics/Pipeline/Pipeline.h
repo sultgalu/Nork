@@ -24,8 +24,8 @@ namespace Nork::Physics
 
 		void Update(float delta);
 
-		void VelocityUpdate(KinematicData& kinem, float delta);
-		void RotationUpdate(KinematicData& kinem, float delta);
+		void VelocityUpdate(Object& kinem, float delta);
+		void RotationUpdate(Object& kinem, float delta);
 
 		World world;
 	};

@@ -35,7 +35,7 @@ namespace Nork::Components {
 	void DirShadowMap::FixTextureRatio(const DirLight& light, uint32_t pixelCount)
 	{
 		float count = light.rectangle.x * light.rectangle.y;
-		auto multiplier = pixelCount / count;
+		auto multiplier = glm::sqrt(pixelCount / count);
 		map.SetFramebuffer(light.rectangle.x * multiplier, light.rectangle.y * multiplier, 
 			Renderer::TextureFormat::Depth16);
 	}
