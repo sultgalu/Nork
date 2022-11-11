@@ -39,8 +39,8 @@ int main()
 		}
 	}*/
 
-	constexpr int levels = 5; //20;
-	constexpr int size = 4; // * 4 = one level
+	constexpr int levels = 40; //20;
+	constexpr int size = 20; // * 4 = one level
 	float sep = 2.1f;
 	constexpr float height = -10;
 	int start = -size / 2;
@@ -51,7 +51,7 @@ int main()
 		auto ent = engine.scene.CreateNode()->GetEntity();
 		ent.AddComponent<Components::Transform>([&](auto& tr) { tr.localPosition = glm::vec3(i * sep, height + 2 + j * sep, k * sep); });
 		ent.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
-		ent.AddComponent<Components::Physics>().Kinem().applyGravity = false;
+		ent.AddComponent<Components::Physics>().Kinem().applyGravity = true;
 		ent.AddComponent<Components::Tag>().tag = std::to_string(i).append("-").append(std::to_string(j)).append("-").append(std::to_string(k));
 	};
 
@@ -68,9 +68,8 @@ int main()
 			auto& kinem = phx.Kinem();
 			kinem.mass = 1000.0f;
 			kinem.velocity.x = 20.0f;
-			kinem.applyGravity = false;
-			kinem.w.z = -1.0f;
 			// kinem.applyGravity = false;
+			kinem.w.z = -1.0f;
 		});
 	bullet.AddComponent<Components::Tag>().tag = "bullet";
 
@@ -150,13 +149,13 @@ int main()
 			l.sun = true;
 		});
 	auto sun2 = engine.scene.CreateNode()->GetEntity();
-	sun2.AddComponent<Components::DirLight>([](Components::DirLight& l)
-		{
-			l.light->direction = { 0.05f, -0.08f, 0.05f };
-			l.light->color = glm::vec4(1, 1, 1, 1.0f);
-			l.position = { 0, 0, -100 };
-			l.rectangle = { 200, 200, 200 };
-		});
+	// sun2.AddComponent<Components::DirLight>([](Components::DirLight& l)
+	// 	{
+	// 		l.light->direction = { 0.05f, -0.08f, 0.05f };
+	// 		l.light->color = glm::vec4(1, 1, 1, 1.0f);
+	// 		l.position = { 0, 0, -100 };
+	// 		l.rectangle = { 200, 200, 200 };
+	// 	});
 	//l.light->color = glm::vec4(0.5f, 0.4f, 0.25f, 1);
 	//l.SetColor(glm::vec4(0.0f));
 

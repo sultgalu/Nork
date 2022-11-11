@@ -55,11 +55,7 @@ namespace Nork::Physics
 		kinem.velocity += deltaV;
 		if (glm::isnan(kinem.velocity.x))
 			Logger::Error("");
-		if (translate != glm::zero<glm::vec3>())
-		{
-			kinem.position += translate;
-			obj.transformChanged = true;
-		}
+		kinem.position += translate;
 		if (kinem.applyGravity)
 			kinem.forces = g * kinem.mass * glm::vec3(0, -1, 0);
 	}
@@ -75,11 +71,7 @@ namespace Nork::Physics
 		{
 			glm::quat rot(2, kinem.w * delta);
 			rot = glm::normalize(rot);
-			if (rot != glm::identity<glm::quat>())
-			{
-				kinem.quaternion = rot * kinem.quaternion;
-				obj.transformChanged = true;
-			}
+			kinem.quaternion = rot * kinem.quaternion;
 
 			if (glm::isnan(kinem.torque.x))
 				Logger::Error("");

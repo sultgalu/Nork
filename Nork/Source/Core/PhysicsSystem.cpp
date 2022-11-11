@@ -16,18 +16,34 @@ namespace Nork {
 		using namespace Components;
 		uint32_t i = 0;
 
-		reg.view<Components::Physics>()
-			.each([&](entt::entity id, Components::Physics& phx)
+		reg.group<Components::Physics, Components::Transform>()
+			.each([&](entt::entity id, Components::Physics& phx, Components::Transform& tra)
 				{
-					if (phx.Object().TransformChanged())
+					bool posChanged = phx.Kinem().position != tra.Position();
+					bool quatChanged = phx.Kinem().quaternion != tra.Quaternion();
+					if (posChanged || quatChanged)
 					{
 						reg.patch<Components::Transform>(id, [&](Components::Transform& tr)
 							{
-								tr.localPosition += phx.Kinem().position - tr.Position();
-								tr.localQuaternion += phx.Kinem().quaternion - tr.Quaternion();
+								if (posChanged)
+									tr.localPosition += phx.Kinem().position - tr.Position();
+								if (quatChanged)
+									tr.localQuaternion += phx.Kinem().quaternion - tr.Quaternion();
 							});
 					}
 				});
+		// reg.view<Components::Physics>()
+		// 	.each([&](entt::entity id, Components::Physics& phx)
+		// 		{
+		// 			if (phx.Object().TransformChanged())
+		// 			{
+		// 				reg.patch<Components::Transform>(id, [&](Components::Transform& tr)
+		// 					{
+		// 						tr.localPosition += phx.Kinem().position - tr.Position();
+		// 						tr.localQuaternion += phx.Kinem().quaternion - tr.Quaternion();
+		// 					});
+		// 			}
+		// 		});
 		transformObserver.clear();
 	}
 	void PhysicsSystem::Upload()

@@ -210,12 +210,10 @@ namespace Nork::Physics {
 			if (!kinem1.isStatic && kinem2.isStatic)
 			{
 				this->deltaP1 = satRes.dir * satRes.depth;
-				GetWorld().objs[obj1Idx].transformChanged = true;
 			}
 			else if (kinem1.isStatic && !kinem2.isStatic)
 			{
 				this->deltaP2 = -satRes.dir * satRes.depth;
-				GetWorld().objs[obj2Idx].transformChanged = true;
 			}
 			else if (!kinem1.isStatic && !kinem2.isStatic)
 			{
@@ -224,8 +222,6 @@ namespace Nork::Physics {
 				glm::vec3 translate = satRes.dir * satRes.depth / (part1 + part2);
 				this->deltaP1 = translate * (part1);
 				this->deltaP2 = -translate * (part2);
-				GetWorld().objs[obj1Idx].transformChanged = true;
-				GetWorld().objs[obj2Idx].transformChanged = true;
 			}
 		}
 	}
