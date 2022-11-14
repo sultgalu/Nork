@@ -16,6 +16,7 @@ namespace Nork::Renderer {
 		const SmartMappedBuffer<Data::Vertex>::Array& Vertices() const { return vertices; }
 		SmartMappedBuffer<uint32_t>::Array& Indices() { return indices; }
 		const SmartMappedBuffer<uint32_t>::Array& Indices() const { return indices; }
+		bool Empty() const { return vertices.IsEmpty(); }
 	private:
 		SmartMappedBuffer<Data::Vertex>::Array vertices;
 		SmartMappedBuffer<uint32_t>::Array indices;

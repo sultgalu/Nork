@@ -13,6 +13,7 @@ namespace Nork::Renderer
 		TextureFormat format;
 		std::vector<char> data;
 	};
+	enum class ImageFormat { JPEG, PNG, BMP };
 	struct MaterialData
 	{
 		std::unordered_map<TextureMap, std::string> textureMaps;
@@ -31,7 +32,8 @@ namespace Nork::Renderer
 	{
 	public:
 		static Image LoadImage(std::string_view path);
-		static void WriteImage(const Image&, const std::string& path);
+		static void WriteImage(const Image&, const std::string& path, ImageFormat);
+		static void WriteTexture(const Renderer::Texture2D& tex, const std::string& path, Renderer::ImageFormat format);
 		static std::array<Image, 6> LoadCubemapImages(std::string dirPath, std::string extension);
 		static std::string LoadShader(std::string_view path);
 		static std::vector<MeshData> LoadModel(const std::string& path);

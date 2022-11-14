@@ -1,41 +1,21 @@
 #include "GLTFBuilder.h"
 
 namespace Nork::Renderer {
-	static GLTF::Buffer WriteIndexBuffer(const Renderer::Mesh& mesh, GLTF::Buffer& buffer, const std::string& path)
-	{
-		buffer.byteLength = mesh.Indices().SizeBytes() * sizeof(uint32_t);
-		FileUtils::WriteBinary(mesh.Indices().Data(), buffer.byteLength, path);
-		return buffer;
-	}
-	static GLTF::Buffer WriteVertexBuffer(const Renderer::Mesh& mesh, GLTF::Buffer& buffer, const std::string& path)
-	{
-		buffer.byteLength = mesh.Vertices().SizeBytes();
-		FileUtils::WriteBinary(mesh.Vertices().Data(), buffer.byteLength, path);
-		return buffer;
-	}
 
-	GLTFBuilder& GLTFBuilder::AddScene(const std::vector<int>& nodes, bool defaultScene)
+	GLTFBuilder& GLTFBuilder::AddScene(bool setDefault)
 	{
-		GLTF::Scene scene;
-		scene.nodes = nodes;
-		gltf.scenes.push_back(scene);
-		if (defaultScene)
-		{
-			gltf.scene = gltf.scenes.size() - 1;
-		}
+		if (setDefault)
+			gltf.scene = gltf.scenes.size();
+		gltf.scenes.push_back(GLTF::Scene());
 		return *this;
 	}
 
-	GLTFBuilder& GLTFBuilder::AddNode(int meshIdx)
-	{
-		GLTF::Node node;
-		node.mesh = meshIdx;
-		gltf.nodes.push_back(node);
-		return *this;
-	}
+	GLTFBuilder& GLTFBuilder::AddMesh(const Mesh& mesh, const std::string& name, int matIdx, const std::filesystem::path& buffersPath)
+    { // adds a node too
+		gltf.scenes.back().nodes.push_back(gltf.nodes.size());
+		gltf.nodes.push_back(GLTF::Node());
+		gltf.nodes.back().mesh = gltf.meshes.size();
 
-	GLTFBuilder& GLTFBuilder::AddMesh(const Mesh& mesh, const std::string& name, int matIdx)
-    {
 		glm::vec3 posMin = glm::vec3(std::numeric_limits<float>::max());
 		glm::vec3 posMax = glm::vec3(-std::numeric_limits<float>::max());
 		for (size_t i = 0; i < mesh.Vertices().Count(); i++)
@@ -83,11 +63,17 @@ namespace Nork::Renderer {
 		glMesh.name = name;
 		glMesh.primitives = { prim };
 
-		verticesBuffer.uri = glMesh.name + "_verts.bin";
-		indicesBuffer.uri = glMesh.name + "_inds.bin";
-		WriteIndexBuffer(mesh, indicesBuffer, std::filesystem::path(this->buffersPath).append(indicesBuffer.uri).string());
-		WriteVertexBuffer(mesh, verticesBuffer, std::filesystem::path(this->buffersPath).append(verticesBuffer.uri).string());
-
+		verticesBuffer.uri = glMesh.name;
+		indicesBuffer.uri = glMesh.name;
+		verticesBuffer.byteLength = mesh.Vertices().SizeBytes();
+		indicesBuffer.byteLength = mesh.Indices().SizeBytes();
+		if (!buffersPath.empty())
+		{
+			verticesBuffer.uri += ".vertices";
+			indicesBuffer.uri += ".indices";
+			FileUtils::WriteBinary(mesh.Vertices().Data(), mesh.Vertices().SizeBytes(), std::filesystem::path(buffersPath).append(verticesBuffer.uri).string());
+			FileUtils::WriteBinary(mesh.Indices().Data(), mesh.Indices().SizeBytes(), std::filesystem::path(buffersPath).append(indicesBuffer.uri).string());
+		}
 		using Vertex = Data::Vertex;
 		auto setBufferView = [&](GLTF::BufferView& bufferView, int size, int offset)
 		{
@@ -146,7 +132,7 @@ namespace Nork::Renderer {
 
 		return *this;
     }
-    GLTFBuilder& GLTFBuilder::AddMaterial(const Material& material, const std::string& name, std::vector<std::pair<TextureMap, std::string>> imageUris)
+    GLTFBuilder& GLTFBuilder::AddMaterial(const Material& material, std::vector<std::pair<TextureMap, std::string>> imageUris, const std::string& name)
     {
 		GLTF::Material mat;
 		mat.name = name;
@@ -155,7 +141,7 @@ namespace Nork::Renderer {
 		mat.pbrMetallicRoughness.extras = JsonObject().Property("specularExponent", material->specularExponent);
 
 		for (auto [mapType, uri] : imageUris)
-		{
+		{ // adds new image+texture even if uri already exists. Should search for uri and use that index if found.
 			GLTF::TextureInfo texInfo;
 			texInfo.index = gltf.images.size();
 

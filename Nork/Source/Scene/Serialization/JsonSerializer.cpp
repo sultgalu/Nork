@@ -2,11 +2,6 @@
 #include "App/Application.h"
 
 namespace Nork {
-
-	static ResourceManager GetResMan()
-	{
-		return Application::Get().engine.resourceManager;
-	}
 	// --------------COMPONENT SERIALIZATION--------------
 
 	template<class T>
@@ -296,14 +291,14 @@ namespace Nork {
 	template<> JsonObject JsonComponentSerializer<Drawable>::Serialize(const Drawable& component)
 	{
 		return JsonObject()
-			.Property("id", *GetResMan().IdFor(component.model));
+			.Property("uri", ModelResources::Instance().Uri(component.GetModel()).string());
 	}
 	template<> Drawable& JsonComponentDeserializer<Drawable>::Deserialize(const JsonObject& json)
 	{
 		auto& comp = entity.AddComponent<Drawable>([&](Drawable& comp)
 			{
-				auto id = json.Get<std::string>("id");
-				comp.model = GetResMan().GetModel(id);
+				auto id = json.Get<std::string>("uri");
+				comp.SetModel(ModelResources::Instance().Get(id));
 			});
 		return comp;
 	}

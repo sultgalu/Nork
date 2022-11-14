@@ -52,6 +52,7 @@ public:
 				return true;
 			else if (str == "false")
 				return false;
+			throw JsonException("Ivalid bool value: " + str);
 		}
 		else if constexpr (std::is_floating_point<T>::value)
 			return std::stod(str);
@@ -60,11 +61,8 @@ public:
 		else if constexpr (std::is_signed<T>::value)
 			return std::stoll(str);
 		else if constexpr (std::is_convertible<T, std::string>::value)
-		{
-			return UnformatString(str.substr(1, str.size() - 2));
-		}
-		else
-			_ASSERT(false);
+			return UnformatString(str.substr(1, str.size() - 2));	
+		std::unreachable();
 	}
 	static JsonObject GetObject(const std::string& str);
 	static JsonArray GetArray(const std::string& str);
@@ -142,6 +140,7 @@ public:
 	template<JsonDataType T>
 	JsonArray& Elements(const std::span<T> array)
 	{
+		elements.reserve(elements.size() + array.size());
 		for (size_t i = 0; i < array.size(); i++)
 		{
 			elements.push_back(JsonParser::Parse(array[i]));
@@ -151,6 +150,7 @@ public:
 	template<JsonDataType T>
 	JsonArray& Elements(const std::vector<T>& array)
 	{
+		elements.reserve(elements.size() + array.size());
 		for (size_t i = 0; i < array.size(); i++)
 		{
 			elements.push_back(JsonParser::Parse(array[i]));
@@ -160,6 +160,7 @@ public:
 	template<JsonDataType T>
 	JsonArray& Elements(const T* data, int count)
 	{
+		elements.reserve(elements.size() + count);
 		for (size_t i = 0; i < count; i++)
 		{
 			elements.push_back(JsonParser::Parse(data[i]));
@@ -175,9 +176,32 @@ public:
 		}
 		return *this;
 	}
+	template<glm::length_t lenX, glm::length_t lenY, JsonDataType T>
+	JsonArray& Elements(const glm::mat<lenX, lenY, T>& mat)
+	{
+		elements.reserve(elements.size() + lenX * lenY);
+		for (size_t i = 0; i < lenX; i++)
+		{
+			for (size_t j = 0; j < lenY; j++)
+			{
+				elements.push_back(JsonParser::Parse(mat[i][j]));
+			}
+		}
+		return *this;
+	}
+	template<JsonDataType T>
+	JsonArray& Elements(const glm::qua<T>& qua)
+	{
+		for (size_t i = 0; i < 4; i++)
+		{
+			elements.push_back(JsonParser::Parse(qua[i]));
+		}
+		return *this;
+	}
 	template<JsonDataType T>
 	JsonArray& Elements(const std::initializer_list<T> array)
 	{
+		elements.reserve(elements.size() + array.size());
 		for (auto& element : array)
 		{
 			elements.push_back(JsonParser::Parse(element));
@@ -226,6 +250,26 @@ public:
 		for (size_t i = 0; i < len; i++)
 		{
 			vec[i] = JsonParser::Get<T>(elements[i]);
+		}
+	}
+	template<JsonDataType T>
+	void Get(glm::qua<T>& qua) const
+	{
+		for (size_t i = 0; i < 4; i++)
+		{
+			qua[i] = JsonParser::Get<T>(elements[i]);
+		}
+	}
+	template<glm::length_t lenX, glm::length_t lenY, JsonDataType T>
+	void Get(glm::mat<lenX, lenY, T>& mat) const
+	{
+		int k = 0;
+		for (size_t i = 0; i < lenX; i++)
+		{
+			for (size_t j = 0; j < lenY; j++)
+			{
+				mat[i][j] = JsonParser::Get<T>(elements[k++]);
+			}
 		}
 	}
 	template<JsonDataType T>

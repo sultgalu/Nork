@@ -9,7 +9,7 @@ namespace Nork {
 		// all the entities that have Physics and updated Transform (changed by a script or the editor)
 		// all the entities that would have entered the <Transform,Physics> group if it existed (initialize Physics by Transform)
 		transformObserver.connect(reg, entt::collector.update<Components::Transform>().where<Components::Physics>()
-			.group<Components::Transform, Components::Physics>());
+			.group<Components::Physics, Components::Transform>());
 	}
 	void PhysicsSystem::Download()
 	{

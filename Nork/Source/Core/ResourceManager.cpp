@@ -3,109 +3,299 @@
 #include "Modules/Renderer/Objects/Texture/TextureBuilder.h"
 #include "Modules/Renderer/GLTF/GLTFBuilder.h"
 #include "Modules/Renderer/MeshFactory.h"
+#include "RenderingSystem.h"
+#include "GLTFReader.h"
 
 namespace Nork {
-	namespace fs = std::filesystem;
-
-	ResourceManager::ResourceManager(Renderer::World& world)
-		: rendererWorld(world)
+	template<class T> void Resources<T>::Reload(T&& val)
 	{
-		assetsPath = fs::current_path().append("Assets");
-		fs::create_directory(assetsPath);
-		fs::create_directory(BufferBinariesPath());
-		fs::create_directory(ImagesPath());
-		fs::create_directory(MeshesPath());
-		fs::create_directory(MaterialsPath());
-		fs::create_directory(ModelsPath());
-		fs::create_directory(ExportPath());
+		auto abs = AbsolutePath(val);
+		if (!fs::exists(abs))
+			throw ResourceNotFoundException(abs);
+		Set(val, Load(abs));
 	}
-
-	std::string ResourceManager::ImportTexture(const std::string& extPath)
+	template<class T> bool Resources<T>::Exists(const fs::path& path)
 	{
-		auto id = ExternalPathToAssetId(fs::path(extPath).replace_extension("bmp").string());
-		auto path = AssetIdToTexturePath(id);
-		if (fs::exists(path))
+		return cache.contains(Relative(path)) || fs::exists(Absolute(path));
+	}
+	template<class T> T& Resources<T>::Get(const fs::path& path)
+	{
+		auto rel = Relative(path);
+		if (!cache.contains(rel))
 		{
-			Logger::Error("Texture with the same path hash is already imported.");
-			return id;
+			auto abs = Absolute(path);
+			if (!fs::exists(abs))
+				throw ResourceNotFoundException(abs);
+			if (IsExternal(path))
+			{ // copy external assets to project. change the uri accordingly
+				abs = Absolute(ImportFile(path));
+				rel = Relative(abs);
+			}
+			cache[rel] = Load(abs);
 		}
+		return cache[rel];
+	}
+	template<class T> fs::path Resources<T>::ImportFile(const fs::path& path) const
+	{
+		auto extAbs = Absolute(path);
+		if (!fs::exists(extAbs))
+			throw ResourceNotFoundException(extAbs);
+
+		int i = 0;
+		fs::path abs = Absolute("imported") / path.filename();
+		while (fs::exists(abs))
+		{
+			abs.replace_filename(path.stem() += " (" + std::to_string(++i) + ")").replace_extension(path.extension());
+		}
+
+		Logger::Info("Importing Asset from ", extAbs, " to ", abs);
+		fs::create_directories(abs.parent_path());
+		fs::copy(extAbs, abs);
+		return abs;
+	}
+	template<class T> fs::path Resources<T>::Uri(const T& val) const
+	{
+		for (auto [rel, v] : cache)
+			if (v == val) return rel;
+		throw ResourceNotLoadedException("Couldn't find resource in cache");
+	}
+	template<class T> fs::path Resources<T>::AbsolutePath(const T& val) const
+	{
+		return Absolute(Uri(val));
+	}
+	template<class T> void Resources<T>::Save(const T& val) const
+	{
+		Save(val, AbsolutePath(val));
+	}
+	template<class T> void Resources<T>::SaveAs(const T& val, const fs::path& path)
+	{
+		Add(val, path);
+		Save(val, Absolute(path));
+	}
+	template<class T> bool Resources<T>::IsExternal(const fs::path& path) const
+	{
+		auto rel = Relative(path);
+		return rel.empty() || * rel.begin() == "..";
+	}
+	template<class T> void Resources<T>::Add(const T& val, const fs::path& path)
+	{
+		auto rel = Relative(path);
+		if (IsExternal(rel))
+			throw ExternalLocationException(path);
+		if (cache.contains(rel))
+			throw FileAlreadyExistsException(rel);
+		cache[rel] = val;
+	}
+	template<class T> fs::path Resources<T>::Absolute(const fs::path& path) const
+	{
+		return path.is_absolute() ? path : parentPath / path;
+	}
+	template<class T> fs::path Resources<T>::Relative(const fs::path& path) const
+	{
+		return path.is_relative() ? path : fs::relative(path, parentPath);
+	}
+	template<class T> Resources<T>::Resources()
+	{
+		parentPath = fs::current_path().append("Assets");
+		fs::create_directory(parentPath);
+	}
+	template<class T> Resources<T>& Resources<T>::Instance()
+	{
+		static Resources<T> instance;
+		return instance;
+	}
+	
+	template Resources<std::shared_ptr<Components::Model>>;
+	template Resources<Renderer::Mesh>;
+	template Resources<std::shared_ptr<Renderer::Texture2D>>;
+
+	static Renderer::GLTF::GLTF LoadGLTF(const fs::path& path)
+	{
+		return Renderer::GLTF::GLTF::FromJson(JsonObject::ParseFormatted(FileUtils::ReadAsString(path.string())));
+	}
+	static void SaveGLTF(const Renderer::GLTF::GLTF& gltf, const fs::path& path)
+	{
+		Logger::Info("Saving GLTF file to ", path);
+		FileUtils::WriteString(gltf.ToJson().ToStringFormatted(), path.string());
+	}
+	static void ParseMaterial(Renderer::Material& material, const Renderer::GLTF::Material& mat, const Renderer::GLTF::GLTF& gltf)
+	{
+		material->diffuse = mat.pbrMetallicRoughness.baseColorFactor;
+		material->specular = 1 - mat.pbrMetallicRoughness.roughnessFactor;
+		material->specularExponent = mat.pbrMetallicRoughness.extras.Get<float>("specularExponent");
+		if (mat.pbrMetallicRoughness.baseColorTexture.Validate())
+		{
+			auto& texId = gltf.images[gltf.textures[mat.pbrMetallicRoughness.baseColorTexture.index].source].uri;
+			material.SetTextureMap(TextureResources::Instance().Get(texId), Renderer::TextureMap::Diffuse);
+		}
+		if (mat.pbrMetallicRoughness.metallicRoughnessTexture.Validate())
+		{
+			auto& texId = gltf.images[gltf.textures[mat.pbrMetallicRoughness.metallicRoughnessTexture.index].source].uri;
+			material.SetTextureMap(TextureResources::Instance().Get(texId), Renderer::TextureMap::Roughness);
+		}
+		if (mat.normalTexture.Validate())
+		{
+			auto& texId = gltf.images[gltf.textures[mat.normalTexture.index].source].uri;
+			material.SetTextureMap(TextureResources::Instance().Get(texId), Renderer::TextureMap::Normal);
+		}
+	}
+	
+	template<> MeshResources::ResourceType MeshResources::Load(const fs::path& path) const
+	{
+		Logger::Info("Loading mesh ", path);
+
+		return RenderingSystem::Instance().world.AddMesh(
+			FileUtils::ReadBinary<Renderer::Data::Vertex>((path / "vertices.bin").string()),
+			FileUtils::ReadBinary<uint32_t>((path / "indices.bin").string()));
+	}
+	template<> TextureResources::ResourceType TextureResources::Load(const fs::path& path) const
+	{
+		Logger::Info("Loading texture ", path);
+
+		auto image = Renderer::LoadUtils::LoadImage(path.string());
 
 		using namespace Renderer;
-		auto image = LoadUtils::LoadImage(extPath);
-		LoadUtils::WriteImage(image, path.string());
-		Logger::Info("Imported texture: ", path.string(), " from ", extPath);
-		return id;
+		return TextureBuilder()
+			.Attributes(TextureAttributes{ .width = image.width, .height = image.height, .format = image.format })
+			.Params(TextureParams::Tex2DParams())
+			.Create2DWithData(image.data.data());
 	}
-	std::shared_ptr<Components::Model> ResourceManager::ImportModel(const std::string& extPath)
+	template<> ModelResources::ResourceType ModelResources::Load(const fs::path& path) const
 	{
-		auto id = ExternalPathToAssetId(extPath);
-		auto path = AssetIdToModelPath(id);
-		if (fs::exists(path))
-		{
-			Logger::Error("Model with the same path hash is already imported.");
-			return GetModel(id);
-		}
-
-		ModelResource modelResource;
-		auto meshDatas = Renderer::LoadUtils::LoadModel(extPath);
-
-		for (auto& meshData : meshDatas)
-		{
-			auto mesh = rendererWorld.AddMesh(meshData.vertices.size(), meshData.indices.size());
-			mesh.Vertices().CopyFrom(meshData.vertices.data(), meshData.vertices.size());
-			mesh.Indices().CopyFrom(meshData.indices.data(), meshData.indices.size());
-			auto material = rendererWorld.AddMaterial();
-
-			material->diffuse = meshData.material.diffuse;
-			material->specular = meshData.material.specular;
-			material->specularExponent = meshData.material.specularExponent;
-			for (auto& pair : meshData.material.textureMaps)
-			{
-				auto texId = ImportTexture(pair.second);
-				material.SetTextureMap(GetTexture(texId), pair.first);
-			}
-
-			MeshResource meshResource{ .mesh = meshData.meshName, .material = meshData.materialName };
-			meshes[meshResource.mesh] = mesh;
-			materials[meshResource.material] = material;
-			SaveMesh(mesh);
-			SaveMaterial(material);
-			modelResource.meshes.push_back(meshResource);
-		}
-
+		Logger::Info("Loading model ", path);
+		auto gltf = LoadGLTF(path);
 		auto model = std::make_shared<Components::Model>();
-		for (auto& meshResource : modelResource.meshes)
-		{
-			model->meshes.push_back(Components::Mesh{ .mesh = meshes[meshResource.mesh], .material = materials[meshResource.material] });
+
+		if (gltf.meshes.empty())
+			throw GeneralResourceException(std::string("gltf file \"").append(path.string()).append("\" did not contain any models (meshes)"));
+		auto& mesh = gltf.meshes.front(); // gltf::Mesh = Components::Model
+		for (auto& prim : mesh.primitives)
+		{ // gltf::Primitive = Components::Mesh
+			const auto& indsBuf = gltf.buffers[gltf.bufferViews[gltf.accessors[prim.indices].bufferView].buffer];
+			// const auto& vertsBufs = gltf.buffers[gltf.bufferViews[gltf.accessors[prim.attributes.back().accessor].bufferView].buffer]; // all of this primitive's attributes should point to the same buffer (vertices) 
+			Components::Mesh mesh{ .mesh = MeshResources::Instance().Get(indsBuf.uri) };
+			mesh.material = RenderingSystem::Instance().world.AddMaterial();
+			if (prim.material != -1)
+				ParseMaterial(mesh.material, gltf.materials[prim.material], gltf);
+			model->meshes.push_back(mesh);
 		}
-		Logger::Info("Loaded model: ", extPath);
-		models[id] = model;
-		SaveModel(model);
+		
 		return model;
 	}
-
-	void ResourceManager::ExportModel(std::shared_ptr<Components::Model> model)
+	
+	template<> void MeshResources::Set(MeshResources::ResourceType& dst, const MeshResources::ResourceType& src) const
 	{
-		auto dir = ExportPath().append(*IdFor(model));
-		Renderer::GLTFBuilder builder(dir);
-		int idx = 0;
-		std::vector<int> nodes;
+		std::unreachable();
+	}
+	template<> void TextureResources::Set(TextureResources::ResourceType& dst, const TextureResources::ResourceType& src) const
+	{
+		std::unreachable();
+	}
+	template<> void ModelResources::Set(ModelResources::ResourceType& dst, const ModelResources::ResourceType& src) const
+	{
+		*dst = *src;
+	}
+
+	template<> void MeshResources::Save(const MeshResources::ResourceType& val, const fs::path& path) const
+	{
+		Logger::Info("Saving Mesh to ", path);
+
+		fs::create_directory(path);
+		FileUtils::WriteBinary(val.Vertices().Data(), val.Vertices().SizeBytes(), (path / "vertices.bin").string());
+		FileUtils::WriteBinary(val.Indices().Data(), val.Indices().SizeBytes(), (path /"indices.bin").string());
+	}
+	template<> void TextureResources::Save(const TextureResources::ResourceType& val, const fs::path& path) const
+	{
+		Logger::Info("Saving Image (", val->GetWidth(), "x", val->GetHeight(), "x", 
+			Renderer::TextureFormatToString(val->GetAttributes().format), ") to ", path);
+		Renderer::LoadUtils::WriteTexture(*val, path.string(), Renderer::ImageFormat::BMP);
+	}
+	template<> void ModelResources::Save(const ModelResources::ResourceType& val, const fs::path& path) const
+	{
+		Logger::Info("Saving Model to ", path);
+
+		auto builder = Renderer::GLTFBuilder();
+		std::vector<std::pair<Renderer::TextureMap, std::string>> imageUris;
+		int matIdx = 0;
+		builder.AddScene(true);
+		for (auto& mesh : val->meshes)
+		{
+			MeshResources::Instance().Save(mesh.mesh);
+			auto tryAddTex = [&](Renderer::TextureMap type)
+			{
+				if (!mesh.material.HasDefault(type))
+					imageUris.push_back({ type, TextureResources::Instance().Uri(mesh.material.GetTextureMap(type)).string()});
+			};
+			using enum Renderer::TextureMap;
+			tryAddTex(Diffuse);
+			tryAddTex(Roughness);
+			tryAddTex(Normal);
+			tryAddTex(Reflection);
+			builder
+				.AddMesh(mesh.mesh, MeshResources::Instance().Uri(mesh.mesh).string(), matIdx++)
+				.AddMaterial(mesh.material, imageUris); // don't need to add if it equals the (gltf) default one
+		}
+
+		SaveGLTF(builder.Get(), path);
+	}
+
+	ModelResources::ResourceType& ResourceUtils::ImportModel(const fs::path& path)
+	{
+		Logger::Info("Importing model from ", path);
+
+		if (path.extension() == ".gltf")
+		{
+			auto model = GLTFReader(path).Read();
+			ModelResources::Instance().Add(model, path.stem());
+			return model;
+		}
+		else if (path.extension() == ".obj")
+		{
+			auto meshDatas = Renderer::LoadUtils::LoadModel(path.string());
+			auto model = std::make_shared<Components::Model>();
+
+			for (auto& meshData : meshDatas)
+			{
+				auto mesh = RenderingSystem::Instance().world.AddMesh(meshData.vertices.size(), meshData.indices.size());
+				mesh.Vertices().CopyFrom(meshData.vertices.data(), meshData.vertices.size());
+				mesh.Indices().CopyFrom(meshData.indices.data(), meshData.indices.size());
+				MeshResources::Instance().SaveAs(mesh, fs::path(meshData.meshName).stem());
+
+				auto material = RenderingSystem::Instance().world.AddMaterial();
+				material->diffuse = meshData.material.diffuse;
+				material->specular = meshData.material.specular;
+				material->specularExponent = meshData.material.specularExponent;
+				for (auto& pair : meshData.material.textureMaps)
+				{
+					auto tex = TextureResources::Instance().Get(pair.second);
+					TextureResources::Instance().Save(tex);
+					material.SetTextureMap(tex, pair.first);
+				}
+
+				model->meshes.push_back(Components::Mesh{ .mesh = mesh, .material = material });
+			}
+
+			ModelResources::Instance().SaveAs(model, path.stem());
+			return model;
+		}
+		throw GeneralResourceException("no importer for " + path.extension().string());
+	}
+	void ResourceUtils::ExportModel(const ModelResources::ResourceType& model, const fs::path& path)
+	{
+		Logger::Info("Exporting model to ", path);
+		Renderer::GLTFBuilder builder;
+		int matIdx = 0;
+		builder.AddScene(true);
 		for (auto& meshMat : model->meshes)
 		{
-			builder.AddNode(idx);
-			nodes.push_back(idx);
-
-			builder.AddMesh(meshMat.mesh, *IdFor(meshMat.mesh), idx++);
+			builder.AddMesh(meshMat.mesh, MeshResources::Instance().Uri(meshMat.mesh).string(), matIdx, path.parent_path());
 
 			std::vector<std::pair<Renderer::TextureMap, std::string>> imageUris;
 			auto tryAddTex = [&](Renderer::TextureMap type)
 			{
-				auto texId = IdFor(meshMat.material.GetTextureMap(type));
-				if (texId.has_value())
-				{
-					SaveImage(*meshMat.material.GetTextureMap(type), fs::path(dir).append(*texId).string());
-					imageUris.push_back({ type, *texId });
-				}
+				auto texId = TextureResources::Instance().Uri(meshMat.material.GetTextureMap(type)).string();
+				Renderer::LoadUtils::WriteTexture(*meshMat.material.GetTextureMap(type), path.string(), Renderer::ImageFormat::JPEG);
+				imageUris.push_back({ type, texId });
 			};
 			using enum Renderer::TextureMap;
 			tryAddTex(Diffuse);
@@ -113,429 +303,50 @@ namespace Nork {
 			tryAddTex(Normal);
 			tryAddTex(Reflection);
 
-			builder.AddMaterial(meshMat.material, *IdFor(meshMat.material), imageUris);
+			builder.AddMaterial(meshMat.material, imageUris);
+			matIdx++;
 		}
-		builder.AddScene(nodes, true);
-		fs::create_directory(dir);
-		SaveGLTF(builder.Get(), dir.append("model").replace_extension("gltf").string());
+		fs::create_directory(path.parent_path());
+		SaveGLTF(builder.Get(), path.string());
 	}
-
-	std::shared_ptr<Components::Model> ResourceManager::GetModelByPath(const std::string& path)
+	static ModelResources::ResourceType& GetCube()
 	{
-		return GetModel(fs::path(path).filename().string());
-	}
-	std::shared_ptr<Components::Model> ResourceManager::GetModel(const std::string& id)
-	{
-		auto opt = models.find(id);
-		if (opt == models.end())
+		static bool initialized = false;
+		static fs::path gltfUri = "templates/cube_template.gltf";
+		if (!initialized)
 		{
-			LoadModel(id);
-		}
-		return models[id];
-	}
-	Renderer::Mesh ResourceManager::GetMesh(const std::string& id)
-	{
-		auto opt = meshes.find(id);
-		if (opt == meshes.end())
-		{
-			LoadMesh(id);
-		}
-		return meshes[id];
-	}
-	std::shared_ptr<Renderer::Texture2D> ResourceManager::GetTexture(const std::string& id)
-	{
-		auto opt = textures.find(id);
-		if (opt == textures.end())
-		{
-			LoadTexture(id);
-		}
-		return textures[id];
-	}
-	std::shared_ptr<Renderer::Texture2D> ResourceManager::GetTextureByPath(const std::string& path)
-	{
-		return GetTexture(fs::path(path).filename().string());
-	}
-	Renderer::Material ResourceManager::GetMaterial(const std::string& id)
-	{
-		auto opt = materials.find(id);
-		if (opt == materials.end())
-		{
-			LoadMaterial(id);
-		}
-		return materials[id];
-	}
-	Renderer::Material ResourceManager::GetMaterialByPath(const std::string& path)
-	{
-		return GetMaterial(fs::path(path).filename().string());
-	}
-
-	void ResourceManager::LoadTexture(const std::string& id)
-	{
-		using namespace Renderer;
-		
-		auto path = AssetIdToTexturePath(id);
-		if (!fs::exists(path))
-		{
-			Logger::Error("Texture path does not exists: ", path.string());
-			return;
-		}
-
-		auto image = LoadUtils::LoadImage(path.string());
-		auto tex = TextureBuilder()
-			.Attributes(TextureAttributes{ .width = image.width, .height = image.height, .format = image.format })
-			.Params(TextureParams::Tex2DParams())
-			.Create2DWithData(image.data.data());
-		textures[id] = tex;
-		Logger::Info("Loaded texture ", id);
-	}
-	void ResourceManager::LoadMesh(const std::string& id)
-	{
-		auto gltf = LoadGLTF(AssetIdToMeshPath(id).string());
-		if (gltf.meshes.empty() || gltf.meshes.back().primitives.empty())
-		{
-			Logger::Error("gltf file ", AssetIdToMeshPath(id).string(), " did not contain any meshes");
-			return;
-		}
-
-		auto indsBufs = gltf.buffers[
-			gltf.bufferViews[
-				gltf.accessors[
-					gltf.meshes.back().primitives.back().indices
-				].bufferView
-			].buffer
-		]; 
-		auto vertsBufs = gltf.buffers[
-			gltf.bufferViews[
-				gltf.accessors[
-					gltf.meshes.back().primitives.back().attributes.back().accessor
-				].bufferView
-			].buffer
-		];
-
-		auto mesh = rendererWorld.AddMesh(
-			FileUtils::ReadBinary<Renderer::Data::Vertex>(MeshesPath().append(vertsBufs.uri).string(), vertsBufs.byteLength),
-			FileUtils::ReadBinary<uint32_t>(MeshesPath().append(indsBufs.uri).string(), indsBufs.byteLength));
-
-		meshes[id] = mesh;
-		Logger::Info("Loaded mesh ", id);
-	}
-	void ResourceManager::LoadMaterial(const std::string& id)
-	{
-		auto gltf = LoadGLTF(AssetIdToMaterialPath(id).string());
-		if (gltf.materials.empty())
-		{
-			Logger::Error("gltf file ", AssetIdToMeshPath(id).string(), " did not contain any materials");
-			return;
-		}
-
-		auto material = rendererWorld.AddMaterial();
-		auto& mat = gltf.materials.back();
-
-		material->diffuse = mat.pbrMetallicRoughness.baseColorFactor;
-		material->specular = 1 - mat.pbrMetallicRoughness.roughnessFactor;
-		material->specularExponent = mat.pbrMetallicRoughness.extras.Get<float>("specularExponent");
-		if (mat.pbrMetallicRoughness.baseColorTexture.Validate())
-		{
-			auto texId = gltf.images[mat.pbrMetallicRoughness.baseColorTexture.index].uri;
-			material.SetTextureMap(GetTexture(texId), Renderer::TextureMap::Diffuse);
-		}
-		if (mat.pbrMetallicRoughness.metallicRoughnessTexture.Validate())
-		{
-			auto texId = gltf.images[mat.pbrMetallicRoughness.metallicRoughnessTexture.index].uri;
-			material.SetTextureMap(GetTexture(texId), Renderer::TextureMap::Roughness);
-		}
-		if (mat.normalTexture.Validate())
-		{
-			auto texId = gltf.images[mat.normalTexture.index].uri;
-			material.SetTextureMap(GetTexture(texId), Renderer::TextureMap::Normal);
-		}
-
-		materials[id] = material;
-		Logger::Info("Loaded material ", id);
-	}
-	void ResourceManager::LoadModel(const std::string& id)
-	{
-		if (id == "")
-		{
-			auto defaultMesh = rendererWorld.AddMesh(Renderer::MeshFactory::CubeVertices(), Renderer::MeshFactory::CubeIndices());
-			auto defaultMaterial = rendererWorld.AddMaterial();
-			meshes[""] = defaultMesh;
-			materials[""] = defaultMaterial;
-			models[""] = std::make_shared<Components::Model>();
-			models[""]->meshes.push_back(Components::Mesh{ .mesh = defaultMesh, .material = defaultMaterial });
-			return;
-		}
-
-		auto path = AssetIdToModelPath(id);
-		if (!fs::exists(path))
-		{
-			Logger::Error("Path ", path, " does not exist for Asset ", id);
-			return;
-		}
-		auto model = std::make_shared<Components::Model>();
-		auto json = JsonObject::ParseFormatted(FileUtils::ReadAsString(path.string()));
-		for (auto& obj : json.Get<JsonArray>("meshes").Get<JsonObject>())
-		{
-			model->meshes.push_back(Components::Mesh{
-				.mesh = GetMesh(obj.Get<std::string>("mesh")),
-				.material = GetMaterial(obj.Get<std::string>("material"))
-				});
-		}
-		models[id] = model;
-		Logger::Info("Loaded model ", id);
-	}
-
-	std::shared_ptr<Components::Model> Nork::ResourceManager::CloneModel(std::shared_ptr<Components::Model> model, const std::string& id)
-	{
-		auto path = AssetIdToModelPath(id);
-		if (models.contains(id) || fs::exists(path))
-		{
-			Logger::Error("Model Asset with the same id already exists at \"", path, "\"");
-			return nullptr;
-		}
-		auto clone = std::make_shared<Components::Model>(*model);
-		models[id] = clone;
-		SaveModel(clone);
-		return clone;
-	}
-	void ResourceManager::SaveModel(std::shared_ptr<Components::Model> model)
-	{
-		JsonArray array;
-		for (auto& mesh : model->meshes)
-		{
-			array.Element<JsonObject>(JsonObject()
-				.Property("mesh", *IdFor(mesh.mesh))
-				.Property("material", *IdFor(mesh.material)));
-		}
-		auto json = JsonObject().Property("meshes", array);
-		auto path = AssetIdToModelPath(*IdFor(model)).string();
-		Logger::Info("Saving Model to ", path);
-		FileUtils::WriteString(json.ToStringFormatted(), path);
-	}
-	Renderer::Material Nork::ResourceManager::CloneMaterial(const Renderer::Material& source, const std::string& id)
-	{
-		auto path = AssetIdToMaterialPath(id);
-		if (materials.contains(id) || fs::exists(path))
-		{
-			Logger::Error("Material Asset with the same id already exists at \"", path, "\"");
-			return source;
-		}
-		auto clone = rendererWorld.AddMaterial();
-		clone->diffuse = source->diffuse;
-		clone->specular = source->specular;
-		clone->specularExponent = source->specularExponent;
-		using enum Renderer::TextureMap;
-		clone.SetTextureMap(source.GetTextureMap(Diffuse), Diffuse);
-		clone.SetTextureMap(source.GetTextureMap(Normal), Normal);
-		clone.SetTextureMap(source.GetTextureMap(Roughness), Roughness);
-		clone.SetTextureMap(source.GetTextureMap(Reflection), Reflection);
-
-		materials[id] = clone;
-		SaveMaterial(clone);
-		return clone;
-	}
-	void ResourceManager::SaveMaterial(const Renderer::Material& material)
-	{
-		auto path = PathFor(material);
-		if (!path.has_value())
-		{
-			Logger::Error("Failed to Serialized Renderer::Material, bacause it's path is not found");
-			return;
-		}
-		std::vector<std::pair<Renderer::TextureMap, std::string>> imageUris;
-		auto tryAddTex = [&](Renderer::TextureMap type)
-		{
-			auto tex = IdFor(material.GetTextureMap(type));
-			if (tex.has_value())
+			fs::path bufUri = fs::path(gltfUri).replace_extension("");
+			if (!ModelResources::Instance().Exists(gltfUri))
 			{
-				imageUris.push_back({ type, *tex });
-			}
-		};
-		using enum Renderer::TextureMap;
-		tryAddTex(Diffuse);
-		tryAddTex(Roughness);
-		tryAddTex(Normal);
-		tryAddTex(Reflection);
-
-		auto gltf = Renderer::GLTFBuilder(BufferBinariesPath())
-			.AddMaterial(material, *IdFor(material), imageUris)
-			.Get();
-		SaveGLTF(gltf, *path);
-	}
-	void ResourceManager::SaveMesh(const Renderer::Mesh& mesh)
-	{
-		auto path = PathFor(mesh);
-		if (!path.has_value())
-		{
-			Logger::Error("Failed to Serialized Renderer::Mesh, bacause it's path is not found");
-			return;
-		}
-		auto gltf = Renderer::GLTFBuilder(BufferBinariesPath())
-			.AddMesh(mesh, *IdFor(mesh))
-			.Get();
-		SaveGLTF(gltf, *path);
-	}
-	void ResourceManager::SaveImage(const Renderer::Texture2D& tex, const std::string& path)
-	{
-		Renderer::Image image;
-		image.format = tex.GetAttributes().format;
-		image.width = tex.GetWidth();
-		image.height = tex.GetHeight();
-		image.channels = Renderer::GetTextureChannelCount(image.format);
-		image.data.resize(Renderer::GetTexturePixelSize(image.format) * image.width * image.height, 0);
-		tex.Bind().GetData2D(image.data.data());
-		Renderer::LoadUtils::WriteImage(image, path);
-		Logger::Info("Saved Image (", image.width, "x", image.height, "x", image.channels, ", ", Renderer::TextureFormatToString(image.format), ") to ", path);
-	}
-	void ResourceManager::SaveGLTF(const Renderer::GLTF::GLTF& gltf, const std::string& path)
-	{
-		FileUtils::WriteString(gltf.ToJson().ToStringFormatted(), path);
-		Logger::Info("Saved GLTF file to ", path);
-	}
-
-	Renderer::GLTF::GLTF ResourceManager::LoadGLTF(const std::string& path)
-	{
-		return Renderer::GLTF::GLTF::FromJson(JsonObject::ParseFormatted(FileUtils::ReadAsString(path)));
-	}
-
-	std::optional<std::string> ResourceManager::PathFor(std::shared_ptr<Renderer::Texture2D> texturePtr)
-	{
-		for (auto [id, ptr] : textures)
-		{
-			if (texturePtr == ptr)
-			{
-				return AssetIdToTexturePath(id).string();
+				MeshResources::Instance().SaveAs(RenderingSystem::Instance().world.AddMesh(
+					Renderer::MeshFactory::CubeVertices(), Renderer::MeshFactory::CubeIndices()), bufUri);
+				ModelResources::Instance().SaveAs(std::make_shared<Components::Model>(
+					Components::Model{
+						.meshes = { Components::Mesh {
+							.mesh = { MeshResources::Instance().Get(bufUri) },
+							.material = RenderingSystem::Instance().world.AddMaterial()
+						}}
+					}), gltfUri);
+				initialized = true;
 			}
 		}
-		return std::nullopt;
+		return ModelResources::Instance().Get(gltfUri);
 	}
-	std::optional<std::string> ResourceManager::PathFor(const Renderer::Material& material)
+	ModelResources::ResourceType& ResourceUtils::GetTemplate(ModelTemplate type)
 	{
-		for (auto [id, mat] : materials)
+		fs::path path = fs::current_path().append("templates").append("models");
+		switch (type)
 		{
-			if (material == mat)
-			{
-				return AssetIdToMaterialPath(id).string();
-			}
+		case ModelTemplate::Cube:
+			return GetCube();
+		case ModelTemplate::Sphere:
+			path.append("sphere").append("sphere");
+			break;
+		default:
+			std::unreachable();
 		}
-		return std::nullopt;
-	}
-	std::optional<std::string> ResourceManager::PathFor(const Renderer::Mesh& meshPtr)
-	{
-		for (auto [id, ptr] : meshes)
-		{
-			if (meshPtr == ptr)
-			{
-				return AssetIdToMeshPath(id).string();
-			}
-		}
-		return std::nullopt;
-	}
-	std::optional<std::string> ResourceManager::PathFor(std::shared_ptr<Components::Model> ptr)
-	{
-		for (auto [id, model] : models)
-		{
-			if (model == ptr)
-			{
-				return AssetIdToModelPath(id).string();
-			}
-		}
-		return std::nullopt;
-	}
-	std::optional<std::string> ResourceManager::IdFor(std::shared_ptr<Renderer::Texture2D> texturePtr)
-	{
-		for (auto& [id, ptr] : textures)
-		{
-			if (texturePtr == ptr)
-			{
-				return id;
-			}
-		}
-		return std::nullopt;
-	}
-	std::optional<std::string> ResourceManager::IdFor(const Renderer::Material& materialPtr)
-	{
-		for (auto [id, ptr] : materials)
-		{
-			if (materialPtr == ptr)
-			{
-				return id;
-			}
-		}
-		return std::nullopt;
-	}
-	std::optional<std::string> ResourceManager::IdFor(const Renderer::Mesh& meshPtr)
-	{
-		for (auto [id, ptr] : meshes)
-		{
-			if (meshPtr == ptr)
-			{
-				return id;
-			}
-		}
-		return std::nullopt;
-	}
-	std::optional<std::string> ResourceManager::IdFor(std::shared_ptr<Components::Model> ptr)
-	{
-		for (auto [id, model] : models)
-		{
-			if (model == ptr)
-			{
-				return id;
-			}
-		}
-		return std::nullopt;
+		return ModelResources::Instance().Get(path.replace_extension("gltf"));
 	}
 
-	std::filesystem::path ResourceManager::AssetsPath()
-	{
-		return std::filesystem::path(assetsPath);
-	}
-	std::filesystem::path ResourceManager::ModelsPath()
-	{
-		return AssetsPath().append("models");
-	}
-	std::filesystem::path ResourceManager::MeshesPath()
-	{
-		return AssetsPath().append("meshes");
-	}
-	std::filesystem::path ResourceManager::BufferBinariesPath()
-	{
-		return AssetsPath().append("meshes");
-	}
-	std::filesystem::path ResourceManager::MaterialsPath()
-	{
-		return AssetsPath().append("materials");
-	}
-	std::filesystem::path ResourceManager::ImagesPath()
-	{
-		return AssetsPath().append("materials");
-	}
-	std::filesystem::path ResourceManager::ExportPath()
-	{
-		return AssetsPath().append("export");
-	}
-
-	std::string ResourceManager::ExternalPathToAssetId(const std::string& path)
-	{
-		std::string dir = path.substr(0, path.find_last_of("\\/") - 2);
-		auto dirHash = std::hash<std::string>()(dir);
-		return std::to_string(dirHash) + "_" + path.substr(path.find_last_of("\\/") + 1);
-	}
-	std::filesystem::path ResourceManager::AssetIdToTexturePath(const std::string& id)
-	{
-		return ImagesPath().append(id).replace_extension("bmp");
-	}
-	std::filesystem::path ResourceManager::AssetIdToMeshPath(const std::string& id)
-	{
-		return MeshesPath().append(id).replace_extension("gltf");
-	}
-	std::filesystem::path ResourceManager::AssetIdToMaterialPath(const std::string& id)
-	{
-		return ImagesPath().append(id).replace_extension("gltf");
-	}
-	std::filesystem::path ResourceManager::AssetIdToModelPath(const std::string& id)
-	{
-		return ModelsPath().append(id).replace_extension("json");
-	}
+	
 }

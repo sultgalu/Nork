@@ -8,6 +8,7 @@ namespace Nork {
 	class PhysicsSystem
 	{
 	public:
+		static PhysicsSystem& Instance();
 		PhysicsSystem(entt::registry& reg);
 		void Download();
 		void Upload();

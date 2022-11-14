@@ -4,76 +4,93 @@
 #include "Modules/Renderer/GLTF/gltf.h"
 
 namespace Nork {
-	struct MeshResource
+	namespace fs = std::filesystem;
+
+	struct ResourcesException : std::exception
 	{
-		std::string mesh;
-		std::string material;
+		ResourcesException(std::string_view type, std::string_view reason)
+			: std::exception(std::string(type).append(": ").append(reason).c_str()) {}
 	};
-	struct ModelResource
+	struct GeneralResourceException : ResourcesException
 	{
-		std::vector<MeshResource> meshes;
+		GeneralResourceException(std::string_view reason)
+			: ResourcesException("GeneralResourceException", reason)
+		{}
+	};
+	struct ResourceNotFoundException : ResourcesException
+	{
+		ResourceNotFoundException(const fs::path& path)
+			: ResourcesException("ResourceNotFoundException", std::string("Couldn't find resource at path: ").append(path.string())) {}
+	};
+	struct ResourceNotLoadedException : ResourcesException
+	{
+		ResourceNotLoadedException(const char* reason)
+			: ResourcesException("ResourceNotLoadedException", reason)
+		{}
+	};
+	struct IdNotFoundException : ResourcesException
+	{
+		IdNotFoundException()
+			: ResourcesException("IdNotFoundException", std::string("Couldn't find Resource ID for value"))
+		{}
+	};
+	struct FileAlreadyExistsException : ResourcesException
+	{
+		FileAlreadyExistsException(const fs::path& path)
+			: ResourcesException("FileAlreadyExistsException", path.string())
+		{}
+	};
+	struct ExternalLocationException : ResourcesException
+	{
+		ExternalLocationException(const fs::path& path)
+			: ResourcesException("ExternalLocationException", path.string().append(" is not a project location"))
+		{}
 	};
 
-	class ResourceManager
+	template<class T>
+	class Resources
 	{
 	public:
-		ResourceManager(Renderer::World&);
-		std::string ImportTexture(const std::string& path);
-		std::shared_ptr<Components::Model> ImportModel(const std::string& path);
-		void ExportModel(std::shared_ptr<Components::Model>);
+		using ResourceType = T;
 
-		std::shared_ptr<Components::Model> GetModelByPath(const std::string& path);
-		std::shared_ptr<Components::Model> GetModel(const std::string& id);
-		Renderer::Mesh GetMesh(const std::string& id);
-		std::shared_ptr<Renderer::Texture2D> GetTextureByPath(const std::string& path);
-		std::shared_ptr<Renderer::Texture2D> GetTexture(const std::string& id);
-		Renderer::Material GetMaterialByPath(const std::string& path);
-		Renderer::Material GetMaterial(const std::string& id);
+		T& Get(const fs::path&);
+		void Add(const T&, const fs::path&);
+		void SaveAs(const T&, const fs::path&);
+		void Save(const T&) const;
+		void Reload(T&&);
 
-		Renderer::World& rendererWorld;
+		fs::path AbsolutePath(const T&) const;
+		fs::path Uri(const T&) const;
+		bool Exists(const fs::path&);
 
-		std::optional<std::string> PathFor(std::shared_ptr<Renderer::Texture2D>);
-		std::optional<std::string> PathFor(const Renderer::Material&);
-		std::optional<std::string> PathFor(const Renderer::Mesh&);
-		std::optional<std::string> PathFor(std::shared_ptr<Components::Model>);
-		std::optional<std::string> IdFor(std::shared_ptr<Renderer::Texture2D>);
-		std::optional<std::string> IdFor(const Renderer::Material&);
-		std::optional<std::string> IdFor(const Renderer::Mesh&);
-		std::optional<std::string> IdFor(std::shared_ptr<Components::Model>);
-
-		std::filesystem::path AssetsPath();
-		std::filesystem::path ModelsPath();
-		std::filesystem::path MeshesPath();
-		std::filesystem::path BufferBinariesPath();
-		std::filesystem::path MaterialsPath();
-		std::filesystem::path ImagesPath();
-		std::filesystem::path ExportPath();
-
-		std::shared_ptr<Components::Model> CloneModel(std::shared_ptr<Components::Model>, const std::string& id);
-		void SaveModel(std::shared_ptr<Components::Model>);
-		Renderer::Material CloneMaterial(const Renderer::Material&, const std::string& id);
-		void SaveMaterial(const Renderer::Material&);
+		static Resources& Instance();
 	private:
-		std::unordered_map<std::string, std::shared_ptr<Components::Model>> models;
-		std::unordered_map<std::string, std::shared_ptr<Renderer::Texture2D>> textures;
-		std::unordered_map<std::string, Renderer::Mesh> meshes;
-		std::unordered_map<std::string, Renderer::Material> materials;
+		T Load(const fs::path&) const;
+		void Set(T&, const T&) const;
+		void Save(const T&, const fs::path&) const;
 
-		void LoadModel(const std::string& id);
-		void LoadTexture(const std::string& id);
-		void LoadMesh(const std::string& id);
-		void LoadMaterial(const std::string& id);
+		fs::path ImportFile(const fs::path&) const;
+		bool IsExternal(const fs::path&) const;
+		fs::path Relative(const fs::path&) const;
+		fs::path Absolute(const fs::path&) const;
+		void ParentPath(const fs::path& path) { parentPath = path; }
+		Resources();
+	private:
+		std::unordered_map<fs::path, T> cache;
+		fs::path parentPath;
+	};
 
-		std::string ExternalPathToAssetId(const std::string&);
-		std::filesystem::path AssetIdToTexturePath(const std::string&);
-		std::filesystem::path AssetIdToMeshPath(const std::string&);
-		std::filesystem::path AssetIdToMaterialPath(const std::string&);
-		std::filesystem::path AssetIdToModelPath(const std::string&);
-		std::filesystem::path assetsPath;
+	using ModelResources = Resources<std::shared_ptr<Components::Model>>;
+	using MeshResources = Resources<Renderer::Mesh>;
+	using TextureResources = Resources<std::shared_ptr<Renderer::Texture2D>>;
 
-		void SaveMesh(const Renderer::Mesh&);
-		void SaveImage(const Renderer::Texture2D&, const std::string& path);
-		void SaveGLTF(const Renderer::GLTF::GLTF& gltf, const std::string& path);
-		Renderer::GLTF::GLTF LoadGLTF(const std::string& path);
+	enum class ModelTemplate { Cube, Sphere };
+	class ResourceUtils
+	{
+	public:
+		static ModelResources::ResourceType& ImportModel(const fs::path&);
+		static ModelResources::ResourceType& GetTemplate(ModelTemplate);
+		static void ExportModel(const ModelResources::ResourceType&, const fs::path&);
+		static std::string GetFileName(fs::path);
 	};
 }

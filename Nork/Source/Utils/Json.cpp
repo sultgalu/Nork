@@ -279,6 +279,8 @@ static size_t FindClosing(char open, char close, const std::string& str, size_t 
 }
 static std::string GetNextPropertyValue(const std::string& json, size_t& pos)
 {
+	static const std::string validArithmeticStartRange = "-0123456789";
+	static const std::string validArithmeticEndRange = "0123456789.e-";
 	size_t end;
 	std::string value;
 	if (json[pos] == '\"')
@@ -286,9 +288,9 @@ static std::string GetNextPropertyValue(const std::string& json, size_t& pos)
 		end = json.find_first_of('\"', pos + 1); // not handling \" being in it
 		value = json.substr(pos, ++end - pos);
 	}
-	else if (std::string("-0123456789").find(json[pos]) != json.npos)
+	else if (validArithmeticStartRange.find(json[pos]) != json.npos)
 	{
-		end = json.find_first_not_of("0123456789.", pos + 1);
+		end = json.find_first_not_of(validArithmeticEndRange, pos + 1);
 		value = json.substr(pos, end - pos);
 	}
 	else if (json[pos] == 't')

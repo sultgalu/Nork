@@ -57,6 +57,7 @@
 //-----------FILESYSTEM-----------
 
 #include <filesystem>
+namespace fs = std::filesystem;
 
 //-----------THREADING-----------
 

@@ -66,6 +66,7 @@ namespace Nork {
 	class RenderingSystem
 	{
 	public:
+		static RenderingSystem& Instance();
 		RenderingSystem(entt::registry& registry);
 		void BeginFrame();
 		void Update();
@@ -102,6 +103,7 @@ namespace Nork {
 		glm::uvec2 resolution = { 1920, 1080 };
 		entt::observer dirLightObserver;
 		entt::observer pointLightObserver;
+		entt::observer transformObserver;
 	public:
 		struct ShadowMapProvider : Renderer::ShadowMapProvider
 		{
@@ -113,7 +115,6 @@ namespace Nork {
 		entt::registry& registry;
 		Shaders shaders;
 		Renderer::World world;
-		ResourceManager resourceManager = ResourceManager(world);
 		Renderer::DrawObjectsCommand deferredDrawCommand;
 		Renderer::DrawObjectsCommand shadowMapDrawCommand;
 		ShadowMapProvider shadowMapProvider;
@@ -125,6 +126,7 @@ namespace Nork {
 		bool shouldUpdateDrawCommands = false;
 		void UpdateDrawCommands();
 		void OnDrawableAdded(entt::registry& reg, entt::entity id);
+		void OnDrawableRemoved(entt::registry& reg, entt::entity id);
 		void OnDrawableUpdated(entt::registry& reg, entt::entity id);
 
 		bool shouldUpdateDirLightAndShadows = false;

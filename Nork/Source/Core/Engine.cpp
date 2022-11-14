@@ -19,6 +19,14 @@ namespace Nork
 	{
 		return *_engine;
 	}
+	RenderingSystem& RenderingSystem::Instance()
+	{
+		return Engine::Get().renderingSystem;
+	}
+	PhysicsSystem& PhysicsSystem::Instance()
+	{
+		return Engine::Get().physicsSystem;
+	}
 	Engine::Engine()
 		: uploadSem(1), updateSem(1),
 		scriptSystem(scene), physicsSystem(scene.registry)
@@ -26,7 +34,6 @@ namespace Nork
 		_engine = this;
 		scene.registry.on_construct<Components::Physics>().connect<&Engine::OnPhysicsAdded>(this);
 		scene.registry.on_destroy<Components::Physics>().connect<&Engine::OnPhysicsRemoved>(this);
-		transformObserver.connect(scene.registry, entt::collector.update<Components::Transform>());
 		renderingSystem.globalShaderUniform.lineColor.a = 0.6f;
 		renderingSystem.globalShaderUniform.lineColor.r += 0.1f;
 		renderingSystem.globalShaderUniform.lineColor.g += 0.2f;
@@ -168,14 +175,6 @@ namespace Nork
 					}
 				}
 			});
-	}
-
-	void Engine::UpdateTransformMatrices()
-	{
-		for (auto entity : transformObserver)
-		{
-			scene.registry.get<Components::Transform>(entity).RecalcModelMatrix();
-		}
 	}
 
 	CollidersStage::CollidersStage(Scene& scene, Shaders& shaders)

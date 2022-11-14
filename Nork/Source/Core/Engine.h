@@ -24,7 +24,6 @@ namespace Nork
 		Scene scene;
 
 		RenderingSystem renderingSystem = RenderingSystem(scene.registry);
-		ResourceManager& resourceManager = renderingSystem.resourceManager; // temp
 		PhysicsSystem physicsSystem;
 		std::thread* physicsThread;
 		bool physicsUpdate = false;
@@ -38,8 +37,6 @@ namespace Nork
 		std::binary_semaphore uploadSem;
 
 		ScriptSystem scriptSystem;
-
-		entt::observer transformObserver;
 	private:
 		void OnPhysicsAdded(entt::registry& reg, entt::entity id);
 		void OnPhysicsRemoved(entt::registry& reg, entt::entity id);

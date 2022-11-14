@@ -14,7 +14,7 @@ namespace Nork::Renderer {
 		static auto diff = CreateTexture2D(TextureFormat::RGBA32F, { 1.0f, 1.0f, 1.0f, 1.0f });
 		static auto norm = CreateTexture2D(TextureFormat::RGB32F, { 0.5f, 0.5f, 1.0f });
 		static auto refl = CreateTexture2D(TextureFormat::R32F, { 0.5f });
-		static auto rough = CreateTexture2D(TextureFormat::R32F, { 0.5f });
+		static auto rough = CreateTexture2D(TextureFormat::RGB32F, { 0.0f, 0.5f, 1.0f }); // g=specular, b=metalness
 		return { diff, norm, rough, refl };
 	}
 	Material::Material(SmartMappedBuffer<Data::Material>::Element element)
@@ -33,5 +33,9 @@ namespace Nork::Renderer {
 	void Material::SetDefaultTexture(TextureMap type)
 	{
 		SetTextureMap(GetDefaultTextureMaps()[std::to_underlying(type)], type);
+	}
+	bool Material::HasDefault(TextureMap type) const
+	{
+		return textureMaps[std::to_underlying(type)] == GetDefaultTextureMaps()[std::to_underlying(type)];
 	}
 }

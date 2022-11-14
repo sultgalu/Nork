@@ -166,6 +166,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Components\Impl\Drawable.cpp" />
     <ClCompile Include="Source\Editor\Panels\ColliderEditorPanel.cpp" />
     <ClCompile Include="Source\Modules\Physics\Pipeline\Collision.cpp" />
     <ClCompile Include="Source\Modules\Physics\Algorithms\Clip.cpp" />
@@ -224,6 +225,7 @@
     <ClCompile Include="Source\Modules\Renderer\Window\Window.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\Texture\Texture.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Objects\VertexArray\VertexArray.cpp" />
+    <ClInclude Include="Source\Core\GLTFReader.h" />
     <ClInclude Include="Source\Editor\Panels\include\ColliderEditorPanel.h" />
     <ClInclude Include="Source\Modules\Physics\Data\Collider.h" />
     <ClInclude Include="Source\Modules\Physics\Data\CollisionResult.h" />

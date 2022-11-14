@@ -24,7 +24,7 @@ namespace Nork::Renderer {
 		const TextureParams& GetParams() const { return params; }
 		uint32_t GetWidth() const { return attributes.width; }
 		uint32_t GetHeight() const { return attributes.height; }
-		void GetData2D(void*) const;
+		std::vector<char> GetData2D() const;
 	protected:
 		const TextureParams params;
 		const TextureAttributes attributes;

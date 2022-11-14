@@ -1,6 +1,24 @@
 #pragma once
 
 namespace Nork::Renderer::GLTF {
+	static std::string PrecentDecode(const std::string& s)
+	{
+		std::string result;
+		for (size_t i = 0; i < s.size(); i++)
+		{
+			if (s[i] == '%')
+			{
+				int c;
+				std::istringstream ({ s[i + 1], s[i + 2] }) >> std::hex >> c;
+				result += (char)c;
+				i += 2;
+			}
+			else
+				result += s[i];
+		}
+		return result;
+	}
+
 	struct Property
 	{
 		virtual JsonObject ToJson() const = 0;
@@ -11,13 +29,17 @@ namespace Nork::Renderer::GLTF {
 
 	struct Attribute
 	{
+		constexpr static const char* position = "POSITION";
+		constexpr static const char* normal = "NORMAL";
+		constexpr static const char* tangent = "TANGENT";
+		constexpr static const char* texcoord0 = "TEXCOORD_0";
 		std::string key;
 		int accessor;
 
-		static Attribute POSITION(int accessor) { return Attribute("POSITION", accessor); }
-		static Attribute NORMAL(int accessor) { return Attribute("NORMAL", accessor); }
-		static Attribute TANGENT(int accessor) { return Attribute("TANGENT", accessor); }
-		static Attribute TEXCOORD_0(int accessor) { return Attribute("TEXCOORD_0", accessor); }
+		static Attribute POSITION(int accessor) { return Attribute(position, accessor); }
+		static Attribute NORMAL(int accessor) { return Attribute(normal, accessor); }
+		static Attribute TANGENT(int accessor) { return Attribute(tangent, accessor); }
+		static Attribute TEXCOORD_0(int accessor) { return Attribute(texcoord0, accessor); }
 
 	private:
 		Attribute(const std::string& key, int accessor)
@@ -31,6 +53,13 @@ namespace Nork::Renderer::GLTF {
 		int material = -1;
 		std::vector<Attribute> attributes;
 
+		int Accessor(const char* attribute) const
+		{
+			for (auto& attrib : attributes)
+				if (attrib.key == attribute)
+					return attrib.accessor;
+			return -1;
+		}
 		JsonObject ToJson() const override
 		{
 			JsonObject json;
@@ -56,14 +85,14 @@ namespace Nork::Renderer::GLTF {
 
 			attributes.clear();
 			auto attribsJson = json.Get<JsonObject>("attributes");
-			if (attribsJson.Contains("NORMAL"))
-				attributes.push_back(Attribute::NORMAL(attribsJson.Get<int>("NORMAL")));
-			if (attribsJson.Contains("POSITION"))
-				attributes.push_back(Attribute::POSITION(attribsJson.Get<int>("POSITION")));
-			if (attribsJson.Contains("TANGENT"))
-				attributes.push_back(Attribute::TANGENT(attribsJson.Get<int>("TANGENT")));
-			if (attribsJson.Contains("TEXCOORD_0"))
-				attributes.push_back(Attribute::TEXCOORD_0(attribsJson.Get<int>("TEXCOORD_0")));
+			if (attribsJson.Contains(Attribute::normal))
+				attributes.push_back(Attribute::NORMAL(attribsJson.Get<int>(Attribute::normal)));
+			if (attribsJson.Contains(Attribute::position))
+				attributes.push_back(Attribute::POSITION(attribsJson.Get<int>(Attribute::position)));
+			if (attribsJson.Contains(Attribute::tangent))
+				attributes.push_back(Attribute::TANGENT(attribsJson.Get<int>(Attribute::tangent)));
+			if (attribsJson.Contains(Attribute::texcoord0))
+				attributes.push_back(Attribute::TEXCOORD_0(attribsJson.Get<int>(Attribute::texcoord0)));
 		}
 		bool Validate() const override
 		{
@@ -135,7 +164,7 @@ namespace Nork::Renderer::GLTF {
 		int buffer = -1;
 		int byteOffset = -1;
 		int byteLength = -1;
-		int byteStride = -1;
+		int byteStride = 0;
 		int target = -1; // optional
 
 		JsonObject ToJson() const override
@@ -159,7 +188,6 @@ namespace Nork::Renderer::GLTF {
 
 			byteOffset = 0;
 			json.GetIfContains("byteOffset", byteOffset);
-			byteStride = 0;
 			json.GetIfContains("byteStride", byteStride);
 			json.GetIfContains("target", target);
 		}
@@ -177,8 +205,8 @@ namespace Nork::Renderer::GLTF {
 		std::string type;
 		int componentType;
 		int count;
-		glm::vec3 min = glm::vec3(std::nan(""));
-		glm::vec3 max = glm::vec3(std::nan(""));
+		std::optional<glm::vec3> min;
+		std::optional<glm::vec3> max;
 
 		inline static const std::string SCALAR = "SCALAR";
 		inline static const std::string VEC2 = "VEC2";
@@ -193,15 +221,15 @@ namespace Nork::Renderer::GLTF {
 			auto json = JsonObject()
 				.Property("count", count)
 				.Property("type", type)
-				.Property("componentType", componentType)
-				.Property("byteOffset", byteOffset);
-
+				.Property("componentType", componentType);
+			if (byteOffset != 0)
+				json.Property("byteOffset", byteOffset);
 			if (bufferView != -1)
 				json.Property("bufferView", bufferView);
-			if (!glm::isnan(max.x))
-				json.Property("max", JsonArray().Elements(&max.x, 3));
-			if (!glm::isnan(min.x))
-				json.Property("min", JsonArray().Elements(&min.x, 3));
+			if (max)
+				json.Property("max", JsonArray().Elements(*max));
+			if (min)
+				json.Property("min", JsonArray().Elements(*min));
 			return json;
 		}
 		virtual void FromJson(const JsonObject& json) override
@@ -212,9 +240,9 @@ namespace Nork::Renderer::GLTF {
 			json.GetIfContains("byteOffset", byteOffset);
 			json.GetIfContains("bufferView", bufferView);
 			if (json.Contains("min"))
-				json.Get<JsonArray>("min").Get(&min.x, 3);
+				json.Get<JsonArray>("min").Get(min.emplace());
 			if (json.Contains("max"))
-				json.Get<JsonArray>("max").Get(&max.x, 3);
+				json.Get<JsonArray>("max").Get(max.emplace());
 		}
 		virtual bool Validate() const override
 		{
@@ -375,6 +403,8 @@ namespace Nork::Renderer::GLTF {
 		virtual void FromJson(const JsonObject& json) override
 		{
 			json.GetIfContains("uri", uri);
+			if (uri.contains('%'))
+				uri = PrecentDecode(uri);
 		}
 		virtual bool Validate() const override
 		{
@@ -384,36 +414,60 @@ namespace Nork::Renderer::GLTF {
 
 	struct Node: Property
 	{
-		// translation, rotation, scale
 		int mesh = -1; // could also be camera
 		std::string name = "";
 		std::vector<int> children = {};
 
+		std::optional<glm::vec3> translation;
+		std::optional<glm::quat> rotation;
+		std::optional<glm::vec3> scale;
+		
+		std::optional<glm::mat4> matrix; // if present, TRS should not be
+
+		bool HasTransform() const
+		{
+			return matrix || translation || rotation || scale;
+		}
+		glm::mat4 Transform() const
+		{
+			if (matrix)
+				return *matrix;
+			auto tr = glm::identity<glm::mat4>();
+			if (scale)
+				tr *= glm::scale(glm::identity<glm::mat4>(), *scale);
+			if (rotation)
+				tr *= glm::mat4_cast(*rotation);
+			if (translation)
+				tr *= glm::translate(glm::identity<glm::mat4>(), *translation);
+			return tr;
+		}
 		JsonObject ToJson() const override
 		{
 			auto json = JsonObject();
-			if (mesh != -1)
-				json.Property("mesh", mesh);
-			if (!name.empty())
-				json.Property("name", name);
-			if (!children.empty())
-			{
-				json.Property("children", JsonArray().Elements(children));
-			}
+			if (mesh != -1) json.Property("mesh", mesh);
+			if (!name.empty()) json.Property("name", name);
+			if (translation.has_value()) json.Property("translation", JsonArray().Elements(*translation));
+			if (rotation.has_value()) json.Property("rotation", JsonArray().Elements(*rotation));
+			if (scale.has_value()) json.Property("scale", JsonArray().Elements(*scale));
+			if (matrix.has_value()) json.Property("matrix", JsonArray().Elements(*matrix));
+			if (!children.empty()) json.Property("children", JsonArray().Elements(children));
 			return json;
 		}
 		virtual void FromJson(const JsonObject& json) override
 		{
 			json.GetIfContains("mesh", mesh);
 			json.GetIfContains("name", name);
-			if (json.Contains("children"))
-			{
-				auto jsonArray = json.Get<JsonArray>("children");
-				children = jsonArray.Get<int>();
-			}
+			auto array = JsonArray();
+			if (json.GetIfContains("translation", array)) array.Get(translation.emplace());
+			if (json.GetIfContains("rotation", array)) array.Get(rotation.emplace());
+			if (json.GetIfContains("scale", array)) array.Get(scale.emplace());
+			if (json.GetIfContains("matrix", array)) array.Get(matrix.emplace());
+			if (json.GetIfContains("children", array)) children = array.Get<int>();
 		}
 		virtual bool Validate() const override
 		{
+			if (matrix && (translation || rotation || scale))
+				return false;
 			return mesh >= -1;
 		}
 	};

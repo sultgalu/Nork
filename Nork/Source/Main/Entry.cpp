@@ -39,8 +39,8 @@ int main()
 		}
 	}*/
 
-	constexpr int levels = 40; //20;
-	constexpr int size = 20; // * 4 = one level
+	constexpr int levels = 4; //20;
+	constexpr int size = 4; // * 4 = one level
 	float sep = 2.1f;
 	constexpr float height = -10;
 	int start = -size / 2;
@@ -50,13 +50,13 @@ int main()
 	{
 		auto ent = engine.scene.CreateNode()->GetEntity();
 		ent.AddComponent<Components::Transform>([&](auto& tr) { tr.localPosition = glm::vec3(i * sep, height + 2 + j * sep, k * sep); });
-		ent.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
+		ent.AddComponent<Components::Drawable>(); //.model->meshes[0].material = MaterialResources::Instance().GetById("a");
 		ent.AddComponent<Components::Physics>().Kinem().applyGravity = true;
 		ent.AddComponent<Components::Tag>().tag = std::to_string(i).append("-").append(std::to_string(j)).append("-").append(std::to_string(k));
 	};
 
 	auto bullet = engine.scene.CreateNode()->GetEntity();
-	bullet.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
+	bullet.AddComponent<Components::Drawable>(); // .model->meshes[0].material = MaterialResources::Instance().GetById("a");
 	bullet.AddComponent<Components::Transform>([&](auto& tr) 
 		{
 			tr.localPosition = glm::vec3(start - 30, levels * sep / 2 + 10, 0);
@@ -112,7 +112,7 @@ int main()
 
 	glm::vec3 scale = glm::vec3(100, 1, 100);
 	auto ground = engine.scene.CreateNode()->GetEntity();
-	ground.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
+	ground.AddComponent<Components::Drawable>(); // .model->meshes[0].material = MaterialResources::Instance().GetById("a");
 	ground.AddComponent<Components::Transform>([&](auto& tr) {
 			tr.localPosition = glm::vec3(0, -10, 0);
 			tr.localScale = scale;

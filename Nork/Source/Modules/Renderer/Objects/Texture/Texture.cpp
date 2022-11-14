@@ -26,9 +26,11 @@ namespace Nork::Renderer {
 		return *this;
 	}
 
-	void Texture::GetData2D(void* ptr) const
+	std::vector<char> Texture::GetData2D() const
 	{
-		glGetTexImage(GL_TEXTURE_2D, 0, GetTextureFormat(attributes.format), GetTextureType(attributes.format), ptr);
+		std::vector<char> data(Renderer::GetTexturePixelSize(attributes.format) * GetWidth() * GetHeight(), 0);
+		glGetTexImage(GL_TEXTURE_2D, 0, GetTextureFormat(attributes.format), GetTextureType(attributes.format), data.data());
+		return data;
 	}
 
 	const Texture2D& Texture2D::Bind(int idx) const

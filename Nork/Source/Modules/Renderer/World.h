@@ -12,11 +12,13 @@ namespace Nork::Renderer {
 		std::vector<uint32_t> lights;
 	};
 
-	using DirLight = UBO<Data::DirLight>::Element;
-	using PointLight = UBO<Data::PointLight>::Element;
-	using DirShadow = UBO<Data::DirShadow>::Element;
-	using PointShadow = UBO<Data::PointShadow>::Element;
-	using ModelMatrix = UBO<glm::mat4>::Element;
+	template<class T>
+	using Ref = UBO<T>::Element;
+	using DirLightRef = UBO<Data::DirLight>::Element;
+	using PointLightRef = UBO<Data::PointLight>::Element;
+	using DirShadowRef = UBO<Data::DirShadow>::Element;
+	using PointShadowRef = UBO<Data::PointShadow>::Element;
+	using ModelMatrixRef = UBO<glm::mat4>::Element;
 
 	class World
 	{
@@ -26,14 +28,14 @@ namespace Nork::Renderer {
 		Mesh AddMesh(uint32_t verts, uint32_t indices);
 		Mesh AddMesh(const std::vector<Data::Vertex>&, const std::vector<uint32_t>&);
 		Material AddMaterial();
-		ModelMatrix AddModel();
+		ModelMatrixRef AddTransform();
 		// Adds a Mesh, Material, and ModelMatrix, returns them in an Object structure
 		Object CreateObject(uint32_t vertCount, uint32_t indexCount);
 
-		DirLight AddDirLight();
-		PointLight AddPointLight();
-		DirShadow AddDirShadow();
-		PointShadow AddPointShadow();
+		DirLightRef AddDirLight();
+		PointLightRef AddPointLight();
+		DirShadowRef AddDirShadow();
+		PointShadowRef AddPointShadow();
 
 		void DirLightIndices(const LightShadowIndices&);
 		void PointLightIndices(const LightShadowIndices&);

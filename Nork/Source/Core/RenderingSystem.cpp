@@ -15,14 +15,15 @@ namespace Nork {
 	{
 		std::vector<Renderer::Object> deferredObjects;
 		std::vector<Renderer::Object> shadowedObjects;
-		auto group = registry.group<Components::Drawable, Components::Transform>();
+		auto group = registry.group<Components::Drawable>(entt::get<Components::Transform>);
 		deferredObjects.reserve(group.size());
 		shadowedObjects.reserve(group.size());
 		auto add = [&](const Components::Drawable& dr, std::vector<Renderer::Object>& to)
 		{
-			for (auto& mesh : dr.model->meshes)
+			for (size_t i = 0; i < dr.GetModel()->meshes.size(); i++)
 			{
-				to.push_back(Renderer::Object{ .mesh = mesh.mesh, .material = mesh.material, .modelMatrix = dr.modelMatrix });
+				auto& mesh = dr.GetModel()->meshes[i];
+				to.push_back(Renderer::Object{ .mesh = mesh.mesh, .material = mesh.material, .modelMatrix = dr.transforms[i] });
 			}
 		};
 		for (auto [id, dr, tr] : group.each())
@@ -43,15 +44,19 @@ namespace Nork {
 	{
 		shouldUpdateDrawCommands = true;
 	}
+	void RenderingSystem::OnDrawableRemoved(entt::registry& reg, entt::entity id)
+	{
+		shouldUpdateDrawCommands = true;
+	}
 	void RenderingSystem::OnDrawableAdded(entt::registry& reg, entt::entity id)
 	{
 		auto& dr = reg.get<Components::Drawable>(id);
 		auto tr = reg.try_get<Components::Transform>(id);
-		dr.modelMatrix = world.AddModel();
+		dr.sharedTransform = world.AddTransform();
 		if (tr)
-			*dr.modelMatrix = tr->RecalcModelMatrix();
-		if (dr.model == nullptr || dr.model->meshes.empty())
-			dr.model = resourceManager.GetModel("");
+			*dr.sharedTransform = tr->RecalcModelMatrix();
+		if (dr.GetModel() == nullptr || dr.GetModel()->meshes.empty())
+			dr.SetModel(ResourceUtils::GetTemplate(ModelTemplate::Cube));
 		shouldUpdateDrawCommands = true;
 	}
 	void RenderingSystem::UpdateDirLightShadows()
@@ -151,6 +156,7 @@ namespace Nork {
 		: registry(registry)
 	{
 		registry.on_update<Components::Drawable>().connect<&RenderingSystem::OnDrawableUpdated>(this);
+		registry.on_destroy<Components::Drawable>().connect<&RenderingSystem::OnDrawableRemoved>(this);
 		registry.on_construct<Components::Drawable>().connect<&RenderingSystem::OnDrawableAdded>(this);
 		
 		registry.on_construct<Components::DirShadowMap>().connect<&RenderingSystem::OnDShadAdded>(this);
@@ -169,6 +175,8 @@ namespace Nork {
 		dirLightObserver.connect(registry, entt::collector.update<Components::DirLight>());
 		pointLightObserver.connect(registry, entt::collector.update<Components::Transform>()
 			.where<Components::PointLight>().update<Components::PointLight>());
+		transformObserver.connect(registry, entt::collector.update<Components::Transform>()
+			.where<Components::Drawable>().group<Components::Drawable, Components::Transform>());
 
 		// auto sceneView = std::make_shared<SceneView>(1920, 1080);
 		// sceneView->pipeline->stages.push_back(CreateStage<Renderer::SkyStage>(*sceneView->pipeline));
@@ -252,6 +260,19 @@ namespace Nork {
 	void RenderingSystem::BeginFrame()
 	{
 		UpdateLights();
+		for (auto& ent : transformObserver)
+		{
+			auto& dr = registry.get<Components::Drawable>(ent);
+			const auto& modelMatrix = registry.get<Components::Transform>(ent).modelMatrix;
+			*dr.sharedTransform = modelMatrix;
+			for (size_t i = 0; i < dr.GetModel()->meshes.size(); i++)
+			{
+				auto& mesh = dr.GetModel()->meshes[i];
+				if (mesh.localTransform.has_value())
+					*dr.transforms[i] = modelMatrix * *mesh.localTransform;
+			}
+		}
+		transformObserver.clear();
 		if (shouldUpdateDrawCommands)
 		{
 			UpdateDrawCommands();
@@ -271,10 +292,6 @@ namespace Nork {
 		{
 			UpdateGlobalUniform();
 			Logger::Info("Updating");
-		}
-		for (auto [id, dr, tr] : registry.group<Components::Drawable, Components::Transform>().each())
-		{
-			*dr.modelMatrix = tr.modelMatrix;
 		}
 	}
 	void RenderingSystem::Update()

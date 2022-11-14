@@ -231,37 +231,38 @@ namespace Nork::Editor {
 	template<> void SceneNodeView::ShowComponent(Components::Drawable& dr, bool& changed)
 	{
 		static int imgSize = 100;
-		if (!dr.model->meshes.empty())
+		const auto model = dr.GetModel();
+		if (!model->meshes.empty())
 		{
 			if (ImGui::TreeNode("Material Textures"))
 			{
 				ImGui::Unindent();
 				static int meshIdx = 0;
-				auto meshCount = dr.model->meshes.size();
+				auto meshCount = model->meshes.size();
 				if (meshIdx >= meshCount)
 					meshIdx = meshCount - 1;
 				ImGui::SliderInt("Mesh of model", &meshIdx, 0, meshCount - 1);
 
-				auto meshPath = GetEngine().resourceManager.PathFor(dr.model->meshes[meshIdx].mesh);
-				auto matPath = GetEngine().resourceManager.PathFor(dr.model->meshes[meshIdx].material);
+				auto meshPath = MeshResources::Instance().Uri(model->meshes[meshIdx].mesh).filename().string();
+				// auto matPath = MaterialResources::Instance().Path(dr.model->meshes[meshIdx].material);
 				ImGui::Text("Mesh ID:"); ImGui::SameLine();
-				ImGui::Text(meshPath.has_value() ? (*meshPath).c_str() : "unkown");
-				ImGui::Text("Material ID:"); ImGui::SameLine();
-				ImGui::Text(matPath.has_value() ? (*matPath).c_str() : "unkown");
+				ImGui::Text(meshPath.c_str());
+				// ImGui::Text("Material ID:"); ImGui::SameLine();
+				// ImGui::Text(matPath.string().c_str());
 
-				ImGui::ColorEdit3("diffuse", &dr.model->meshes[meshIdx].material->diffuse.r, ImGuiColorEditFlags_DefaultOptions_ | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
-				ImGui::SliderFloat("specular", &dr.model->meshes[meshIdx].material->specular, 0, 10);
-				ImGui::SliderFloat("spec-exp", &dr.model->meshes[meshIdx].material->specularExponent, 0, 1024, "%.0f", ImGuiSliderFlags_Logarithmic);
+				ImGui::ColorEdit3("diffuse", &model->meshes[meshIdx].material->diffuse.r, ImGuiColorEditFlags_DefaultOptions_ | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
+				ImGui::SliderFloat("specular", &model->meshes[meshIdx].material->specular, 0, 10);
+				ImGui::SliderFloat("spec-exp", &model->meshes[meshIdx].material->specularExponent, 0, 1024, "%.0f", ImGuiSliderFlags_Logarithmic);
 				
-				if (ImGui::Button("Save Material"))
-				{
-					GetEngine().resourceManager.SaveMaterial(dr.model->meshes[meshIdx].material);
-				}
+				// if (ImGui::Button("Save Material"))
+				// {
+				// 	MaterialResources::Instance().Save(dr.model->meshes[meshIdx].material);
+				// }
 				if (ImGui::BeginTabBar("MaterialTexturesTab"))
 				{
 					auto displayTex = [&](Renderer::TextureMap type)
 					{
-						auto tex = dr.model->meshes[meshIdx].material.GetTextureMap(type);
+						auto tex = model->meshes[meshIdx].material.GetTextureMap(type);
 						ImGui::Image((ImTextureID)tex->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
 							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
 						ImGui::Text("Width: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->GetWidth()).c_str());
@@ -271,30 +272,17 @@ namespace Nork::Editor {
 						ImGui::EndTabItem();
 						if (ImGui::Button("Default"))
 						{
-							dr.model->meshes[meshIdx].material.SetDefaultTexture(type);
+							model->meshes[meshIdx].material.SetDefaultTexture(type);
 						}
 						if (ImGui::Button("Load texture"))
 						{
 							std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::Image, L"Load Texture", L"Load");
 							if (!p.empty())
 							{
-								auto newTex = GetEngine().resourceManager.GetTextureByPath(p);
+								auto newTex = TextureResources::Instance().Get(p);
 								if (newTex != nullptr)
 								{
-									dr.model->meshes[meshIdx].material.SetTextureMap(newTex, type);
-								}
-							}
-						}
-						if (ImGui::Button("Import texture"))
-						{
-							std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::Image, L"Load Texture", L"Load");
-							if (!p.empty())
-							{
-								GetEngine().resourceManager.ImportTexture(p);
-								auto newTex = GetEngine().resourceManager.GetTexture(p);
-								if (newTex != nullptr)
-								{
-									dr.model->meshes[meshIdx].material.SetTextureMap(newTex, type);
+									model->meshes[meshIdx].material.SetTextureMap(newTex, type);
 								}
 							}
 						}
@@ -320,100 +308,58 @@ namespace Nork::Editor {
 
 				ImGui::DragInt("Image Size", &imgSize, 1, 50, 500);
 
-				auto meshSrc = GetEngine().resourceManager.IdFor(dr.model->meshes[meshIdx].mesh);
+				auto meshUri = MeshResources::Instance().Uri(model->meshes[meshIdx].mesh).filename().string();
 				ImGui::Text("Mesh: "); ImGui::SameLine();
-				ImGui::Text(meshSrc.has_value() ? (*meshSrc).c_str() : "unkown");
+				ImGui::Text(meshUri.c_str());
 
-				auto matSrc = GetEngine().resourceManager.IdFor(dr.model->meshes[meshIdx].material);
-				ImGui::Text("Material: "); ImGui::SameLine();
-				ImGui::Text(matSrc.has_value() ? (*matSrc).c_str() : "unkown");
+				// auto matSrc = MaterialResources::Instance().Id(dr.model->meshes[meshIdx].material);
+				// ImGui::Text("Material: "); ImGui::SameLine();
+				// ImGui::Text(matSrc.c_str());
 
-				if (ImGui::Button("Load Material"))
-				{
-					std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::glTF, L"Load Material", L"Load");
-					if (!p.empty())
-					{
-						dr.model->meshes[meshIdx].material = GetEngine().resourceManager.GetMaterialByPath(p);
-					}
-				}
-				static char matNameBuf[100] = { 0 };
-				if (ImGui::Button("Clone Material"))
-				{
-					auto cloneId = (*matSrc + "_");
-					std::memset(matNameBuf, 0, sizeof(matNameBuf));
-					std::memcpy(matNameBuf, cloneId.c_str(), cloneId.size());
-					ImGui::OpenPopup("newNameForMat");
-				}
-				if (ImGui::BeginPopup("newNameForMat"))
-				{
-					if (ImGui::InputText("", matNameBuf, sizeof(matNameBuf), ImGuiInputTextFlags_EnterReturnsTrue))
-					{
-						auto clone = GetEngine().resourceManager.CloneMaterial(dr.model->meshes[meshIdx].material, matNameBuf);
-						if (clone != dr.model->meshes[meshIdx].material)
-							dr.model->meshes[meshIdx].material = clone;
-						ImGui::CloseCurrentPopup();
-					}
-					ImGui::EndPopup();
-				}
+				// if (ImGui::Button("Load Material"))
+				// {
+				// 	std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::glTF, L"Load Material", L"Load");
+				// 	if (!p.empty())
+				// 		dr.model->meshes[meshIdx].material = MaterialResources::Instance().GetByPath(p);
+				// }
 				ImGui::Indent();
 				ImGui::TreePop();
 			}
 		}
-		if (ImGui::Button("Add Mesh"))
-		{
-			std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::glTF, L"Add Mesh", L"Add");
-			if (!p.empty())
-			{
-				Components::Mesh mesh;
-				mesh.material = GetEngine().resourceManager.GetMaterial("");
-				mesh.mesh = GetEngine().resourceManager.GetMesh(p);
-				dr.model->meshes.push_back(mesh);
-			}
-		}
-		auto src = GetEngine().resourceManager.IdFor(dr.model);
-		ImGui::Text(src.has_value() ? (*src).c_str() : "unkown");
+		auto src = ModelResources::Instance().Uri(model).filename().string();
+		ImGui::Text(src.c_str());
 		static char modelNamebuf[100] = { 0 };
-		if (ImGui::Button("Clone Model"))
-		{
-			auto cloneId = (*src + "_");
-			std::memset(modelNamebuf, 0, sizeof(modelNamebuf));
-			std::memcpy(modelNamebuf, cloneId.c_str(), cloneId.size());
-			ImGui::OpenPopup("newNameForModel");
-		}
-		if (ImGui::BeginPopup("newNameForModel"))
-		{
-			if (ImGui::InputText("", modelNamebuf, sizeof(modelNamebuf), ImGuiInputTextFlags_EnterReturnsTrue))
-			{
-				auto clone = GetEngine().resourceManager.CloneModel(dr.model, modelNamebuf);
-				if (clone != nullptr)
-					dr.model = clone;
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::EndPopup();
-		}
 		if (ImGui::Button("Save Model"))
 		{
-			GetEngine().resourceManager.SaveModel(dr.model);
+			ModelResources::Instance().Save(model);
 		}
 		if (ImGui::Button("Load Model"))
 		{
-			std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::Json, L"Load model", L"Load");
-			if (!p.empty())
+			std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::glTF, L"Load model", L"Load");
+			if (changed |= !p.empty())
 			{
-				dr.model = GetEngine().resourceManager.GetModelByPath(p);
+				dr.SetModel(ModelResources::Instance().Get(p));
 			}
+		}
+		if (changed |= ImGui::Button("Reload Model"))
+		{
+			ModelResources::Instance().Reload(dr.GetModel());
 		}
 		if (ImGui::Button("Import Model"))
 		{
 			std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::_3D, L"Import model", L"Import");
-			if (!p.empty())
+			if (changed |= !p.empty())
 			{
-				dr.model = GetEngine().resourceManager.ImportModel(p);
+				dr.SetModel(ResourceUtils::ImportModel(p));
 			}
 		}
 		if (ImGui::Button("Export Model"))
 		{
-			GetEngine().resourceManager.ExportModel(dr.model);
+			std::string p = FileDialog::SaveFile(FileDialog::EngineFileTypes::glTF, L"Export model", L"Export");
+			if (!p.empty())
+			{
+				ResourceUtils::ExportModel(model, p);
+			}
 		}
 	}
 	template<> void SceneNodeView::ShowComponent(Components::Physics& phx, bool& changed)
@@ -514,7 +460,7 @@ namespace Nork::Editor {
 									});
 							}
 							//GetEngine().resourceManager.drawState.vaoWrapper
-							auto& mesh = ent.GetComponent<Components::Drawable>().model->meshes[0].mesh;
+							auto& mesh = ent.GetComponent<Components::Drawable>().GetModel()->meshes[0].mesh;
 							// mesh->GetVaoWrapper().GetVertexWrapper().Erase(mesh->GetVertexPtr());
 							// mesh->GetVaoWrapper().GetIndexWrapper().Erase(mesh->GetIndexPtr());
 							// auto vertPtr = mesh->GetVaoWrapper().GetVertexWrapper().Add(vertices.data(), vertices.size());

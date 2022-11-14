@@ -5,7 +5,7 @@
 namespace Nork::Renderer {
 	World::World()
 		: dirLights(5), dirShadows(5), pointLights(5), pointShadows(5), 
-		modelMatrices(10 * 1000), materials(100), vertices(100 * 1000), indices(100 * 1000)
+		modelMatrices(10 * 1000), materials(100), vertices(100'1000), indices(100'1000)
 	{
 		vao = VertexArrayBuilder()
 			.VBO(vertices.GetBuffer())
@@ -42,7 +42,7 @@ namespace Nork::Renderer {
 	{
 		return Material(materials.Allocate());
 	}
-	UBO<glm::mat4>::Element World::AddModel()
+	UBO<glm::mat4>::Element World::AddTransform()
 	{
 		return modelMatrices.Allocate();
 	}
@@ -67,7 +67,7 @@ namespace Nork::Renderer {
 		return Object{
 			.mesh = AddMesh(vertCount, indexCount),
 			.material = AddMaterial(),
-			.modelMatrix = AddModel()
+			.modelMatrix = AddTransform()
 		};
 	}
 	static std::vector<uint32_t> ToData(const LightShadowIndices& idxs)

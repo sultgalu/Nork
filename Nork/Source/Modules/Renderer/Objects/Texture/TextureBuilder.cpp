@@ -60,6 +60,15 @@ namespace Nork::Renderer {
 	}
 	void TextureBuilder::SetData(bool cube)
 	{
+		GLenum preferredFormat;
+		glGetInternalformativ(GL_TEXTURE_2D, attributes.GetInternalFormat(), GL_INTERNALFORMAT_PREFERRED, sizeof(preferredFormat), (GLint*)&preferredFormat);
+		if (preferredFormat != attributes.GetInternalFormat())
+		{
+			auto newFormat = (TextureFormat)preferredFormat;
+			Logger::Debug("promoting ", TextureFormatToString(attributes.format), " to ", TextureFormatToString(newFormat));
+			attributes.format = newFormat;
+		}
+
 		if (cube)
 		{
 			for (size_t i = 0; i < 6; i++)
@@ -88,6 +97,7 @@ namespace Nork::Renderer {
 	void TextureBuilder::SetParams(bool cube)
 	{
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		glPixelStorei(GL_PACK_ALIGNMENT, 1);
 		glTexParameteri(cube ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, params.GetFilter());
 		glTexParameteri(cube ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, params.magLinear ? GL_LINEAR : GL_NEAREST);
 		glTexParameteri(cube ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, params.GetWrap());

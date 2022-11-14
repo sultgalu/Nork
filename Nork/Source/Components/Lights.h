@@ -7,7 +7,7 @@ namespace Nork::Components
 {
 	struct PointLight
 	{
-		Renderer::PointLight light;
+		Renderer::PointLightRef light;
 		void SetIntensity(uint32_t val);
 		inline uint32_t GetIntensity() const { return intensity; }
 	private:
@@ -24,7 +24,7 @@ namespace Nork::Components
 	
 	struct DirLight
 	{
-		Renderer::DirLight light;
+		Renderer::DirLightRef light;
 		inline glm::mat4 GetView() const { return glm::lookAt(glm::vec3(0) - light->direction, glm::vec3(0), glm::vec3(0.0f, 1.0f, 0.0f)); }
 		inline void RecalcVP()
 		{
