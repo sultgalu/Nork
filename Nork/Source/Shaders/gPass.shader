@@ -104,7 +104,7 @@ void main()
 {
 	pos = vec4(worldPos, 1.0f);
 	diffuse_spec = texture(material.diffuseMap, texCoord).rgb * material.diffuse;
-	specular = vec2((1 - texture(material.roughnessMap, texCoord).g) * material.specular, material.specularExponent);
+	specular = texture(material.roughnessMap, texCoord).gb;
 	
 	vec3 norm = texture(material.normalsMap, texCoord).rgb;
 	norm = norm * 2.0f - 1.0f; // [0;1] -> [-1;1]

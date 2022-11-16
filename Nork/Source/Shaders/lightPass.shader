@@ -105,10 +105,9 @@ layout(std140, binding = 9) uniform asd6
 
 struct Materials
 {
-	vec3 ambient;
-	vec3 diffuse;
-	vec3 specular;
-	float specularExponent;
+	float roughness;
+	float metallic;
+	vec3 albedo;
 };
 
 in vec2 texCoord;
@@ -120,177 +119,173 @@ uniform sampler2D gDiff;
 uniform sampler2D gNorm;
 uniform sampler2D gSpec;
 
-// uniform sampler2DShadow dirShadowMaps[5];
-// uniform samplerCubeShadow pointShadowMaps[15];
-
-vec3 dLight(DirLight light, Materials material, vec3 normal, vec3 viewDir, vec3 worldPos);
 vec3 dLightShadow(DirLight light, Materials material, vec3 normal, vec3 viewDir, DirShadow shadow, vec3 worldPos);
 
-vec3 pLight(PointLight light, Materials material, vec3 worldPos, vec3 normal, vec3 viewDir);
+float dShadow(DirLight light, DirShadow shadow, vec3 normal, vec3 worldPos);
+float pShadow(PointShadow shadow, vec3 normal, vec3 lightDir, vec3 distance);
+vec3 pbr(vec3 lightDir, vec3 color, Materials material, vec3 worldPos, vec3 normal, vec3 viewDir, float attenuation);
 vec3 pLightShadow(PointLight light, Materials material, vec3 normal, vec3 viewDir, PointShadow shadow, vec3 worldPos);
+
+const float PI = 3.14159265359;
+
+float DistributionGGX(vec3 N, vec3 H, float roughness);
+float GeometrySchlickGGX(float NdotV, float roughness);
+float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness);
+vec3 fresnelSchlick(float cosTheta, vec3 F0);
+
+vec3 F0 = vec3(0.04);;
 
 void main()
 {
-	/*float x = gl_FragCoord.x / 1920.0f;
-	float y = gl_FragCoord.y / 1080.0f;
-
-	int i = int(x * cullConfig.cullRes.x);
-	int j = int(y * cullConfig.cullRes.y);
-
-	uvec2 range = ranges[j * int(cullConfig.cullRes.x) + i];*/
-	//----------------------------NEW-----------------------------
 	vec4 pos = texture(gPos, texCoord).rgba;
 	if (pos.a == 0.0f)
 		discard;
 	vec3 worldPos = pos.rgb;
-	vec3 diff = texture(gDiff, texCoord).rgb;
 	vec3 normal = texture(gNorm, texCoord).rgb;
-	vec2 spec = texture(gSpec, texCoord).rg;
-
-	vec3 viewDir = normalize(viewPos - worldPos);
 
 	Materials material;
-	material.ambient = diff.rgb;
-	material.diffuse = diff.rgb;
-	material.specular = material.diffuse * spec.r;
-	material.specularExponent = spec.g;
-	
-	vec3 result = vec3(0.0f);
+	material.albedo = texture(gDiff, texCoord).rgb;
+	vec2 roughnessMetalness = texture(gSpec, texCoord).rg;
+	material.roughness = roughnessMetalness.r;
+	material.metallic = roughnessMetalness.g;
+
+	vec3 viewDir = normalize(worldPos - viewPos);
+
+	F0 = mix(F0, material.albedo, material.metallic);
+
+	vec3 Lo = vec3(0.0);
 	for (uint i = uint(0); i < dShadowCount; i++)
 	{
 		uint j = i * 2;
 		uint li = dirIdxs[j / 4][j % 4];
 		uint si = dirIdxs[j / 4][j % 4 + 1];
-		result += dLightShadow(dLs[li], material, normal, viewDir, dLSs[si], worldPos);
+		float shad = dShadow(dLs[li], dLSs[si], normal, worldPos);
+		Lo += shad * pbr(normalize(dLs[li].direction), dLs[li].color.rgb, material, worldPos, normal, viewDir, 1.0f);
 	}
 	for (uint i = dShadowCount * 2; i < dShadowCount * 2 + (dLightCount - dShadowCount); i++)
 	{
 		uint li = dirIdxs[i / 4][i % 4];
-		result += dLight(dLs[li], material, normal, viewDir, worldPos);
+		Lo += pbr(normalize(dLs[li].direction), dLs[li].color.rgb, material, worldPos, normal, viewDir, 1.0f);
 	}
 	
-	//for (uint i = range.x; i < range.x + range.y; i++)
-	//{
-	//	uint idx = pLightIndicies[i];
-	//	if (idx < pShadowCount) // plight has shadow
-	//	{
-	//		result += pLightShadow(pLs[idx], material, normal, viewDir, pLSs[idx], worldPos);
-	//	}
-	//	else
-	//	{
-	//		result += pLight(pLs[idx], material, worldPos, normal, viewDir);
-	//	}
-	//}
 	for (uint i = uint(0); i < pShadowCount; i++)
 	{
 		uint j = i * 2;
 		uint li = pointIdxs[j / 4][j % 4];
 		uint si = pointIdxs[j / 4][j % 4 + 1];
-		result += pLightShadow(pLs[li], material, normal, viewDir, pLSs[si], worldPos);
+
+		float distance = length(pLs[li].position - worldPos);
+		float attenuation = 1.0 / (distance * distance);
+		vec3 lightDir = normalize(worldPos - pLs[li].position);
+		float shad = pShadow(pLSs[si], normal, lightDir, worldPos - pLs[li].position);
+		Lo += shad * pbr(lightDir, pLs[li].color.rgb, material, worldPos, normal, viewDir, attenuation);
 	}
-	if (pShadowCount < pLightCount) // if left out, weird rendering happens (can't handle for loop below)
+	for (uint i = pShadowCount * 2; i < pShadowCount * 2 + (pLightCount - pShadowCount); i++)
 	{
-		for (uint i = pShadowCount * 2; i < pShadowCount * 2 + (pLightCount - pShadowCount); i++)
-		{
-			uint li = pointIdxs[i / 4][i % 4];
-			result += pLight(pLs[li], material, worldPos, normal, viewDir);
-		}
+		uint li = pointIdxs[i / 4][i % 4];
+		float distance = length(pLs[li].position - worldPos);
+		float attenuation = 1.0 / (distance * distance); // inverse-square law. More physically correct but gives less manual control
+		vec3 lightDir = normalize(worldPos - pLs[li].position);
+		Lo += pbr(lightDir, pLs[li].color.rgb, material, worldPos, normal, viewDir, attenuation);
 	}
-	fColor = vec4(result, 1.0f);
-	// fColor = vec4(texture(dirShadowMaps[0], texCoord).rgb, 1.0f);
-	// fColor = vec4(diff, 1);
+	vec3 ambient = vec3(0.03) * material.albedo; // *ao
+	vec3 color = ambient + Lo;
+
+	color = color / (color + vec3(1.0));
+	color = pow(color, vec3(1.0 / 2.2));
+	fColor = vec4(color, 1.0f);
+}
+
+vec3 fresnelSchlick(float cosTheta, vec3 F0)
+{
+	return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+float DistributionGGX(vec3 N, vec3 H, float roughness)
+{
+	float a = roughness * roughness;
+	float a2 = a * a;
+	float NdotH = max(dot(N, H), 0.0);
+	float NdotH2 = NdotH * NdotH;
+
+	float num = a2;
+	float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+	denom = PI * denom * denom;
+
+	return num / denom;
+}
+float GeometrySchlickGGX(float NdotV, float roughness)
+{
+	float r = (roughness + 1.0);
+	float k = (r * r) / 8.0;
+
+	float num = NdotV;
+	float denom = NdotV * (1.0 - k) + k;
+
+	return num / denom;
+}
+float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
+{
+	float NdotV = max(dot(N, V), 0.0);
+	float NdotL = max(dot(N, L), 0.0);
+	float ggx2 = GeometrySchlickGGX(NdotV, roughness);
+	float ggx1 = GeometrySchlickGGX(NdotL, roughness);
+
+	return ggx1 * ggx2;
+}
+vec3 pbr(vec3 lightDir, vec3 color, Materials material, vec3 worldPos, vec3 normal, vec3 viewDir, float attenuation)
+{
+	// translate ...
+	float roughness = material.roughness;
+	float metallic = material.metallic;
+	vec3 albedo = material.albedo;
+	vec3 N = normal;
+	vec3 V = -viewDir;
+
+	vec3 L = -lightDir;
+	vec3 H = normalize(V + L);
+	vec3 radiance = color * attenuation;
+
+	// cook-torrance brdf
+	float NDF = DistributionGGX(N, H, roughness);
+	float G = GeometrySmith(N, V, L, roughness);
+	vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
+
+	vec3 kS = F;
+	vec3 kD = vec3(1.0) - kS;
+	kD *= 1.0 - metallic;
+
+	vec3 numerator = NDF * G * F;
+	float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+	vec3 specular = numerator / denominator;
+
+	// add to outgoing radiance Lo
+	float NdotL = max(dot(N, L), 0.0);
+	return (kD * albedo / PI + specular) * radiance * NdotL;
 }
 
 float clip(vec3 fragPos, float clippedVal)
 {
 	return (pow(fragPos.x, 2.0) > 1 || pow(fragPos.y, 2.0) > 1 || pow(fragPos.z, 2.0) > 1) ? clippedVal : 1;
 }
-vec3 dLight(DirLight light, Materials material, vec3 normal, vec3 viewDir, vec3 worldPos)
+float dShadow(DirLight light, DirShadow shadow, vec3 normal, vec3 worldPos)
 {
-	vec3 ambient = light.color.a * light.color.rgb * material.ambient;
-
-	vec3 lightDir = -normalize(light.direction); // acts now as a position pointing towards the origin (otherwise should * (-1)) 
-	float diffAngle = max(dot(lightDir, normal), 0.0f);
-	vec3 diffuse = light.color2.rgb * diffAngle * material.diffuse;
-
-	vec3 halfwayDir = normalize(viewDir + lightDir);
-	float angle = pow(max(dot(halfwayDir, normal), 0.0f), material.specularExponent);
-	vec3 specular = light.color2.rgb * angle * material.specular;
-
 	vec4 lightView = light.VP * vec4(worldPos, 1.0f);
 	vec3 fragPos = lightView.xyz / lightView.w; // clipping
+	float bias = max(shadow.bias * (1.0f - dot(normal, normalize(-light.direction))), shadow.biasMin); // for huge angle, bias = 0.05f (perpendicular)
 
-	return clip(fragPos, light.outOfProj) * (0.2f * ambient + diffuse + specular);
-}
-float dShadow(DirShadow shadow, float bias, vec3 fragPos)
-{
 	fragPos = (fragPos + 1.0f) / 2.0f; // [-1;1] -> [0;1]
 	fragPos.z -= bias;
-	return texture(shadow.shadMap, fragPos.xyz);
+	return clip(fragPos, light.outOfProj) * texture(shadow.shadMap, fragPos.xyz);
 }
-vec3 dLightShadow(DirLight light, Materials material, vec3 normal, vec3 viewDir, DirShadow shadow, vec3 worldPos)
+float pShadow(PointShadow shadow, vec3 normal, vec3 lightDir, vec3 distance)
 {
-	vec3 ambient = light.color.a * light.color.rgb * material.ambient;
-
-	vec3 lightDir = normalize(light.direction); // acts now as a position pointing towards the origin (otherwise should * (-1)) 
-	float diffAngle = max(dot(-lightDir, normal), 0.0f);
-	vec3 diffuse = light.color2.rgb * diffAngle * material.diffuse;
-
-	vec3 halfwayDir = normalize(viewDir - lightDir);
-	float angle = pow(max(dot(halfwayDir, normal), 0.0f), material.specularExponent);
-	vec3 specular = light.color2.rgb * angle * material.specular;
-
-	vec4 lightView = light.VP * vec4(worldPos, 1.0f);
-	vec3 fragPos = lightView.xyz / lightView.w; // clipping
 	float bias = max(shadow.bias * (1.0f - dot(normal, -lightDir)), shadow.biasMin); // for huge angle, bias = 0.05f (perpendicular)
-	float shad = dShadow(shadow, bias, fragPos);
-
-	return clip(fragPos, light.outOfProj) * (0.2f * ambient + shad * (diffuse + specular));
+	return texture(shadow.shadMap, vec4(distance.xyz, length(distance) / shadow.far - bias));
 }
-
+// can be used instead of inverse-square for better manual control
 float CalcLuminosity(vec3 fromPos, vec3 toPos, float linear, float quadratic)
 {
 	float distance = length(toPos - fromPos);
 	float attenuation = 1.0f / (1.0f + linear * distance + quadratic * distance * distance);
-	//if (attenuation <= 0.001f) attenuation = 0.0f;
 	return attenuation;
-}
-
-vec3 pLight(PointLight light, Materials material, vec3 worldPos, vec3 normal, vec3 viewDir)
-{
-	vec3 ambient = light.color.rgb * material.ambient;
-
-	vec3 lightDir = normalize(light.position - worldPos);
-	float diffAngle = max(dot(lightDir, normal), 0.0f);
-	vec3 diffuse = light.color.rgb * diffAngle * material.diffuse;
-
-	vec3 halfwayDir = normalize(viewDir + lightDir);
-	float angle = pow(max(dot(halfwayDir, normal), 0.0f), material.specularExponent);
-	vec3 specular = light.color.rgb * angle * material.specular;
-
-	float attenuation = CalcLuminosity(light.position, worldPos, light.linear, light.quadratic);
-	return attenuation * (ambient + diffuse + specular);
-}
-float pShadow(PointShadow shadow, float bias, vec3 worldPos, vec3 lightPos)
-{
-	vec3 direction = worldPos - lightPos;
-	return texture(shadow.shadMap, vec4(direction.xyz, length(direction) / shadow.far - bias));
-}
-vec3 pLightShadow(PointLight light, Materials material, vec3 normal, vec3 viewDir, PointShadow shadow, vec3 worldPos)
-{
-	vec3 ambient = light.color.rgb * material.ambient;
-
-	vec3 lightDir = normalize(light.position - worldPos);
-	float diffAngle = max(dot(lightDir, normal), 0.0f);
-	vec3 diffuse = light.color.rgb * diffAngle * material.diffuse;
-
-	vec3 halfwayDir = normalize(viewDir + lightDir);
-	float angle = pow(max(dot(halfwayDir, normal), 0.0f), material.specularExponent);
-	vec3 specular = light.color.rgb * angle * material.specular;
-
-	float bias = max(shadow.bias * (1.0f - dot(normal, lightDir)), shadow.biasMin); // for huge angle, bias = 0.05f (perpendicular)
-	float shad = pShadow(shadow, bias, worldPos, light.position);
-
-	float attenuation = CalcLuminosity(light.position, worldPos, light.linear, light.quadratic);
-	return attenuation * (ambient + shad * (diffuse + specular));
 }

@@ -39,6 +39,14 @@ int main()
 		}
 	}*/
 
+	auto pl = engine.scene.CreateNode()->GetEntity();
+	pl.AddComponent<Components::Transform>([&](auto& tr) { tr.localPosition = { -8.0, -8.6, -4.7 }; tr.localScale = glm::vec3(0.1f); });
+	pl.AddComponent<Components::Drawable>();
+	pl.AddComponent<Components::PointLight>([&](Components::PointLight& l)
+		{
+			l.light->color *= 100.0f;
+		});
+	pl.AddComponent<Components::PointShadowMap>();
 	constexpr int levels = 4; //20;
 	constexpr int size = 4; // * 4 = one level
 	float sep = 2.1f;
@@ -161,6 +169,8 @@ int main()
 
 	sun.AddComponent<Components::DirShadowMap>();
 	sun.AddComponent<Components::Tag>().tag = "SUN";
+
+
 	
 	int offsX = 10;
 	int dimP = 0;
