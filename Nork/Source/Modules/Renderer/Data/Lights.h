@@ -12,8 +12,8 @@ namespace Nork::Renderer::Data
 	};
 	struct PointShadow
 	{
-		float bias = 0.0057, biasMin = 0.0004,
-			near = 1, far = 50;
+		float bias = 0.006, biasMin = 0.0001,
+			near = 0, far = 50;
 		uint64_t shadMap;
 		uint64_t padding;
 	};

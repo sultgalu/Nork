@@ -88,21 +88,7 @@ layout(std140, binding = 9) uniform asd6
 	uint pLightCount, pShadowCount;
 	uint pad2, pad3;
 	uvec4 pointIdxs[1];
-};
-//layout(std430, binding = 10) buffer Buf0
-//{
-//	uint pLightIndicies[];
-//};
-//layout(std430, binding = 11) buffer Buf
-//{
-//	uvec2 ranges[];
-//};
-//layout(std430, binding = 12) buffer BUF3
-//{
-//	CullConfig cullConfig;
-//};
-// --------- GLOBAL ----------
-
+}; 
 struct Materials
 {
 	float roughness;
@@ -114,10 +100,10 @@ in vec2 texCoord;
 
 uniform vec3 viewPos;
 
-uniform sampler2D gPos;
-uniform sampler2D gDiff;
-uniform sampler2D gNorm;
-uniform sampler2D gSpec;
+uniform sampler2D gPosition;
+uniform sampler2D gBaseColor;
+uniform sampler2D gNormal;
+uniform sampler2D gMetallicRoughness;
 
 vec3 dLightShadow(DirLight light, Materials material, vec3 normal, vec3 viewDir, DirShadow shadow, vec3 worldPos);
 
@@ -133,21 +119,21 @@ float GeometrySchlickGGX(float NdotV, float roughness);
 float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness);
 vec3 fresnelSchlick(float cosTheta, vec3 F0);
 
-vec3 F0 = vec3(0.04);;
+vec3 F0 = vec3(0.04);
 
 void main()
 {
-	vec4 pos = texture(gPos, texCoord).rgba;
+	vec4 pos = texture(gPosition, texCoord).rgba;
 	if (pos.a == 0.0f)
 		discard;
 	vec3 worldPos = pos.rgb;
-	vec3 normal = texture(gNorm, texCoord).rgb;
+	vec3 normal = texture(gNormal, texCoord).rgb;
 
 	Materials material;
-	material.albedo = texture(gDiff, texCoord).rgb;
-	vec2 roughnessMetalness = texture(gSpec, texCoord).rg;
-	material.roughness = roughnessMetalness.r;
-	material.metallic = roughnessMetalness.g;
+	material.albedo = texture(gBaseColor, texCoord).rgb;
+	vec2 metallicRoughness = texture(gMetallicRoughness, texCoord).rg;
+	material.roughness = metallicRoughness.r;
+	material.metallic = metallicRoughness.g;
 
 	vec3 viewDir = normalize(worldPos - viewPos);
 
@@ -190,9 +176,6 @@ void main()
 	}
 	vec3 ambient = vec3(0.03) * material.albedo; // *ao
 	vec3 color = ambient + Lo;
-
-	color = color / (color + vec3(1.0));
-	color = pow(color, vec3(1.0 / 2.2));
 	fColor = vec4(color, 1.0f);
 }
 
@@ -271,7 +254,7 @@ float dShadow(DirLight light, DirShadow shadow, vec3 normal, vec3 worldPos)
 {
 	vec4 lightView = light.VP * vec4(worldPos, 1.0f);
 	vec3 fragPos = lightView.xyz / lightView.w; // clipping
-	float bias = max(shadow.bias * (1.0f - dot(normal, normalize(-light.direction))), shadow.biasMin); // for huge angle, bias = 0.05f (perpendicular)
+	float bias = max(shadow.bias * (1.0f - dot(normal, normalize(-light.direction))), shadow.biasMin); // for huge angle, use biasmin (perpendicular)
 
 	fragPos = (fragPos + 1.0f) / 2.0f; // [-1;1] -> [0;1]
 	fragPos.z -= bias;
@@ -279,8 +262,9 @@ float dShadow(DirLight light, DirShadow shadow, vec3 normal, vec3 worldPos)
 }
 float pShadow(PointShadow shadow, vec3 normal, vec3 lightDir, vec3 distance)
 {
-	float bias = max(shadow.bias * (1.0f - dot(normal, -lightDir)), shadow.biasMin); // for huge angle, bias = 0.05f (perpendicular)
-	return texture(shadow.shadMap, vec4(distance.xyz, length(distance) / shadow.far - bias));
+	float distanceLen = length(distance);
+	float bias = max(shadow.bias * distanceLen * (1.0f - dot(normal, -lightDir)), shadow.biasMin); // for huge angle, bias = 0.05f (perpendicular)
+	return texture(shadow.shadMap, vec4(distance.xyz, distanceLen / shadow.far - bias));
 }
 // can be used instead of inverse-square for better manual control
 float CalcLuminosity(vec3 fromPos, vec3 toPos, float linear, float quadratic)

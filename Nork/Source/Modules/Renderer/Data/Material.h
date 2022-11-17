@@ -2,13 +2,12 @@
 namespace Nork::Renderer::Data {
 	struct Material
 	{
-		uint64_t diffuseMap;
-		uint64_t normalsMap;
-		uint64_t roughnessMap;
-		uint64_t reflectMap;
-		glm::vec3 diffuse;
-		float specular;
-		float specularExponent;
-		float padding[3];
+		uint64_t baseColor;
+		uint64_t normal;
+		uint64_t metallicRoughness;
+		float roughnessFactor = 1;
+		float metallicFactor = 1;
+		glm::vec3 baseColorFactor = { 1, 1, 1 };
+		float padding;
 	};
 }

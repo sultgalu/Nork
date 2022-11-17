@@ -69,7 +69,7 @@ struct TextureParams
 	static consteval TextureParams ShadowMapParamsCube()
 	{
 		return TextureParams{
-			.wrap = TextureWrap::ClampToBorder,
+			.wrap = TextureWrap::ClampToEdge,
 			.filter = TextureFilter::Linear,
 			.magLinear = true, // shadow anti-aliasing
 			.genMipmap = false,

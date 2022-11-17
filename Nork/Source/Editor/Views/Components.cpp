@@ -30,7 +30,7 @@ namespace Nork::Editor {
 		// dirLight.light->Update();
 		auto dir = dirLight.light->direction;
 		changed |= ImGui::Checkbox("Sun", &dirLight.sun);
-		changed |= ImGui::SliderFloat3("Direction", &dirLight.light->direction.x, -1.01, 1.01);
+		changed |= ImGui::SliderFloat3("Direction", &dirLight.light->direction.x, -1, 1, "%5.f");
 		changed |= ImGui::SliderFloat("Out Of Proj Value", &dirLight.light->outOfProjValue, 0, 1);
 		changed |= ImGui::ColorEdit3("Color (diffuse)", &(dirLight.light->color2.r));
 		changed |= ImGui::ColorEdit3("Color (ambient)", &(dirLight.light->color.r));
@@ -111,7 +111,7 @@ namespace Nork::Editor {
 	}
 	template<> void SceneNodeView::ShowComponent(Components::PointLight& pointLight, bool& changed)
 	{
-		changed |= ImGui::ColorEdit4("Color##PlIght", (float*)&(pointLight.light->color.r));
+		changed |= ImGui::ColorEdit4("Color##Plight", (float*)&(pointLight.light->color.r));
 
 		int pow = pointLight.GetIntensity();
 		if (changed |= ImGui::DragInt("Intensity", &(pow), 1, 0, 10000))
@@ -124,11 +124,11 @@ namespace Nork::Editor {
 				node->GetEntity().AddComponent<Components::PointShadowMap>();
 			}
 		}
-		else if (ImGui::TreeNode("Shadow"))
+		else if (ImGui::TreeNodeEx("Shadow", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_NoTreePushOnOpen))
 		{
 			auto& shadowMap = node->GetEntity().GetComponent<Components::PointShadowMap>().map;
-			ImGui::SliderFloat("Bias", (float*)&(shadowMap.shadow->bias), 0, 1);
-			ImGui::SliderFloat("min Bias", (float*)&(shadowMap.shadow->biasMin), 0, 1);
+			ImGui::DragFloat("Bias", (float*)&(shadowMap.shadow->bias), 0.0001f, 0, FLT_MAX, "%.4f");
+			ImGui::DragFloat("min Bias", (float*)&(shadowMap.shadow->biasMin), 0.0001f, 0, FLT_MAX, "%.4f");
 			ImGui::SliderFloat("Near", (float*)&(shadowMap.shadow->near), 0, 1);
 			ImGui::SliderFloat("Far", (float*)&(shadowMap.shadow->far), 0, 1000, "%.1f", ImGuiSliderFlags_Logarithmic);
 
@@ -168,8 +168,6 @@ namespace Nork::Editor {
 				node->GetEntity().RemoveComponent<Components::PointShadowMap>();
 			}
 			ImGui::PopStyleColor();
-
-			ImGui::TreePop();
 		}
 	}
 	template<> void SceneNodeView::ShowComponent(Components::Transform& tr, bool& changed)
@@ -250,9 +248,9 @@ namespace Nork::Editor {
 				// ImGui::Text("Material ID:"); ImGui::SameLine();
 				// ImGui::Text(matPath.string().c_str());
 
-				ImGui::ColorEdit3("diffuse", &model->meshes[meshIdx].material->diffuse.r, ImGuiColorEditFlags_DefaultOptions_ | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
-				ImGui::SliderFloat("specular", &model->meshes[meshIdx].material->specular, 0, 10);
-				ImGui::SliderFloat("spec-exp", &model->meshes[meshIdx].material->specularExponent, 0, 1024, "%.0f", ImGuiSliderFlags_Logarithmic);
+				ImGui::ColorEdit3("Base Color Factor", &model->meshes[meshIdx].material->baseColorFactor.r, ImGuiColorEditFlags_DefaultOptions_ | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
+				ImGui::SliderFloat("Roughness Factor", &model->meshes[meshIdx].material->roughnessFactor, 0, 1);
+				ImGui::SliderFloat("Metallic Factor", &model->meshes[meshIdx].material->metallicFactor, 0, 1);
 				
 				// if (ImGui::Button("Save Material"))
 				// {
@@ -287,21 +285,17 @@ namespace Nork::Editor {
 							}
 						}
 					};
-					if (ImGui::BeginTabItem("Diffuse"))
+					if (ImGui::BeginTabItem("Base Color"))
 					{
-						displayTex(Renderer::TextureMap::Diffuse);
+						displayTex(Renderer::TextureMap::BaseColor);
 					}
 					if (ImGui::BeginTabItem("Normal"))
 					{
 						displayTex(Renderer::TextureMap::Normal);
 					}
-					if (ImGui::BeginTabItem("Roughness"))
+					if (ImGui::BeginTabItem("Metallic Roughness"))
 					{
-						displayTex(Renderer::TextureMap::Roughness);
-					}
-					if (ImGui::BeginTabItem("Metalness"))
-					{
-						displayTex(Renderer::TextureMap::Reflection);
+						displayTex(Renderer::TextureMap::MetallicRoughness);
 					}
 					ImGui::EndTabBar();
 				}

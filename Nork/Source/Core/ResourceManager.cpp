@@ -120,18 +120,18 @@ namespace Nork {
 	}
 	static void ParseMaterial(Renderer::Material& material, const Renderer::GLTF::Material& mat, const Renderer::GLTF::GLTF& gltf)
 	{
-		material->diffuse = mat.pbrMetallicRoughness.baseColorFactor;
-		material->specular = 1 - mat.pbrMetallicRoughness.roughnessFactor;
-		material->specularExponent = mat.pbrMetallicRoughness.extras.Get<float>("specularExponent");
+		material->baseColorFactor = mat.pbrMetallicRoughness.baseColorFactor;
+		material->roughnessFactor = mat.pbrMetallicRoughness.roughnessFactor;
+		material->metallicFactor = mat.pbrMetallicRoughness.metallicFactor;
 		if (mat.pbrMetallicRoughness.baseColorTexture.Validate())
 		{
 			auto& texId = gltf.images[gltf.textures[mat.pbrMetallicRoughness.baseColorTexture.index].source].uri;
-			material.SetTextureMap(TextureResources::Instance().Get(texId), Renderer::TextureMap::Diffuse);
+			material.SetTextureMap(TextureResources::Instance().Get(texId), Renderer::TextureMap::BaseColor);
 		}
 		if (mat.pbrMetallicRoughness.metallicRoughnessTexture.Validate())
 		{
 			auto& texId = gltf.images[gltf.textures[mat.pbrMetallicRoughness.metallicRoughnessTexture.index].source].uri;
-			material.SetTextureMap(TextureResources::Instance().Get(texId), Renderer::TextureMap::Roughness);
+			material.SetTextureMap(TextureResources::Instance().Get(texId), Renderer::TextureMap::MetallicRoughness);
 		}
 		if (mat.normalTexture.Validate())
 		{
@@ -227,10 +227,9 @@ namespace Nork {
 					imageUris.push_back({ type, TextureResources::Instance().Uri(mesh.material.GetTextureMap(type)).string()});
 			};
 			using enum Renderer::TextureMap;
-			tryAddTex(Diffuse);
-			tryAddTex(Roughness);
+			tryAddTex(BaseColor);
+			tryAddTex(MetallicRoughness);
 			tryAddTex(Normal);
-			tryAddTex(Reflection);
 			builder
 				.AddMesh(mesh.mesh, MeshResources::Instance().Uri(mesh.mesh).string(), matIdx++)
 				.AddMaterial(mesh.material, imageUris); // don't need to add if it equals the (gltf) default one
@@ -262,9 +261,9 @@ namespace Nork {
 				MeshResources::Instance().SaveAs(mesh, fs::path(meshData.meshName).stem());
 
 				auto material = RenderingSystem::Instance().world.AddMaterial();
-				material->diffuse = meshData.material.diffuse;
-				material->specular = meshData.material.specular;
-				material->specularExponent = meshData.material.specularExponent;
+				material->baseColorFactor = meshData.material.diffuse;
+				material->roughnessFactor = 1 - meshData.material.specular;
+				//material->specularExponent = meshData.material.specularExponent;
 				for (auto& pair : meshData.material.textureMaps)
 				{
 					auto tex = TextureResources::Instance().Get(pair.second);
@@ -298,10 +297,9 @@ namespace Nork {
 				imageUris.push_back({ type, texId });
 			};
 			using enum Renderer::TextureMap;
-			tryAddTex(Diffuse);
-			tryAddTex(Roughness);
+			tryAddTex(BaseColor);
+			tryAddTex(MetallicRoughness);
 			tryAddTex(Normal);
-			tryAddTex(Reflection);
 
 			builder.AddMaterial(meshMat.material, imageUris);
 			matIdx++;

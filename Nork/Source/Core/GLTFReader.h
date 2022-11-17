@@ -69,13 +69,14 @@ namespace Nork{
 		Material CreateMaterial(const GLTF::Material& mat)
 		{
 			auto material = RenderingSystem::Instance().world.AddMaterial();
-			material->diffuse = mat.pbrMetallicRoughness.baseColorFactor;
-			material->specular = 1 - mat.pbrMetallicRoughness.roughnessFactor;
+			material->baseColorFactor = mat.pbrMetallicRoughness.baseColorFactor;
+			material->roughnessFactor = mat.pbrMetallicRoughness.roughnessFactor;
+			material->metallicFactor = mat.pbrMetallicRoughness.metallicFactor;
 			// material->specularExponent = mat.pbrMetallicRoughness.extras.Get<float>("specularExponent"); has official extension
 			if (mat.pbrMetallicRoughness.baseColorTexture.Validate())
-				material.SetTextureMap(images[gltf.textures[mat.pbrMetallicRoughness.baseColorTexture.index].source], Renderer::TextureMap::Diffuse);
+				material.SetTextureMap(images[gltf.textures[mat.pbrMetallicRoughness.baseColorTexture.index].source], Renderer::TextureMap::BaseColor);
 			if (mat.pbrMetallicRoughness.metallicRoughnessTexture.Validate())
-				material.SetTextureMap(images[gltf.textures[mat.pbrMetallicRoughness.metallicRoughnessTexture.index].source], Renderer::TextureMap::Roughness);
+				material.SetTextureMap(images[gltf.textures[mat.pbrMetallicRoughness.metallicRoughnessTexture.index].source], Renderer::TextureMap::MetallicRoughness);
 			if (mat.normalTexture.Validate())
 				material.SetTextureMap(images[gltf.textures[mat.normalTexture.index].source], Renderer::TextureMap::Normal);
 			return material;

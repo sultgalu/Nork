@@ -7,7 +7,7 @@
 namespace Nork::Renderer {
 	enum class TextureMap: uint8_t
 	{
-		Diffuse = 0, Normal, Roughness, Reflection, COUNT
+		BaseColor = 0, Normal, MetallicRoughness, COUNT
 	};
 
 	struct Material
@@ -25,17 +25,14 @@ namespace Nork::Renderer {
 			using enum Nork::Renderer::TextureMap;
 			switch (type)
 			{
-			case Diffuse:
-				material->diffuseMap = tex->GetBindlessHandle();
+			case BaseColor:
+				material->baseColor = tex->GetBindlessHandle();
 				break;
 			case Normal:
-				material->normalsMap = tex->GetBindlessHandle();
+				material->normal = tex->GetBindlessHandle();
 				break;
-			case Roughness:
-				material->roughnessMap = tex->GetBindlessHandle();
-				break;
-			case Reflection:
-				material->reflectMap = tex->GetBindlessHandle();
+			case MetallicRoughness:
+				material->metallicRoughness = tex->GetBindlessHandle();
 				break;
 			case COUNT:
 				break;

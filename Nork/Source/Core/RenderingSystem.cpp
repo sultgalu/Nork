@@ -432,8 +432,8 @@ namespace Nork {
 	}
 	Shaders::Shaders()
 	{
-		SetLightPassShader(InitShaderFromSource("Source/Shaders/lightPass.shader"));
-		gPassShader = InitShaderFromSource("Source/Shaders/gPass.shader");
+		SetLightPassShader(InitShaderFromSource("Source/Shaders/lightPass.glsl"));
+		gPassShader = InitShaderFromSource("Source/Shaders/gPass.glsl");
 		skyShader = InitShaderFromSource("Source/Shaders/sky.shader");
 		dShadowShader = InitShaderFromSource("Source/Shaders/dirShadMap.shader");
 		pShadowShader = InitShaderFromSource("Source/Shaders/pointShadMap.shader");
@@ -451,10 +451,10 @@ namespace Nork {
 	{
 		lPassShader = shader;
 		lPassShader->Use()
-			.SetInt("gPos", 0)
-			.SetInt("gDiff", 1)
-			.SetInt("gNorm", 2)
-			.SetInt("gSpec", 3);
+			.SetInt("gPosition", 0)
+			.SetInt("gBaseColor", 1)
+			.SetInt("gNormal", 2)
+			.SetInt("gMetallicRoughness", 3);
 	}
 
 	template<> std::shared_ptr<Renderer::BloomStage> RenderingSystem::ConstructStage(Renderer::Pipeline& dest)

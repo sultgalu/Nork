@@ -171,7 +171,7 @@ namespace Nork::Renderer
 			{
 				char buf[1000];
 				ifs.getline(buf, sizeof(buf), '\n');
-				mtl.textureMaps[TextureMap::Diffuse] = buf;
+				mtl.textureMaps[TextureMap::BaseColor] = buf;
 			}
 			else if (type == "map_Bump")
 			{
@@ -192,13 +192,13 @@ namespace Nork::Renderer
 			{
 				char buf[1000];
 				ifs.getline(buf, sizeof(buf), '\n');
-				mtl.textureMaps[TextureMap::Reflection] = buf;
+				// mtl.textureMaps[TextureMap::Reflection] = buf;
 			}
 			else if (type == "map_Ks")
 			{
 				char buf[1000];
 				ifs.getline(buf, sizeof(buf), '\n');
-				mtl.textureMaps[TextureMap::Roughness] = buf;
+				// mtl.textureMaps[TextureMap::Roughness] = buf;
 			}
 			else if (type == "newmtl")
 				return type;

@@ -11,7 +11,6 @@ layout(location = 3) in vec3 vTangent;
 
 out vec3 worldPos;
 out vec2 texCoord;
-out vec4 lightViewPos; // new
 out mat3 TBN;
 out vec3 vNorm;
 
@@ -24,14 +23,13 @@ layout(std140, binding = 5) uniform asd5
 
 struct Material
 {
-	sampler2D diffuseMap;
-	sampler2D normalsMap;
-	sampler2D roughnessMap;
-	sampler2D reflectMap;
+	sampler2D baseColor;
+	sampler2D normal;
+	sampler2D metallicRoughness;
 
-	vec3 diffuse;
-	float specular;
-	float specularExponent;
+	float metallicFactor;
+	float roughnessFactor;
+	vec3 baseColorFactor;
 };
 layout(std140, binding = 6) uniform asd6
 {
@@ -39,7 +37,7 @@ layout(std140, binding = 6) uniform asd6
 };
 layout(std140, binding = 7) uniform asd8
 {
-	uvec4 modelMatIndexes[10]; // uvec2 and uvec4 have the same stride, so using the latter is more memory efficient, just a little more complicated in indexing
+	uvec4 modelMatIndexes[1]; // uvec2 and uvec4 have the same stride, so using the latter is more memory efficient, just a little more complicated in indexing
 };
 flat out Material material;
 
@@ -75,23 +73,21 @@ void main()
 
 #version 330 core
 #extension ARB_bindless_texture : require
-//#extension ARB_shader_draw_parameters : require
 
-layout(location = 0) out vec4 pos; // 3 used
-layout(location = 1) out vec3 diffuse_spec;
+layout(location = 0) out vec4 position; // 3 used
+layout(location = 1) out vec3 baseColor;
 layout(location = 2) out vec3 normal; // 3 used
-layout(location = 3) out vec2 specular; // 2 used
+layout(location = 3) out vec2 metallicRoughness; // 2 used
 
 struct Material
 {
-	sampler2D diffuseMap;
-	sampler2D normalsMap;
-	sampler2D roughnessMap;
-	sampler2D reflectMap;
+	sampler2D baseColor;
+	sampler2D normal;
+	sampler2D metallicRoughness;
 
-	vec3 diffuse;
-	float specular;
-	float specularExponent;
+	float metallicFactor;
+	float roughnessFactor;
+	vec3 baseColorFactor;
 };
 
 flat in Material material;
@@ -102,11 +98,11 @@ in vec3 vNorm;
 
 void main()
 {
-	pos = vec4(worldPos, 1.0f);
-	diffuse_spec = texture(material.diffuseMap, texCoord).rgb * material.diffuse;
-	specular = texture(material.roughnessMap, texCoord).gb;
-	
-	vec3 norm = texture(material.normalsMap, texCoord).rgb;
+	position = vec4(worldPos, 1.0f);
+	baseColor = texture(material.baseColor, texCoord).rgb * material.baseColorFactor;
+	metallicRoughness = texture(material.metallicRoughness, texCoord).gb * vec2(material.roughnessFactor, material.metallicFactor);
+
+	vec3 norm = texture(material.normal, texCoord).rgb;
 	norm = norm * 2.0f - 1.0f; // [0;1] -> [-1;1]
 	normal = normalize(TBN * norm); // transforming from tangent-space -> world space
 }

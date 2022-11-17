@@ -13,22 +13,17 @@ namespace Nork::Renderer {
 	{
 		static auto diff = CreateTexture2D(TextureFormat::RGBA32F, { 1.0f, 1.0f, 1.0f, 1.0f });
 		static auto norm = CreateTexture2D(TextureFormat::RGB32F, { 0.5f, 0.5f, 1.0f });
-		static auto refl = CreateTexture2D(TextureFormat::R32F, { 0.5f });
-		static auto rough = CreateTexture2D(TextureFormat::RGB32F, { 0.0f, 0.5f, 1.0f }); // g=specular, b=metalness
-		return { diff, norm, rough, refl };
+		static auto rough = CreateTexture2D(TextureFormat::RGB32F, { 0.0f, 1.0f, 1.0f }); // g=roughness, b=metallic
+		return { diff, norm, rough };
 	}
 	Material::Material(SmartMappedBuffer<Data::Material>::Element element)
 		: material(element)
 	{
 		textureMaps = GetDefaultTextureMaps();
 
-		material->diffuseMap = textureMaps[std::to_underlying(TextureMap::Diffuse)]->GetBindlessHandle();
-		material->normalsMap = textureMaps[std::to_underlying(TextureMap::Normal)]->GetBindlessHandle();
-		material->roughnessMap = textureMaps[std::to_underlying(TextureMap::Roughness)]->GetBindlessHandle();
-		material->reflectMap = textureMaps[std::to_underlying(TextureMap::Reflection)]->GetBindlessHandle();
-		material->diffuse = { 1, 1, 1 };
-		material->specular = 1;
-		material->specularExponent = 128;
+		material->baseColor = textureMaps[std::to_underlying(TextureMap::BaseColor)]->GetBindlessHandle();
+		material->normal = textureMaps[std::to_underlying(TextureMap::Normal)]->GetBindlessHandle();
+		material->metallicRoughness = textureMaps[std::to_underlying(TextureMap::MetallicRoughness)]->GetBindlessHandle();
 	}
 	void Material::SetDefaultTexture(TextureMap type)
 	{

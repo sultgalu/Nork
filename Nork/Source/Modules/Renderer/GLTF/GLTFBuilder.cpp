@@ -136,9 +136,9 @@ namespace Nork::Renderer {
     {
 		GLTF::Material mat;
 		mat.name = name;
-		mat.pbrMetallicRoughness.baseColorFactor = glm::vec4(material->diffuse, 1.0f);
-		mat.pbrMetallicRoughness.roughnessFactor = 1 - material->specular;
-		mat.pbrMetallicRoughness.extras = JsonObject().Property("specularExponent", material->specularExponent);
+		mat.pbrMetallicRoughness.baseColorFactor = glm::vec4(material->baseColorFactor, 1.0f);
+		mat.pbrMetallicRoughness.roughnessFactor = material->roughnessFactor;
+		// mat.pbrMetallicRoughness.extras = JsonObject().Property("specularExponent", material->specularExponent);
 
 		for (auto [mapType, uri] : imageUris)
 		{ // adds new image+texture even if uri already exists. Should search for uri and use that index if found.
@@ -155,17 +155,14 @@ namespace Nork::Renderer {
 			using enum TextureMap;
 			switch (mapType)
 			{
-			case Diffuse:
+			case BaseColor:
 				mat.pbrMetallicRoughness.baseColorTexture = texInfo;
 				break;
 			case Normal:
 				mat.normalTexture = texInfo;
 				break;
-			case Roughness:
+			case MetallicRoughness:
 				mat.pbrMetallicRoughness.metallicRoughnessTexture = texInfo;
-				break;
-			case Reflection:
-				MetaLogger().Error("Separate Relfection map not handled here.");
 				break;
 			default:
 				break;
