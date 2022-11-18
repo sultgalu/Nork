@@ -8,6 +8,6 @@ namespace Nork::Renderer::Data {
 		float roughnessFactor = 1;
 		float metallicFactor = 1;
 		glm::vec3 baseColorFactor = { 1, 1, 1 };
-		float padding;
+		float alphaCutoff = -1;
 	};
 }

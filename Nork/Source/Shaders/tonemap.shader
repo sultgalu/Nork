@@ -19,11 +19,11 @@ void main()
 in vec2 fTex;
 out vec4 fColor;
 uniform sampler2D tex;
+uniform float gamma = 1.0f;
+uniform float exposure = 10.0f;
 
 void main()
 {
-	float exposure = 1.0f;
-	float gamma = 1.0f;
 	vec3 col = texture(tex, fTex).rgb;
 	fColor = vec4(col, 1);
 

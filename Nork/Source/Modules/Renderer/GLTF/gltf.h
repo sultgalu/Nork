@@ -205,8 +205,9 @@ namespace Nork::Renderer::GLTF {
 		std::string type;
 		int componentType;
 		int count;
-		std::optional<glm::vec3> min;
-		std::optional<glm::vec3> max;
+		// std::optional<glm::vec3> min;
+		// std::optional<glm::vec3> max;
+		// min/max component count can range from 1 to 4
 
 		inline static const std::string SCALAR = "SCALAR";
 		inline static const std::string VEC2 = "VEC2";
@@ -226,10 +227,10 @@ namespace Nork::Renderer::GLTF {
 				json.Property("byteOffset", byteOffset);
 			if (bufferView != -1)
 				json.Property("bufferView", bufferView);
-			if (max)
-				json.Property("max", JsonArray().Elements(*max));
-			if (min)
-				json.Property("min", JsonArray().Elements(*min));
+			// if (max)
+			// 	json.Property("max", JsonArray().Elements(*max));
+			// if (min)
+			// 	json.Property("min", JsonArray().Elements(*min));
 			return json;
 		}
 		virtual void FromJson(const JsonObject& json) override
@@ -239,10 +240,10 @@ namespace Nork::Renderer::GLTF {
 			componentType = json.Get<int>("componentType");
 			json.GetIfContains("byteOffset", byteOffset);
 			json.GetIfContains("bufferView", bufferView);
-			if (json.Contains("min"))
-				json.Get<JsonArray>("min").Get(min.emplace());
-			if (json.Contains("max"))
-				json.Get<JsonArray>("max").Get(max.emplace());
+			// if (json.Contains("min"))
+			// 	json.Get<JsonArray>("min").Get(min.emplace());
+			// if (json.Contains("max"))
+			// 	json.Get<JsonArray>("max").Get(max.emplace());
 		}
 		virtual bool Validate() const override
 		{
@@ -342,6 +343,11 @@ namespace Nork::Renderer::GLTF {
 		std::string name = "";
 		MaterialRoughnessModel pbrMetallicRoughness;
 		TextureInfo normalTexture;
+		std::string alphaMode = OPAQUE;
+		float alphaCutoff = 0.5f;
+		inline static const std::string OPAQUE = "OPAQUE";
+		inline static const std::string MASK = "MASK";
+		inline static const std::string BLEND = "BLEND";
 
 		JsonObject ToJson() const override
 		{
@@ -351,11 +357,19 @@ namespace Nork::Renderer::GLTF {
 				json.Property("normalTexture", normalTexture.ToJson());
 			if (!name.empty())
 				json.Property("name", name);
+			if (alphaMode != OPAQUE)
+			{
+				json.Property("alphaMode", alphaMode);
+				if (alphaCutoff != 0.5f)
+					json.Property("alphaCutoff", alphaCutoff);
+			}
 			return json;
 		}
 		virtual void FromJson(const JsonObject& json) override
 		{
 			json.GetIfContains("name", name);
+			json.GetIfContains("alphaMode", alphaMode);
+			json.GetIfContains("alphaCutoff", alphaCutoff);
 			if (json.Contains("normalTexture"))
 			{
 				normalTexture.FromJson(json.Get<JsonObject>("normalTexture"));

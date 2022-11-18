@@ -31,9 +31,9 @@ namespace Nork::Components {
 		glm::vec3 skew; glm::vec4 persp;
 		glm::decompose(modelMatrix, diff.scale, diff.quaternion, diff.position, skew, persp);
 		diff.quaternion = glm::normalize(glm::conjugate(diff.quaternion));
-		auto asd = glm::normalize(localQuaternion);
+		auto locQuat = glm::normalize(localQuaternion);
 		diff.position = localPosition - diff.position;
-		diff.quaternion = asd * diff.quaternion;
+		diff.quaternion = locQuat * diff.quaternion;
 		diff.scale = localScale / diff.scale;
 		return diff;
 	}

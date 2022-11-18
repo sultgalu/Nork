@@ -72,6 +72,8 @@ namespace Nork{
 			material->baseColorFactor = mat.pbrMetallicRoughness.baseColorFactor;
 			material->roughnessFactor = mat.pbrMetallicRoughness.roughnessFactor;
 			material->metallicFactor = mat.pbrMetallicRoughness.metallicFactor;
+			if (mat.alphaMode == mat.MASK)
+				material->alphaCutoff = mat.alphaCutoff;
 			// material->specularExponent = mat.pbrMetallicRoughness.extras.Get<float>("specularExponent"); has official extension
 			if (mat.pbrMetallicRoughness.baseColorTexture.Validate())
 				material.SetTextureMap(images[gltf.textures[mat.pbrMetallicRoughness.baseColorTexture.index].source], Renderer::TextureMap::BaseColor);

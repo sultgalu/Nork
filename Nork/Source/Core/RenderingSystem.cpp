@@ -175,7 +175,7 @@ namespace Nork {
 		dirLightObserver.connect(registry, entt::collector.update<Components::DirLight>());
 		pointLightObserver.connect(registry, entt::collector.update<Components::Transform>()
 			.where<Components::PointLight>().update<Components::PointLight>());
-		transformObserver.connect(registry, entt::collector.update<Components::Transform>()
+		transformObserver.connect(registry, entt::collector.update<Components::Transform>().update<Components::Drawable>()
 			.where<Components::Drawable>().group<Components::Drawable, Components::Transform>());
 
 		// auto sceneView = std::make_shared<SceneView>(1920, 1080);

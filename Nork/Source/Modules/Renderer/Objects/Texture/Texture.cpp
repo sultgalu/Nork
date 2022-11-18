@@ -43,4 +43,52 @@ namespace Nork::Renderer {
 		BindCube(idx);
 		return *this;
 	}
+
+
+	TextureParams TextureParams::CubeMapParams()
+	{
+		return TextureParams{
+			.wrap = TextureWrap::ClampToEdge,
+			.filter = TextureFilter::Linear,
+			.genMipmap = false
+		};
+	}
+	TextureParams TextureParams::Tex2DParams()
+	{
+		return TextureParams{
+			.wrap = TextureWrap::Repeat,
+			.filter = TextureFilter::LinearMipmapLinear,
+			.genMipmap = true
+		};
+	}
+	TextureParams TextureParams::FramebufferTex2DParams()
+	{
+		return TextureParams{
+			.wrap = TextureWrap::ClampToEdge,
+			.filter = TextureFilter::Linear,
+			.genMipmap = false
+		};
+	}
+	TextureParams TextureParams::ShadowMapParams2D()
+	{
+		return TextureParams{
+			.wrap = TextureWrap::ClampToBorder,
+			.filter = TextureFilter::Linear,
+			.magLinear = true, // shadow anti-aliasing
+			.genMipmap = false,
+			.shadow = true,
+			.border = true,
+		};
+	}
+	TextureParams TextureParams::ShadowMapParamsCube()
+	{
+		return TextureParams{
+			.wrap = TextureWrap::ClampToEdge,
+			.filter = TextureFilter::Linear,
+			.magLinear = true, // shadow anti-aliasing
+			.genMipmap = false,
+			.shadow = true,
+		};
+	}
+
 }

@@ -30,6 +30,7 @@ struct Material
 	float metallicFactor;
 	float roughnessFactor;
 	vec3 baseColorFactor;
+	float alphaCutoff;
 };
 layout(std140, binding = 6) uniform asd6
 {
@@ -88,6 +89,7 @@ struct Material
 	float metallicFactor;
 	float roughnessFactor;
 	vec3 baseColorFactor;
+	float alphaCutoff;
 };
 
 flat in Material material;
@@ -99,7 +101,10 @@ in vec3 vNorm;
 void main()
 {
 	position = vec4(worldPos, 1.0f);
-	baseColor = texture(material.baseColor, texCoord).rgb * material.baseColorFactor;
+	vec4 color = texture(material.baseColor, texCoord).rgba;
+	if (color.a < material.alphaCutoff)
+		discard;
+	baseColor = color.rgb * material.baseColorFactor;
 	metallicRoughness = texture(material.metallicRoughness, texCoord).gb * vec2(material.roughnessFactor, material.metallicFactor);
 
 	vec3 norm = texture(material.normal, texCoord).rgb;

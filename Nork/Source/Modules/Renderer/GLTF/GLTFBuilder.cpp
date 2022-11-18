@@ -16,19 +16,20 @@ namespace Nork::Renderer {
 		gltf.nodes.push_back(GLTF::Node());
 		gltf.nodes.back().mesh = gltf.meshes.size();
 
-		glm::vec3 posMin = glm::vec3(std::numeric_limits<float>::max());
-		glm::vec3 posMax = glm::vec3(-std::numeric_limits<float>::max());
-		for (size_t i = 0; i < mesh.Vertices().Count(); i++)
-		{
-			auto& vertex = mesh.Vertices()[i];
-			if (vertex.position.x > posMax.x) posMax.x = vertex.position.x;
-			if (vertex.position.y > posMax.y) posMax.y = vertex.position.y;
-			if (vertex.position.z > posMax.z) posMax.z = vertex.position.z;
-
-			if (vertex.position.x < posMin.x) posMin.x = vertex.position.x;
-			if (vertex.position.y < posMin.y) posMin.y = vertex.position.y;
-			if (vertex.position.z < posMin.z) posMin.z = vertex.position.z;
-		}
+		// TODO use again when min/max comp count fixed
+		// glm::vec3 posMin = glm::vec3(std::numeric_limits<float>::max());
+		// glm::vec3 posMax = glm::vec3(-std::numeric_limits<float>::max());
+		// for (size_t i = 0; i < mesh.Vertices().Count(); i++)
+		// {
+		// 	auto& vertex = mesh.Vertices()[i];
+		// 	if (vertex.position.x > posMax.x) posMax.x = vertex.position.x;
+		// 	if (vertex.position.y > posMax.y) posMax.y = vertex.position.y;
+		// 	if (vertex.position.z > posMax.z) posMax.z = vertex.position.z;
+		// 
+		// 	if (vertex.position.x < posMin.x) posMin.x = vertex.position.x;
+		// 	if (vertex.position.y < posMin.y) posMin.y = vertex.position.y;
+		// 	if (vertex.position.z < posMin.z) posMin.z = vertex.position.z;
+		// }
 
 		auto bufIdx = [&](int idx) { return gltf.buffers.size() + idx; };
 		auto bufViewIdx = [&](int idx) { return gltf.bufferViews.size() + idx; };
@@ -102,8 +103,9 @@ namespace Nork::Renderer {
 			accessor.count = mesh.Vertices().Count();
 		};
 		setAccessor(posAcc, bufViewIdx(0), GLTF::Accessor::VEC3);
-		posAcc.min = posMin;
-		posAcc.max = posMax;
+		// TODO use again when min/max comp count fixed
+		// posAcc.min = posMin;
+		// posAcc.max = posMax;
 		setAccessor(normAcc, bufViewIdx(1), GLTF::Accessor::VEC3);
 		setAccessor(texCoordAcc, bufViewIdx(2), GLTF::Accessor::VEC2);
 		setAccessor(tangAcc, bufViewIdx(3), GLTF::Accessor::VEC3);

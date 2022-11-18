@@ -107,7 +107,7 @@ namespace Nork
 
 		if (input.IsDown(Button::Left))
 		{
-			camera.Rotate(input.CursorYOffs(), -input.CursorXOffs());
+			camera.Rotate(-input.CursorYOffs(), input.CursorXOffs());
 			camera.SetPosition(center + -camera.front * distance);
 		}
 	}

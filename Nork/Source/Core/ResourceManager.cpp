@@ -26,12 +26,13 @@ namespace Nork {
 			auto abs = Absolute(path);
 			if (!fs::exists(abs))
 				throw ResourceNotFoundException(abs);
+			auto res = Load(abs);
 			if (IsExternal(path))
-			{ // copy external assets to project. change the uri accordingly
+			{ // change uri for external assets
 				abs = Absolute(ImportFile(path));
 				rel = Relative(abs);
 			}
-			cache[rel] = Load(abs);
+			cache[rel] = res;
 		}
 		return cache[rel];
 	}
@@ -50,7 +51,7 @@ namespace Nork {
 
 		Logger::Info("Importing Asset from ", extAbs, " to ", abs);
 		fs::create_directories(abs.parent_path());
-		fs::copy(extAbs, abs);
+		// fs::copy(extAbs, abs);
 		return abs;
 	}
 	template<class T> fs::path Resources<T>::Uri(const T& val) const
@@ -263,11 +264,9 @@ namespace Nork {
 				auto material = RenderingSystem::Instance().world.AddMaterial();
 				material->baseColorFactor = meshData.material.diffuse;
 				material->roughnessFactor = 1 - meshData.material.specular;
-				//material->specularExponent = meshData.material.specularExponent;
 				for (auto& pair : meshData.material.textureMaps)
 				{
 					auto tex = TextureResources::Instance().Get(pair.second);
-					TextureResources::Instance().Save(tex);
 					material.SetTextureMap(tex, pair.first);
 				}
 

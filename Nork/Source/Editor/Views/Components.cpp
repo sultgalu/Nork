@@ -30,7 +30,7 @@ namespace Nork::Editor {
 		// dirLight.light->Update();
 		auto dir = dirLight.light->direction;
 		changed |= ImGui::Checkbox("Sun", &dirLight.sun);
-		changed |= ImGui::SliderFloat3("Direction", &dirLight.light->direction.x, -1, 1, "%5.f");
+		changed |= ImGui::SliderFloat3("Direction", &dirLight.light->direction.x, -1, 1, "%.5f");
 		changed |= ImGui::SliderFloat("Out Of Proj Value", &dirLight.light->outOfProjValue, 0, 1);
 		changed |= ImGui::ColorEdit3("Color (diffuse)", &(dirLight.light->color2.r));
 		changed |= ImGui::ColorEdit3("Color (ambient)", &(dirLight.light->color.r));
@@ -240,8 +240,30 @@ namespace Nork::Editor {
 				if (meshIdx >= meshCount)
 					meshIdx = meshCount - 1;
 				ImGui::SliderInt("Mesh of model", &meshIdx, 0, meshCount - 1);
+				auto& mesh = model->meshes[meshIdx];
+				if (mesh.localTransform.has_value())
+				{
+					glm::vec3 pos, scale, skew;
+					glm::quat quat;
+					glm::vec4 persp;
+					glm::decompose(*mesh.localTransform, scale, quat, pos, skew, persp);
+					bool trChanged = false;
 
-				auto meshPath = MeshResources::Instance().Uri(model->meshes[meshIdx].mesh).filename().string();
+					trChanged |= ImGui::DragFloat3("Position", &pos.x);
+					trChanged |= ImGui::DragFloat3("Rotation", &quat.x);
+					trChanged |= ImGui::DragFloat3("Scale", &scale.x);
+					changed |= trChanged;
+					if (trChanged)
+						mesh.localTransform = glm::scale(glm::translate(glm::identity<glm::mat4>(), pos) * glm::mat4_cast(quat), scale);
+					if (changed |= ImGui::Button("Remove Local Transform&localtransform"))
+						mesh.localTransform.reset();
+				}
+				else if (changed |= ImGui::Button("Add Local Transform&localtransform"));
+				{
+					mesh.localTransform.emplace(glm::identity<glm::mat4>());
+				}
+
+				auto meshPath = MeshResources::Instance().Uri(model->meshes[meshIdx].mesh).string();
 				// auto matPath = MaterialResources::Instance().Path(dr.model->meshes[meshIdx].material);
 				ImGui::Text("Mesh ID:"); ImGui::SameLine();
 				ImGui::Text(meshPath.c_str());

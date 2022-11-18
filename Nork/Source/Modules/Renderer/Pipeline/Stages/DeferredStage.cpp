@@ -29,7 +29,7 @@ namespace Nork::Renderer {
 
 		Capabilities()
 			.Enable().DepthTest().CullFace()
-			.Disable().Blend(); //  .CullFace();
+			.Disable().Blend().CullFace(); // for double-sided materials
 
 		drawCommand->operator()();
 	}

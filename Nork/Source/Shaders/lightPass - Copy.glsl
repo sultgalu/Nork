@@ -145,6 +145,8 @@ void main()
 	vec3 worldPos = pos.rgb;
 	vec3 diff = texture(gDiff, texCoord).rgb;
 	vec3 normal = texture(gNorm, texCoord).rgb;
+	if (!gl_FrontFacing)
+		normal *= -1;
 	vec2 spec = texture(gSpec, texCoord).rg;
 
 	vec3 viewDir = normalize(viewPos - worldPos);
