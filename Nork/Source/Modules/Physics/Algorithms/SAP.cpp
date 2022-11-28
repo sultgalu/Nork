@@ -40,7 +40,7 @@ namespace Nork::Physics
 		res.resize(objs.size());
 		std::for_each_n(std::execution::par_unseq, counter.begin(), objs.size(), [&](auto i)
 			{
-				res[i] = (std::pair(i, AABB(objs[i].collider.verts)));
+				res[i] = std::pair(i, AABB(objs[i].collider.verts));
 				constexpr float bias = 0.0f;
 				res[i].second.min -= glm::vec3(bias);
 				res[i].second.max += glm::vec3(bias);

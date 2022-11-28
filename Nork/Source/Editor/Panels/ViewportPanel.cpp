@@ -129,8 +129,15 @@ namespace Nork::Editor {
 					auto id = NameForStage((*it).get()) + std::string("#") + std::to_string((int)(it._Ptr));
 					if (ImGui::SmallButton(("X##" + id).c_str()))
 					{
-						auto toRemove = it--;
-						sceneView->pipeline->stages.erase(toRemove);
+						if (it != sceneView->pipeline->stages.begin())
+						{
+							sceneView->pipeline->stages.erase(it--);
+						}
+						else
+						{
+							sceneView->pipeline->stages.erase(it);
+							it = sceneView->pipeline->stages.begin();
+						}
 						continue;
 					}
 					ImGui::SameLine();

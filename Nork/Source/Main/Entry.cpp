@@ -40,7 +40,7 @@ int main()
 	}*/
 
 	auto pl = engine.scene.CreateNode()->GetEntity();
-	pl.AddComponent<Components::Transform>([&](auto& tr) { tr.localPosition = { -8.0, -8.6, -4.7 }; tr.localScale = glm::vec3(0.1f); });
+	pl.AddComponent<Components::Transform>([&](auto& tr) {}); //{ tr.localPosition = { -8.0, -8.6, -4.7 }; tr.localScale = glm::vec3(0.1f); });
 	pl.AddComponent<Components::Drawable>();
 	pl.AddComponent<Components::PointLight>([&](Components::PointLight& l)
 		{

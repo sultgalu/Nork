@@ -361,6 +361,26 @@ namespace Nork::Editor {
 		{
 			ModelResources::Instance().Reload(dr.GetModel());
 		}
+		static fs::path selected;
+		if (ImGui::Button("Switch"))
+		{
+			selected = "";
+			ImGui::OpenPopup("SwitchPopup");
+		}
+		if (ImGui::BeginPopup("SwitchPopup"))
+		{
+			for (auto& [path, model] : ModelResources::Instance().Cache())
+			{
+				if (ImGui::Selectable(path.string().c_str(), selected == path, ImGuiSelectableFlags_::ImGuiSelectableFlags_DontClosePopups))
+					selected = path;
+			}
+			if (changed |= ImGui::Button("Switch##Accept"))
+			{
+				dr.SetModel(ModelResources::Instance().Get(selected));
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
 		if (ImGui::Button("Import Model"))
 		{
 			std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::_3D, L"Import model", L"Import");

@@ -439,7 +439,9 @@
     <None Include="Source\Shaders\bloom3.shader" />
     <None Include="Source\Shaders\debug.shader" />
     <None Include="Source\Shaders\dirShadMap.shader" />
+    <None Include="Source\Shaders\gPass.glsl" />
     <None Include="Source\Shaders\gPass.shader" />
+    <None Include="Source\Shaders\lightPass.glsl" />
     <None Include="Source\Shaders\sky2.shader" />
     <None Include="Source\Shaders\tonemap.shader" />
     <None Include="Source\Shaders\lightCull.shader" />

@@ -64,6 +64,7 @@ namespace Nork {
 		bool Exists(const fs::path&);
 
 		static Resources& Instance();
+		const std::unordered_map<fs::path, T>& Cache() { return cache; }
 	private:
 		T Load(const fs::path&) const;
 		void Set(T&, const T&) const;

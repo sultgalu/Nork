@@ -646,5 +646,7 @@
     <None Include="Source\Shaders\bloom3.shader" />
     <None Include="Source\Shaders\sky.shader" />
     <None Include="Source\Shaders\sky2.shader" />
+    <None Include="Source\Shaders\lightPass.glsl" />
+    <None Include="Source\Shaders\gPass.glsl" />
   </ItemGroup>
 </Project>
