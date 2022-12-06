@@ -65,13 +65,15 @@ namespace fs = std::filesystem;
 #include <mutex>
 #include <semaphore>
 
-////-----------------OPENGL-----------------------
+////-----------------OPENGL/VULKAN-----------------------
 
 #include <glad/glad.h>
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 
+#define GLFW_INCLUDE_VULKAN
 #include <glfw/glfw3.h>
 
 ////-----------------IMGUI-----------------------

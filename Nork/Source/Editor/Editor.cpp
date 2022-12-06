@@ -237,7 +237,7 @@ namespace Nork::Editor
 	{
 		UpdateImguiInputs();
 		Render();
-		engine.Update();
+		// engine.Update();
 	}
 	void Editor::UpdateImguiInputs()
 	{

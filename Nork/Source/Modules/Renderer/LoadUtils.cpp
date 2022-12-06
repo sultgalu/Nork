@@ -30,12 +30,12 @@ namespace Nork::Renderer
 			MetaLogger().Error("Unhandled number of channels: ", channels);
 		}
 	}
-    Image LoadUtils::LoadImage(std::string_view path)
+    Image LoadUtils::LoadImage(std::string_view path, bool forceRGBA)
     {
         int width = 0, height = 0, channels = 0;
 
-		unsigned char* data = stbi_load(path.data(), &width, &height, &channels, 0);
-		size_t size = (size_t)width * height * channels;
+		unsigned char* data = stbi_load(path.data(), &width, &height, &channels, forceRGBA ? STBI_rgb_alpha : 0);
+		size_t size = (size_t)width * height * (forceRGBA ? 4 : channels);
 		if (data)
 		{
 			auto image = Image{

@@ -31,7 +31,7 @@ namespace Nork::Renderer
 	class LoadUtils
 	{
 	public:
-		static Image LoadImage(std::string_view path);
+		static Image LoadImage(std::string_view path, bool forceRGBA = false);
 		static void WriteImage(const Image&, const std::string& path, ImageFormat);
 		static void WriteTexture(const Renderer::Texture2D& tex, const std::string& path, Renderer::ImageFormat format);
 		static std::array<Image, 6> LoadCubemapImages(std::string dirPath, std::string extension);

@@ -279,6 +279,9 @@
     <ClCompile Include="Source\Components\Impl\Drawable.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Main\Shaderc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\PCH\pch.h">
@@ -626,6 +629,9 @@
     <ClInclude Include="Source\Core\GLTFReader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Main\Shaderc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\OneDrive\Dokumentumok\GameEngine_0\GameEngineEditor\resources\shaders\lightPass.shader" />
@@ -648,5 +654,7 @@
     <None Include="Source\Shaders\sky2.shader" />
     <None Include="Source\Shaders\lightPass.glsl" />
     <None Include="Source\Shaders\gPass.glsl" />
+    <None Include="Source\Shaders\shader.vert" />
+    <None Include="Source\Shaders\shader.frag" />
   </ItemGroup>
 </Project>
