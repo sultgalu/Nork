@@ -259,7 +259,17 @@
     <ClCompile Include="Source\Modules\Renderer\Objects\VertexArray\VertexArray.cpp" />
     <ClInclude Include="Source\Core\GLTFReader.h" />
     <ClInclude Include="Source\Editor\Panels\include\ColliderEditorPanel.h" />
+    <ClInclude Include="Source\Main\Buffer.h" />
+    <ClInclude Include="Source\Main\Device.h" />
+    <ClInclude Include="Source\Main\DeviceMemory.h" />
+    <ClInclude Include="Source\Main\Image.h" />
+    <ClInclude Include="Source\Main\Sampler.h" />
     <ClInclude Include="Source\Main\Shaderc.h" />
+    <ClInclude Include="Source\Main\SwapChain.h" />
+    <ClInclude Include="Source\Main\Texture.h" />
+    <ClInclude Include="Source\Main\VkSuccess.h" />
+    <ClInclude Include="Source\Main\VulkanContext.h" />
+    <ClInclude Include="Source\Main\Window.h" />
     <ClInclude Include="Source\Modules\Physics\Data\Collider.h" />
     <ClInclude Include="Source\Modules\Physics\Data\CollisionResult.h" />
     <ClInclude Include="Source\Modules\Physics\Data\Kinematic.h" />
