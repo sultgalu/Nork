@@ -45,10 +45,11 @@ public:
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = 1;
 
-        vkCreateImageView(Device::Instance().device, &viewInfo, nullptr, &imageView) == VkSuccess();
+        vkCreateImageView(Device::Instance().device, &viewInfo, nullptr, &imageViewHandle) == VkSuccess();
 	}
     ~Image()
     {
+        vkDestroyImageView(Device::Instance().device, imageViewHandle, nullptr);
         vkDestroyImage(Device::Instance().device, handle, nullptr);
     }
     void Sampler(std::shared_ptr<Sampler> sampler)
@@ -57,7 +58,7 @@ public:
     }
 public:
     VkImage handle;
-    VkImageView imageView;
+    VkImageView imageViewHandle;
     std::shared_ptr<class Sampler> sampler = nullptr;
 
     VkImageCreateInfo imageInfo;

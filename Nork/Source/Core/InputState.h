@@ -6,6 +6,7 @@ namespace Nork
 	class Input: Template::Types::OnlyConstruct
 	{
 	public:
+		static Input& Instance();
 		Input(GLFWwindow* winPtr);
 		void Update(); // call before input polling
 

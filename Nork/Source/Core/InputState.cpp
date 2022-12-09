@@ -6,8 +6,14 @@ namespace Nork {
 	{
 		return *(Input*)glfwGetWindowUserPointer(windowPtr);
 	}
+	static Input* instance;
+	Input& Input::Instance()
+	{
+		return *instance;
+	}
 	Input::Input(GLFWwindow* windowPtr)
 	{
+		instance = this;
 		glfwSetWindowUserPointer(windowPtr, this);
 
 		glfwSetKeyCallback(windowPtr, [](GLFWwindow* winPtr, int key, int scancode, int action, int mods)

@@ -1,6 +1,6 @@
 #pragma once
 #include "VkSuccess.h"
-
+#include "Core/InputState.h"
 
 class VulkanWindow
 {
@@ -9,6 +9,7 @@ public:
         : width(width), height(height)
     {
         initWindow();
+        input = std::make_unique<Nork::Input>(glfwWindow);
     }
     ~VulkanWindow()
     {
@@ -55,7 +56,7 @@ public:
     }
 public:
     uint32_t width, height;
-
+    std::unique_ptr<Nork::Input> input;
     GLFWwindow* glfwWindow;
 
     std::function<void(int, int)> onFbResize = nullptr;
