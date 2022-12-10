@@ -18,6 +18,7 @@
 #include "Sampler.h"
 #include "Pipeline.h"
 #include "DescriptorSet.h"
+#include "CommandBuffer.h"
 
 using namespace Nork;
 
@@ -92,15 +93,11 @@ public:
             vkDestroySemaphore(device.device, imageAvailableSemaphores[i], nullptr);
             vkDestroyFence(device.device, inFlightFences[i], nullptr);
         }
-
-        vkDestroyCommandPool(device.device, commandPool, nullptr);
     }
 private:
 
     void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
     {
-        VkCommandBuffer commandBuffer = beginSingleTimeCommands();
-
         VkImageMemoryBarrier barrier{};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier.oldLayout = oldLayout;
@@ -139,21 +136,15 @@ private:
             throw std::invalid_argument("unsupported layout transition!");
         }
 
-        vkCmdPipelineBarrier(
-            commandBuffer,
-            sourceStage, destinationStage,
-            0,
-            0, nullptr,
-            0, nullptr,
-            1, &barrier
-        );
+        auto cmdBuf = CommandBuilder(*commandPool)
+            .BeginCommands()
+            .PipelineBarrier(sourceStage, destinationStage, barrier)
+            .EndCommands();
 
-        endSingleTimeCommands(commandBuffer);
+        endSingleTimeCommands(cmdBuf);
     }
-    void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
+    void copyBufferToImage(const Buffer& buffer, const Image& image, uint32_t width, uint32_t height)
     {
-        VkCommandBuffer commandBuffer = beginSingleTimeCommands();
-
         VkBufferImageCopy region{};
         region.bufferOffset = 0;
         region.bufferRowLength = 0;
@@ -171,16 +162,12 @@ private:
             1
         };
 
-        vkCmdCopyBufferToImage(
-            commandBuffer,
-            buffer,
-            image,
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            1,
-            &region
-        );
+        auto cmdBuf = CommandBuilder(*commandPool)
+            .BeginCommands()
+            .CopyBufferToImage(buffer, image, region)
+            .EndCommands();
 
-        endSingleTimeCommands(commandBuffer);
+        endSingleTimeCommands(cmdBuf);
     }
     void createTextureImage()
     {
@@ -196,7 +183,7 @@ private:
 
         transitionImageLayout(textureImage->handle, textureImage->imageInfo.format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
         textureImage->layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        copyBufferToImage(stagingBuffer.handle, textureImage->handle, image.width, image.height);
+        copyBufferToImage(stagingBuffer, *textureImage, image.width, image.height);
         transitionImageLayout(textureImage->handle, textureImage->imageInfo.format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         textureImage->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
@@ -210,7 +197,7 @@ private:
         indexBuffer = std::make_shared<Buffer>(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        copyBuffer(stagingBuffer.handle, indexBuffer->handle, bufferSize);
+        copyBuffer(stagingBuffer, *indexBuffer, bufferSize);
     }
     void createVertexBuffer()
     {
@@ -222,24 +209,18 @@ private:
         vertexBuffer = std::make_shared<Buffer>(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        copyBuffer(stagingBuffer.handle, vertexBuffer->handle, bufferSize);
+        copyBuffer(stagingBuffer, *vertexBuffer, bufferSize);
     }
-    void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+    void copyBuffer(const Buffer& srcBuffer, const Buffer& dstBuffer, VkDeviceSize size)
     {
-        VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+        auto cmdBuf = CommandBuilder(*commandPool)
+            .BeginCommands()
+            .CopyBuffer(srcBuffer, dstBuffer, size)
+            .EndCommands();
 
-        VkBufferCopy copyRegion{};
-        copyRegion.size = size;
-        vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
-
-        endSingleTimeCommands(commandBuffer);
+        endSingleTimeCommands(cmdBuf);
     }
-    void createDepthResources()
-    {
-        depthImage = std::make_shared<Image>(swapChain.swapChainExtent.width, swapChain.swapChainExtent.height, VK_FORMAT_D32_SFLOAT,
-            VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
-    }
-
+   
     std::vector<uint32_t> LoadShader(const fs::path& srcFile)
     {
         fs::path binFile = fs::path(srcFile).replace_extension(srcFile.extension().string() + "_bin");
@@ -295,7 +276,8 @@ private:
     
     void initVulkan()
     {
-        createDepthResources();
+        //depthImage = std::make_shared<Image>(swapChain.swapChainExtent.width, swapChain.swapChainExtent.height, VK_FORMAT_D32_SFLOAT,
+          //  VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
 
         descriptorSetLayout = DescriptorSetLayout::Builder()
             .Binding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
@@ -305,8 +287,9 @@ private:
         descriptorSet = std::make_shared<DescriptorSet>(*descriptorPool, *descriptorSetLayout);
         createGraphicsPipeline();
 
-        createCommandPool();
-
+        commandPool = std::make_shared<CommandPool>();
+        commandBuffers = commandPool->CreateCommandBuffers(MAX_FRAMES_IN_FLIGHT);
+        
         textureSampler = std::make_shared<Sampler>();
 
         createVertexBuffer();
@@ -314,48 +297,26 @@ private:
 
         createTextureImage();
         uniformBuffer = std::make_shared<Buffer>(sizeof(glm::mat4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, true);
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, true);
         descriptorSet->Writer()
             .Buffer(0, *uniformBuffer, 0, sizeof(glm::mat4))
             .Image(1, *textureImage)
             .Write();
 
-        createCommandBuffer();
         createSyncObjects();
     }
 
-    VkCommandBuffer beginSingleTimeCommands()
+    void endSingleTimeCommands(CommandBuffer cmdBuffer)
     {
-        VkCommandBufferAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandPool = commandPool;
-        allocInfo.commandBufferCount = 1;
-
-        VkCommandBuffer commandBuffer;
-        vkAllocateCommandBuffers(device.device, &allocInfo, &commandBuffer);
-
-        VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-        vkBeginCommandBuffer(commandBuffer, &beginInfo);
-
-        return commandBuffer;
-    }
-    void endSingleTimeCommands(VkCommandBuffer commandBuffer)
-    {
-        vkEndCommandBuffer(commandBuffer);
-
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffer;
-
+        submitInfo.pCommandBuffers = &cmdBuffer.handle;
+        
         vkQueueSubmit(device.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
         vkQueueWaitIdle(device.graphicsQueue);
 
-        vkFreeCommandBuffers(device.device, commandPool, 1, &commandBuffer);
+        commandPool->FreeCommandBuffer(cmdBuffer);
     }
     
     void createSyncObjects()
@@ -377,79 +338,24 @@ private:
             vkCreateFence(device.device, &fenceInfo, nullptr, &inFlightFences[i]) == VkSuccess();
         }
     }
-    void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
+
+    void recordCommandBuffer(CommandBuffer& commandBuffer, uint32_t imageIndex)
     {
-        VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = 0; // Optional
-        beginInfo.pInheritanceInfo = nullptr; // Optional
-        vkBeginCommandBuffer(commandBuffer, &beginInfo) == VkSuccess();
+        CommandBuilder(commandBuffer)
+            .BeginCommands()
+            .BeginRenderPass(swapChain, imageIndex).Viewport().Scissor()
 
-        VkRenderPassBeginInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = swapChain.renderPass;
-        renderPassInfo.framebuffer = swapChain.swapChainFramebuffers[imageIndex];
-        renderPassInfo.renderArea.offset = { 0, 0 };
-        renderPassInfo.renderArea.extent = swapChain.swapChainExtent;
+            .BindPipeline(*pipeline)
+            .BindVB(*vertexBuffer)
+            .BindIB(*indexBuffer, VK_INDEX_TYPE_UINT16)
+            .BindDescriptorSet(pipeline->layoutHandle, *descriptorSet)
+            .DrawIndexed(indices.size())
 
-        std::array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-        clearValues[1].depthStencil = { 1.0f, 0 };
-
-        renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-        renderPassInfo.pClearValues = clearValues.data();
-
-        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE); 
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->handle);
-
-        VkViewport viewport{};
-        viewport.x = 0.0f;
-        viewport.y = 0.0f;
-        viewport.width = swapChain.swapChainExtent.width;
-        viewport.height = swapChain.swapChainExtent.height;
-        viewport.minDepth = 0.0f;
-        viewport.maxDepth = 1.0f;
-        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+            .EndRenderPass()
+            .EndCommands();
         
-        VkRect2D scissor{};
-        scissor.offset = { 0, 0 };
-        scissor.extent = swapChain.swapChainExtent;
-        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
-        VkBuffer vertexBuffers[] = { vertexBuffer->handle };
-        VkDeviceSize offsets[] = { 0 };
-
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(commandBuffer, indexBuffer->handle, 0, VK_INDEX_TYPE_UINT16);
-        
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->layoutHandle, 0, 1, &descriptorSet->handle, 0, nullptr);
-        
-        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
-        
-        vkCmdEndRenderPass(commandBuffer);
-        vkEndCommandBuffer(commandBuffer) == VkSuccess();
     }
-    void createCommandBuffer()
-    {
-        commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-
-        VkCommandBufferAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.commandPool = commandPool;
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandBufferCount = (uint32_t)commandBuffers.size();
-        vkAllocateCommandBuffers(device.device, &allocInfo, commandBuffers.data()) == VkSuccess();
-    }
-    void createCommandPool()
-    {
-        VkCommandPoolCreateInfo poolInfo{};
-        poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        poolInfo.queueFamilyIndex = device.graphicsQueueFamily;
-
-        vkCreateCommandPool(device.device, &poolInfo, nullptr, &commandPool) == VkSuccess();
-    }
-   
+    
     void updateUniformBuffer(uint32_t currentImage)
     {
         static auto startTime = std::chrono::high_resolution_clock::now();
@@ -462,12 +368,12 @@ private:
         glm::mat4 proj = glm::perspective(glm::radians(45.0f), swapChain.swapChainExtent.width / (float)swapChain.swapChainExtent.height, 0.1f, 10.0f);
         proj[1][1] *= -1;
         glm::mat4 vp = proj * view * model;
-        memcpy(uniformBuffer->Ptr(), &vp, sizeof(vp));
+        *uniformBuffer = vp;
     }
     void mainLoop()
     {
-        uint32_t frames = 0;
         Timer timer;
+        uint32_t frames = 0;
         while (!glfwWindowShouldClose(window.glfwWindow))
         {
             glfwPollEvents();
@@ -477,7 +383,7 @@ private:
             if (seconds > 1.0f)
             {
                 auto fps = frames / seconds;
-                Logger::Info(fps, " fps");
+                // Logger::Info(fps, " fps");
                 timer = Timer();
                 frames = 0;
             }
@@ -486,10 +392,26 @@ private:
     }
     void drawFrame()
     {
+        static Timer sumT;
+        static float elapsed = 0;
+
         vkWaitForFences(device.device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+        vkResetFences(device.device, 1, &inFlightFences[currentFrame]);
+
+        Timer t;
+        vkResetCommandBuffer(commandBuffers[currentFrame].handle, 0);
+        updateUniformBuffer(currentFrame);
+        elapsed += t.Elapsed();
 
         uint32_t imageIndex;
         VkResult result = vkAcquireNextImageKHR(device.device, swapChain.swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+        if (sumT.ElapsedSeconds() >= 1.0f)
+        {
+            sumT.Restart();
+            Logger::Info(elapsed, " ms");
+            elapsed = 0;
+        }
+
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
             swapChain.recreateSwapChain();
@@ -499,11 +421,6 @@ private:
         {
             throw std::runtime_error("failed to acquire swap chain image!");
         }
-        vkResetFences(device.device, 1, &inFlightFences[currentFrame]);
-
-        vkResetCommandBuffer(commandBuffers[currentFrame], 0);
-
-        updateUniformBuffer(currentFrame);
         recordCommandBuffer(commandBuffers[currentFrame], imageIndex);
 
         VkSubmitInfo submitInfo{};
@@ -516,7 +433,7 @@ private:
         submitInfo.pWaitDstStageMask = waitStages;
 
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffers[currentFrame];
+        submitInfo.pCommandBuffers = &commandBuffers[currentFrame].handle;
 
         VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
         submitInfo.signalSemaphoreCount = 1;
@@ -561,8 +478,8 @@ private:
 
     std::shared_ptr<Pipeline> pipeline;
 
-    VkCommandPool commandPool;
-    std::vector<VkCommandBuffer> commandBuffers;
+    std::vector<CommandBuffer> commandBuffers;
+    std::shared_ptr<CommandPool> commandPool;
 
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;

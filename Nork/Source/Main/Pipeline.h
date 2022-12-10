@@ -142,7 +142,7 @@ public:
 class Pipeline
 {
 public:
-    Pipeline(PipelineInfo info, const VkRenderPass& renderPass)
+    Pipeline(PipelineInfo createInfo, const VkRenderPass& renderPass)
     {
         std::vector<VkDynamicState> dynamicStates = {
             VK_DYNAMIC_STATE_VIEWPORT,
@@ -160,18 +160,18 @@ public:
 
         VkGraphicsPipelineCreateInfo pipelineInfo{};
         pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        pipelineInfo.stageCount = info.shaderStage.size();
-        pipelineInfo.pStages = info.shaderStage.data();
-        pipelineInfo.pVertexInputState = &info.vertexInput;
-        pipelineInfo.pInputAssemblyState = &info.inputAssembly;
+        pipelineInfo.stageCount = createInfo.shaderStage.size();
+        pipelineInfo.pStages = createInfo.shaderStage.data();
+        pipelineInfo.pVertexInputState = &createInfo.vertexInput;
+        pipelineInfo.pInputAssemblyState = &createInfo.inputAssembly;
         pipelineInfo.pViewportState = &viewportState;
-        pipelineInfo.pRasterizationState = &info.rasterization;
-        pipelineInfo.pMultisampleState = &info.multisampling;
-        pipelineInfo.pDepthStencilState = &info.depthStencil;
-        pipelineInfo.pColorBlendState = &info.colorBlending;
+        pipelineInfo.pRasterizationState = &createInfo.rasterization;
+        pipelineInfo.pMultisampleState = &createInfo.multisampling;
+        pipelineInfo.pDepthStencilState = &createInfo.depthStencil;
+        pipelineInfo.pColorBlendState = &createInfo.colorBlending;
         pipelineInfo.pDynamicState = &dynamicState;
 
-        vkCreatePipelineLayout(Device::Instance().device, &info.pipelineLayoutInfo, nullptr, &layoutHandle) == VkSuccess();
+        vkCreatePipelineLayout(Device::Instance().device, &createInfo.pipelineLayoutInfo, nullptr, &layoutHandle) == VkSuccess();
 
         pipelineInfo.layout = layoutHandle;
         pipelineInfo.renderPass = renderPass;

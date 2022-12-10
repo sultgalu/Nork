@@ -7,6 +7,7 @@
 class Buffer
 {
 public:
+    Buffer(const Buffer&) = delete;
 	Buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memFlags, bool autoMap = false)
 	{
         bufferInfo = VkBufferCreateInfo{};
@@ -35,6 +36,11 @@ public:
         if (!memory->IsMapped())
             std::unreachable();
         return memory->ptr;
+    }
+    template<class T>
+    void operator=(const T& val)
+    {
+        *((T*)Ptr()) = val;
     }
 public:
     VkBuffer handle;

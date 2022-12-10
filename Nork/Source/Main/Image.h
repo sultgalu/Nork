@@ -6,6 +6,7 @@
 class Image
 {
 public:
+    Image(const Image&) = delete;
 	Image(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
         VkMemoryPropertyFlags memFlags, VkImageAspectFlags aspectFlags, std::shared_ptr<Sampler> sampler = nullptr)
 	    : sampler(sampler)
