@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Device.h"
-
+#include "Buffer.h"
 
 class DescriptorSetLayout
 {
@@ -126,13 +125,19 @@ public:
 	struct Image_
 	{
 		uint32_t bindIdx;
-		Image& img;
+		VkDescriptorImageInfo info;
+		VkDescriptorType type;
 	};
-	Self& Image(uint32_t bindIdx, Image& img)
+	Self& Image(uint32_t bindIdx, Image& img, VkImageLayout layout, VkDescriptorType type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
 	{
 		images.push_back(Image_{
 			.bindIdx = bindIdx,
-			.img = img,
+			.info = VkDescriptorImageInfo{
+				.sampler = img.Sampler()->handle,
+				.imageView = img.ImageView(),
+				.imageLayout = layout,
+			},
+			.type = type
 			});
 		return *this;
 	}
@@ -147,18 +152,14 @@ public:
 
 		for (auto& img : images)
 		{
-			imageInfos.push_back(VkDescriptorImageInfo{
-				.sampler = img.img.sampler->handle,
-				.imageView = img.img.imageViewHandle,
-				.imageLayout = img.img.layout,
-				});
+			imageInfos.push_back(img.info);
 
 			VkWriteDescriptorSet write{};
 			write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			write.dstSet = dSet.handle;
 			write.dstBinding = img.bindIdx;
 			write.dstArrayElement = 0;
-			write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			write.descriptorType = img.type;
 			write.descriptorCount = 1;
 			write.pImageInfo = &imageInfos.back();
 

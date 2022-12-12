@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ShaderModule.h"
+#include "RenderPass.h"
 
 template<class T>
 concept VertexConcept = requires()
@@ -36,6 +37,16 @@ public:
         vertexInput.pVertexAttributeDescriptions = attributeDescriptions.data();
         return *this;
     }
+    Self& VertexInputHardCoded()
+    {
+        vertexInput = VkPipelineVertexInputStateCreateInfo{};
+        vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+        vertexInput.vertexBindingDescriptionCount = 0;
+        vertexInput.vertexAttributeDescriptionCount = 0;
+        vertexInput.pVertexBindingDescriptions = nullptr;
+        vertexInput.pVertexAttributeDescriptions = nullptr;
+        return *this;
+    }
     Self& InputAssembly(VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
     {
         inputAssembly = VkPipelineInputAssemblyStateCreateInfo{};
@@ -44,7 +55,7 @@ public:
         inputAssembly.primitiveRestartEnable = VK_FALSE;
         return *this;
     }
-    Self& Rasterization()
+    Self& Rasterization(bool cullFace)
     {
         rasterization = VkPipelineRasterizationStateCreateInfo{};
         rasterization.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -52,7 +63,7 @@ public:
         rasterization.rasterizerDiscardEnable = VK_FALSE; // disables output to fragment shader
         rasterization.polygonMode = VK_POLYGON_MODE_FILL;
         rasterization.lineWidth = 1.0f;
-        rasterization.cullMode = VK_CULL_MODE_BACK_BIT;
+        rasterization.cullMode = cullFace ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_NONE;
         rasterization.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         rasterization.depthBiasEnable = VK_FALSE;
         rasterization.depthBiasConstantFactor = 0.0f; // Optional
@@ -142,7 +153,8 @@ public:
 class Pipeline
 {
 public:
-    Pipeline(PipelineInfo createInfo, const VkRenderPass& renderPass)
+    Pipeline(PipelineInfo createInfo, const RenderPass& renderPass, uint32_t subpass)
+        : renderPassConfig(renderPass.config)
     {
         std::vector<VkDynamicState> dynamicStates = {
             VK_DYNAMIC_STATE_VIEWPORT,
@@ -174,8 +186,8 @@ public:
         vkCreatePipelineLayout(Device::Instance().device, &createInfo.pipelineLayoutInfo, nullptr, &layoutHandle) == VkSuccess();
 
         pipelineInfo.layout = layoutHandle;
-        pipelineInfo.renderPass = renderPass;
-        pipelineInfo.subpass = 0;
+        pipelineInfo.renderPass = renderPass.handle;
+        pipelineInfo.subpass = subpass;
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional, VK_PIPELINE_CREATE_DERIVATIVE_BIT = true
         pipelineInfo.basePipelineIndex = -1; // Optional, VK_PIPELINE_CREATE_DERIVATIVE_BIT = true
         vkCreateGraphicsPipelines(Device::Instance().device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &handle) == VkSuccess();
@@ -188,6 +200,7 @@ public:
 public:
     VkPipelineLayout layoutHandle;
     VkPipeline handle;
+    const RenderPass::Config& renderPassConfig; // renderPass must be compatible with this
 private:
     Pipeline() = default;
 };

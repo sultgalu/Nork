@@ -24,6 +24,7 @@ using namespace Nork;
 
 struct Vertex
 {
+    using Self = Vertex;
     glm::vec3 pos;
     glm::vec3 color;
     glm::vec2 texCoord;
@@ -70,6 +71,49 @@ private:
         return attributeDescriptions;
     }
 };
+struct VertexQuad
+{
+    using Self = VertexQuad;
+    glm::vec2 pos;
+    glm::vec2 texCoord;
+    static const std::array<VkVertexInputAttributeDescription, 2>& getAttributeDescriptions()
+    {
+        static auto val = getAttributeDescriptions_();
+        return val;
+    }
+    static const VkVertexInputBindingDescription& getBindingDescription()
+    {
+        static auto val = getBindingDescription_();
+        return val;
+    }
+private:
+    static const VkVertexInputBindingDescription getBindingDescription_()
+    {
+        VkVertexInputBindingDescription bindingDescription{};
+        bindingDescription.binding = 0;
+        bindingDescription.stride = sizeof(Self);
+        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+        return bindingDescription;
+    }
+
+    static const std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions_()
+    {
+        std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+
+        attributeDescriptions[0].binding = 0;
+        attributeDescriptions[0].location = 0;
+        attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[0].offset = offsetof(Self, pos);
+
+        attributeDescriptions[1].binding = 0;
+        attributeDescriptions[1].location = 1;
+        attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[1].offset = offsetof(Self, texCoord);
+
+        return attributeDescriptions;
+    }
+};
 
 class HelloTriangleApplication
 {
@@ -85,7 +129,7 @@ public:
     }
     ~HelloTriangleApplication()
     {
-        vkDestroyRenderPass(device.device, swapChain.renderPass, nullptr);
+        // vkDestroyRenderPass(device.device, swapChain.renderPass, nullptr);
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
@@ -138,7 +182,7 @@ private:
 
         auto cmdBuf = CommandBuilder(*commandPool)
             .BeginCommands()
-            .PipelineBarrier(sourceStage, destinationStage, barrier)
+            .PipelineBarrier(sourceStage, destinationStage, std::vector<VkImageMemoryBarrier>{ barrier })
             .EndCommands();
 
         endSingleTimeCommands(cmdBuf);
@@ -177,15 +221,13 @@ private:
         Buffer stagingBuffer(imgSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
         memcpy(stagingBuffer.memory->Map(0, imgSize), image.data.data(), imgSize);
 
-        textureImage = std::make_shared<Image>(image.width, image.height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+        textureImage = std::make_shared<AppImage>(image.width, image.height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
             VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT,
             textureSampler);
 
-        transitionImageLayout(textureImage->handle, textureImage->imageInfo.format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        textureImage->layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        transitionImageLayout(textureImage->handle, textureImage->Format(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
         copyBufferToImage(stagingBuffer, *textureImage, image.width, image.height);
-        transitionImageLayout(textureImage->handle, textureImage->imageInfo.format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-        textureImage->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        transitionImageLayout(textureImage->handle, textureImage->Format(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
     void createIndexBuffer()
     {
@@ -266,31 +308,85 @@ private:
             .AddShader(fragShaderModule)
             .VertexInput<Vertex>()
             .InputAssembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
-            .Rasterization()
+            .Rasterization(true)
             .Multisampling()
             .ColorBlend()
             .Layout(descriptorSetLayout->handle)
             .DepthStencil(true, true, VK_COMPARE_OP_LESS);
-        pipeline = std::make_shared<Pipeline>(info, swapChain.renderPass);
+        pipeline = std::make_shared<Pipeline>(info, *renderPass, 0);
+
+        ShaderModule vertShaderModule2(LoadShader("Source/Shaders/pp.vert"), VK_SHADER_STAGE_VERTEX_BIT);
+        ShaderModule fragShaderModule2(LoadShader("Source/Shaders/pp.frag"), VK_SHADER_STAGE_FRAGMENT_BIT);
+        PipelineInfo info2 = PipelineInfo()
+            .AddShader(vertShaderModule2)
+            .AddShader(fragShaderModule2)
+            .VertexInputHardCoded()
+            .InputAssembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+            .Rasterization(false)
+            .Multisampling()
+            .ColorBlend()
+            .Layout(descriptorSetLayoutPP->handle)
+            .DepthStencil(false, VK_COMPARE_OP_ALWAYS);
+        pipelinePP = std::make_shared<Pipeline>(info2, *renderPass, 1);
     }
-    
+
+    void createRenderPass()
+    {
+        RenderPass::Config config(2, 2);
+        config.Attachment(0, AttachmentDescription::ColorForLaterCopy(VK_FORMAT_R8G8B8A8_SRGB));
+        config.Attachment(1, AttachmentDescription::CleanDepth());
+        auto subPassDraw = SubPass(0)
+            .ColorAttachment(0)
+            .DepthAttachment(1);
+        auto subPassPP = SubPass(1)
+            .ColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL)
+            .InputAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+        config.AddSubPass(subPassDraw).AddSubPass(subPassPP);
+        config.DependencyExternalSrc(subPassDraw, SubPassDependency()
+            .SrcStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT)
+            .DstStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT)
+            .DstAccessMask(VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT));
+        config.Dependency(subPassDraw, subPassPP, SubPassDependency()
+            .SrcStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT)
+            .SrcAccessMask(VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT)
+            .DstStageMask(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
+            .DstAccessMask(VK_ACCESS_INPUT_ATTACHMENT_READ_BIT)
+            .Flags_ByRegion());
+
+        renderPass = std::make_shared<RenderPass>(config);
+    }
+
     void initVulkan()
     {
-        //depthImage = std::make_shared<Image>(swapChain.swapChainExtent.width, swapChain.swapChainExtent.height, VK_FORMAT_D32_SFLOAT,
-          //  VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
+        createRenderPass();
+        swapChain = std::make_shared<SwapChain>(ctx, window, device, renderPass);
+
+        textureSampler = std::make_shared<Sampler>();
+
+        auto w = swapChain->swapChainExtent.width;
+        auto h = swapChain->swapChainExtent.height;
+        depthImage = std::make_shared<AppImage>(w, h, VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL,
+            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
+        fbColor = std::make_shared<AppImage>(w, h, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, textureSampler);
+        fb = std::make_shared<Framebuffer>(w, h, *renderPass, std::vector<std::shared_ptr<Image>>{ fbColor, depthImage });
 
         descriptorSetLayout = DescriptorSetLayout::Builder()
             .Binding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
             .Binding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
             .Build();
+        descriptorSetLayoutPP = DescriptorSetLayout::Builder()
+            .Binding(0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT)
+            .Build();
         descriptorPool = std::make_shared<DescriptorPool>(*descriptorSetLayout);
+        descriptorPoolPP = std::make_shared<DescriptorPool>(*descriptorSetLayoutPP);
         descriptorSet = std::make_shared<DescriptorSet>(*descriptorPool, *descriptorSetLayout);
+        descriptorSetPP = std::make_shared<DescriptorSet>(*descriptorPoolPP, *descriptorSetLayoutPP);
         createGraphicsPipeline();
 
         commandPool = std::make_shared<CommandPool>();
         commandBuffers = commandPool->CreateCommandBuffers(MAX_FRAMES_IN_FLIGHT);
-        
-        textureSampler = std::make_shared<Sampler>();
 
         createVertexBuffer();
         createIndexBuffer();
@@ -300,7 +396,10 @@ private:
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, true);
         descriptorSet->Writer()
             .Buffer(0, *uniformBuffer, 0, sizeof(glm::mat4))
-            .Image(1, *textureImage)
+            .Image(1, *textureImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+            .Write();
+        descriptorSetPP->Writer()
+            .Image(0, *fbColor, VK_IMAGE_LAYOUT_GENERAL, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)
             .Write();
 
         createSyncObjects();
@@ -343,15 +442,38 @@ private:
     {
         CommandBuilder(commandBuffer)
             .BeginCommands()
-            .BeginRenderPass(swapChain, imageIndex).Viewport().Scissor()
-
+            .BeginRenderPass(*fb, *renderPass)
+            .Viewport().Scissor()
+            
             .BindPipeline(*pipeline)
             .BindVB(*vertexBuffer)
             .BindIB(*indexBuffer, VK_INDEX_TYPE_UINT16)
             .BindDescriptorSet(pipeline->layoutHandle, *descriptorSet)
             .DrawIndexed(indices.size())
 
+            .NextSubPass()
+
+            .BindPipeline(*pipelinePP)
+            .BindDescriptorSet(pipelinePP->layoutHandle, *descriptorSetPP)
+            .DrawQuad()
+
             .EndRenderPass()
+            .PipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                {
+                    fbColor->Barrier(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                        VK_ACCESS_NONE, VK_ACCESS_TRANSFER_READ_BIT),
+                    swapChain->swapChainImages[imageIndex]->Barrier(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                        VK_ACCESS_NONE, VK_ACCESS_TRANSFER_WRITE_BIT),
+                })
+            .CopyImage(*fbColor, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT, *swapChain->swapChainImages[imageIndex], 
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT, { swapChain->swapChainExtent.width, swapChain->swapChainExtent.height, 1 })
+            .PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                {
+                    //fbColor->Barrier(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                    //    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT),
+                    swapChain->swapChainImages[imageIndex]->Barrier(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                        VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_NONE),
+                })
             .EndCommands();
         
     }
@@ -365,7 +487,7 @@ private:
         
         glm::mat4 model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         glm::mat4 view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        glm::mat4 proj = glm::perspective(glm::radians(45.0f), swapChain.swapChainExtent.width / (float)swapChain.swapChainExtent.height, 0.1f, 10.0f);
+        glm::mat4 proj = glm::perspective(glm::radians(45.0f), swapChain->swapChainExtent.width / (float)swapChain->swapChainExtent.height, 0.1f, 10.0f);
         proj[1][1] *= -1;
         glm::mat4 vp = proj * view * model;
         *uniformBuffer = vp;
@@ -404,7 +526,7 @@ private:
         elapsed += t.Elapsed();
 
         uint32_t imageIndex;
-        VkResult result = vkAcquireNextImageKHR(device.device, swapChain.swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+        VkResult result = vkAcquireNextImageKHR(device.device, swapChain->swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
         if (sumT.ElapsedSeconds() >= 1.0f)
         {
             sumT.Restart();
@@ -414,7 +536,7 @@ private:
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
-            swapChain.recreateSwapChain();
+            swapChain->recreateSwapChain();
             return;
         }
         else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
@@ -447,7 +569,7 @@ private:
         presentInfo.waitSemaphoreCount = 1;
         presentInfo.pWaitSemaphores = signalSemaphores;
 
-        VkSwapchainKHR swapChains[] = { swapChain.swapChain };
+        VkSwapchainKHR swapChains[] = { swapChain->swapChain };
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapChains;
         presentInfo.pImageIndices = &imageIndex;
@@ -458,7 +580,7 @@ private:
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized)
         {
             framebufferResized = false;
-            swapChain.recreateSwapChain();
+            swapChain->recreateSwapChain();
         }
         else if (result != VK_SUCCESS)
         {
@@ -470,13 +592,22 @@ private:
     VulkanWindow window = VulkanWindow(800, 600);
     VulkanContext ctx = VulkanContext(window);
     Device device = Device(ctx);
-    SwapChain swapChain = SwapChain(ctx, window, device);
+    std::shared_ptr<RenderPass> renderPass;
+    std::shared_ptr<SwapChain> swapChain;
+
+    std::shared_ptr<Image> depthImage;
+    std::shared_ptr<Image> fbColor;
+    std::shared_ptr<Framebuffer> fb;
 
     std::shared_ptr<DescriptorSetLayout> descriptorSetLayout;
     std::shared_ptr<DescriptorPool > descriptorPool;
     std::shared_ptr<DescriptorSet> descriptorSet;
+    std::shared_ptr<DescriptorSetLayout> descriptorSetLayoutPP;
+    std::shared_ptr<DescriptorPool > descriptorPoolPP;
+    std::shared_ptr<DescriptorSet> descriptorSetPP;
 
     std::shared_ptr<Pipeline> pipeline;
+    std::shared_ptr<Pipeline> pipelinePP;
 
     std::vector<CommandBuffer> commandBuffers;
     std::shared_ptr<CommandPool> commandPool;
@@ -485,7 +616,6 @@ private:
     std::vector<VkSemaphore> renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;
     uint32_t currentFrame = 0;
-    std::shared_ptr<Image> depthImage;
 
     const int MAX_FRAMES_IN_FLIGHT = 2;
     
@@ -502,6 +632,15 @@ private:
     {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
     {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
     };
+    const std::vector<float> quad = {
+        -1.0f, -1.0f, 0.0f, 0.0f,
+        1.0f, -1.0f, 1.0f, 0.0f,
+        1.0f, 1.0f, 1.0f, 1.0f,
+
+        -1.0f, -1.0f, 0.0f, 0.0f,
+        1.0f, 1.0f, 1.0f, 1.0f,
+        -1.0f, 1.0f, 0.0f, 1.0f, 
+    };
     const std::vector<uint16_t> indices = {
      0, 1, 2, 2, 3, 0,
     4, 5, 6, 6, 7, 4
@@ -511,7 +650,6 @@ private:
 
     std::shared_ptr<Buffer> uniformBuffer;
 
-    
     std::shared_ptr<Image> textureImage;
     std::shared_ptr<Sampler> textureSampler;
 };

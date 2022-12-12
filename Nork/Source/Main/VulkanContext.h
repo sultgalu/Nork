@@ -134,7 +134,7 @@ public:
                 break;
             }
             // Message is important enough to show
-            Logger::Error("VULKAN validation layer: ", type, ": ", pCallbackData->pMessage);
+            Logger::Error("VULKAN validation layer: ", type, ": ", pCallbackData->pMessage, "\n");
         }
 
         return VK_FALSE;

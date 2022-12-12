@@ -1,6 +1,9 @@
 #pragma once
 
-#include "Device.h"
+#include "SwapChain.h"
+#include "Pipeline.h"
+#include "DescriptorSet.h"
+#include "Framebuffer.h"
 
 class CommandBuilder;
 class CommandBuffer
@@ -70,15 +73,16 @@ class RenderPassBuilder
 {
 public:
     using Self = RenderPassBuilder;
-    RenderPassBuilder(CommandBuilder& cmdBuilder, const SwapChain& swapChain);
-    Self& Begin(uint32_t imgIdx)
+    RenderPassBuilder(CommandBuilder& cmdBuilder, const Framebuffer& fb);
+
+    Self& Begin(const RenderPass& renderPass)
     {
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = swapChain.renderPass;
-        renderPassInfo.framebuffer = swapChain.swapChainFramebuffers[imgIdx];
+        renderPassInfo.renderPass = renderPass.handle;
+        renderPassInfo.framebuffer = fb.handle;
         renderPassInfo.renderArea.offset = { 0, 0 };
-        renderPassInfo.renderArea.extent = swapChain.swapChainExtent;
+        renderPassInfo.renderArea.extent = { fb.width, fb.height };
 
         std::array<VkClearValue, 2> clearValues{};
         clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
@@ -115,6 +119,10 @@ public:
         vkCmdDraw(cmdBuf.handle, count, 1, 0, 0);
         return *this;
     }
+    Self& DrawQuad()
+    {
+        return Draw(6);
+    }
     Self& DrawIndexed(uint32_t count, uint32_t instanceCount = 1)
     {
         vkCmdDrawIndexed(cmdBuf.handle, count, instanceCount, 0, 0, 0);
@@ -123,6 +131,11 @@ public:
     Self& DrawIndexedIndirect(const Buffer& buffer, uint32_t drawCount, VkDeviceSize offset = 0, uint32_t stride = sizeof(VkDrawIndexedIndirectCommand))
     {
         vkCmdDrawIndexedIndirect(cmdBuf.handle, buffer.handle, offset, drawCount, stride);
+        return *this;
+    }
+    Self& NextSubPass()
+    {
+        vkCmdNextSubpass(cmdBuf.handle, VK_SUBPASS_CONTENTS_INLINE);
         return *this;
     }
     Self& Viewport(float x, float y, float width, float height)
@@ -149,11 +162,11 @@ public:
     }
     Self& Viewport()
     {
-        return Viewport(0, 0, swapChain.swapChainExtent.width, swapChain.swapChainExtent.height);
+        return Viewport(0, 0, fb.width, fb.height);
     }
     Self& Scissor()
     {
-        return Scissor(0, 0, swapChain.swapChainExtent.width, swapChain.swapChainExtent.height);
+        return Scissor(0, 0, fb.width, fb.height);
     }
     CommandBuilder& EndRenderPass()
     {
@@ -163,7 +176,7 @@ public:
 public:
     CommandBuilder& cmdBuilder;
     CommandBuffer& cmdBuf;
-    const SwapChain& swapChain;
+    const Framebuffer& fb;
     bool viewportSet = false;
     bool scissorSet = false;
 };
@@ -192,19 +205,38 @@ public:
         vkEndCommandBuffer(cmdBuf.handle) == VkSuccess();
         return cmdBuf;
     }
-    RenderPassBuilder BeginRenderPass(const SwapChain& swapChain, uint32_t imgIdx)
+    RenderPassBuilder BeginRenderPass(const Framebuffer& fb, const RenderPass& renderPass)
     {
-        return RenderPassBuilder(*this, swapChain)
-            .Begin(imgIdx);
+        return RenderPassBuilder(*this, fb)
+            .Begin(renderPass);
     }
-    Self& PipelineBarrier(VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkImageMemoryBarrier barrier)
+    Self& PipelineBarrier(VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, std::vector<VkImageMemoryBarrier> barriers)
     {
-        vkCmdPipelineBarrier(cmdBuf.handle, srcStage, dstStage, 0,0, nullptr, 0, nullptr, 1, &barrier);
+        vkCmdPipelineBarrier(cmdBuf.handle, srcStage, dstStage, 0,0, nullptr, 0, nullptr, barriers.size(), barriers.data());
         return *this;
     }
-    Self& CopyBufferToImage(const Buffer& buffer, const Image& img, VkBufferImageCopy region)
+    Self& CopyBufferToImage(const Buffer& buffer, const Image& img, VkBufferImageCopy region, VkImageLayout layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
     {
-        vkCmdCopyBufferToImage(cmdBuf.handle, buffer.handle , img.handle, img.layout, 1, &region);
+        vkCmdCopyBufferToImage(cmdBuf.handle, buffer.handle , img.handle, layout, 1, &region);
+        return *this;
+    }
+    Self& CopyImage(const Image& src, VkImageLayout srcLayout, VkImageAspectFlags srcAspect, const Image& dst, VkImageLayout dstLayout, VkImageAspectFlags dstAspect, VkExtent3D extent)
+    {
+        VkImageCopy copy{};
+        copy.dstSubresource.aspectMask = dstAspect;
+        copy.dstSubresource.layerCount = 1;
+        copy.dstSubresource.baseArrayLayer = 0;
+        copy.dstSubresource.mipLevel = 0;
+
+        copy.srcSubresource.aspectMask = srcAspect;
+        copy.srcSubresource.layerCount = 1;
+        copy.srcSubresource.baseArrayLayer = 0;
+        copy.srcSubresource.mipLevel = 0;
+
+        copy.srcOffset = VkOffset3D{ 0, 0, 0 };
+        copy.dstOffset = VkOffset3D{ 0, 0, 0 };
+        copy.extent = extent;
+        vkCmdCopyImage(cmdBuf.handle, src.handle, srcLayout, dst.handle, dstLayout, 1, &copy);
         return *this;
     }
     Self& CopyBuffer(const Buffer& src, const Buffer& dst, VkDeviceSize size, VkDeviceSize srcOffs = 0, VkDeviceSize dstOffs = 0)
@@ -221,8 +253,8 @@ public:
 };
 
 using CommandBuilder_ = CommandBuilder;
-RenderPassBuilder::RenderPassBuilder(CommandBuilder& cmdBuilder, const SwapChain& swapChain)
-    : cmdBuilder(cmdBuilder), cmdBuf(cmdBuilder.cmdBuf), swapChain(swapChain)
+RenderPassBuilder::RenderPassBuilder(CommandBuilder& cmdBuilder, const Framebuffer& fb)
+    : cmdBuilder(cmdBuilder), cmdBuf(cmdBuilder.cmdBuf), fb(fb)
 {}
 CommandBuilder_ CommandBuffer::CommandBuilder()
 {

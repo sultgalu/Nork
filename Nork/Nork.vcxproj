@@ -264,9 +264,12 @@
     <ClInclude Include="Source\Main\DescriptorSet.h" />
     <ClInclude Include="Source\Main\Device.h" />
     <ClInclude Include="Source\Main\DeviceMemory.h" />
+    <ClInclude Include="Source\Main\Framebuffer.h" />
     <ClInclude Include="Source\Main\Image.h" />
+    <ClInclude Include="Source\Main\RenderPass.h" />
     <ClInclude Include="Source\Main\Sampler.h" />
     <ClInclude Include="Source\Main\Pipeline.h" />
+    <ClInclude Include="Source\Main\Semaphore.h" />
     <ClInclude Include="Source\Main\Shaderc.h" />
     <ClInclude Include="Source\Main\ShaderModule.h" />
     <ClInclude Include="Source\Main\SwapChain.h" />
