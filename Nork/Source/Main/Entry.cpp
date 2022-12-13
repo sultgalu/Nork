@@ -310,10 +310,24 @@ private:
             .InputAssembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
             .Rasterization(true)
             .Multisampling()
-            .ColorBlend()
+            .ColorBlend(2)
             .Layout(descriptorSetLayout->handle)
             .DepthStencil(true, true, VK_COMPARE_OP_LESS);
-        pipeline = std::make_shared<Pipeline>(info, *renderPass, 0);
+        pipelineGPass = std::make_shared<Pipeline>(info, *renderPass, 0);
+
+        ShaderModule vertShaderModule3(LoadShader("Source/Shaders/pp.vert"), VK_SHADER_STAGE_VERTEX_BIT);
+        ShaderModule fragShaderModule3(LoadShader("Source/Shaders/lPass.frag"), VK_SHADER_STAGE_FRAGMENT_BIT);
+        PipelineInfo info3 = PipelineInfo()
+            .AddShader(vertShaderModule3)
+            .AddShader(fragShaderModule3)
+            .VertexInputHardCoded()
+            .InputAssembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+            .Rasterization(false)
+            .Multisampling()
+            .ColorBlend(1)
+            .Layout(descriptorSetLayoutLPass->handle)
+            .DepthStencil(false, VK_COMPARE_OP_ALWAYS);
+        pipelineLPass = std::make_shared<Pipeline>(info3, *renderPass, 1);
 
         ShaderModule vertShaderModule2(LoadShader("Source/Shaders/pp.vert"), VK_SHADER_STAGE_VERTEX_BIT);
         ShaderModule fragShaderModule2(LoadShader("Source/Shaders/pp.frag"), VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -324,29 +338,46 @@ private:
             .InputAssembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
             .Rasterization(false)
             .Multisampling()
-            .ColorBlend()
+            .ColorBlend(1)
             .Layout(descriptorSetLayoutPP->handle)
             .DepthStencil(false, VK_COMPARE_OP_ALWAYS);
-        pipelinePP = std::make_shared<Pipeline>(info2, *renderPass, 1);
+        pipelinePP = std::make_shared<Pipeline>(info2, *renderPass, 2);
     }
 
     void createRenderPass()
     {
-        RenderPass::Config config(2, 2);
-        config.Attachment(0, AttachmentDescription::ColorForLaterCopy(VK_FORMAT_R8G8B8A8_SRGB));
-        config.Attachment(1, AttachmentDescription::CleanDepth());
-        auto subPassDraw = SubPass(0)
-            .ColorAttachment(0)
-            .DepthAttachment(1);
-        auto subPassPP = SubPass(1)
-            .ColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL)
-            .InputAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
-        config.AddSubPass(subPassDraw).AddSubPass(subPassPP);
-        config.DependencyExternalSrc(subPassDraw, SubPassDependency()
+        uint32_t gPosAtt = 0, gColAtt = 1, lPassAtt = 2, depthAtt = 3;
+        RenderPass::Config config(4, 3);
+        config.Attachment(gPosAtt, AttachmentDescription::ColorInternalUse(VK_FORMAT_R8G8B8A8_SRGB).FinalLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+        config.Attachment(gColAtt, AttachmentDescription::ColorInternalUse(VK_FORMAT_R8G8B8A8_SRGB).FinalLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+        config.Attachment(lPassAtt, AttachmentDescription::ColorForLaterCopy(VK_FORMAT_R8G8B8A8_SRGB));
+        config.Attachment(depthAtt, AttachmentDescription::CleanDepth());
+
+        auto gPass = SubPass(0)
+            .ColorAttachment(gPosAtt)
+            .ColorAttachment(gColAtt)
+            .DepthAttachment(depthAtt);
+        auto lPass = SubPass(1)
+            .InputAttachment(gPosAtt, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+            .InputAttachment(gColAtt, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+            .ColorAttachment(lPassAtt);
+        auto ppPass = SubPass(2)
+            .ColorAttachment(lPassAtt, VK_IMAGE_LAYOUT_GENERAL)
+            .InputAttachment(lPassAtt, VK_IMAGE_LAYOUT_GENERAL);
+
+        config.AddSubPass(gPass).AddSubPass(lPass).AddSubPass(ppPass);
+
+        config.DependencyExternalSrc(gPass, SubPassDependency()
             .SrcStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT)
             .DstStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT)
             .DstAccessMask(VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT));
-        config.Dependency(subPassDraw, subPassPP, SubPassDependency()
+        config.Dependency(gPass, lPass, SubPassDependency()
+            .SrcStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT)
+            .SrcAccessMask(VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT)
+            .DstStageMask(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
+            .DstAccessMask(VK_ACCESS_INPUT_ATTACHMENT_READ_BIT)
+            .Flags_ByRegion());
+        config.Dependency(lPass, ppPass, SubPassDependency()
             .SrcStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT)
             .SrcAccessMask(VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT)
             .DstStageMask(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
@@ -370,18 +401,30 @@ private:
         fbColor = std::make_shared<AppImage>(w, h, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, textureSampler);
-        fb = std::make_shared<Framebuffer>(w, h, *renderPass, std::vector<std::shared_ptr<Image>>{ fbColor, depthImage });
+        gPos = std::make_shared<AppImage>(w, h, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, textureSampler);
+        gCol = std::make_shared<AppImage>(w, h, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, textureSampler);
+        fb = std::make_shared<Framebuffer>(w, h, *renderPass, std::vector<std::shared_ptr<Image>>{ gPos, gCol, fbColor, depthImage });
 
         descriptorSetLayout = DescriptorSetLayout::Builder()
             .Binding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
             .Binding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
             .Build();
+        descriptorSetLayoutLPass = DescriptorSetLayout::Builder()
+            .Binding(0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT)
+            .Binding(1, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT)
+            .Build();
         descriptorSetLayoutPP = DescriptorSetLayout::Builder()
             .Binding(0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT)
             .Build();
         descriptorPool = std::make_shared<DescriptorPool>(*descriptorSetLayout);
+        descriptorPoolLPass = std::make_shared<DescriptorPool>(*descriptorSetLayoutLPass);
         descriptorPoolPP = std::make_shared<DescriptorPool>(*descriptorSetLayoutPP);
         descriptorSet = std::make_shared<DescriptorSet>(*descriptorPool, *descriptorSetLayout);
+        descriptorSetLPass = std::make_shared<DescriptorSet>(*descriptorPoolLPass, *descriptorSetLayoutLPass);
         descriptorSetPP = std::make_shared<DescriptorSet>(*descriptorPoolPP, *descriptorSetLayoutPP);
         createGraphicsPipeline();
 
@@ -397,6 +440,10 @@ private:
         descriptorSet->Writer()
             .Buffer(0, *uniformBuffer, 0, sizeof(glm::mat4))
             .Image(1, *textureImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+            .Write();
+        descriptorSetLPass->Writer()
+            .Image(0, *gPos, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)
+            .Image(1, *gCol, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)
             .Write();
         descriptorSetPP->Writer()
             .Image(0, *fbColor, VK_IMAGE_LAYOUT_GENERAL, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)
@@ -445,14 +492,18 @@ private:
             .BeginRenderPass(*fb, *renderPass)
             .Viewport().Scissor()
             
-            .BindPipeline(*pipeline)
+            .BindPipeline(*pipelineGPass)
             .BindVB(*vertexBuffer)
             .BindIB(*indexBuffer, VK_INDEX_TYPE_UINT16)
-            .BindDescriptorSet(pipeline->layoutHandle, *descriptorSet)
+            .BindDescriptorSet(pipelineGPass->layoutHandle, *descriptorSet)
             .DrawIndexed(indices.size())
 
             .NextSubPass()
+            .BindPipeline(*pipelineLPass)
+            .BindDescriptorSet(pipelineLPass->layoutHandle, *descriptorSetLPass)
+            .DrawQuad()
 
+            .NextSubPass()
             .BindPipeline(*pipelinePP)
             .BindDescriptorSet(pipelinePP->layoutHandle, *descriptorSetPP)
             .DrawQuad()
@@ -596,6 +647,8 @@ private:
     std::shared_ptr<SwapChain> swapChain;
 
     std::shared_ptr<Image> depthImage;
+    std::shared_ptr<Image> gPos;
+    std::shared_ptr<Image> gCol;
     std::shared_ptr<Image> fbColor;
     std::shared_ptr<Framebuffer> fb;
 
@@ -605,8 +658,12 @@ private:
     std::shared_ptr<DescriptorSetLayout> descriptorSetLayoutPP;
     std::shared_ptr<DescriptorPool > descriptorPoolPP;
     std::shared_ptr<DescriptorSet> descriptorSetPP;
+    std::shared_ptr<DescriptorSetLayout> descriptorSetLayoutLPass;
+    std::shared_ptr<DescriptorPool > descriptorPoolLPass;
+    std::shared_ptr<DescriptorSet> descriptorSetLPass;
 
-    std::shared_ptr<Pipeline> pipeline;
+    std::shared_ptr<Pipeline> pipelineGPass;
+    std::shared_ptr<Pipeline> pipelineLPass;
     std::shared_ptr<Pipeline> pipelinePP;
 
     std::vector<CommandBuffer> commandBuffers;

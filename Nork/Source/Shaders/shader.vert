@@ -10,9 +10,12 @@ layout(location = 2) in vec2 inTexCoord;
 
 layout(location = 0) out vec3 fragColor;
 layout(location = 1) out vec2 fragTexCoord;
+layout(location = 2) out vec3 worldPos;
 
 void main() {
-    gl_Position = ubo.VP * vec4(inPosition, 1.0);
+    vec4 wPos = ubo.VP * vec4(inPosition, 1.0);
+    worldPos = wPos.xyz;
+    gl_Position = wPos;
     fragColor = inColor;
     fragTexCoord = inTexCoord;
 }

@@ -83,28 +83,9 @@ public:
         multisampling.alphaToOneEnable = VK_FALSE; // Optional
         return *this;
     }
-    Self& ColorBlend()
+    Self& ColorBlend(uint32_t attachmentCount)
     {
-        colorBlendAttachment = VkPipelineColorBlendAttachmentState{};
-        colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-        colorBlendAttachment.blendEnable = false;
-        colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
-        colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-        colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD; // Optional
-        colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
-        colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-        colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD; // Optional
-
-        colorBlending = VkPipelineColorBlendStateCreateInfo{};
-        colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-        colorBlending.logicOpEnable = VK_FALSE;
-        colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
-        colorBlending.attachmentCount = 1;
-        colorBlending.pAttachments = &colorBlendAttachment;
-        colorBlending.blendConstants[0] = 0.0f; // Optional
-        colorBlending.blendConstants[1] = 0.0f; // Optional
-        colorBlending.blendConstants[2] = 0.0f; // Optional
-        colorBlending.blendConstants[3] = 0.0f; // Optional
+        this->attachmentCount = attachmentCount;
         return *this;
     }
     Self& Layout(const VkDescriptorSetLayout& descriptorSetLayout)
@@ -136,6 +117,32 @@ public:
         depthStencil.back = {}; // Optional
         return *this;
     }
+    VkPipelineColorBlendStateCreateInfo ColorBlendAttachments()
+    {
+        auto colorBlendAttachment = VkPipelineColorBlendAttachmentState{};
+        colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+        colorBlendAttachment.blendEnable = false;
+        colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
+        colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
+        colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD; // Optional
+        colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
+        colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
+        colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD; // Optional
+
+        colorBlendAttachments = std::vector<VkPipelineColorBlendAttachmentState>(attachmentCount, colorBlendAttachment);
+
+        auto colorBlending = VkPipelineColorBlendStateCreateInfo{};
+        colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+        colorBlending.logicOpEnable = VK_FALSE;
+        colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
+        colorBlending.attachmentCount = colorBlendAttachments.size();
+        colorBlending.pAttachments = colorBlendAttachments.data();
+        colorBlending.blendConstants[0] = 0.0f; // Optional
+        colorBlending.blendConstants[1] = 0.0f; // Optional
+        colorBlending.blendConstants[2] = 0.0f; // Optional
+        colorBlending.blendConstants[3] = 0.0f; // Optional
+        return colorBlending;
+    }
 public:
     std::vector<VkPipelineShaderStageCreateInfo> shaderStage;
     VkPipelineVertexInputStateCreateInfo vertexInput;
@@ -143,8 +150,8 @@ public:
     VkPipelineRasterizationStateCreateInfo rasterization;
     VkPipelineMultisampleStateCreateInfo multisampling;
 
-    VkPipelineColorBlendAttachmentState colorBlendAttachment;
-    VkPipelineColorBlendStateCreateInfo colorBlending;
+    uint32_t attachmentCount;
+    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
     VkPipelineDepthStencilStateCreateInfo depthStencil;
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo;
@@ -180,7 +187,8 @@ public:
         pipelineInfo.pRasterizationState = &createInfo.rasterization;
         pipelineInfo.pMultisampleState = &createInfo.multisampling;
         pipelineInfo.pDepthStencilState = &createInfo.depthStencil;
-        pipelineInfo.pColorBlendState = &createInfo.colorBlending;
+        auto bs = createInfo.ColorBlendAttachments();
+        pipelineInfo.pColorBlendState = &bs;
         pipelineInfo.pDynamicState = &dynamicState;
 
         vkCreatePipelineLayout(Device::Instance().device, &createInfo.pipelineLayoutInfo, nullptr, &layoutHandle) == VkSuccess();

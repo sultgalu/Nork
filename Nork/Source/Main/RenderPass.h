@@ -2,8 +2,6 @@
 
 #include "Device.h"
 
-
-
 struct SubPass
 {
 public:

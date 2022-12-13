@@ -84,11 +84,21 @@ public:
         renderPassInfo.renderArea.offset = { 0, 0 };
         renderPassInfo.renderArea.extent = { fb.width, fb.height };
 
-        std::array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-        clearValues[1].depthStencil = { 1.0f, 0 };
+        std::vector<VkClearValue> clearValues;
+        clearValues.reserve(fb.renderPassConfig.attachments.size());
+        for (auto& att : fb.renderPassConfig.attachments)
+        {
+            VkClearValue clearValue{};
+            if (att.format == VK_FORMAT_D32_SFLOAT)
+                clearValue.depthStencil = { 1.0f, 0 };
+            else if (att.format == VK_FORMAT_R8G8B8A8_SRGB)
+                clearValue.color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+            else
+                std::unreachable();
+            clearValues.push_back(clearValue);
+        }
 
-        renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+        renderPassInfo.clearValueCount = clearValues.size();
         renderPassInfo.pClearValues = clearValues.data();
         vkCmdBeginRenderPass(cmdBuf.handle, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
         return *this;
