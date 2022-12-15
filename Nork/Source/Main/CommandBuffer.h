@@ -108,9 +108,11 @@ public:
         vkCmdBindPipeline(cmdBuf.handle, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.handle);
         return *this;
     }
-    Self& BindDescriptorSet(VkPipelineLayout layoutHandle, DescriptorSet& descriptorSet)
+    Self& BindDescriptorSet(VkPipelineLayout layoutHandle, DescriptorSet& descriptorSet, const std::vector<uint32_t>& dynamicOffsets = {})
     {
-        vkCmdBindDescriptorSets(cmdBuf.handle, VK_PIPELINE_BIND_POINT_GRAPHICS, layoutHandle, 0, 1, &descriptorSet.handle, 0, nullptr);
+        const uint32_t* offsets = dynamicOffsets.size() == 0 ? nullptr : dynamicOffsets.data();
+        vkCmdBindDescriptorSets(cmdBuf.handle, VK_PIPELINE_BIND_POINT_GRAPHICS, layoutHandle, 0, 1, &descriptorSet.handle,
+            dynamicOffsets.size(), offsets);
         return *this;
     }
     Self& BindVB(const Buffer& buffer)
@@ -122,6 +124,11 @@ public:
     Self& BindIB(const Buffer& buffer, VkIndexType type)
     {
         vkCmdBindIndexBuffer(cmdBuf.handle, buffer.handle, 0, type);
+        return *this;
+    }
+    Self& PushConstants(const Pipeline& pipeline, VkShaderStageFlags stages, const void* data, uint32_t size, uint32_t offs = 0)
+    {
+        vkCmdPushConstants(cmdBuf.handle, pipeline.layoutHandle, stages, offs, size, data);
         return *this;
     }
     Self& Draw(uint32_t count)

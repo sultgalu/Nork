@@ -40,7 +40,7 @@ public:
         glfwWindow = glfwCreateWindow(width, height, "Vulkan window", nullptr, nullptr);
         glfwSetWindowUserPointer(glfwWindow, this);
         glfwSetFramebufferSizeCallback(glfwWindow, framebufferResizeCallback);
-
+        
         uint32_t extensionCount = 0;
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
         std::vector<VkExtensionProperties> extensions(extensionCount);

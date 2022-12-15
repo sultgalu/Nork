@@ -88,15 +88,21 @@ public:
         this->attachmentCount = attachmentCount;
         return *this;
     }
-    Self& Layout(const VkDescriptorSetLayout& descriptorSetLayout)
+    Self& Layout(const VkDescriptorSetLayout& descriptorSetLayout, std::vector<VkPushConstantRange> pushConstants = {})
     {
-        pipelineLayoutInfo = VkPipelineLayoutCreateInfo{};
+        this->descriptorSetLayout = descriptorSetLayout;
+        this->pushConstants = pushConstants;
+        return *this;
+    }
+    VkPipelineLayoutCreateInfo LayoutInfo()
+    {
+        auto pipelineLayoutInfo = VkPipelineLayoutCreateInfo{};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutInfo.setLayoutCount = 1;
         pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
-        pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-        pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
-        return *this;
+        pipelineLayoutInfo.pushConstantRangeCount = pushConstants.size(); // Optional
+        pipelineLayoutInfo.pPushConstantRanges = pushConstants.size() == 0 ? nullptr : pushConstants.data(); // Optional
+        return pipelineLayoutInfo;
     }
     Self& DepthStencil(bool depthTest, VkCompareOp op = VK_COMPARE_OP_LESS)
     {
@@ -154,7 +160,8 @@ public:
     std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
     VkPipelineDepthStencilStateCreateInfo depthStencil;
 
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo;
+    VkDescriptorSetLayout descriptorSetLayout;
+    std::vector<VkPushConstantRange> pushConstants;
 };
 
 class Pipeline
@@ -191,7 +198,8 @@ public:
         pipelineInfo.pColorBlendState = &bs;
         pipelineInfo.pDynamicState = &dynamicState;
 
-        vkCreatePipelineLayout(Device::Instance().device, &createInfo.pipelineLayoutInfo, nullptr, &layoutHandle) == VkSuccess();
+        auto layoutInfo = createInfo.LayoutInfo();
+        vkCreatePipelineLayout(Device::Instance().device, &layoutInfo, nullptr, &layoutHandle) == VkSuccess();
 
         pipelineInfo.layout = layoutHandle;
         pipelineInfo.renderPass = renderPass.handle;

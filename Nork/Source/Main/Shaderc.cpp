@@ -57,14 +57,17 @@ namespace Nork {
     std::vector<uint32_t> compile_file(const std::string& source_name,
         shaderc_shader_kind kind,
         const std::string& source,
+        std::vector<std::array<std::string, 2>> macros,
         bool optimize = false)
     {
         shaderc::Compiler compiler;
         shaderc::CompileOptions options;
 
         // Like -DMY_DEFINE=1
-        options.AddMacroDefinition("MY_DEFINE", "1");
-        if (optimize) options.SetOptimizationLevel(shaderc_optimization_level_size);
+        for(auto& [name, value]: macros)
+            options.AddMacroDefinition(name, value);
+
+        if (optimize) options.SetOptimizationLevel(shaderc_optimization_level_performance);
 
         shaderc::SpvCompilationResult module =
             compiler.CompileGlslToSpv(source, kind, source_name.c_str(), options);
@@ -97,12 +100,12 @@ namespace Nork {
         }
     }
 
-    std::vector<uint32_t> Shaderc::Compile(const std::string& src, Renderer::ShaderType type)
+    std::vector<uint32_t> Shaderc::Compile(const std::string& src, Renderer::ShaderType type, std::vector<std::array<std::string, 2>> defines)
     {
         auto kind = GetShaderKind(type);
 
         // Preprocess
-        auto preprocessed = preprocess_shader("shader_src", kind, src);
+        // auto preprocessed = preprocess_shader("shader_src", kind, src);
         // Logger::Info("Preprocessed shader: ", preprocessed);
 
         // // Compile
@@ -116,7 +119,7 @@ namespace Nork {
         // auto assemblyOpt = compile_file_to_assembly("shader_src", kind, src, true);
         // Logger::Info("SPIR-V optimized assembly: ", assemblyOpt);
 
-        auto spirvOpt = compile_file("shader_src", kind, src, true);
+        auto spirvOpt = compile_file("shader_src", kind, src, defines, true);
         Logger::Info("Compiled to an optimized binary module with ", spirvOpt.size(), "words.");
         return spirvOpt;
     }

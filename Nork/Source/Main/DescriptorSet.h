@@ -7,13 +7,28 @@ class DescriptorSetLayout
 public:
 	class Builder;
 	DescriptorSetLayout(const DescriptorSetLayout&) = delete; // no move constructor will be declared implicitly
-	DescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding> bindings)
+	DescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding> bindings, const std::vector<bool>& bindlesses)
 		: bindings(bindings)
 	{
 		VkDescriptorSetLayoutCreateInfo layoutInfo{};
+		//layoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
 		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+		layoutInfo.bindingCount = bindings.size();
 		layoutInfo.pBindings = bindings.data();
+
+		const VkDescriptorBindingFlagsEXT flags_ =
+			VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT |
+			VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT; // VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | // VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
+		std::vector<VkDescriptorBindingFlagsEXT> flags;
+		for (size_t i = 0; i < bindings.size(); i++)
+			flags.push_back(bindlesses[i] ? flags_ : 0);
+
+		VkDescriptorSetLayoutBindingFlagsCreateInfo binding_flags = {};
+		binding_flags.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+		binding_flags.bindingCount = flags.size();
+		binding_flags.pBindingFlags = flags.data();
+		layoutInfo.pNext = &binding_flags;
+
 		vkCreateDescriptorSetLayout(Device::Instance().device, &layoutInfo, nullptr, &handle) == VkSuccess();
 	}
 	~DescriptorSetLayout()
@@ -30,23 +45,25 @@ class DescriptorSetLayout::Builder
 {
 public:
 	using Self = Builder;
-	Self& Binding(uint32_t idx, VkDescriptorType type, VkShaderStageFlags shaderStage)
+	Self& Binding(uint32_t idx, VkDescriptorType type, VkShaderStageFlags shaderStage, uint32_t arraySize = 1, bool bindless = false)
 	{
 		bindings.push_back(VkDescriptorSetLayoutBinding{
 			.binding = idx,
 			.descriptorType = type,
-			.descriptorCount = 1,
+			.descriptorCount = arraySize,
 			.stageFlags = shaderStage,
 			.pImmutableSamplers = nullptr,
 			});
+		bindlesses.push_back(bindless);
 		return *this;
 	}
 	std::shared_ptr<DescriptorSetLayout> Build()
 	{
-		return std::make_shared<DescriptorSetLayout>(bindings);
+		return std::make_shared<DescriptorSetLayout>(bindings, bindlesses);
 	}
 public:
 	std::vector<VkDescriptorSetLayoutBinding> bindings;
+	std::vector<bool> bindlesses;
 };
 
 class DescriptorPool
@@ -58,7 +75,7 @@ public:
 		descriptorCounts.reserve(layout.bindings.size());
 		for (auto& binding : layout.bindings)
 		{
-			descriptorCounts.push_back(VkDescriptorPoolSize{ .type = binding.descriptorType, .descriptorCount = maxSets });
+			descriptorCounts.push_back(VkDescriptorPoolSize{ .type = binding.descriptorType, .descriptorCount = binding.descriptorCount });
 		}
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -80,13 +97,22 @@ class DescriptorSet
 {
 public:
 	class Writer_;
-	DescriptorSet(const DescriptorPool& pool, const DescriptorSetLayout& layout)
+	DescriptorSet(const DescriptorPool& pool, const DescriptorSetLayout& layout, uint32_t dynamicDescSize = 0)
 	{
 		VkDescriptorSetAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 		allocInfo.descriptorPool = pool.handle;
 		allocInfo.descriptorSetCount = 1;
 		allocInfo.pSetLayouts = &layout.handle;
+
+		if (dynamicDescSize != 0)
+		{
+			VkDescriptorSetVariableDescriptorCountAllocateInfo variable_info = {};
+			variable_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO;
+			variable_info.descriptorSetCount = 1;
+			variable_info.pDescriptorCounts = &dynamicDescSize;
+			allocInfo.pNext = &variable_info;
+		}
 
 		vkAllocateDescriptorSets(Device::Instance().device, &allocInfo, &handle) == VkSuccess();
 	}
@@ -124,13 +150,15 @@ public:
 	}
 	struct Image_
 	{
+		uint32_t arrIdx;
 		uint32_t bindIdx;
 		VkDescriptorImageInfo info;
 		VkDescriptorType type;
 	};
-	Self& Image(uint32_t bindIdx, Image& img, VkImageLayout layout, VkDescriptorType type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+	Self& Image(uint32_t bindIdx, Image& img, VkImageLayout layout, VkDescriptorType type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, uint32_t arrIdx = 0)
 	{
 		images.push_back(Image_{
+			.arrIdx = arrIdx,
 			.bindIdx = bindIdx,
 			.info = VkDescriptorImageInfo{
 				.sampler = img.Sampler()->handle,
@@ -158,7 +186,7 @@ public:
 			write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			write.dstSet = dSet.handle;
 			write.dstBinding = img.bindIdx;
-			write.dstArrayElement = 0;
+			write.dstArrayElement = img.arrIdx;
 			write.descriptorType = img.type;
 			write.descriptorCount = 1;
 			write.pImageInfo = &imageInfos.back();
@@ -170,7 +198,7 @@ public:
 			VkDescriptorType type = VK_DESCRIPTOR_TYPE_MAX_ENUM;
 			if (buf.buf.bufferInfo.usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
 				type = buf.dynamic ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			else if (buf.buf.bufferInfo.usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
+			else if (buf.buf.bufferInfo.usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)
 				type = buf.dynamic ? VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 			else
 				std::unreachable();

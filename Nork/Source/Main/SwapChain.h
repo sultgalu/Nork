@@ -8,10 +8,10 @@
 class SwapChain
 {
 public:
-    SwapChain(VulkanContext& ctx, VulkanWindow& window, Device& device, std::shared_ptr<RenderPass> renderPass)
-        : ctx(ctx), window(window), device(device), renderPass(renderPass)
+    SwapChain(VulkanContext& ctx, VulkanWindow& window, uint32_t imageCount)
+        : ctx(ctx), window(window)
     {
-        createSwapChain();
+        createSwapChain(imageCount);
         // createImageViews();
         // createFramebuffers(*renderPass);
     }
@@ -20,16 +20,16 @@ public:
         cleanupSwapChain();
     }
 
-    void createSwapChain()
+    void createSwapChain(uint32_t imageCount)
     {
         VkSurfaceCapabilitiesKHR capabilities;
-        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device.physicalDevice, ctx.surface, &capabilities) == VkSuccess();
-        auto& swapChainSupport = device.swapChainSupport;
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(Device::Instance().physicalDevice, ctx.surface, &capabilities) == VkSuccess();
+        auto& swapChainSupport = Device::Instance().swapChainSupport;
 
         VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
         VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
         VkExtent2D extent = chooseSwapExtent(capabilities);
-        uint32_t imageCount = 3; // triple buffering //capabilities.minImageCount + 1;
+        // uint32_t imageCount = 3; // triple buffering //capabilities.minImageCount + 1;
         if (capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount)
         {
             imageCount = capabilities.maxImageCount;
@@ -44,9 +44,9 @@ public:
         createInfo.imageArrayLayers = 1;
         createInfo.imageUsage = VK_IMAGE_USAGE_TRANSFER_DST_BIT; // VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT use VK_IMAGE_USAGE_TRANSFER_DST_BIT if it is not a destination (we need this)
 
-        if (device.graphicsQueueFamily != device.presentQueueFamily)
+        if (Device::Instance().graphicsQueueFamily != Device::Instance().presentQueueFamily)
         {
-            uint32_t queueFamilyIndices[] = { device.graphicsQueueFamily, device.presentQueueFamily };
+            uint32_t queueFamilyIndices[] = { Device::Instance().graphicsQueueFamily, Device::Instance().presentQueueFamily };
             createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
             createInfo.queueFamilyIndexCount = 2;
             createInfo.pQueueFamilyIndices = queueFamilyIndices;
@@ -63,12 +63,12 @@ public:
         createInfo.presentMode = presentMode;
         createInfo.clipped = VK_TRUE;
         createInfo.oldSwapchain = VK_NULL_HANDLE;
-        vkCreateSwapchainKHR(device.device, &createInfo, nullptr, &swapChain) == VkSuccess();
+        vkCreateSwapchainKHR(Device::Instance().device, &createInfo, nullptr, &swapChain) == VkSuccess();
         
-        vkGetSwapchainImagesKHR(device.device, swapChain, &imageCount, nullptr);
+        vkGetSwapchainImagesKHR(Device::Instance().device, swapChain, &imageCount, nullptr);
         std::vector<VkImage> images;
         images.resize(imageCount);
-        vkGetSwapchainImagesKHR(device.device, swapChain, &imageCount, images.data());
+        vkGetSwapchainImagesKHR(Device::Instance().device, swapChain, &imageCount, images.data());
         swapChainImages.reserve(imageCount);
         swapChainImages.clear();
         for (auto handle : images)
@@ -126,10 +126,10 @@ public:
     {
         for (size_t i = 0; i < swapChainImageViews.size(); i++)
         {
-            vkDestroyImageView(device.device, swapChainImageViews[i], nullptr);
+            vkDestroyImageView(Device::Instance().device, swapChainImageViews[i], nullptr);
         }
 
-        vkDestroySwapchainKHR(device.device, swapChain, nullptr);
+        vkDestroySwapchainKHR(Device::Instance().device, swapChain, nullptr);
     }
 
     void recreateSwapChain()
@@ -141,11 +141,11 @@ public:
             glfwWaitEvents();
         }
 
-        vkDeviceWaitIdle(device.device);
+        vkDeviceWaitIdle(Device::Instance().device);
 
         cleanupSwapChain();
 
-        createSwapChain();
+        createSwapChain(swapChainImages.size());
         // createImageViews();
         // createFramebuffers(*renderPass);
     }
@@ -183,7 +183,6 @@ public:
     std::vector<VkImageView> swapChainImageViews;
     // std::vector<std::shared_ptr<Framebuffer>> swapChainFramebuffers;
 
-    Device& device;
     VulkanWindow& window;
     VulkanContext& ctx;
 };

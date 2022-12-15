@@ -13,6 +13,7 @@ public:
         createLogicalDevice();
         swapChainSupport = querySwapChainSupport(physicalDevice, ctx.surface);
         vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+        vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
     }
     VkPhysicalDevice choosePhysicalDevice(const VulkanContext& ctx)
     {
@@ -58,6 +59,15 @@ public:
         createInfo.enabledExtensionCount = deviceExtensions.size();
         createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
+        VkPhysicalDeviceDescriptorIndexingFeatures descriptor_indexing_features{};
+        descriptor_indexing_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+
+        // Enable non-uniform indexing
+        descriptor_indexing_features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+        descriptor_indexing_features.runtimeDescriptorArray = VK_TRUE;
+        descriptor_indexing_features.descriptorBindingVariableDescriptorCount = VK_TRUE;
+        descriptor_indexing_features.descriptorBindingPartiallyBound = VK_TRUE;
+        createInfo.pNext = &descriptor_indexing_features;
         // this is only required in older driver versions, already specified for physical device
         // if (enableValidationLayers)
         // {
@@ -202,6 +212,7 @@ public:
     VkQueue graphicsQueue; // cleaned up by device destroy
     VkQueue presentQueue;
 
+    VkPhysicalDeviceProperties physicalDeviceProperties;
     SwapChainSupportDetails swapChainSupport;
     VkPhysicalDeviceMemoryProperties memProperties;
 

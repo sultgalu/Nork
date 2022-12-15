@@ -22,6 +22,12 @@
 
 using namespace Nork;
 
+struct SSBO
+{
+    glm::mat4 vp;
+    float offset;
+    float padding[3];
+};
 struct Vertex
 {
     using Self = Vertex;
@@ -213,29 +219,34 @@ private:
 
         endSingleTimeCommands(cmdBuf);
     }
-    void createTextureImage()
+    std::shared_ptr<Image> createTextureImage(const std::string& path)
     {
-        auto image = Renderer::LoadUtils::LoadImage("texture.jpg", true);
+        auto image = Renderer::LoadUtils::LoadImage(path, true);
         auto imgSize = image.data.size();
 
         Buffer stagingBuffer(imgSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
         memcpy(stagingBuffer.memory->Map(0, imgSize), image.data.data(), imgSize);
 
-        textureImage = std::make_shared<AppImage>(image.width, image.height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+        auto texImg = std::make_shared<AppImage>(image.width, image.height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
             VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT,
             textureSampler);
 
-        transitionImageLayout(textureImage->handle, textureImage->Format(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        copyBufferToImage(stagingBuffer, *textureImage, image.width, image.height);
-        transitionImageLayout(textureImage->handle, textureImage->Format(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        transitionImageLayout(texImg->handle, texImg->Format(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        copyBufferToImage(stagingBuffer, *texImg, image.width, image.height);
+        transitionImageLayout(texImg->handle, texImg->Format(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        return texImg;
     }
     void createIndexBuffer()
     {
-        VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+        uint32_t stride = sizeof(indices[0]) * indices.size();
+        VkDeviceSize bufferSize = stride * drawRepeat;
 
-        Buffer stagingBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-        memcpy(stagingBuffer.memory->Map(0, bufferSize), indices.data(), (size_t)bufferSize);
+        Buffer stagingBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, true);
+        for (size_t i = 0; i < drawRepeat; i++)
+        {
+            memcpy((char*)stagingBuffer.Ptr() + stride * i, indices.data(), stride);
+        }
         indexBuffer = std::make_shared<Buffer>(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
@@ -263,7 +274,7 @@ private:
         endSingleTimeCommands(cmdBuf);
     }
    
-    std::vector<uint32_t> LoadShader(const fs::path& srcFile)
+    std::vector<uint32_t> LoadShader(const fs::path& srcFile, std::vector<std::array<std::string, 2>> macros = {})
     {
         fs::path binFile = fs::path(srcFile).replace_extension(srcFile.extension().string() + "_bin");
         auto src = FileUtils::ReadAsString(srcFile.string());
@@ -288,7 +299,7 @@ private:
         else
             std::unreachable();
 
-        auto data = Shaderc::Compile(src, type);
+        auto data = Shaderc::Compile(src, type, macros);
         // save with hash
         data.resize(data.size() + 2);
         *((size_t*)&data.data()[data.size() - 2]) = srcHash;
@@ -300,18 +311,20 @@ private:
 
     void createGraphicsPipeline()
     {
-        ShaderModule vertShaderModule(LoadShader("Source/Shaders/shader.vert"), VK_SHADER_STAGE_VERTEX_BIT);
+        ShaderModule vertShaderModule(LoadShader("Source/Shaders/shader.vert", { {"MAX_IMG_ARR_SIZE", std::to_string(MAX_IMG_ARR_SIZE)}}), VK_SHADER_STAGE_VERTEX_BIT);
         ShaderModule fragShaderModule(LoadShader("Source/Shaders/shader.frag"), VK_SHADER_STAGE_FRAGMENT_BIT);
-
+        VkPushConstantRange p{};
+        p.size = sizeof(glm::mat4);
+        p.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
         PipelineInfo info = PipelineInfo()
             .AddShader(vertShaderModule)
             .AddShader(fragShaderModule)
             .VertexInput<Vertex>()
             .InputAssembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
-            .Rasterization(true)
+            .Rasterization(false) // TRUE
             .Multisampling()
             .ColorBlend(2)
-            .Layout(descriptorSetLayout->handle)
+            .Layout(descriptorSetLayoutGPass->handle, { p })
             .DepthStencil(true, true, VK_COMPARE_OP_LESS);
         pipelineGPass = std::make_shared<Pipeline>(info, *renderPass, 0);
 
@@ -326,7 +339,7 @@ private:
             .Multisampling()
             .ColorBlend(1)
             .Layout(descriptorSetLayoutLPass->handle)
-            .DepthStencil(false, VK_COMPARE_OP_ALWAYS);
+            .DepthStencil(false);
         pipelineLPass = std::make_shared<Pipeline>(info3, *renderPass, 1);
 
         ShaderModule vertShaderModule2(LoadShader("Source/Shaders/pp.vert"), VK_SHADER_STAGE_VERTEX_BIT);
@@ -340,7 +353,7 @@ private:
             .Multisampling()
             .ColorBlend(1)
             .Layout(descriptorSetLayoutPP->handle)
-            .DepthStencil(false, VK_COMPARE_OP_ALWAYS);
+            .DepthStencil(false);
         pipelinePP = std::make_shared<Pipeline>(info2, *renderPass, 2);
     }
 
@@ -390,7 +403,7 @@ private:
     void initVulkan()
     {
         createRenderPass();
-        swapChain = std::make_shared<SwapChain>(ctx, window, device, renderPass);
+        swapChain = std::make_shared<SwapChain>(ctx, window, 3);
 
         textureSampler = std::make_shared<Sampler>();
 
@@ -409,9 +422,10 @@ private:
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, textureSampler);
         fb = std::make_shared<Framebuffer>(w, h, *renderPass, std::vector<std::shared_ptr<Image>>{ gPos, gCol, fbColor, depthImage });
 
-        descriptorSetLayout = DescriptorSetLayout::Builder()
-            .Binding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-            .Binding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+        descriptorSetLayoutGPass = DescriptorSetLayout::Builder()
+            .Binding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT)
+            .Binding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+            .Binding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, MAX_IMG_ARR_SIZE, true)
             .Build();
         descriptorSetLayoutLPass = DescriptorSetLayout::Builder()
             .Binding(0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT)
@@ -420,10 +434,10 @@ private:
         descriptorSetLayoutPP = DescriptorSetLayout::Builder()
             .Binding(0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT)
             .Build();
-        descriptorPool = std::make_shared<DescriptorPool>(*descriptorSetLayout);
+        descriptorPool = std::make_shared<DescriptorPool>(*descriptorSetLayoutGPass);
         descriptorPoolLPass = std::make_shared<DescriptorPool>(*descriptorSetLayoutLPass);
         descriptorPoolPP = std::make_shared<DescriptorPool>(*descriptorSetLayoutPP);
-        descriptorSet = std::make_shared<DescriptorSet>(*descriptorPool, *descriptorSetLayout);
+        descriptorSet = std::make_shared<DescriptorSet>(*descriptorPool, *descriptorSetLayoutGPass, MAX_IMG_ARR_SIZE);
         descriptorSetLPass = std::make_shared<DescriptorSet>(*descriptorPoolLPass, *descriptorSetLayoutLPass);
         descriptorSetPP = std::make_shared<DescriptorSet>(*descriptorPoolPP, *descriptorSetLayoutPP);
         createGraphicsPipeline();
@@ -434,13 +448,23 @@ private:
         createVertexBuffer();
         createIndexBuffer();
 
-        createTextureImage();
-        uniformBuffer = std::make_shared<Buffer>(sizeof(glm::mat4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        textureImage = createTextureImage("texture.jpg");
+        textureImage2 = createTextureImage("clown.png");
+        uboStride = Device::Instance().physicalDeviceProperties.limits.minUniformBufferOffsetAlignment;
+        if (uboStride < sizeof(uint32_t)) // never, but maybe i'll change uint32_t for a larger type
+            uboStride = sizeof(uint32_t);
+        uniformBuffer = std::make_shared<Buffer>(uboStride * MAX_FRAMES_IN_FLIGHT, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, true);
-        descriptorSet->Writer()
-            .Buffer(0, *uniformBuffer, 0, sizeof(glm::mat4))
-            .Image(1, *textureImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-            .Write();
+        storageBuffer = std::make_shared<Buffer>(sizeof(SSBO) * MAX_FRAMES_IN_FLIGHT, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, true);
+        auto writer = descriptorSet->Writer()
+            .Buffer(0, *uniformBuffer, 0, sizeof(uint32_t), true)
+            .Buffer(1, *storageBuffer, 0, storageBuffer->memory->allocInfo.allocationSize);
+        for (size_t i = 0; i < MAX_IMG_ARR_SIZE; i++)
+        {
+            writer.Image(2, i % 10 ? *textureImage2 : *textureImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, i);
+        }
+        writer.Write();
         descriptorSetLPass->Writer()
             .Image(0, *gPos, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)
             .Image(1, *gCol, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)
@@ -493,10 +517,11 @@ private:
             .Viewport().Scissor()
             
             .BindPipeline(*pipelineGPass)
+            .PushConstants(*pipelineGPass, VK_SHADER_STAGE_VERTEX_BIT, &vp, sizeof(glm::mat4))
             .BindVB(*vertexBuffer)
             .BindIB(*indexBuffer, VK_INDEX_TYPE_UINT16)
-            .BindDescriptorSet(pipelineGPass->layoutHandle, *descriptorSet)
-            .DrawIndexed(indices.size())
+            .BindDescriptorSet(pipelineGPass->layoutHandle, *descriptorSet, { currentUboOffset * uboStride })
+            .DrawIndexed(indices.size(), 1'000'000)
 
             .NextSubPass()
             .BindPipeline(*pipelineLPass)
@@ -536,12 +561,28 @@ private:
         auto currentTime = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
         
-        glm::mat4 model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        glm::mat4 view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        glm::mat4 proj = glm::perspective(glm::radians(45.0f), swapChain->swapChainExtent.width / (float)swapChain->swapChainExtent.height, 0.1f, 10.0f);
-        proj[1][1] *= -1;
-        glm::mat4 vp = proj * view * model;
-        *uniformBuffer = vp;
+        //glm::mat4 model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        static auto offs = 1.0f;
+        static auto pos = glm::vec3(0, 0, -10);
+        if (Input::Instance().IsDown(Key::Up)) pos.y += 0.1f;
+        if (Input::Instance().IsDown(Key::Down)) pos.y -= 0.1f;
+        if (Input::Instance().IsDown(Key::Right)) pos.x += 0.1f;
+        if (Input::Instance().IsDown(Key::Left)) pos.x -= 0.1f;
+        if (Input::Instance().IsDown(Key::W)) pos.z += 0.1f;
+        if (Input::Instance().IsDown(Key::S)) pos.z -= 0.1f;
+        if (Input::Instance().IsDown(Key::D)) offs *= 0.9f;
+        if (Input::Instance().IsDown(Key::A)) offs *= 1.1f;
+        auto model = glm::translate(glm::identity<glm::mat4>(), pos);
+        // model *= glm::scale(glm::identity<glm::mat4>(), glm::vec3(0.1, 0.1, 0.1));
+        glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 proj = glm::perspective(glm::radians(45.0f), swapChain->swapChainExtent.width / (float)swapChain->swapChainExtent.height, 0.1f, 1000.0f);
+        //proj[1][1] *= -1;
+        vp = proj * view * model;
+        SSBO ssbo = { .vp = vp, .offset = offs };
+        ((SSBO*)storageBuffer->Ptr())[currentUboOffset] = ssbo;
+        auto ubo = (char*)uniformBuffer->Ptr();
+        auto idx = ((uint32_t*)&ubo[uboStride * currentUboOffset]);
+        *idx = currentUboOffset;
     }
     void mainLoop()
     {
@@ -556,7 +597,7 @@ private:
             if (seconds > 1.0f)
             {
                 auto fps = frames / seconds;
-                // Logger::Info(fps, " fps");
+                Logger::Info(fps, " fps");
                 timer = Timer();
                 frames = 0;
             }
@@ -568,20 +609,20 @@ private:
         static Timer sumT;
         static float elapsed = 0;
 
+        Timer t;
         vkWaitForFences(device.device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
         vkResetFences(device.device, 1, &inFlightFences[currentFrame]);
+        elapsed += t.Elapsed();
 
-        Timer t;
         vkResetCommandBuffer(commandBuffers[currentFrame].handle, 0);
         updateUniformBuffer(currentFrame);
-        elapsed += t.Elapsed();
 
         uint32_t imageIndex;
         VkResult result = vkAcquireNextImageKHR(device.device, swapChain->swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
         if (sumT.ElapsedSeconds() >= 1.0f)
         {
+            Logger::Info("\t", elapsed, " ms (", 100 * elapsed / sumT.Elapsed(), "%)");
             sumT.Restart();
-            Logger::Info(elapsed, " ms");
             elapsed = 0;
         }
 
@@ -638,9 +679,10 @@ private:
             throw std::runtime_error("failed to present swap chain image!");
         }
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+        currentUboOffset = currentFrame;
     }
 private:
-    VulkanWindow window = VulkanWindow(800, 600);
+    VulkanWindow window = VulkanWindow(1920 * 0.8f, 1080 * 0.8f);
     VulkanContext ctx = VulkanContext(window);
     Device device = Device(ctx);
     std::shared_ptr<RenderPass> renderPass;
@@ -652,7 +694,7 @@ private:
     std::shared_ptr<Image> fbColor;
     std::shared_ptr<Framebuffer> fb;
 
-    std::shared_ptr<DescriptorSetLayout> descriptorSetLayout;
+    std::shared_ptr<DescriptorSetLayout> descriptorSetLayoutGPass;
     std::shared_ptr<DescriptorPool > descriptorPool;
     std::shared_ptr<DescriptorSet> descriptorSet;
     std::shared_ptr<DescriptorSetLayout> descriptorSetLayoutPP;
@@ -673,6 +715,7 @@ private:
     std::vector<VkSemaphore> renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;
     uint32_t currentFrame = 0;
+    uint32_t currentUboOffset = 0;
 
     const int MAX_FRAMES_IN_FLIGHT = 2;
     
@@ -702,13 +745,19 @@ private:
      0, 1, 2, 2, 3, 0,
     4, 5, 6, 6, 7, 4
     };
+    uint32_t drawRepeat = 1;
     std::shared_ptr<Buffer> vertexBuffer;
     std::shared_ptr<Buffer> indexBuffer;
 
+    glm::mat4 vp;
+    uint32_t uboStride;
     std::shared_ptr<Buffer> uniformBuffer;
+    std::shared_ptr<Buffer> storageBuffer; // 268 MB is MAX for DeviceLocal HostVisible Coherent
 
-    std::shared_ptr<Image> textureImage;
     std::shared_ptr<Sampler> textureSampler;
+    std::shared_ptr<Image> textureImage;
+    std::shared_ptr<Image> textureImage2;
+    uint32_t MAX_IMG_ARR_SIZE = 2000;
 };
 
 int main()
