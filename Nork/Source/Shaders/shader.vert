@@ -1,13 +1,14 @@
 #version 450
 
+//#extension GL_ARB_shader_draw_parameters : require
+
 layout(binding = 0) uniform UniformBufferObject {
-    uint idx;
+    uint[10] idx;
 } ubo;
 struct SSBO_{
-    mat4 VP;
-    float offs;
+    mat4 model;
 };
-readonly layout(binding = 1) buffer SSBO {
+layout(binding = 1) readonly buffer SSBO {
     SSBO_[] d;
 } ssbo;
 
@@ -22,16 +23,17 @@ layout(location = 3) flat out uint imgIdx;
 
 layout(push_constant) uniform constants
 {
-	mat4 render_matrix;
+	mat4 VP;
 } PushConstants;
 
 void main() {
-    imgIdx = uint(mod(gl_InstanceIndex, MAX_IMG_ARR_SIZE));  
-    SSBO_ d = ssbo.d[ubo.idx];
-    vec3 translate = vec3(gl_InstanceIndex / 200.0, mod(gl_InstanceIndex, 200.0), 0) - vec3(100, 100, 0);
-    translate *= vec3(vec2(d.offs), 0);
+    imgIdx = gl_InstanceIndex % MAX_IMG_ARR_SIZE; // gl_BaseInstanceARB; //gl_DrawIDARB gl_InstanceIndex% MAX_IMG_ARR_SIZE;
+    SSBO_ d = ssbo.d[ubo.idx[gl_InstanceIndex]];
+    // float size = 1;
+    //vec3 translate = vec3(gl_InstanceIndex / size, mod(gl_InstanceIndex, size), 0) - vec3(size / 2, size / 2, 0);
+    //translate *= vec3(vec2(d.offs), 0);
     //translate.z = -gl_InstanceIndex * 0.001 * 0.001 * 0.001;
-    vec4 wPos = d.VP * vec4(inPosition + translate, 1.0);
+    vec4 wPos = PushConstants.VP * d.model * vec4(inPosition, 1.0);
     // vec4 wPos = PushConstants.render_matrix * vec4(inPosition + translate, 1.0);
     //vec4 wPos = vec4(inPosition.xy, 0.0, 1.0);
     worldPos = wPos.xyz;

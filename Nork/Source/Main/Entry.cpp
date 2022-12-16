@@ -24,9 +24,7 @@ using namespace Nork;
 
 struct SSBO
 {
-    glm::mat4 vp;
-    float offset;
-    float padding[3];
+    glm::mat4 model;
 };
 struct Vertex
 {
@@ -361,8 +359,8 @@ private:
     {
         uint32_t gPosAtt = 0, gColAtt = 1, lPassAtt = 2, depthAtt = 3;
         RenderPass::Config config(4, 3);
-        config.Attachment(gPosAtt, AttachmentDescription::ColorInternalUse(VK_FORMAT_R8G8B8A8_SRGB).FinalLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
-        config.Attachment(gColAtt, AttachmentDescription::ColorInternalUse(VK_FORMAT_R8G8B8A8_SRGB).FinalLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+        config.Attachment(gPosAtt, AttachmentDescription::ColorInternalUse(VK_FORMAT_R8G8B8A8_SRGB).FinalLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL));
+        config.Attachment(gColAtt, AttachmentDescription::ColorInternalUse(VK_FORMAT_R8G8B8A8_SRGB).FinalLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL));
         config.Attachment(lPassAtt, AttachmentDescription::ColorForLaterCopy(VK_FORMAT_R8G8B8A8_SRGB));
         config.Attachment(depthAtt, AttachmentDescription::CleanDepth());
 
@@ -378,7 +376,9 @@ private:
             .ColorAttachment(lPassAtt, VK_IMAGE_LAYOUT_GENERAL)
             .InputAttachment(lPassAtt, VK_IMAGE_LAYOUT_GENERAL);
 
-        config.AddSubPass(gPass).AddSubPass(lPass).AddSubPass(ppPass);
+        config.AddSubPass(gPass)
+            .AddSubPass(lPass)
+            .AddSubPass(ppPass);
 
         config.DependencyExternalSrc(gPass, SubPassDependency()
             .SrcStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT)
@@ -447,22 +447,24 @@ private:
 
         createVertexBuffer();
         createIndexBuffer();
+        drawCommandsBuffer = std::make_shared<Buffer>(sizeof(VkDrawIndexedIndirectCommand) * MAX_FRAMES_IN_FLIGHT * DRAW_BATCH_COUNT, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, true);
 
         textureImage = createTextureImage("texture.jpg");
         textureImage2 = createTextureImage("clown.png");
         uboStride = Device::Instance().physicalDeviceProperties.limits.minUniformBufferOffsetAlignment;
         if (uboStride < sizeof(uint32_t)) // never, but maybe i'll change uint32_t for a larger type
             uboStride = sizeof(uint32_t);
-        uniformBuffer = std::make_shared<Buffer>(uboStride * MAX_FRAMES_IN_FLIGHT, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        uniformBuffer = std::make_shared<Buffer>(uboStride * MAX_FRAMES_IN_FLIGHT * DRAW_COUNT, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, true);
-        storageBuffer = std::make_shared<Buffer>(sizeof(SSBO) * MAX_FRAMES_IN_FLIGHT, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        storageBuffer = std::make_shared<Buffer>(sizeof(SSBO) * MAX_FRAMES_IN_FLIGHT * DRAW_COUNT, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, true);
         auto writer = descriptorSet->Writer()
             .Buffer(0, *uniformBuffer, 0, sizeof(uint32_t), true)
             .Buffer(1, *storageBuffer, 0, storageBuffer->memory->allocInfo.allocationSize);
         for (size_t i = 0; i < MAX_IMG_ARR_SIZE; i++)
         {
-            writer.Image(2, i % 10 ? *textureImage2 : *textureImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, i);
+            writer.Image(2, i % 3 ? *textureImage2 : *textureImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, i);
         }
         writer.Write();
         descriptorSetLPass->Writer()
@@ -515,13 +517,14 @@ private:
             .BeginCommands()
             .BeginRenderPass(*fb, *renderPass)
             .Viewport().Scissor()
-            
+
             .BindPipeline(*pipelineGPass)
             .PushConstants(*pipelineGPass, VK_SHADER_STAGE_VERTEX_BIT, &vp, sizeof(glm::mat4))
             .BindVB(*vertexBuffer)
             .BindIB(*indexBuffer, VK_INDEX_TYPE_UINT16)
-            .BindDescriptorSet(pipelineGPass->layoutHandle, *descriptorSet, { currentUboOffset * uboStride })
-            .DrawIndexed(indices.size(), 1'000'000)
+            .BindDescriptorSet(pipelineGPass->layoutHandle, *descriptorSet, { currentFrame * uboStride * DRAW_COUNT })
+            //.DrawIndexed(indices.size(), 1'000'000)
+            .DrawIndexedIndirect(*drawCommandsBuffer, DRAW_BATCH_COUNT, sizeof(VkDrawIndexedIndirectCommand) * currentFrame * DRAW_BATCH_COUNT)
 
             .NextSubPass()
             .BindPipeline(*pipelineLPass)
@@ -563,7 +566,7 @@ private:
         
         //glm::mat4 model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         static auto offs = 1.0f;
-        static auto pos = glm::vec3(0, 0, -10);
+        static auto pos = glm::vec3(0, 0.5, -1);
         if (Input::Instance().IsDown(Key::Up)) pos.y += 0.1f;
         if (Input::Instance().IsDown(Key::Down)) pos.y -= 0.1f;
         if (Input::Instance().IsDown(Key::Right)) pos.x += 0.1f;
@@ -572,17 +575,30 @@ private:
         if (Input::Instance().IsDown(Key::S)) pos.z -= 0.1f;
         if (Input::Instance().IsDown(Key::D)) offs *= 0.9f;
         if (Input::Instance().IsDown(Key::A)) offs *= 1.1f;
-        auto model = glm::translate(glm::identity<glm::mat4>(), pos);
+        auto camPos = glm::translate(glm::identity<glm::mat4>(), pos);
         // model *= glm::scale(glm::identity<glm::mat4>(), glm::vec3(0.1, 0.1, 0.1));
         glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         glm::mat4 proj = glm::perspective(glm::radians(45.0f), swapChain->swapChainExtent.width / (float)swapChain->swapChainExtent.height, 0.1f, 1000.0f);
         //proj[1][1] *= -1;
-        vp = proj * view * model;
-        SSBO ssbo = { .vp = vp, .offset = offs };
-        ((SSBO*)storageBuffer->Ptr())[currentUboOffset] = ssbo;
-        auto ubo = (char*)uniformBuffer->Ptr();
-        auto idx = ((uint32_t*)&ubo[uboStride * currentUboOffset]);
-        *idx = currentUboOffset;
+        vp = proj * view * camPos;
+        auto models = &((glm::mat4*)storageBuffer->Ptr())[currentFrame * DRAW_COUNT];
+        auto modelIdxs = &((char*)uniformBuffer->Ptr())[currentFrame * DRAW_COUNT * uboStride];
+        for (size_t i = 0; i < DRAW_COUNT; i++)
+        {
+            *(uint32_t*)(&modelIdxs[i * uboStride]) = currentFrame * DRAW_COUNT + i;
+            models[i] = glm::translate(glm::identity<glm::mat4>(), glm::vec3(objOffset * i, 0, 0));
+        }
+
+        auto drawCmds = (VkDrawIndexedIndirectCommand*)drawCommandsBuffer->Ptr() + DRAW_BATCH_COUNT * currentFrame;
+        for (size_t i = 0; i < DRAW_BATCH_COUNT; i++)
+        {
+            auto& drawCmd = drawCmds[i];
+            drawCmd.indexCount = indices.size();
+            drawCmd.instanceCount = INSTANCE_COUNT;
+            drawCmd.firstIndex = 0;
+            drawCmd.vertexOffset = 0;
+            drawCmd.firstInstance = i * INSTANCE_COUNT;
+        }
     }
     void mainLoop()
     {
@@ -679,7 +695,6 @@ private:
             throw std::runtime_error("failed to present swap chain image!");
         }
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-        currentUboOffset = currentFrame;
     }
 private:
     VulkanWindow window = VulkanWindow(1920 * 0.8f, 1080 * 0.8f);
@@ -715,7 +730,6 @@ private:
     std::vector<VkSemaphore> renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;
     uint32_t currentFrame = 0;
-    uint32_t currentUboOffset = 0;
 
     const int MAX_FRAMES_IN_FLIGHT = 2;
     
@@ -753,11 +767,16 @@ private:
     uint32_t uboStride;
     std::shared_ptr<Buffer> uniformBuffer;
     std::shared_ptr<Buffer> storageBuffer; // 268 MB is MAX for DeviceLocal HostVisible Coherent
+    std::shared_ptr<Buffer> drawCommandsBuffer;
 
     std::shared_ptr<Sampler> textureSampler;
     std::shared_ptr<Image> textureImage;
     std::shared_ptr<Image> textureImage2;
-    uint32_t MAX_IMG_ARR_SIZE = 2000;
+    uint32_t MAX_IMG_ARR_SIZE = 10;
+    uint32_t DRAW_BATCH_COUNT = 5;
+    uint32_t INSTANCE_COUNT = 2;
+    uint32_t DRAW_COUNT = DRAW_BATCH_COUNT * INSTANCE_COUNT;
+    float objOffset = 1.0f;
 };
 
 int main()

@@ -145,9 +145,9 @@ public:
         vkCmdDrawIndexed(cmdBuf.handle, count, instanceCount, 0, 0, 0);
         return *this;
     }
-    Self& DrawIndexedIndirect(const Buffer& buffer, uint32_t drawCount, VkDeviceSize offset = 0, uint32_t stride = sizeof(VkDrawIndexedIndirectCommand))
+    Self& DrawIndexedIndirect(const Buffer& buffer, uint32_t count, VkDeviceSize offset = 0, uint32_t stride = sizeof(VkDrawIndexedIndirectCommand))
     {
-        vkCmdDrawIndexedIndirect(cmdBuf.handle, buffer.handle, offset, drawCount, stride);
+        vkCmdDrawIndexedIndirect(cmdBuf.handle, buffer.handle, offset, count, stride);
         return *this;
     }
     Self& NextSubPass()
