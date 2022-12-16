@@ -400,6 +400,14 @@ private:
         renderPass = std::make_shared<RenderPass>(config);
     }
 
+    std::unordered_map<VkDescriptorType, uint32_t> DescriptorCounts(const std::vector<std::shared_ptr<DescriptorSetLayout>>& layouts)
+    {
+        std::unordered_map<VkDescriptorType, uint32_t> result;
+        for (auto& layout : layouts)
+            for (auto& binding : layout->bindings)
+                result[binding.descriptorType] += binding.descriptorCount;
+        return result;
+    }
     void initVulkan()
     {
         createRenderPass();
@@ -434,12 +442,12 @@ private:
         descriptorSetLayoutPP = DescriptorSetLayout::Builder()
             .Binding(0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT)
             .Build();
-        descriptorPool = std::make_shared<DescriptorPool>(*descriptorSetLayoutGPass);
-        descriptorPoolLPass = std::make_shared<DescriptorPool>(*descriptorSetLayoutLPass);
-        descriptorPoolPP = std::make_shared<DescriptorPool>(*descriptorSetLayoutPP);
+
+        //descriptorPool = std::make_shared<DescriptorPool>(*descriptorSetLayoutGPass);
+        descriptorPool = std::make_shared<DescriptorPool>(DescriptorCounts({ descriptorSetLayoutGPass, descriptorSetLayoutLPass, descriptorSetLayoutPP }), 3);
         descriptorSet = std::make_shared<DescriptorSet>(*descriptorPool, *descriptorSetLayoutGPass, MAX_IMG_ARR_SIZE);
-        descriptorSetLPass = std::make_shared<DescriptorSet>(*descriptorPoolLPass, *descriptorSetLayoutLPass);
-        descriptorSetPP = std::make_shared<DescriptorSet>(*descriptorPoolPP, *descriptorSetLayoutPP);
+        descriptorSetLPass = std::make_shared<DescriptorSet>(*descriptorPool, *descriptorSetLayoutLPass);
+        descriptorSetPP = std::make_shared<DescriptorSet>(*descriptorPool, *descriptorSetLayoutPP);
         createGraphicsPipeline();
 
         commandPool = std::make_shared<CommandPool>();
@@ -709,14 +717,13 @@ private:
     std::shared_ptr<Image> fbColor;
     std::shared_ptr<Framebuffer> fb;
 
-    std::shared_ptr<DescriptorSetLayout> descriptorSetLayoutGPass;
     std::shared_ptr<DescriptorPool > descriptorPool;
+
+    std::shared_ptr<DescriptorSetLayout> descriptorSetLayoutGPass;
     std::shared_ptr<DescriptorSet> descriptorSet;
     std::shared_ptr<DescriptorSetLayout> descriptorSetLayoutPP;
-    std::shared_ptr<DescriptorPool > descriptorPoolPP;
     std::shared_ptr<DescriptorSet> descriptorSetPP;
     std::shared_ptr<DescriptorSetLayout> descriptorSetLayoutLPass;
-    std::shared_ptr<DescriptorPool > descriptorPoolLPass;
     std::shared_ptr<DescriptorSet> descriptorSetLPass;
 
     std::shared_ptr<Pipeline> pipelineGPass;

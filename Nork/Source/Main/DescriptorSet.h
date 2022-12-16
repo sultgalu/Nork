@@ -69,6 +69,23 @@ public:
 class DescriptorPool
 {
 public:
+	DescriptorPool(const std::unordered_map<VkDescriptorType, uint32_t> descriptorCounts, uint32_t maxSets = 1)
+	{
+		std::vector<VkDescriptorPoolSize> poolSizes;
+		poolSizes.reserve(descriptorCounts.size());
+		for (auto& [type, count] : descriptorCounts)
+		{
+			poolSizes.push_back(VkDescriptorPoolSize{ .type = type, .descriptorCount = count });
+		}
+
+		VkDescriptorPoolCreateInfo poolInfo{};
+		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		poolInfo.poolSizeCount = poolSizes.size();
+		poolInfo.pPoolSizes = poolSizes.data();
+		poolInfo.maxSets = maxSets;
+
+		vkCreateDescriptorPool(Device::Instance().device, &poolInfo, nullptr, &handle) == VkSuccess();
+	}
 	DescriptorPool(const DescriptorSetLayout& layout, uint32_t maxSets = 1)
 	{
 		std::vector<VkDescriptorPoolSize> descriptorCounts;
