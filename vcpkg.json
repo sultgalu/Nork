@@ -1,8 +1,17 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
-  "name": "my-application",
-  "version": "0.15.2",
+  "name": "nork",
+  "version": "0.1.0",
   "dependencies": [
-    "shaderc"
+    "shaderc",
+    "entt",
+    "glm",
+    "stb",
+    "glfw3",
+    "vulkan-headers",
+    {
+      "name": "imgui",
+      "features": [ "glfw-binding", "vulkan-binding", "docking-experimental" ]
+    }
   ]
 }

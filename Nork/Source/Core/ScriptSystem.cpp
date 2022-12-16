@@ -20,7 +20,7 @@ namespace Nork {
 			playerKin.mass = 0.001f;
 			engine.physicsSystem.pipeline.coefficient = 0.2f;
 			playerPl.SetIntensity(200);
-			playerPl.light->color = glm::vec4(1.0f, 0.4f, 0.8f, 1.0f);
+			// playerPl.light->color = glm::vec4(1.0f, 0.4f, 0.8f, 1.0f);
 			Application::Get().engine.window.Resize(1920, 1080);
 			// if (engine.renderingSystem.viewports.empty())
 			//  	engine.renderingSystem.viewports.push_back();
@@ -83,6 +83,6 @@ namespace Nork {
 
 			playerTr.localQuaternion = q;
 		}
-		*engine.renderingSystem.sceneViews.begin()._Ptr->_Myval->camera = cam;
+		// *engine.renderingSystem.sceneViews.begin()._Ptr->_Myval->camera = cam;
 	}
 }

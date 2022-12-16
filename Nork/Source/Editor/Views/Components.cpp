@@ -2,7 +2,8 @@
 #include "../Views/include/Helpers.h"
 #include "Platform/FileDialog.h"
 #include "Editor/Editor.h"
-#include "../Panels/include/ColliderEditorPanel.h"
+#include "Modules/Renderer/Data/Vertex.h"
+#include "Core/PolygonBuilder.h"
 
 namespace Nork::Editor {
 
@@ -28,7 +29,7 @@ namespace Nork::Editor {
 	{
 		//dirLight.RecalcVP();
 		// dirLight.light->Update();
-		auto dir = dirLight.light->direction;
+		/*auto dir = dirLight.light->direction;
 		changed |= ImGui::Checkbox("Sun", &dirLight.sun);
 		changed |= ImGui::SliderFloat3("Direction", &dirLight.light->direction.x, -1, 1, "%.5f");
 		changed |= ImGui::SliderFloat("Out Of Proj Value", &dirLight.light->outOfProjValue, 0, 1);
@@ -107,11 +108,11 @@ namespace Nork::Editor {
 			ImGui::PopStyleColor();
 
 			ImGui::TreePop();
-		}
+		}*/
 	}
 	template<> void SceneNodeView::ShowComponent(Components::PointLight& pointLight, bool& changed)
 	{
-		changed |= ImGui::ColorEdit4("Color##Plight", (float*)&(pointLight.light->color.r));
+		/*changed |= ImGui::ColorEdit4("Color##Plight", (float*)&(pointLight.light->color.r));
 
 		int pow = pointLight.GetIntensity();
 		if (changed |= ImGui::DragInt("Intensity", &(pow), 1, 0, 10000))
@@ -168,7 +169,7 @@ namespace Nork::Editor {
 				node->GetEntity().RemoveComponent<Components::PointShadowMap>();
 			}
 			ImGui::PopStyleColor();
-		}
+		}*/
 	}
 	template<> void SceneNodeView::ShowComponent(Components::Transform& tr, bool& changed)
 	{
@@ -228,6 +229,7 @@ namespace Nork::Editor {
 	}
 	template<> void SceneNodeView::ShowComponent(Components::Drawable& dr, bool& changed)
 	{
+		/*
 		static int imgSize = 100;
 		const auto model = dr.GetModel();
 		if (!model->meshes.empty())
@@ -396,7 +398,7 @@ namespace Nork::Editor {
 			{
 				ResourceUtils::ExportModel(model, p);
 			}
-		}
+		}*/
 	}
 	template<> void SceneNodeView::ShowComponent(Components::Physics& phx, bool& changed)
 	{
@@ -477,33 +479,6 @@ namespace Nork::Editor {
 					ShowComponent(copy, changed);
 					if constexpr (std::is_same<T, Components::Physics>::value)
 					{
-						if (ImGui::Button(std::string("Edit Collider").append(std::to_string((size_t)ent.Id())).c_str()))
-						{
-							Editor::Get().AddPanel(std::make_shared<ColliderEditorPanel>(ent));
-						}
-						if (ImGui::Button(std::string("Convert").append(std::to_string((size_t)ent.Id())).c_str()))
-						{
-							auto& coll = ent.GetComponent<Components::Physics>().LocalCollider();
-							auto poly = PolygonBuilder(coll).BuildMesh();
-							std::vector<Renderer::Data::Vertex> vertices;
-							for (auto& vert : poly.vertices)
-							{
-								vertices.push_back(Renderer::Data::Vertex{
-									.position = vert,
-									.normal = glm::vec3(0, 1, 0),
-									.texCoords = glm::vec2(0),
-									.tangent = glm::vec3(1, 0, 0),
-									});
-							}
-							//GetEngine().resourceManager.drawState.vaoWrapper
-							auto& mesh = ent.GetComponent<Components::Drawable>().GetModel()->meshes[0].mesh;
-							// mesh->GetVaoWrapper().GetVertexWrapper().Erase(mesh->GetVertexPtr());
-							// mesh->GetVaoWrapper().GetIndexWrapper().Erase(mesh->GetIndexPtr());
-							// auto vertPtr = mesh->GetVaoWrapper().GetVertexWrapper().Add(vertices.data(), vertices.size());
-							// auto idxPtr = mesh->GetVaoWrapper().GetIndexWrapper().Add((uint32_t*)poly.triangles.data(), poly.triangles.size() * 3);
-							// mesh = std::make_shared<Renderer::Mesh>(mesh->GetVaoWrapper(), vertPtr, idxPtr, vertices.size(), poly.triangles.size() * 3);
-							// vbo.Erase()
-						}
 					}
 				};
 				bool edited = _EditComponent(ent.GetComponent<T>(), ent, fun);

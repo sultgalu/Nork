@@ -12,6 +12,8 @@ namespace Nork::Renderer {
 
 	GLTFBuilder& GLTFBuilder::AddMesh(const Mesh& mesh, const std::string& name, int matIdx, const std::filesystem::path& buffersPath)
     { // adds a node too
+		std::unreachable();
+		/*
 		gltf.scenes.back().nodes.push_back(gltf.nodes.size());
 		gltf.nodes.push_back(GLTF::Node());
 		gltf.nodes.back().mesh = gltf.meshes.size();
@@ -170,7 +172,7 @@ namespace Nork::Renderer {
 				break;
 			}
 		}
-		gltf.materials.push_back(mat);
+		gltf.materials.push_back(mat);*/
 
 		return *this;
     }

@@ -19,7 +19,7 @@ namespace Nork::Editor {
 
 	void ViewportView::Content()
 	{
-		auto texture = sceneView->pipeline->FinalTexture();
+		/*auto texture = sceneView->pipeline->FinalTexture();
 
 		glm::vec2 texSize(texture->GetWidth(), texture->GetHeight());
 		glm::vec2 displaySize = GetDisplaySize(texSize);
@@ -33,7 +33,7 @@ namespace Nork::Editor {
 		{
 			camController->UpdateByKeyInput(*sceneView->camera, ImGui::GetIO().DeltaTime * 500);
 			camController->UpdateByMouseInput(*sceneView->camera);
-		}
+		}*/
 
 		mouseState.isViewportHovered = ImGui::IsItemHovered();
 		mouseState.isViewportDoubleClicked = mouseState.isViewportHovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
@@ -42,10 +42,10 @@ namespace Nork::Editor {
 		auto rMin = ImGui::GetWindowContentRegionMin();
 		auto wPos = ImGui::GetWindowPos();
 		auto mPos = ImGui::GetMousePos();
-		glm::vec2 actualPos = glm::vec2(mPos.x - wPos.x - rMin.x, displaySize.y - (mPos.y - wPos.y - rMin.y));
-		glm::vec2 actualPos2 = glm::vec2((actualPos.x / displaySize.x) * texSize.x, (actualPos.y / displaySize.y) * texSize.y);
-		mouseState.mousePosX = (int)actualPos2.x;
-		mouseState.mousePosY = (int)actualPos2.y;
+		// glm::vec2 actualPos = glm::vec2(mPos.x - wPos.x - rMin.x, displaySize.y - (mPos.y - wPos.y - rMin.y));
+		// glm::vec2 actualPos2 = glm::vec2((actualPos.x / displaySize.x) * texSize.x, (actualPos.y / displaySize.y) * texSize.y);
+		// mouseState.mousePosX = (int)actualPos2.x;
+		// mouseState.mousePosY = (int)actualPos2.y;
 	}
 	ViewportView::ViewportView()
 	{}

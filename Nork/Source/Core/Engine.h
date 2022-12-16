@@ -2,7 +2,6 @@
 #include "NorkWindow.h"
 #include "Core/CameraController.h"
 #include "Scene/Scene.h"
-#include "Modules/Renderer/Objects/Shader/Shader.h"
 #include "RenderingSystem.h"
 #include "PhysicsSystem.h"
 #include "ScriptSystem.h"
@@ -43,17 +42,5 @@ namespace Nork
 		std::thread* LaunchPhysicsThread();
 		void UpdateGlobalTransforms();
 		void UpdateTransformMatrices();
-	};
-
-	class CollidersStage : public Renderer::Stage
-	{
-	public:
-		CollidersStage(Scene& scene, Shaders& shaders);
-		bool Execute(Renderer::Framebuffer& src, Renderer::Framebuffer& dst) override;
-	public:
-		Scene& scene;
-		Shaders& shaders;
-		std::shared_ptr<Renderer::VertexArray> vao;
-		std::shared_ptr<Renderer::Framebuffer> fb;
 	};
 }

@@ -24,9 +24,6 @@
     <ClCompile Include="Source\Utils\Logger.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\ThirdParty\src\glad.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\ThirdParty\include\imgui\backends\imgui_impl_opengl3.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -96,31 +93,7 @@
     <ClCompile Include="Source\App\Application.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Objects\Texture\Texture.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Objects\Shader\Shader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Objects\Buffer\Buffer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Objects\Framebuffer\Framebuffer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Objects\VertexArray\VertexArray.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\State\Capabilities.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\DrawUtils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Modules\Renderer\LoadUtils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Window\Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\RenderingSystem.cpp">
@@ -138,30 +111,6 @@
     <ClCompile Include="Source\Core\PhysicsSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Objects\Buffer\BufferBuilder.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Objects\VertexArray\VertexArrayBuilder.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Objects\Texture\TextureBuilder.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Objects\Shader\ShaderBuilder.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Objects\Framebuffer\FramebufferBuilder.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Objects\Framebuffer\GeometryFramebufferBuilder.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Objects\Framebuffer\MainFramebufferBuilder.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Objects\GLManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Components\Impl\Common.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -174,16 +123,7 @@
     <ClCompile Include="Source\Modules\Renderer\Model\Material.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Storage\SmartMappedBuffer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Modules\Renderer\MeshFactory.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Pipeline\DrawCommands\DrawObjectsCommand.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\RendererWorld.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\InputState.cpp">
@@ -231,49 +171,10 @@
     <ClCompile Include="Source\Editor\Panels\BloomPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Panels\ShadersPanel.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\Views\ShaderView.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Modules\Physics\Algorithms\Clip.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Modules\Physics\Pipeline\Collision.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\Panels\ColliderEditorPanel.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Pipeline\Stages\DeferredStage.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Pipeline\RenderPipeline.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Pipeline\Stages\BloomStage.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Pipeline\Stages\PostProcessStage.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Pipeline\Stages\SkyboxStage.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Pipeline\Stages\SkyStage.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Model\ShadowMap.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Pipeline\Stages\ShadowMapStage.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Pipeline\DrawCommands\DrawCubeCommand.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Pipeline\DrawCommands\DrawQuadCommand.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Components\Impl\Drawable.cpp">
@@ -365,40 +266,7 @@
     <ClInclude Include="Source\App\Application.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Objects\Texture\Texture.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Objects\GLObject.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Objects\Texture\TextureFormat.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Objects\Texture\TextureParams.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Objects\Texture\TextureAttributes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Objects\Shader\Shader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Objects\Buffer\Buffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Objects\Framebuffer\Framebuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\State\Capabilities.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Objects\VertexArray\VertexArray.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Modules\Renderer\Model\Mesh.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\DrawUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\RenderingSystem.h">
@@ -407,22 +275,7 @@
     <ClInclude Include="Source\Modules\Renderer\Data\Lights.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Config.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Modules\Renderer\LoadUtils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Window\Window.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Objects\GLManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Objects\Framebuffer\LightFramebuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Objects\Framebuffer\GeometryFramebuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Scene\Entity.h">
@@ -440,27 +293,6 @@
     <ClInclude Include="Source\Core\PhysicsSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Objects\Buffer\BufferBuilder.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Objects\VertexArray\VertexArrayBuilder.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Objects\Texture\TextureBuilder.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Objects\Shader\ShaderBuilder.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Objects\Framebuffer\FramebufferBuilder.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Objects\Framebuffer\GeometryFramebufferBuilder.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Objects\Framebuffer\LightFramebufferBuilder.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Utils\Observed.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -474,15 +306,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Modules\Renderer\Data\Material.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Storage\SmartMappedBuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\DrawCommands\DrawObjectsCommand.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\World.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Main\GameLoop.h">
@@ -554,9 +377,6 @@
     <ClInclude Include="Source\Editor\Panels\include\BloomPanel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Panels\include\ShadersPanel.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Editor\Views\include\ShaderView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -567,30 +387,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Modules\Physics\Pipeline\Collision.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\Panels\include\ColliderEditorPanel.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\Stages\DeferredStage.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\Stages\Stage.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\Pipeline.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\Stages\BloomStage.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\Stages\PostProcessStage.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\Stages\SkyboxStage.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\Stages\SkyStage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Modules\Physics\Data\Collider.h">
@@ -605,25 +401,10 @@
     <ClInclude Include="Source\Modules\Physics\Data\CollisionResult.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Model\ShadowMap.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\Stages\ShadowMapStage.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\DrawCommands\DrawCommand.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Modules\Renderer\Model\Object.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Modules\Renderer\MeshFactory.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\DrawCommands\DrawCubeCommand.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\Pipeline\DrawCommands\DrawQuadCommand.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\GLTFReader.h">

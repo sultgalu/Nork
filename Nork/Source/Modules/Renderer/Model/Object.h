@@ -8,6 +8,6 @@ namespace Nork::Renderer {
 	{
 		Mesh mesh;
 		Material material;
-		UBO<glm::mat4>::Element modelMatrix;
+		//UBO<glm::mat4>::Element modelMatrix;
 	};
 }

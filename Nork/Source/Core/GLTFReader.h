@@ -20,7 +20,7 @@ namespace Nork{
 			for (auto& buf : gltf.buffers)
 				buffers.push_back(FileUtils::ReadBinary<char>(SrcPath(buf.uri).string()));
 			for (auto& img : gltf.images)
-				images.push_back(TextureResources::Instance().Get(SrcPath(img.uri)));
+				//images.push_back(TextureResources::Instance().Get(SrcPath(img.uri)));
 			for (auto& mat : gltf.materials)
 				materials.push_back(CreateMaterial(mat));
 			for (size_t i = 0; i < gltf.meshes.size(); i++)
@@ -29,7 +29,7 @@ namespace Nork{
 				for (size_t j = 0; j < gltf.meshes[i].primitives.size(); j++)
 				{
 					auto mesh = CreateRendererMesh(j, i);
-					MeshResources::Instance().Add(mesh, (dstFolder / std::to_string(i) / std::to_string(j)).replace_extension(".bin"));
+					// MeshResources::Instance().Add(mesh, (dstFolder / std::to_string(i) / std::to_string(j)).replace_extension(".bin"));
 					meshes.back().push_back(mesh);
 				}
 			}
@@ -40,6 +40,7 @@ namespace Nork{
 		}
 		void AddMeshRecursive(int nodeIdx, const glm::mat4& parentTransform = glm::identity<glm::mat4>())
 		{
+			std::unreachable();
 			const GLTF::Node& node = gltf.nodes[nodeIdx];
 			std::optional<glm::mat4> transform;
 			if (node.HasTransform())
@@ -54,21 +55,22 @@ namespace Nork{
 				for (size_t i = 0; i < meshGltf.primitives.size(); i++)
 				{
 					auto& mesh = meshes[node.mesh][i];
-					if (!mesh.Empty())
-					{
-						auto matIdx = meshGltf.primitives[i].material;
-						model->meshes.push_back(Components::Mesh{
-							.mesh = mesh,
-							.material = matIdx == -1 ? defaultMaterial : materials[matIdx],
-							.localTransform = transform
-							});
-					}
+					// if (!mesh.Empty())
+					// {
+					// 	auto matIdx = meshGltf.primitives[i].material;
+					// 	model->meshes.push_back(Components::Mesh{
+					// 		.mesh = mesh,
+					// 		.material = matIdx == -1 ? defaultMaterial : materials[matIdx],
+					// 		.localTransform = transform
+					// 		});
+					// }
 				}
 			}
 		}
 		Material CreateMaterial(const GLTF::Material& mat)
 		{
-			auto material = RenderingSystem::Instance().world.AddMaterial();
+			std::unreachable();
+			/*auto material = RenderingSystem::Instance().world.AddMaterial();
 			material->baseColorFactor = mat.pbrMetallicRoughness.baseColorFactor;
 			material->roughnessFactor = mat.pbrMetallicRoughness.roughnessFactor;
 			material->metallicFactor = mat.pbrMetallicRoughness.metallicFactor;
@@ -81,10 +83,12 @@ namespace Nork{
 				material.SetTextureMap(images[gltf.textures[mat.pbrMetallicRoughness.metallicRoughnessTexture.index].source], Renderer::TextureMap::MetallicRoughness);
 			if (mat.normalTexture.Validate())
 				material.SetTextureMap(images[gltf.textures[mat.normalTexture.index].source], Renderer::TextureMap::Normal);
-			return material;
+			return material;*/
 		}
 		Mesh CreateRendererMesh(int idx, int meshIdx)
 		{
+			std::unreachable();
+
 			auto& prim = gltf.meshes[meshIdx].primitives[idx];
 			if (prim.mode != GL_TRIANGLES)
 			{
@@ -153,7 +157,7 @@ namespace Nork{
 			{
 				SetTangent(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]);
 			}
-			return RenderingSystem::Instance().world.AddMesh(vertices, indices);
+			//return RenderingSystem::Instance().world.AddMesh(vertices, indices);
 		}
 		template<class T> std::vector<uint32_t> GetIndices(const GLTF::Primitive& prim)
 		{
@@ -198,10 +202,10 @@ namespace Nork{
 		fs::path dstFolder; // relative
 
 		std::vector<std::vector<char>> buffers;
-		std::vector<std::shared_ptr<Texture2D>> images;
+		//std::vector<std::shared_ptr<Texture2D>> images;
 		std::vector<Material> materials;
 		std::vector<std::vector<Mesh>> meshes;
-		Material defaultMaterial = RenderingSystem::Instance().world.AddMaterial(); // should be GLTF default
+		//Material defaultMaterial = RenderingSystem::Instance().world.AddMaterial(); // should be GLTF default
 
 		std::shared_ptr<Components::Model> model;
 	};

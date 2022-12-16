@@ -13,8 +13,8 @@ namespace Nork::Components {
 			{
 				if (val == ranges[i])
 				{
-					light->linear = linears[i];
-					light->quadratic = quadratics[i];
+					// light->linear = linears[i];
+					// light->quadratic = quadratics[i];
 				}
 				else
 				{
@@ -24,8 +24,8 @@ namespace Nork::Components {
 					float linearRange = linears[i - 1] - linears[i];
 					float quadraticRange = quadratics[i - 1] - quadratics[i];
 
-					light->quadratic = quadratics[i - 1] - portion * quadraticRange;
-					light->linear = linears[i - 1] - portion * linearRange;
+					// light->quadratic = quadratics[i - 1] - portion * quadraticRange;
+					// light->linear = linears[i - 1] - portion * linearRange;
 				}
 				break;
 			}
@@ -34,9 +34,9 @@ namespace Nork::Components {
 	}
 	void DirShadowMap::FixTextureRatio(const DirLight& light, uint32_t pixelCount)
 	{
+		std::unreachable();
 		float count = light.rectangle.x * light.rectangle.y;
 		auto multiplier = glm::sqrt(pixelCount / count);
-		map.SetFramebuffer(light.rectangle.x * multiplier, light.rectangle.y * multiplier, 
-			Renderer::TextureFormat::Depth16);
+		// map.SetFramebuffer(light.rectangle.x * multiplier, light.rectangle.y * multiplier, Renderer::TextureFormat::Depth16);
 	}
 }

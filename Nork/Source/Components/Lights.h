@@ -1,13 +1,9 @@
 #pragma once
 
-#include "Modules/Renderer/World.h"
-#include "Modules/Renderer/Model/ShadowMap.h"
-
 namespace Nork::Components
 {
 	struct PointLight
 	{
-		Renderer::PointLightRef light;
 		void SetIntensity(uint32_t val);
 		inline uint32_t GetIntensity() const { return intensity; }
 	private:
@@ -15,7 +11,7 @@ namespace Nork::Components
 	};
 	struct PointShadowMap
 	{
-		Renderer::PointShadowMap map;
+		char dummy;
 	};
 
 	//Renderer::PointShadow(Renderer::PointShadow{ .bias = 0.0057, .biasMin = 0.0004 , .blur = 1, .radius = 0.024, .far = 50, .near = 1, .idx = 0 })
@@ -24,8 +20,10 @@ namespace Nork::Components
 	
 	struct DirLight
 	{
-		Renderer::DirLightRef light;
-		inline glm::mat4 GetView() const { return glm::lookAt(glm::vec3(0) - light->direction, glm::vec3(0), glm::vec3(0.0f, 1.0f, 0.0f)); }
+		inline glm::mat4 GetView() const { 
+			std::unreachable();
+			// return glm::lookAt(glm::vec3(0) - light->direction, glm::vec3(0), glm::vec3(0.0f, 1.0f, 0.0f)); 
+		}
 		inline void RecalcVP()
 		{
 			auto right = position.x + rectangle.x / 2;
@@ -34,7 +32,7 @@ namespace Nork::Components
 			auto bottom = position.y - rectangle.y / 2;
 			auto near = position.z;
 			auto far = position.z + rectangle.z;
-			light->VP = glm::ortho(left, right, bottom, top, near, far) * GetView();
+			// light->VP = glm::ortho(left, right, bottom, top, near, far) * GetView();
 		}
 		glm::vec3 position = { 100, 0, 0 };
 		glm::vec3 rectangle = { 60, 60, 150 };
@@ -43,7 +41,7 @@ namespace Nork::Components
 	};
 	struct DirShadowMap // should only exist if the same component has a dirLight as well
 	{
-		Renderer::DirShadowMap map;
+		char dummy;
 		void FixTextureRatio(const DirLight&, uint32_t pixelCount);
 	};
 }

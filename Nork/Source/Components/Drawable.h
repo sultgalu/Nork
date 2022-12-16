@@ -1,13 +1,11 @@
 #pragma once
 
-#include "Modules/Renderer/World.h"
-
 namespace Nork::Components
 {
 	struct Mesh
 	{
-		Renderer::Mesh mesh; // assigne only with entt::patch
-		Renderer::Material material; // assigne only with entt::patch
+		// Renderer::Mesh mesh; // assigne only with entt::patch
+		// Renderer::Material material; // assigne only with entt::patch
 		std::optional<glm::mat4> localTransform = std::nullopt;
 	};
 
@@ -20,8 +18,8 @@ namespace Nork::Components
 	{
 		void SetModel(std::shared_ptr<Model>);
 		inline std::shared_ptr<Model> GetModel() const { return model; }
-		std::vector<Renderer::ModelMatrixRef> transforms; // global transforms of each mesh (if mesh.localTransform is empty, it is the shared transform)
-		Renderer::ModelMatrixRef sharedTransform; // transform of the model itself and meshes that do not have a local transform
+		// std::vector<Renderer::ModelMatrixRef> transforms; // global transforms of each mesh (if mesh.localTransform is empty, it is the shared transform)
+		// Renderer::ModelMatrixRef sharedTransform; // transform of the model itself and meshes that do not have a local transform
 	private:
 		std::shared_ptr<Model> model;
 	};

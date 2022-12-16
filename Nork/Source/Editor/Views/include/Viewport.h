@@ -17,7 +17,7 @@ namespace Nork::Editor {
 		};
 	public:
 		MouseState mouseState;
-		std::shared_ptr<SceneView> sceneView;
+		// std::shared_ptr<SceneView> sceneView;
 		std::shared_ptr<CameraController> camController = std::make_shared<FpsCameraController>();
 	};
 }

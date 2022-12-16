@@ -143,7 +143,6 @@ public:
         }
     }
 private:
-
     void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
     {
         VkImageMemoryBarrier barrier{};

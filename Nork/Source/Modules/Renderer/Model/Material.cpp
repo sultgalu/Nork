@@ -1,8 +1,7 @@
 #include "Material.h"
-#include "../Objects/Texture/TextureBuilder.h"
 
 namespace Nork::Renderer {
-	static std::shared_ptr<Texture2D> CreateTexture2D(TextureFormat format, std::vector<float> data)
+	/*static std::shared_ptr<Texture2D> CreateTexture2D(TextureFormat format, std::vector<float> data)
 	{
 		return TextureBuilder()
 			.Params(TextureParams::Tex2DParams())
@@ -32,5 +31,5 @@ namespace Nork::Renderer {
 	bool Material::HasDefault(TextureMap type) const
 	{
 		return textureMaps[std::to_underlying(type)] == GetDefaultTextureMaps()[std::to_underlying(type)];
-	}
+	}*/
 }

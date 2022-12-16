@@ -81,9 +81,9 @@ namespace Nork {
         return { module.cbegin(), module.cend() };
     }
 
-    static shaderc_shader_kind GetShaderKind(Renderer::ShaderType type)
+    static shaderc_shader_kind GetShaderKind(ShaderType type)
     {
-        using enum Renderer::ShaderType;
+        using enum ShaderType;
         switch (type)
         {
         case Vertex:
@@ -100,7 +100,7 @@ namespace Nork {
         }
     }
 
-    std::vector<uint32_t> Shaderc::Compile(const std::string& src, Renderer::ShaderType type, std::vector<std::array<std::string, 2>> defines)
+    std::vector<uint32_t> Shaderc::Compile(const std::string& src, ShaderType type, std::vector<std::array<std::string, 2>> defines)
     {
         auto kind = GetShaderKind(type);
 

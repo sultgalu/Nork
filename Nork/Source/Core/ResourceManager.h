@@ -82,8 +82,8 @@ namespace Nork {
 	};
 
 	using ModelResources = Resources<std::shared_ptr<Components::Model>>;
-	using MeshResources = Resources<Renderer::Mesh>;
-	using TextureResources = Resources<std::shared_ptr<Renderer::Texture2D>>;
+	// using MeshResources = Resources<Renderer::Mesh>;
+	// using TextureResources = Resources<std::shared_ptr<Renderer::Texture2D>>;
 
 	enum class ModelTemplate { Cube, Sphere };
 	class ResourceUtils

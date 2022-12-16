@@ -145,10 +145,8 @@ namespace Nork::Editor
 			style.Colors[ImGuiCol_WindowBg].w = 1.0f;
 		}
 
-		ImGui_ImplOpenGL3_Init();
-		ImGui_ImplGlfw_InitForOpenGL(Application::Get().engine.window.Underlying().GetContext().glfwWinPtr, false);
-	
-		// ImGui::SetColorEditOptions(0);
+		//ImGui_ImplOpenGL3_Init();
+		//ImGui_ImplGlfw_InitForOpenGL(Application::Get().engine.window.Underlying().GetContext().glfwWinPtr, false);
 	}
 	Editor::Editor(Engine& engine)
 		: engine(engine)
@@ -174,7 +172,7 @@ namespace Nork::Editor
 
 	void Editor::Render()
 	{
-		ImGui_ImplOpenGL3_NewFrame();
+		//ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 		//ImGui::DockSpace(3, ImVec2(100, 1000));
@@ -207,7 +205,7 @@ namespace Nork::Editor
 		}
 
 		ImGui::Render();
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+		//ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 		ImGuiIO& io = ImGui::GetIO();
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
@@ -223,12 +221,12 @@ namespace Nork::Editor
 			data.gameMode = !data.gameMode;
 			if (data.gameMode)
 			{
-				glfwSetInputMode(Application::Get().engine.window.Underlying().GetContext().glfwWinPtr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+				//glfwSetInputMode(Application::Get().engine.window.Underlying().GetContext().glfwWinPtr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 				engine.StartPhysics();
 			}
 			else
 			{
-				glfwSetInputMode(Application::Get().engine.window.Underlying().GetContext().glfwWinPtr, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+				//glfwSetInputMode(Application::Get().engine.window.Underlying().GetContext().glfwWinPtr, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 				engine.StopPhysics();
 			}
 		}
@@ -278,62 +276,6 @@ namespace Nork::Editor
 				engine.StartPhysics(false);
 		}
 	}
-	std::pair<std::shared_ptr<Renderer::Shader>, std::string> SelectShaderFromRenderer(Engine& engine)
-	{
-		auto& shaders = engine.renderingSystem.shaders;
-		std::pair<std::shared_ptr<Renderer::Shader>, std::string> selected = { nullptr, "" };
-
-		if (ImGui::MenuItem("Geometry Pass"))
-			selected = { shaders.gPassShader, "Geometry Pass"};
-		if (ImGui::MenuItem("Light Pass"))
-			selected = { shaders.lPassShader, "Light Pass" };
-		ImGui::Separator();
-
-		if (ImGui::MenuItem("Dir. Light Shadow"))
-			selected = { shaders.dShadowShader, "Dir. Light Shadow" };
-		if (ImGui::MenuItem("Point Light Shadow"))
-			selected = { shaders.pShadowShader, "Point Light Shadow" };
-		ImGui::Separator();
-
-		if (ImGui::MenuItem("Point"))
-			selected = { shaders.pointShader, "Point" };
-		if (ImGui::MenuItem("Line"))
-			selected = { shaders.lineShader, "Line" };
-		if (ImGui::MenuItem("Collider"))
-			selected = { shaders.colliderShader, "Collider" };
-		ImGui::Separator();
-
-		if (ImGui::MenuItem("Bloom 1"))
-			selected = { shaders.bloomShader, "Bloom 1" };
-		if (ImGui::MenuItem("Bloom 2"))
-			selected = { shaders.bloom2Shader, "Bloom 2" };
-		if (ImGui::MenuItem("Bloom 3"))
-			selected = { shaders.bloom3Shader, "Bloom 3" };
-
-		ImGui::Separator();
-		if (ImGui::MenuItem("Tonemap"))
-			selected = { shaders.tonemapShader, "Tonemap" };
-		if (ImGui::MenuItem("Texture"))
-			selected = { shaders.textureShader, "Texture" };
-		if (ImGui::MenuItem("Sky"))
-			selected = { shaders.skyShader, "Sky" };
-		if (ImGui::MenuItem("Skybox"))
-			selected = { shaders.skyboxShader, "Skybox" };
-
-		return selected;
-	}
-	int FindShaderPanelBy(std::vector<std::shared_ptr<Panel>>& panels, std::shared_ptr<Renderer::Shader> shader)
-	{
-		for (int i = 0; i < panels.size(); i++)
-		{
-			auto shaderPanel = dynamic_cast<ShadersPanel*>(panels[i].get());
-			if (shaderPanel && shaderPanel->shaderView.Shader() == shader)
-			{
-				return i;
-			}
-		}
-		return -1;
-	}
 	void Editor::DrawPanelManager()
 	{
 		if (ImGui::BeginMenu("Panels"))
@@ -351,27 +293,6 @@ namespace Nork::Editor
 			if (ImGui::MenuItem("New Viewport"))
 			{
 				AddViewportPanel();
-			}
-			// if (ImGui::MenuItem("New ColliderPanel"))
-			// {
-			// 	panels.push_back(std::make_shared<ColliderEditorPanel>());
-			// }
-			if (ImGui::BeginMenu("Shaders"))
-			{
-				auto shader = SelectShaderFromRenderer(engine);
-				if (shader.first)
-				{
-					int idx = FindShaderPanelBy(panels, shader.first);
-					if (idx > 0)
-					{
-						panels[idx]->panelState.setFocus = true;
-					}
-					else
-					{
-						panels.push_back(std::make_shared<ShadersPanel>(shader.first, shader.second));
-					}
-				}
-				ImGui::EndMenu();
 			}
 			ImGui::EndMenu();
 		}

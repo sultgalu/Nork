@@ -2,7 +2,6 @@
 
 #include "Core/Engine.h"
 #include "Panels/include/Panel.h"
-#include "Panels/include/ShadersPanel.h"
 #include "Menus/include/Menu.h"
 
 namespace Nork::Editor {
@@ -34,7 +33,6 @@ namespace Nork::Editor {
 		}
 	private:
 		std::vector<std::shared_ptr<Panel>> panels;
-		std::vector<std::shared_ptr<ShadersPanel>> shaderPanels;
 		std::vector<std::shared_ptr<Menu>> menus;
 		CommonData data;
 		Engine& engine;

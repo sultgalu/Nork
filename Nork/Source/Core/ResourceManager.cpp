@@ -1,6 +1,5 @@
 #include "ResourceManager.h"
 #include "Modules/Renderer/LoadUtils.h"
-#include "Modules/Renderer/Objects/Texture/TextureBuilder.h"
 #include "Modules/Renderer/GLTF/GLTFBuilder.h"
 #include "Modules/Renderer/MeshFactory.h"
 #include "RenderingSystem.h"
@@ -107,8 +106,8 @@ namespace Nork {
 	}
 	
 	template Resources<std::shared_ptr<Components::Model>>;
-	template Resources<Renderer::Mesh>;
-	template Resources<std::shared_ptr<Renderer::Texture2D>>;
+	// template Resources<Renderer::Mesh>;
+	// template Resources<std::shared_ptr<Renderer::Texture2D>>;
 
 	static Renderer::GLTF::GLTF LoadGLTF(const fs::path& path)
 	{
@@ -121,7 +120,7 @@ namespace Nork {
 	}
 	static void ParseMaterial(Renderer::Material& material, const Renderer::GLTF::Material& mat, const Renderer::GLTF::GLTF& gltf)
 	{
-		material->baseColorFactor = mat.pbrMetallicRoughness.baseColorFactor;
+		/*material->baseColorFactor = mat.pbrMetallicRoughness.baseColorFactor;
 		material->roughnessFactor = mat.pbrMetallicRoughness.roughnessFactor;
 		material->metallicFactor = mat.pbrMetallicRoughness.metallicFactor;
 		if (mat.pbrMetallicRoughness.baseColorTexture.Validate())
@@ -138,14 +137,15 @@ namespace Nork {
 		{
 			auto& texId = gltf.images[gltf.textures[mat.normalTexture.index].source].uri;
 			material.SetTextureMap(TextureResources::Instance().Get(texId), Renderer::TextureMap::Normal);
-		}
+		}*/
 	}
-	
+	/*
 	template<> MeshResources::ResourceType MeshResources::Load(const fs::path& path) const
 	{
 		Logger::Info("Loading mesh ", path);
+		std::unreachable();
 
-		return RenderingSystem::Instance().world.AddMesh(
+		/*return RenderingSystem::Instance().world.AddMesh(
 			FileUtils::ReadBinary<Renderer::Data::Vertex>((path / "vertices.bin").string()),
 			FileUtils::ReadBinary<uint32_t>((path / "indices.bin").string()));
 	}
@@ -155,16 +155,17 @@ namespace Nork {
 
 		auto image = Renderer::LoadUtils::LoadImage(path.string());
 
-		using namespace Renderer;
+		std::unreachable();
 		return TextureBuilder()
 			.Attributes(TextureAttributes{ .width = image.width, .height = image.height, .format = image.format })
 			.Params(TextureParams::Tex2DParams())
 			.Create2DWithData(image.data.data());
-	}
+	}*/
 	template<> ModelResources::ResourceType ModelResources::Load(const fs::path& path) const
 	{
+		std::unreachable();
 		Logger::Info("Loading model ", path);
-		auto gltf = LoadGLTF(path);
+		/*auto gltf = LoadGLTF(path);
 		auto model = std::make_shared<Components::Model>();
 
 		if (gltf.meshes.empty())
@@ -181,8 +182,10 @@ namespace Nork {
 			model->meshes.push_back(mesh);
 		}
 		
-		return model;
+		return model;*/
 	}
+	
+	/*
 	
 	template<> void MeshResources::Set(MeshResources::ResourceType& dst, const MeshResources::ResourceType& src) const
 	{
@@ -192,11 +195,6 @@ namespace Nork {
 	{
 		std::unreachable();
 	}
-	template<> void ModelResources::Set(ModelResources::ResourceType& dst, const ModelResources::ResourceType& src) const
-	{
-		*dst = *src;
-	}
-
 	template<> void MeshResources::Save(const MeshResources::ResourceType& val, const fs::path& path) const
 	{
 		Logger::Info("Saving Mesh to ", path);
@@ -207,10 +205,17 @@ namespace Nork {
 	}
 	template<> void TextureResources::Save(const TextureResources::ResourceType& val, const fs::path& path) const
 	{
-		Logger::Info("Saving Image (", val->GetWidth(), "x", val->GetHeight(), "x", 
+		std::unreachable();
+		Logger::Info("Saving Image (", val->GetWidth(), "x", val->GetHeight(), "x",
 			Renderer::TextureFormatToString(val->GetAttributes().format), ") to ", path);
 		Renderer::LoadUtils::WriteTexture(*val, path.string(), Renderer::ImageFormat::BMP);
 	}
+	*/
+	template<> void ModelResources::Set(ModelResources::ResourceType& dst, const ModelResources::ResourceType& src) const
+	{
+		*dst = *src;
+	}
+
 	template<> void ModelResources::Save(const ModelResources::ResourceType& val, const fs::path& path) const
 	{
 		Logger::Info("Saving Model to ", path);
@@ -221,19 +226,20 @@ namespace Nork {
 		builder.AddScene(true);
 		for (auto& mesh : val->meshes)
 		{
-			MeshResources::Instance().Save(mesh.mesh);
+			// MeshResources::Instance().Save(mesh.mesh);
 			auto tryAddTex = [&](Renderer::TextureMap type)
 			{
-				if (!mesh.material.HasDefault(type))
-					imageUris.push_back({ type, TextureResources::Instance().Uri(mesh.material.GetTextureMap(type)).string()});
+				std::unreachable();
+				//if (!mesh.material.HasDefault(type))
+					//imageUris.push_back({ type, TextureResources::Instance().Uri(mesh.material.GetTextureMap(type)).string()});
 			};
 			using enum Renderer::TextureMap;
 			tryAddTex(BaseColor);
 			tryAddTex(MetallicRoughness);
 			tryAddTex(Normal);
-			builder
-				.AddMesh(mesh.mesh, MeshResources::Instance().Uri(mesh.mesh).string(), matIdx++)
-				.AddMaterial(mesh.material, imageUris); // don't need to add if it equals the (gltf) default one
+			// builder
+			// 	.AddMesh(mesh.mesh, MeshResources::Instance().Uri(mesh.mesh).string(), matIdx++)
+			// 	.AddMaterial(mesh.material, imageUris); // don't need to add if it equals the (gltf) default one
 		}
 
 		SaveGLTF(builder.Get(), path);
@@ -243,7 +249,9 @@ namespace Nork {
 	{
 		Logger::Info("Importing model from ", path);
 
-		if (path.extension() == ".gltf")
+		std::unreachable();
+
+		/*if (path.extension() == ".gltf")
 		{
 			auto model = GLTFReader(path).Read();
 			ModelResources::Instance().Add(model, path.stem());
@@ -276,7 +284,7 @@ namespace Nork {
 			ModelResources::Instance().SaveAs(model, path.stem());
 			return model;
 		}
-		throw GeneralResourceException("no importer for " + path.extension().string());
+		throw GeneralResourceException("no importer for " + path.extension().string());*/
 	}
 	void ResourceUtils::ExportModel(const ModelResources::ResourceType& model, const fs::path& path)
 	{
@@ -286,21 +294,22 @@ namespace Nork {
 		builder.AddScene(true);
 		for (auto& meshMat : model->meshes)
 		{
-			builder.AddMesh(meshMat.mesh, MeshResources::Instance().Uri(meshMat.mesh).string(), matIdx, path.parent_path());
+			// builder.AddMesh(meshMat.mesh, MeshResources::Instance().Uri(meshMat.mesh).string(), matIdx, path.parent_path());
 
 			std::vector<std::pair<Renderer::TextureMap, std::string>> imageUris;
 			auto tryAddTex = [&](Renderer::TextureMap type)
 			{
-				auto texId = TextureResources::Instance().Uri(meshMat.material.GetTextureMap(type)).string();
-				Renderer::LoadUtils::WriteTexture(*meshMat.material.GetTextureMap(type), path.string(), Renderer::ImageFormat::JPEG);
-				imageUris.push_back({ type, texId });
+				std::unreachable();
+				// auto texId = TextureResources::Instance().Uri(meshMat.material.GetTextureMap(type)).string();
+				// Renderer::LoadUtils::WriteTexture(*meshMat.material.GetTextureMap(type), path.string(), Renderer::ImageFormat::JPEG);
+				// imageUris.push_back({ type, texId });
 			};
 			using enum Renderer::TextureMap;
 			tryAddTex(BaseColor);
 			tryAddTex(MetallicRoughness);
 			tryAddTex(Normal);
 
-			builder.AddMaterial(meshMat.material, imageUris);
+			//builder.AddMaterial(meshMat.material, imageUris);
 			matIdx++;
 		}
 		fs::create_directory(path.parent_path());
@@ -308,7 +317,8 @@ namespace Nork {
 	}
 	static ModelResources::ResourceType& GetCube()
 	{
-		static bool initialized = false;
+		std::unreachable();
+		/*static bool initialized = false;
 		static fs::path gltfUri = "templates/cube_template.gltf";
 		if (!initialized)
 		{
@@ -327,7 +337,7 @@ namespace Nork {
 				initialized = true;
 			}
 		}
-		return ModelResources::Instance().Get(gltfUri);
+		return ModelResources::Instance().Get(gltfUri);*/
 	}
 	ModelResources::ResourceType& ResourceUtils::GetTemplate(ModelTemplate type)
 	{
