@@ -7,18 +7,18 @@ class VulkanContext
 public:
     VulkanContext(const VulkanWindow& window)
     {
+        ctx = std::make_shared<vk::raii::Context>();
         createInstance();
-        surface = window.createSurface(instance);
+        surface = window.createSurface(**instance2);
         setupDebugMessenger();
     }
     ~VulkanContext()
     {
-        vkDestroySurfaceKHR(instance, surface, nullptr);
+        vkDestroySurfaceKHR(**instance2, surface, nullptr);
         if (enableValidationLayers)
         {
-            DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+            DestroyDebugUtilsMessengerEXT(**instance2, debugMessenger, nullptr);
         }
-        vkDestroyInstance(instance, nullptr);
     }
     static std::vector<const char*> getRequiredExtensions()
     {
@@ -68,16 +68,14 @@ public:
 
     void createInstance()
     {
-        VkApplicationInfo appInfo{};
-        appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+        vk::ApplicationInfo appInfo{};
         appInfo.pApplicationName = "Hello Triangle";
         appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
         appInfo.pEngineName = "No Engine";
         appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
         appInfo.apiVersion = VK_API_VERSION_1_2;
 
-        VkInstanceCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+        vk::InstanceCreateInfo createInfo{};
         createInfo.pApplicationInfo = &appInfo;
 
         auto extensions = getRequiredExtensions();
@@ -103,7 +101,7 @@ public:
             createInfo.pNext = nullptr;
         }
 
-        vkCreateInstance(&createInfo, nullptr, &instance) == VkSuccess();
+        instance2 = std::make_shared<vk::raii::Instance>(*ctx, createInfo);
     }
     void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
     {
@@ -146,7 +144,7 @@ public:
             return;
         VkDebugUtilsMessengerCreateInfoEXT createInfo{};
         populateDebugMessengerCreateInfo(createInfo);
-        CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) == VkSuccess();
+        CreateDebugUtilsMessengerEXT(**instance2, &createInfo, nullptr, &debugMessenger) == VkSuccess();
     }
     VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
     {
@@ -172,17 +170,18 @@ public:
     std::vector<VkPhysicalDevice> physicalDevices() const
     {
         uint32_t deviceCount = 0;
-        vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+        vkEnumeratePhysicalDevices(**instance2, &deviceCount, nullptr);
         if (deviceCount == 0)
         {
             throw std::runtime_error("failed to find GPUs with Vulkan support!");
         }
         std::vector<VkPhysicalDevice> devices(deviceCount);
-        vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+        vkEnumeratePhysicalDevices(**instance2, &deviceCount, devices.data());
         return devices;
     }
 public:
-    VkInstance instance;
+    std::shared_ptr<vk::raii::Context> ctx;
+    std::shared_ptr<vk::raii::Instance> instance2;
     VkDebugUtilsMessengerEXT debugMessenger;
     VkSurfaceKHR surface;
 

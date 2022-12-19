@@ -88,10 +88,11 @@ public:
         clearValues.reserve(fb.renderPassConfig.attachments.size());
         for (auto& att : fb.renderPassConfig.attachments)
         {
+            auto comps = vk::componentCount((vk::Format)att.format);
             VkClearValue clearValue{};
-            if (att.format == VK_FORMAT_D32_SFLOAT)
+            if (att.format == VK_FORMAT_D32_SFLOAT || att.format == VK_FORMAT_D16_UNORM)
                 clearValue.depthStencil = { 1.0f, 0 };
-            else if (att.format == VK_FORMAT_R8G8B8A8_SRGB)
+            else if (att.format == VK_FORMAT_R8G8B8A8_SRGB || att.format == VK_FORMAT_R8G8B8A8_UNORM)
                 clearValue.color = { {0.0f, 0.0f, 0.0f, 1.0f} };
             else
                 std::unreachable();
@@ -232,12 +233,12 @@ public:
         vkCmdPipelineBarrier(cmdBuf.handle, srcStage, dstStage, 0,0, nullptr, 0, nullptr, barriers.size(), barriers.data());
         return *this;
     }
-    Self& CopyBufferToImage(const Buffer& buffer, const Image& img, VkBufferImageCopy region, VkImageLayout layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+    Self& CopyBufferToImage(const Buffer& buffer, const ImageBase& img, VkBufferImageCopy region, VkImageLayout layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
     {
-        vkCmdCopyBufferToImage(cmdBuf.handle, buffer.handle , img.handle, layout, 1, &region);
+        vkCmdCopyBufferToImage(cmdBuf.handle, buffer.handle , *img, layout, 1, &region);
         return *this;
     }
-    Self& CopyImage(const Image& src, VkImageLayout srcLayout, VkImageAspectFlags srcAspect, const Image& dst, VkImageLayout dstLayout, VkImageAspectFlags dstAspect, VkExtent3D extent)
+    Self& CopyImage(const ImageBase& src, VkImageLayout srcLayout, VkImageAspectFlags srcAspect, const ImageBase& dst, VkImageLayout dstLayout, VkImageAspectFlags dstAspect, VkExtent3D extent)
     {
         VkImageCopy copy{};
         copy.dstSubresource.aspectMask = dstAspect;
@@ -253,7 +254,7 @@ public:
         copy.srcOffset = VkOffset3D{ 0, 0, 0 };
         copy.dstOffset = VkOffset3D{ 0, 0, 0 };
         copy.extent = extent;
-        vkCmdCopyImage(cmdBuf.handle, src.handle, srcLayout, dst.handle, dstLayout, 1, &copy);
+        vkCmdCopyImage(cmdBuf.handle, *src, srcLayout, *dst, dstLayout, 1, &copy);
         return *this;
     }
     Self& CopyBuffer(const Buffer& src, const Buffer& dst, VkDeviceSize size, VkDeviceSize srcOffs = 0, VkDeviceSize dstOffs = 0)

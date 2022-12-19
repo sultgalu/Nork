@@ -6,15 +6,27 @@
 class Framebuffer
 {
 public:
+    // using Base = vk::raii::Framebuffer;
+
     Framebuffer(const Framebuffer&) = delete;
-    static std::vector<VkImageView> ToImageViews(const std::vector<std::shared_ptr<Image>>& attachments)
+    static std::vector<VkImageView> ToImageViews(const std::vector<std::shared_ptr<ImageView>>& attachments)
     {
         std::vector<VkImageView> imgViews;
         imgViews.reserve(attachments.size());
         for (auto& att : attachments)
-            imgViews.push_back(att->ImageView());
+            imgViews.push_back(**att);
         return imgViews;
     }
+    Framebuffer(uint32_t width, uint32_t height, const RenderPass& renderPass, const std::vector<std::shared_ptr<ImageView>>& attachments)
+        : Framebuffer(width, height, renderPass, ToImageViews(attachments))
+    {
+        this->attachments = attachments;
+    }
+    ~Framebuffer()
+    {
+        vkDestroyFramebuffer(Device::Instance().device, handle, nullptr);
+    }
+private:
     Framebuffer(uint32_t width, uint32_t height, const RenderPass& renderPass, const std::vector<VkImageView>& attachments)
         : width(width), height(height), renderPassConfig(renderPass.config)
     {
@@ -29,15 +41,9 @@ public:
 
         vkCreateFramebuffer(Device::Instance().device, &framebufferInfo, nullptr, &handle) == VkSuccess();
     }
-    Framebuffer(uint32_t width, uint32_t height, const RenderPass& renderPass, const std::vector<std::shared_ptr<Image>>& attachments)
-        : Framebuffer(width, height, renderPass, ToImageViews(attachments))
-    {}
-    ~Framebuffer()
-    {
-        vkDestroyFramebuffer(Device::Instance().device, handle, nullptr);
-    }
 public:
     VkFramebuffer handle;
+    std::vector<std::shared_ptr<ImageView>> attachments;
     const RenderPass::Config& renderPassConfig; // compatibility
     const uint32_t width, height;
 };

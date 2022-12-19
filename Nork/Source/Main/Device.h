@@ -6,13 +6,17 @@
 class Device
 {
 public:
-    Device(const VulkanContext& ctx)
+    Device(std::shared_ptr<VulkanContext> ctx)
+        : ctx(ctx)
     {
         instance = this;
-        physicalDevice = choosePhysicalDevice(ctx);
+        physicalDevice = choosePhysicalDevice(*ctx);
+        physicalDevice2 = std::make_shared<vk::raii::PhysicalDevice>(*ctx->instance2, physicalDevice);
         createLogicalDevice();
-        swapChainSupport = querySwapChainSupport(physicalDevice, ctx.surface);
-        vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+        instance2 = std::make_shared<vk::raii::Device>(*physicalDevice2, vk::Device(device));
+        instance3 = instance2.get();
+        swapChainSupport = querySwapChainSupport(physicalDevice, ctx->surface);
+        memProperties = physicalDevice2->getMemoryProperties();
         vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
     }
     VkPhysicalDevice choosePhysicalDevice(const VulkanContext& ctx)
@@ -25,10 +29,6 @@ public:
             }
         }
         throw std::runtime_error("failed to find a suitable GPU!");
-    }
-    ~Device()
-    {
-        vkDestroyDevice(device, nullptr);
     }
     void createLogicalDevice()
     {
@@ -162,7 +162,7 @@ public:
         return requiredExtensions.empty();
     }
 
-    uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+    uint32_t findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties)
     {
         for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
         {
@@ -196,6 +196,10 @@ public:
     {
         return *instance;
     }
+    static vk::raii::Device& Instance2()
+    {
+        return *instance3;
+    }
     VkPhysicalDeviceProperties PhysicalDeviceProperties()
     {
         VkPhysicalDeviceProperties properties{};
@@ -204,8 +208,11 @@ public:
     }
 public:
     static Device* instance;
+    static vk::raii::Device* instance3;
+    std::shared_ptr<vk::raii::Device> instance2;
 
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    std::shared_ptr<vk::raii::PhysicalDevice> physicalDevice2;
     VkDevice device;
 
     uint32_t graphicsQueueFamily;
@@ -215,11 +222,13 @@ public:
 
     VkPhysicalDeviceProperties physicalDeviceProperties;
     SwapChainSupportDetails swapChainSupport;
-    VkPhysicalDeviceMemoryProperties memProperties;
+    vk::PhysicalDeviceMemoryProperties memProperties;
 
     const std::vector<const char*> deviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };
+    std::shared_ptr<VulkanContext> ctx;
 };
 
 Device* Device::instance = nullptr;
+vk::raii::Device* Device::instance3 = nullptr;

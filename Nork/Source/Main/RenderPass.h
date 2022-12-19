@@ -70,6 +70,7 @@ struct AttachmentDescription : VkAttachmentDescription
     static AttachmentDescription ColorForLaterCopy(VkFormat format = VK_FORMAT_R8G8B8A8_SRGB, bool clear = true)
     {
         auto att = AttachmentDescription(format)
+            // .LoadOp_Clear()
             .StoreOp_Store()
             .FinalLayout_TransferSrc();
         return clear ? att.LoadOp_Clear() : att;

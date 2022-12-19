@@ -3,21 +3,31 @@
 #include "DeviceMemory.h"
 #include "Sampler.h"
 
-class Image
+struct Format
+{
+    constexpr static auto rgba8Unorm = vk::Format::eR8G8B8A8Unorm;
+    constexpr static auto rgba8Ui = vk::Format::eR8G8B8A8Uint;
+    constexpr static auto rgba8Srgb = vk::Format::eR8G8B8A8Srgb;
+    constexpr static auto rgba16f = vk::Format::eR16G16B16A16Sfloat;
+    constexpr static auto rgba32f = vk::Format::eR32G32B32A32Sfloat;
+    constexpr static auto depth32 = vk::Format::eD32Sfloat;
+    constexpr static auto depth16 = vk::Format::eD16Unorm;
+};
+
+class ImageBase : public vk::raii::Image
 {
 public:
-    Image(const Image&) = delete;
-    Image() = default;
-    VkImageMemoryBarrier Barrier(VkImageLayout oldLayout, VkImageLayout newLayout, VkAccessFlags srcAccess, VkAccessFlags dstAccess)
+    using vk::raii::Image::Image;
+    VkImageMemoryBarrier Barrier(vk::ImageLayout oldLayout, vk::ImageLayout newLayout, 
+        vk::AccessFlags srcAccess, vk::AccessFlags dstAccess, vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor)
     {
-        VkImageMemoryBarrier barrier{};
-        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        vk::ImageMemoryBarrier barrier;
         barrier.oldLayout = oldLayout;
         barrier.newLayout = newLayout;
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.image = handle;
-        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.image = **this;
+        barrier.subresourceRange.aspectMask = aspect;
         barrier.subresourceRange.baseMipLevel = 0;
         barrier.subresourceRange.levelCount = 1;
         barrier.subresourceRange.baseArrayLayer = 0;
@@ -26,101 +36,97 @@ public:
         barrier.dstAccessMask = dstAccess;
         return barrier;
     }
+    ~ImageBase()
+    {
+        ;
+    }
     virtual uint32_t Width() const = 0;
     virtual uint32_t Height() const = 0;
-    virtual VkFormat Format() const = 0;
-    virtual VkImageView ImageView() const = 0;
-    virtual std::shared_ptr<Sampler> Sampler() const = 0;
-public:
-    VkImage handle;
-
+    virtual vk::Format Format() const = 0;
 };
-class SwapChainImage : public Image
+class SwapChainImage : public ImageBase
 {
 public:
     SwapChainImage(VkImage handle, const VkSwapchainCreateInfoKHR& createInfo)
+        : ImageBase(Device::Instance2(), handle)
     {
-        this->handle = handle;
         this->createInfo = createInfo;
     }
     virtual uint32_t Width() const { return createInfo.imageExtent.width; }
     virtual uint32_t Height() const { return createInfo.imageExtent.height; }
-    virtual VkFormat Format() const { return createInfo.imageFormat; }
-    virtual VkImageView ImageView() const
-    {
-        std::unreachable();
-    }
-    virtual std::shared_ptr<class Sampler> Sampler() const
-    {
-        std::unreachable();
-    }
+    virtual vk::Format Format() const { std::unreachable(); return Format::rgba8Ui; } // { return createInfo.imageFormat; }
 public:
     VkSwapchainCreateInfoKHR createInfo;
 };
-class AppImage : public Image
+struct ImageCreateInfo : vk::ImageCreateInfo
+{
+    ImageCreateInfo() = delete;
+    ImageCreateInfo(uint32_t width, uint32_t height, vk::Format format_, vk::ImageUsageFlags usage_)
+    {
+        imageType = vk::ImageType::e2D;
+        extent.width = width;
+        extent.height = height;
+        extent.depth = 1;
+        mipLevels = 1;
+        arrayLayers = 1;
+        format = format_;
+        tiling = vk::ImageTiling::eOptimal;
+        initialLayout = vk::ImageLayout::eUndefined;
+        usage = usage_;
+        samples = vk::SampleCountFlagBits::e1;
+        sharingMode = vk::SharingMode::eExclusive;
+    }
+};
+class Image : public ImageBase
 {
 public:
-    AppImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
-        VkMemoryPropertyFlags memFlags, VkImageAspectFlags aspectFlags, std::shared_ptr<class Sampler> sampler = nullptr)
-        : sampler(sampler)
+    Image(const ImageCreateInfo& createInfo, vk::MemoryPropertyFlags memFlags)
+        : ImageBase(Device::Instance2(), createInfo), createInfo(createInfo)
     {
-        createInfo = VkImageCreateInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        createInfo.imageType = VK_IMAGE_TYPE_2D;
-        createInfo.extent.width = width;
-        createInfo.extent.height = height;
-        createInfo.extent.depth = 1;
-        createInfo.mipLevels = 1;
-        createInfo.arrayLayers = 1;
-        createInfo.format = format;
-        createInfo.tiling = tiling;
-        createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        createInfo.usage = usage;
-        createInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-        createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-        vkCreateImage(Device::Instance().device, &createInfo, nullptr, &handle) == VkSuccess();
-
-        VkMemoryRequirements memRequirements;
-        vkGetImageMemoryRequirements(Device::Instance().device, handle, &memRequirements);
-        memory = std::make_shared<DeviceMemory>(memRequirements.size, memRequirements.memoryTypeBits, memFlags);
-
-        vkBindImageMemory(Device::Instance().device, handle, memory->handle, 0);
-
-        VkImageViewCreateInfo viewInfo{};
-        viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        viewInfo.image = handle;
-        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        viewInfo.format = format;
-        viewInfo.subresourceRange.aspectMask = aspectFlags;
-        viewInfo.subresourceRange.baseMipLevel = 0;
-        viewInfo.subresourceRange.levelCount = 1;
-        viewInfo.subresourceRange.baseArrayLayer = 0;
-        viewInfo.subresourceRange.layerCount = 1;
-
-        vkCreateImageView(Device::Instance().device, &viewInfo, nullptr, &imageViewHandle) == VkSuccess();
+        auto memreq = this->getMemoryRequirements();
+        VkMemoryAllocateInfo i;
+        memory = std::make_shared<DeviceMemory>(vk::MemoryAllocateInfo(memreq.size, 
+            Device::Instance().findMemoryType(memreq.memoryTypeBits, memFlags)));
+        
+        bindMemory(**memory, 0);
     }
-    ~AppImage()
+    uint32_t Width() const override { return createInfo.extent.width; }
+    uint32_t Height() const override { return createInfo.extent.height; }
+    vk::Format Format() const override { return createInfo.format; }
+public:
+    ImageCreateInfo createInfo;
+    std::shared_ptr<DeviceMemory> memory;
+};
+
+struct ImageViewCreateInfo : vk::ImageViewCreateInfo
+{
+    ImageViewCreateInfo() = delete;
+    ImageViewCreateInfo(std::shared_ptr<Image> img, vk::ImageAspectFlagBits aspect, vk::ImageViewType type = vk::ImageViewType::e2D)
+        : img(img)
     {
-        vkDestroyImageView(Device::Instance().device, imageViewHandle, nullptr);
-        vkDestroyImage(Device::Instance().device, handle, nullptr);
+        image = **img;
+        viewType = type;
+        format = img->Format();
+        subresourceRange.aspectMask = aspect;
+        subresourceRange.baseMipLevel = 0;
+        subresourceRange.levelCount = 1;
+        subresourceRange.baseArrayLayer = 0;
+        subresourceRange.layerCount = 1;
     }
-    virtual uint32_t Width() const { return createInfo.extent.width; }
-    virtual uint32_t Height() const { return createInfo.extent.height; }
-    virtual VkFormat Format() const { return createInfo.format; }
-    virtual VkImageView ImageView() const
+    std::shared_ptr<Image> img;
+};
+
+class ImageView : public vk::raii::ImageView
+{
+public:
+    ImageView(const ImageViewCreateInfo& createInfo, std::shared_ptr<class Sampler> sampler = nullptr)
+        : createInfo(createInfo), vk::raii::ImageView(Device::Instance2(), createInfo), sampler(sampler)
+    {}
+    std::shared_ptr<Image> Image()
     {
-        return imageViewHandle;
-    }
-    virtual std::shared_ptr<class Sampler> Sampler() const
-    {
-        return sampler;
+        return createInfo.img;
     }
 public:
-    VkImageView imageViewHandle;
+    ImageViewCreateInfo createInfo;
     std::shared_ptr<class Sampler> sampler;
-    VkImageCreateInfo createInfo;
-
-    std::shared_ptr<DeviceMemory> memory;
-    VkDeviceSize memOffset;
 };

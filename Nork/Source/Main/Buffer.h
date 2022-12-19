@@ -8,7 +8,7 @@ class Buffer
 {
 public:
     Buffer(const Buffer&) = delete;
-	Buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memFlags, bool autoMap = false)
+	Buffer(VkDeviceSize size, VkBufferUsageFlags usage, vk::MemoryPropertyFlags memFlags, bool autoMap = false)
 	{
         bufferInfo = VkBufferCreateInfo{};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -18,12 +18,13 @@ public:
 
         vkCreateBuffer(Device::Instance().device, &bufferInfo, nullptr, &handle) == VkSuccess();
 
-        VkMemoryRequirements memRequirements;
-        vkGetBufferMemoryRequirements(Device::Instance().device, handle, &memRequirements);
-        memory = std::make_shared<DeviceMemory>(memRequirements.size, memRequirements.memoryTypeBits, memFlags);
+        VkMemoryRequirements memreq;
+        vkGetBufferMemoryRequirements(Device::Instance().device, handle, &memreq);
+        memory = std::make_shared<DeviceMemory>(vk::MemoryAllocateInfo(memreq.size,
+            Device::Instance().findMemoryType(memreq.memoryTypeBits, memFlags)));
 
         memOffset = 0;
-        vkBindBufferMemory(Device::Instance().device, handle, memory->handle, memOffset);
+        vkBindBufferMemory(Device::Instance().device, handle, **memory, memOffset);
         if (autoMap)
             memory->Map();
 	}

@@ -74,6 +74,9 @@ namespace fs = std::filesystem;
 #include <glm/gtx/matrix_decompose.hpp>
 
 #include <vulkan/vulkan.hpp>
+// #define VULKAN_HPP_NO_CONSTRUCTORS
+#include <vulkan/vulkan_raii.hpp>
+#include <vulkan/vulkan_format_traits.hpp>
 //#define GLFW_INCLUDE_VULKAN
 #include <glfw/glfw3.h>
 

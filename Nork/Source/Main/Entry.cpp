@@ -118,7 +118,11 @@ private:
         return attributeDescriptions;
     }
 };
-
+struct ASD // this is how to extend enums
+{
+    using enum vk::MemoryPropertyFlagBits;
+    static constexpr auto hostVisibleCoherent = eHostVisible | eHostCoherent;
+};
 class HelloTriangleApplication
 {
 public:
@@ -141,6 +145,8 @@ public:
             vkDestroySemaphore(device.device, imageAvailableSemaphores[i], nullptr);
             vkDestroyFence(device.device, inFlightFences[i], nullptr);
         }
+        vkDestroyDescriptorPool(*Device::Instance2(), imguiPool, nullptr);
+        ImGui_ImplVulkan_Shutdown();
     }
 private:
     void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
@@ -221,16 +227,16 @@ private:
         auto image = Renderer::LoadUtils::LoadImage(path, true);
         auto imgSize = image.data.size();
 
-        Buffer stagingBuffer(imgSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-        memcpy(stagingBuffer.memory->Map(0, imgSize), image.data.data(), imgSize);
+        using enum vk::MemoryPropertyFlagBits;
+        Buffer stagingBuffer(imgSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, eHostVisible | eHostCoherent);
+        memcpy(stagingBuffer.memory->Map(), image.data.data(), imgSize);
 
-        auto texImg = std::make_shared<AppImage>(image.width, image.height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-            VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT,
-            textureSampler);
+        auto texImg = std::make_shared<Image>(ImageCreateInfo(image.width, image.height, Format::rgba8Unorm,
+            vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled), eDeviceLocal);
 
-        transitionImageLayout(texImg->handle, texImg->Format(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        transitionImageLayout(*texImg.operator*(), (VkFormat)texImg->Format(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
         copyBufferToImage(stagingBuffer, *texImg, image.width, image.height);
-        transitionImageLayout(texImg->handle, texImg->Format(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        transitionImageLayout(**texImg, (VkFormat)texImg->Format(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         return texImg;
     }
     void createIndexBuffer()
@@ -238,14 +244,14 @@ private:
         uint32_t stride = sizeof(indices[0]) * indices.size();
         VkDeviceSize bufferSize = stride * drawRepeat;
 
-        Buffer stagingBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, true);
+        using enum vk::MemoryPropertyFlagBits;
+        Buffer stagingBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, eHostVisible | eHostCoherent, true);
         for (size_t i = 0; i < drawRepeat; i++)
         {
             memcpy((char*)stagingBuffer.Ptr() + stride * i, indices.data(), stride);
         }
         indexBuffer = std::make_shared<Buffer>(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            vk::MemoryPropertyFlagBits::eDeviceLocal);
 
         copyBuffer(stagingBuffer, *indexBuffer, bufferSize);
     }
@@ -253,11 +259,12 @@ private:
     {
         VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
-        Buffer stagingBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        using enum vk::MemoryPropertyFlagBits;
+        Buffer stagingBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, eHostVisible | eHostCoherent);
 
-        memcpy(stagingBuffer.memory->Map(0, bufferSize), vertices.data(), (size_t)bufferSize);
+        memcpy(stagingBuffer.memory->Map(), vertices.data(), (size_t)bufferSize);
         vertexBuffer = std::make_shared<Buffer>(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            vk::MemoryPropertyFlagBits::eDeviceLocal);
 
         copyBuffer(stagingBuffer, *vertexBuffer, bufferSize);
     }
@@ -358,9 +365,9 @@ private:
     {
         uint32_t gPosAtt = 0, gColAtt = 1, lPassAtt = 2, depthAtt = 3;
         RenderPass::Config config(4, 3);
-        config.Attachment(gPosAtt, AttachmentDescription::ColorInternalUse(VK_FORMAT_R8G8B8A8_SRGB).FinalLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL));
-        config.Attachment(gColAtt, AttachmentDescription::ColorInternalUse(VK_FORMAT_R8G8B8A8_SRGB).FinalLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL));
-        config.Attachment(lPassAtt, AttachmentDescription::ColorForLaterCopy(VK_FORMAT_R8G8B8A8_SRGB));
+        config.Attachment(gPosAtt, AttachmentDescription::ColorInternalUse((VkFormat)Format::rgba8Unorm).FinalLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL));
+        config.Attachment(gColAtt, AttachmentDescription::ColorInternalUse((VkFormat)Format::rgba8Unorm).FinalLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL));
+        config.Attachment(lPassAtt, AttachmentDescription::ColorForLaterCopy((VkFormat)Format::rgba8Unorm).FinalLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
         config.Attachment(depthAtt, AttachmentDescription::CleanDepth());
 
         auto gPass = SubPass(0)
@@ -398,7 +405,25 @@ private:
 
         renderPass = std::make_shared<RenderPass>(config);
     }
+    void createRenderPassUI()
+    {
+        uint32_t colAtt = 0, depthAtt = 1;
+        RenderPass::Config config(1, 1);
+        config.Attachment(colAtt, AttachmentDescription::ColorForLaterCopy((VkFormat)Format::rgba8Unorm, true));
 
+        auto sPass = SubPass(0)
+            .ColorAttachment(colAtt);
+
+        config.AddSubPass(sPass);
+
+        config.DependencyExternalSrc(sPass, SubPassDependency()
+            .SrcStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT)
+            .DstStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT)
+            .SrcAccessMask(VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT)
+            .DstAccessMask(VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT));
+
+        renderPassUI = std::make_shared<RenderPass>(config);
+    }
     std::unordered_map<VkDescriptorType, uint32_t> DescriptorCounts(const std::vector<std::shared_ptr<DescriptorSetLayout>>& layouts)
     {
         std::unordered_map<VkDescriptorType, uint32_t> result;
@@ -410,25 +435,34 @@ private:
     void initVulkan()
     {
         createRenderPass();
-        swapChain = std::make_shared<SwapChain>(ctx, window, 3);
+        createRenderPassUI();
+        swapChain = std::make_shared<SwapChain>(*ctx, window, 3);
 
         textureSampler = std::make_shared<Sampler>();
 
         auto w = swapChain->swapChainExtent.width;
         auto h = swapChain->swapChainExtent.height;
-        depthImage = std::make_shared<AppImage>(w, h, VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL,
-            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
-        fbColor = std::make_shared<AppImage>(w, h, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, textureSampler);
-        gPos = std::make_shared<AppImage>(w, h, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, textureSampler);
-        gCol = std::make_shared<AppImage>(w, h, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, textureSampler);
-        fb = std::make_shared<Framebuffer>(w, h, *renderPass, std::vector<std::shared_ptr<Image>>{ gPos, gCol, fbColor, depthImage });
+        using enum vk::ImageUsageFlagBits;
+        auto depthImage_ = std::make_shared<Image>(ImageCreateInfo(w, h, Format::depth32, eDepthStencilAttachment),
+            vk::MemoryPropertyFlagBits::eDeviceLocal);
+        depthImage = std::make_shared<ImageView>(ImageViewCreateInfo(depthImage_, vk::ImageAspectFlagBits::eDepth), textureSampler);
+        auto fbColor_ = std::make_shared<Image>(ImageCreateInfo(w, h, Format::rgba8Unorm, eColorAttachment | eInputAttachment | eTransferSrc | eSampled),
+            vk::MemoryPropertyFlagBits::eDeviceLocal);
+        fbColor = std::make_shared<ImageView>(ImageViewCreateInfo(fbColor_, vk::ImageAspectFlagBits::eColor), textureSampler);
 
+        auto gPos_ = std::make_shared<Image>(ImageCreateInfo(w, h, Format::rgba8Unorm, eColorAttachment | eInputAttachment),
+            vk::MemoryPropertyFlagBits::eDeviceLocal);
+        gPos = std::make_shared<ImageView>(ImageViewCreateInfo(gPos_, vk::ImageAspectFlagBits::eColor), textureSampler);
+        auto gCol_ = std::make_shared<Image>(ImageCreateInfo(w, h, Format::rgba8Unorm, eColorAttachment | eInputAttachment),
+            vk::MemoryPropertyFlagBits::eDeviceLocal);
+        gCol = std::make_shared<ImageView>(ImageViewCreateInfo(gCol_, vk::ImageAspectFlagBits::eColor), textureSampler);
+        fb = std::make_shared<Framebuffer>(w, h, *renderPass, std::vector<std::shared_ptr<ImageView>>{ gPos, gCol, fbColor, depthImage });
+        // Imgui
+        auto uiImg = std::make_shared<Image>(ImageCreateInfo(w, h, Format::rgba8Unorm, eColorAttachment | eTransferSrc),
+            vk::MemoryPropertyFlagBits::eDeviceLocal);
+        auto uiImgView = std::make_shared<ImageView>(ImageViewCreateInfo(uiImg, vk::ImageAspectFlagBits::eColor), textureSampler);
+        fbUI = std::make_shared<Framebuffer>(w, h, *renderPassUI, std::vector<std::shared_ptr<ImageView>>{ uiImgView });
+        
         descriptorSetLayoutGPass = DescriptorSetLayout::Builder()
             .Binding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT)
             .Binding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
@@ -443,7 +477,9 @@ private:
             .Build();
 
         //descriptorPool = std::make_shared<DescriptorPool>(*descriptorSetLayoutGPass);
-        descriptorPool = std::make_shared<DescriptorPool>(DescriptorCounts({ descriptorSetLayoutGPass, descriptorSetLayoutLPass, descriptorSetLayoutPP }), 3);
+        descriptorPool = std::make_shared<DescriptorPool>(DescriptorCounts({
+            descriptorSetLayoutGPass, descriptorSetLayoutLPass, descriptorSetLayoutPP
+            }), 3);
         descriptorSet = std::make_shared<DescriptorSet>(*descriptorPool, *descriptorSetLayoutGPass, MAX_IMG_ARR_SIZE);
         descriptorSetLPass = std::make_shared<DescriptorSet>(*descriptorPool, *descriptorSetLayoutLPass);
         descriptorSetPP = std::make_shared<DescriptorSet>(*descriptorPool, *descriptorSetLayoutPP);
@@ -454,24 +490,31 @@ private:
 
         createVertexBuffer();
         createIndexBuffer();
+        vk::MemoryPropertyFlags hostVisibleFlags;
+        {
+            using enum vk::MemoryPropertyFlagBits;
+            hostVisibleFlags = eHostVisible | eHostCoherent | eDeviceLocal;
+        }
         drawCommandsBuffer = std::make_shared<Buffer>(sizeof(VkDrawIndexedIndirectCommand) * MAX_FRAMES_IN_FLIGHT * DRAW_BATCH_COUNT, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, true);
+            hostVisibleFlags, true);
 
         textureImage = createTextureImage("texture.jpg");
         textureImage2 = createTextureImage("clown.png");
+        textureView = std::make_shared<ImageView>(ImageViewCreateInfo(textureImage, vk::ImageAspectFlagBits::eColor), textureSampler);
+        textureView2 = std::make_shared<ImageView>(ImageViewCreateInfo(textureImage2, vk::ImageAspectFlagBits::eColor), textureSampler);
         uboStride = Device::Instance().physicalDeviceProperties.limits.minUniformBufferOffsetAlignment;
         if (uboStride < sizeof(uint32_t)) // never, but maybe i'll change uint32_t for a larger type
             uboStride = sizeof(uint32_t);
         uniformBuffer = std::make_shared<Buffer>(uboStride * MAX_FRAMES_IN_FLIGHT * DRAW_COUNT, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, true);
+            hostVisibleFlags, true);
         storageBuffer = std::make_shared<Buffer>(sizeof(SSBO) * MAX_FRAMES_IN_FLIGHT * DRAW_COUNT, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, true);
+            hostVisibleFlags, true);
         auto writer = descriptorSet->Writer()
             .Buffer(0, *uniformBuffer, 0, sizeof(uint32_t), true)
             .Buffer(1, *storageBuffer, 0, storageBuffer->memory->allocInfo.allocationSize);
         for (size_t i = 0; i < MAX_IMG_ARR_SIZE; i++)
         {
-            writer.Image(2, i % 3 ? *textureImage2 : *textureImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, i);
+            writer.Image(2, i % 3 ? *textureView2 : *textureView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, i);
         }
         writer.Write();
         descriptorSetLPass->Writer()
@@ -483,6 +526,7 @@ private:
             .Write();
 
         createSyncObjects();
+        initImgui();
     }
 
     void endSingleTimeCommands(CommandBuffer cmdBuffer)
@@ -520,7 +564,8 @@ private:
 
     void recordCommandBuffer(CommandBuffer& commandBuffer, uint32_t imageIndex)
     {
-        CommandBuilder(commandBuffer)
+        
+        auto builder = CommandBuilder(commandBuffer)
             .BeginCommands()
             .BeginRenderPass(*fb, *renderPass)
             .Viewport().Scissor()
@@ -542,26 +587,35 @@ private:
             .BindPipeline(*pipelinePP)
             .BindDescriptorSet(pipelinePP->layoutHandle, *descriptorSetPP)
             .DrawQuad()
-
             .EndRenderPass()
+
+            //.PipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            //    { // already converted to eTransferSrcOptimal by renderpass (attachment config)
+            //        fbUI->attachments[0]->Image()->Barrier(vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eColorAttachmentOptimal,
+            //            vk::AccessFlagBits::eColorAttachmentWrite, vk::AccessFlagBits::eColorAttachmentWrite)
+            //    })
+
+            .BeginRenderPass(*fbUI, *renderPassUI);
+        ImGui::Render();
+        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), builder.cmdBuf.handle);
+        builder.EndRenderPass()
             .PipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                {
-                    fbColor->Barrier(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                        VK_ACCESS_NONE, VK_ACCESS_TRANSFER_READ_BIT),
-                    swapChain->swapChainImages[imageIndex]->Barrier(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                        VK_ACCESS_NONE, VK_ACCESS_TRANSFER_WRITE_BIT),
+                { // already converted to eTransferSrcOptimal by renderpass (attachment config)
+                    fbUI->attachments[0]->Image()->Barrier(vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eTransferSrcOptimal,
+                        vk::AccessFlagBits::eColorAttachmentWrite, vk::AccessFlagBits::eTransferRead),
+                    swapChain->swapChainImages[imageIndex]->Barrier(vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal,
+                        vk::AccessFlagBits::eNone, vk::AccessFlagBits::eTransferWrite),
                 })
-            .CopyImage(*fbColor, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT, *swapChain->swapChainImages[imageIndex], 
+            .CopyImage(*fbUI->attachments[0]->Image(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT, *swapChain->swapChainImages[imageIndex],
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT, { swapChain->swapChainExtent.width, swapChain->swapChainExtent.height, 1 })
             .PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
                 {
                     //fbColor->Barrier(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                     //    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT),
-                    swapChain->swapChainImages[imageIndex]->Barrier(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-                        VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_NONE),
+                    swapChain->swapChainImages[imageIndex]->Barrier(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::ePresentSrcKHR,
+                        vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eNone),
                 })
             .EndCommands();
-        
     }
     
     void updateUniformBuffer(uint32_t currentImage)
@@ -614,6 +668,23 @@ private:
         while (!glfwWindowShouldClose(window.glfwWindow))
         {
             glfwPollEvents();
+
+            //imgui new frame
+            ImGui_ImplVulkan_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
+            //imgui commands
+            ImGui::ShowDemoWindow();
+           
+            if (ImGui::Begin("Viewport"))
+            {
+                ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+                ImGui::Image(viewportImgDs, ImVec2{ viewportPanelSize.x, viewportPanelSize.y });
+                ImGui::End();
+            }
+
+            ImGui::EndFrame();
+
             drawFrame();
             frames++;
             auto seconds = timer.ElapsedSeconds();
@@ -703,20 +774,93 @@ private:
         }
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
+    void initImgui()
+    {
+
+        //1: create descriptor pool for IMGUI
+        // the size of the pool is very oversize, but it's copied from imgui demo itself.
+        VkDescriptorPoolSize pool_sizes[] =
+        {
+            { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+            { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+        };
+
+        VkDescriptorPoolCreateInfo pool_info = {};
+        pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+        pool_info.maxSets = 1000;
+        pool_info.poolSizeCount = std::size(pool_sizes);
+        pool_info.pPoolSizes = pool_sizes;
+
+        vkCreateDescriptorPool(*Device::Instance2(), &pool_info, nullptr, &imguiPool);
+
+        // 2: initialize imgui library
+
+        //this initializes the core structures of imgui
+        ImGui::CreateContext();
+
+        //this initializes imgui for SDL
+        ImGui_ImplGlfw_InitForVulkan(window.glfwWindow, true);
+        // ImGui_ImplSDL2_InitForVulkan(_window);
+
+        //this initializes imgui for Vulkan
+        ImGui_ImplVulkan_InitInfo init_info = {};
+        init_info.Instance = **ctx->instance2;
+        init_info.PhysicalDevice = Device::Instance().physicalDevice;
+        init_info.Device = Device::Instance().device;
+        init_info.Queue = Device::Instance().graphicsQueue;
+        init_info.DescriptorPool = imguiPool;
+        init_info.MinImageCount = 3;
+        init_info.ImageCount = 3;
+        init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+        init_info.Subpass = 0;
+
+        ImGui_ImplVulkan_Init(&init_info, renderPassUI->handle);
+
+        //execute a gpu command to upload imgui font textures
+        auto cmdBuf = CommandBuilder(*commandPool)
+            .BeginCommands();
+        ImGui_ImplVulkan_CreateFontsTexture(cmdBuf.cmdBuf.handle);
+        cmdBuf.EndCommands();
+        endSingleTimeCommands(cmdBuf.cmdBuf);
+        //could use smt like below
+        //immediate_submit([&](VkCommandBuffer cmd)
+        //    {
+        //    });
+
+        //clear font textures from cpu data
+        ImGui_ImplVulkan_DestroyFontUploadObjects();
+
+        viewportImgDs = ImGui_ImplVulkan_AddTexture(textureSampler->handle, **fbColor, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    }
 private:
+    VkDescriptorSet viewportImgDs;
+
     VulkanWindow window = VulkanWindow(1920 * 0.8f, 1080 * 0.8f);
-    VulkanContext ctx = VulkanContext(window);
+    std::shared_ptr<VulkanContext> ctx = std::make_shared<VulkanContext>(window);
     Device device = Device(ctx);
     std::shared_ptr<RenderPass> renderPass;
     std::shared_ptr<SwapChain> swapChain;
 
-    std::shared_ptr<Image> depthImage;
-    std::shared_ptr<Image> gPos;
-    std::shared_ptr<Image> gCol;
-    std::shared_ptr<Image> fbColor;
+    std::shared_ptr<ImageView> depthImage;
+    std::shared_ptr<ImageView> gPos;
+    std::shared_ptr<ImageView> gCol;
+    std::shared_ptr<ImageView> fbColor;
     std::shared_ptr<Framebuffer> fb;
 
-    std::shared_ptr<DescriptorPool > descriptorPool;
+    std::shared_ptr<RenderPass> renderPassUI;
+    std::shared_ptr<Framebuffer> fbUI;
+    VkDescriptorPool imguiPool;
+    std::shared_ptr<DescriptorPool> descriptorPool;
 
     std::shared_ptr<DescriptorSetLayout> descriptorSetLayoutGPass;
     std::shared_ptr<DescriptorSet> descriptorSet;
@@ -778,6 +922,8 @@ private:
     std::shared_ptr<Sampler> textureSampler;
     std::shared_ptr<Image> textureImage;
     std::shared_ptr<Image> textureImage2;
+    std::shared_ptr<ImageView> textureView;
+    std::shared_ptr<ImageView> textureView2;
     uint32_t MAX_IMG_ARR_SIZE = 10;
     uint32_t DRAW_BATCH_COUNT = 5;
     uint32_t INSTANCE_COUNT = 2;

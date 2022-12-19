@@ -172,14 +172,14 @@ public:
 		VkDescriptorImageInfo info;
 		VkDescriptorType type;
 	};
-	Self& Image(uint32_t bindIdx, Image& img, VkImageLayout layout, VkDescriptorType type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, uint32_t arrIdx = 0)
+	Self& Image(uint32_t bindIdx, ImageView& img, VkImageLayout layout, VkDescriptorType type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, uint32_t arrIdx = 0)
 	{
 		images.push_back(Image_{
 			.arrIdx = arrIdx,
 			.bindIdx = bindIdx,
 			.info = VkDescriptorImageInfo{
-				.sampler = img.Sampler()->handle,
-				.imageView = img.ImageView(),
+				.sampler = img.sampler->handle,
+				.imageView = *img,
 				.imageLayout = layout,
 			},
 			.type = type
