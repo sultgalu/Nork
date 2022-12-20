@@ -130,7 +130,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>Source/PCH;Source;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Norbi\source\repos\Nork\vcpkg_repo\x64-windows\include;Source/PCH;Source</AdditionalIncludeDirectories>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <ForcedIncludeFiles>common.h</ForcedIncludeFiles>
@@ -154,7 +154,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>Source/PCH;Source;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Norbi\source\repos\Nork\vcpkg_repo\x64-windows\include;Source/PCH;Source</AdditionalIncludeDirectories>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <ForcedIncludeFiles>common.h</ForcedIncludeFiles>
