@@ -24,24 +24,6 @@
     <ClCompile Include="Source\Utils\Logger.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\ThirdParty\include\imgui\backends\imgui_impl_opengl3.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\ThirdParty\include\imgui\backends\imgui_impl_glfw.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\ThirdParty\include\imgui\imgui.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\ThirdParty\include\imgui\imgui_draw.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\ThirdParty\include\imgui\imgui_tables.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\ThirdParty\include\imgui\imgui_widgets.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Components\Impl\Camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -85,9 +67,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Utils\Profiler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Core\NorkWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\App\Application.cpp">
@@ -183,6 +162,9 @@
     <ClCompile Include="Source\Main\Shaderc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Modules\Renderer\Vulkan\VulkanWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\PCH\pch.h">
@@ -258,9 +240,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Utils\Profiler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\NorkWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\App\Application.h">
@@ -413,19 +392,19 @@
     <ClInclude Include="Source\Main\Shaderc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Main\VulkanContext.h">
+    <ClInclude Include="Source\Modules\Renderer\Vulkan\VulkanContext.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Main\VkSuccess.h">
+    <ClInclude Include="Source\Modules\Renderer\Vulkan\VkSuccess.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Main\SwapChain.h">
+    <ClInclude Include="Source\Modules\Renderer\Vulkan\SwapChain.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Main\Window.h">
+    <ClInclude Include="Source\Modules\Renderer\Vulkan\Window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Main\Device.h">
+    <ClInclude Include="Source\Modules\Renderer\Vulkan\Device.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Main\Texture.h">

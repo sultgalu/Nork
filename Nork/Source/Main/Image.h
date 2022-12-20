@@ -3,6 +3,7 @@
 #include "DeviceMemory.h"
 #include "Sampler.h"
 
+using namespace Nork::Renderer::Vulkan;
 struct Format
 {
     constexpr static auto rgba8Unorm = vk::Format::eR8G8B8A8Unorm;
@@ -14,28 +15,30 @@ struct Format
     constexpr static auto depth16 = vk::Format::eD16Unorm;
 };
 
+struct ImageMemoryBarrier : vk::ImageMemoryBarrier
+{
+    ImageMemoryBarrier(vk::Image img, vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
+        vk::AccessFlags srcAccess, vk::AccessFlags dstAccess, vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor)
+    {
+        this->oldLayout = oldLayout;
+        this->newLayout = newLayout;
+        this->srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        this->dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        this->image = img;
+        this->subresourceRange.aspectMask = aspect;
+        this->subresourceRange.baseMipLevel = 0;
+        this->subresourceRange.levelCount = 1;
+        this->subresourceRange.baseArrayLayer = 0;
+        this->subresourceRange.layerCount = 1;
+        this->srcAccessMask = srcAccess;
+        this->dstAccessMask = dstAccess;
+    }
+};
+
 class ImageBase : public vk::raii::Image
 {
 public:
     using vk::raii::Image::Image;
-    VkImageMemoryBarrier Barrier(vk::ImageLayout oldLayout, vk::ImageLayout newLayout, 
-        vk::AccessFlags srcAccess, vk::AccessFlags dstAccess, vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor)
-    {
-        vk::ImageMemoryBarrier barrier;
-        barrier.oldLayout = oldLayout;
-        barrier.newLayout = newLayout;
-        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.image = **this;
-        barrier.subresourceRange.aspectMask = aspect;
-        barrier.subresourceRange.baseMipLevel = 0;
-        barrier.subresourceRange.levelCount = 1;
-        barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.layerCount = 1;
-        barrier.srcAccessMask = srcAccess;
-        barrier.dstAccessMask = dstAccess;
-        return barrier;
-    }
     ~ImageBase()
     {
         ;
@@ -43,20 +46,6 @@ public:
     virtual uint32_t Width() const = 0;
     virtual uint32_t Height() const = 0;
     virtual vk::Format Format() const = 0;
-};
-class SwapChainImage : public ImageBase
-{
-public:
-    SwapChainImage(VkImage handle, const VkSwapchainCreateInfoKHR& createInfo)
-        : ImageBase(Device::Instance2(), handle)
-    {
-        this->createInfo = createInfo;
-    }
-    virtual uint32_t Width() const { return createInfo.imageExtent.width; }
-    virtual uint32_t Height() const { return createInfo.imageExtent.height; }
-    virtual vk::Format Format() const { std::unreachable(); return Format::rgba8Ui; } // { return createInfo.imageFormat; }
-public:
-    VkSwapchainCreateInfoKHR createInfo;
 };
 struct ImageCreateInfo : vk::ImageCreateInfo
 {
@@ -81,7 +70,7 @@ class Image : public ImageBase
 {
 public:
     Image(const ImageCreateInfo& createInfo, vk::MemoryPropertyFlags memFlags)
-        : ImageBase(Device::Instance2(), createInfo), createInfo(createInfo)
+        : ImageBase(Device::Instance(), createInfo), createInfo(createInfo)
     {
         auto memreq = this->getMemoryRequirements();
         VkMemoryAllocateInfo i;
@@ -101,26 +90,30 @@ public:
 struct ImageViewCreateInfo : vk::ImageViewCreateInfo
 {
     ImageViewCreateInfo() = delete;
-    ImageViewCreateInfo(std::shared_ptr<Image> img, vk::ImageAspectFlagBits aspect, vk::ImageViewType type = vk::ImageViewType::e2D)
-        : img(img)
+    ImageViewCreateInfo(std::shared_ptr<Image> img_, vk::ImageAspectFlagBits aspect, vk::ImageViewType type = vk::ImageViewType::e2D)
+        : ImageViewCreateInfo(**img_, img_->Format(), aspect, type)
     {
-        image = **img;
+        img = img_;
+    }
+    ImageViewCreateInfo(vk::Image img, vk::Format format_, vk::ImageAspectFlagBits aspect, vk::ImageViewType type = vk::ImageViewType::e2D)
+    {
+        image = img;
         viewType = type;
-        format = img->Format();
+        format = format_;
         subresourceRange.aspectMask = aspect;
         subresourceRange.baseMipLevel = 0;
         subresourceRange.levelCount = 1;
         subresourceRange.baseArrayLayer = 0;
         subresourceRange.layerCount = 1;
     }
-    std::shared_ptr<Image> img;
+    std::shared_ptr<Image> img = nullptr;
 };
 
 class ImageView : public vk::raii::ImageView
 {
 public:
     ImageView(const ImageViewCreateInfo& createInfo, std::shared_ptr<class Sampler> sampler = nullptr)
-        : createInfo(createInfo), vk::raii::ImageView(Device::Instance2(), createInfo), sampler(sampler)
+        : createInfo(createInfo), vk::raii::ImageView(Device::Instance(), createInfo), sampler(sampler)
     {}
     std::shared_ptr<Image> Image()
     {

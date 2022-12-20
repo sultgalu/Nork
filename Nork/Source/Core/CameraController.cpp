@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "CameraController.h"
 #include "App/Application.h"
 
@@ -7,7 +6,7 @@ namespace Nork
 	void FpsCameraController::UpdateByKeyInput(Components::Camera& camera, float delta)
 	{
 		using enum Components::Camera::Direction;
-		auto& input = Application::Get().engine.window.Input();
+		auto& input = Input::Instance();
 
 		if (input.IsDown(Key::W))
 		{
@@ -38,7 +37,7 @@ namespace Nork
 	}
 	void FpsCameraController::UpdateByMouseInput(Components::Camera& camera)
 	{
-		auto& input = Application::Get().engine.window.Input();
+		auto& input = Input::Instance();
 
 		if (input.DidScroll())
 		{
@@ -53,7 +52,7 @@ namespace Nork
 
 	void EditorCameraController::UpdateByKeyInput(Components::Camera& camera, float delta)
 	{
-		auto& input = Application::Get().engine.window.Input();
+		auto& input = Input::Instance();
 		/*using enum Components::Camera::Direction;
 
 		if (input.IsDown(Key::W))
@@ -85,7 +84,7 @@ namespace Nork
 	}
 	void EditorCameraController::UpdateByMouseInput(Components::Camera& camera)
 	{
-		auto& input = Application::Get().engine.window.Input();
+		auto& input = Input::Instance();
 		
 		camera.FOV = 1.0f;
 		auto vec = center - camera.position;

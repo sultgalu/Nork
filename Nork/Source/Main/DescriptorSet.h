@@ -1,7 +1,9 @@
 #pragma once
 
+#include "Image.h"
 #include "Buffer.h"
 
+using namespace Nork::Renderer::Vulkan;
 class DescriptorSetLayout
 {
 public:
@@ -29,11 +31,11 @@ public:
 		binding_flags.pBindingFlags = flags.data();
 		layoutInfo.pNext = &binding_flags;
 
-		vkCreateDescriptorSetLayout(Device::Instance().device, &layoutInfo, nullptr, &handle) == VkSuccess();
+		vkCreateDescriptorSetLayout(*Device::Instance(), &layoutInfo, nullptr, &handle) == VkSuccess();
 	}
 	~DescriptorSetLayout()
 	{
-		vkDestroyDescriptorSetLayout(Device::Instance().device, handle, nullptr);
+		vkDestroyDescriptorSetLayout(*Device::Instance(), handle, nullptr);
 	}
 public:
 	VkDescriptorSetLayout handle;
@@ -84,7 +86,7 @@ public:
 		poolInfo.pPoolSizes = poolSizes.data();
 		poolInfo.maxSets = maxSets;
 
-		vkCreateDescriptorPool(Device::Instance().device, &poolInfo, nullptr, &handle) == VkSuccess();
+		vkCreateDescriptorPool(*Device::Instance(), &poolInfo, nullptr, &handle) == VkSuccess();
 	}
 	DescriptorPool(const DescriptorSetLayout& layout, uint32_t maxSets = 1)
 	{
@@ -100,11 +102,11 @@ public:
 		poolInfo.pPoolSizes = descriptorCounts.data();
 		poolInfo.maxSets = maxSets;
 
-		vkCreateDescriptorPool(Device::Instance().device, &poolInfo, nullptr, &handle) == VkSuccess();
+		vkCreateDescriptorPool(*Device::Instance(), &poolInfo, nullptr, &handle) == VkSuccess();
 	}
 	~DescriptorPool()
 	{
-		vkDestroyDescriptorPool(Device::Instance().device, handle, nullptr);
+		vkDestroyDescriptorPool(*Device::Instance(), handle, nullptr);
 	}
 public:
 	VkDescriptorPool handle;
@@ -131,7 +133,7 @@ public:
 			allocInfo.pNext = &variable_info;
 		}
 
-		vkAllocateDescriptorSets(Device::Instance().device, &allocInfo, &handle) == VkSuccess();
+		vkAllocateDescriptorSets(*Device::Instance(), &allocInfo, &handle) == VkSuccess();
 	}
 	Writer_ Writer();
 public:
@@ -238,7 +240,7 @@ public:
 			writes.push_back(write);
 		}
 
-		vkUpdateDescriptorSets(Device::Instance().device, writes.size(), writes.data(), 0, nullptr);
+		vkUpdateDescriptorSets(*Device::Instance(), writes.size(), writes.data(), 0, nullptr);
 		return dSet;
 	}
 public:
@@ -246,8 +248,3 @@ public:
 	std::vector<Buffer_> buffers;
 	std::vector<Image_> images;
 };
-
-DescriptorSet::Writer_ DescriptorSet::Writer()
-{
-	return Writer_(*this);
-}

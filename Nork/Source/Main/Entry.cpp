@@ -4,14 +4,11 @@
 #include "Utils/Timer.h"
 #include "Components/Common.h"
 #include "Editor/Editor.h"
-#include "Core/NorkWindow.h"
 #include "Core/Engine.h"
 #include "App/Application.h"
 #include "Shaderc.h"
 #include "Modules/Renderer/LoadUtils.h"
-#include "VulkanContext.h"
-#include "Window.h"
-#include "SwapChain.h"
+#include "Modules/Renderer/Vulkan/Window.h"
 #include "Buffer.h"
 #include "DeviceMemory.h"
 #include "Image.h"
@@ -21,7 +18,24 @@
 #include "CommandBuffer.h"
 
 using namespace Nork;
+using namespace Nork::Renderer::Vulkan;
 
+Device* Device::instance = nullptr;
+PhysicalDevice* PhysicalDevice::instance = nullptr;
+SwapChain* SwapChain::instance = nullptr;
+Instance* Instance::staticInstance = nullptr;
+Window* Window::staticInstance = nullptr;
+RenderPassBuilder::RenderPassBuilder(CommandBuilder& cmdBuilder, const Framebuffer& fb)
+    : cmdBuilder(cmdBuilder), cmdBuf(cmdBuilder.cmdBuf), fb(fb)
+{}
+CommandBuilder CommandBuffer::CommandBuilder()
+{
+    return class CommandBuilder(*this);
+}
+DescriptorSet::Writer_ DescriptorSet::Writer()
+{
+    return Writer_(*this);
+}
 struct SSBO
 {
     glm::mat4 model;
@@ -141,11 +155,11 @@ public:
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
-            vkDestroySemaphore(device.device, renderFinishedSemaphores[i], nullptr);
-            vkDestroySemaphore(device.device, imageAvailableSemaphores[i], nullptr);
-            vkDestroyFence(device.device, inFlightFences[i], nullptr);
+            vkDestroySemaphore(*Device::Instance(), renderFinishedSemaphores[i], nullptr);
+            vkDestroySemaphore(*Device::Instance(), imageAvailableSemaphores[i], nullptr);
+            vkDestroyFence(*Device::Instance(), inFlightFences[i], nullptr);
         }
-        vkDestroyDescriptorPool(*Device::Instance2(), imguiPool, nullptr);
+        vkDestroyDescriptorPool(*Device::Instance(), imguiPool, nullptr);
         ImGui_ImplVulkan_Shutdown();
     }
 private:
@@ -436,12 +450,11 @@ private:
     {
         createRenderPass();
         createRenderPassUI();
-        swapChain = std::make_shared<SwapChain>(*ctx, window, 3);
-
+        
         textureSampler = std::make_shared<Sampler>();
 
-        auto w = swapChain->swapChainExtent.width;
-        auto h = swapChain->swapChainExtent.height;
+        auto w = SwapChain::Instance().Width();
+        auto h = SwapChain::Instance().Height();
         using enum vk::ImageUsageFlagBits;
         auto depthImage_ = std::make_shared<Image>(ImageCreateInfo(w, h, Format::depth32, eDepthStencilAttachment),
             vk::MemoryPropertyFlagBits::eDeviceLocal);
@@ -502,7 +515,7 @@ private:
         textureImage2 = createTextureImage("clown.png");
         textureView = std::make_shared<ImageView>(ImageViewCreateInfo(textureImage, vk::ImageAspectFlagBits::eColor), textureSampler);
         textureView2 = std::make_shared<ImageView>(ImageViewCreateInfo(textureImage2, vk::ImageAspectFlagBits::eColor), textureSampler);
-        uboStride = Device::Instance().physicalDeviceProperties.limits.minUniformBufferOffsetAlignment;
+        uboStride = PhysicalDevice::Instance().physicalDeviceProperties.limits.minUniformBufferOffsetAlignment;
         if (uboStride < sizeof(uint32_t)) // never, but maybe i'll change uint32_t for a larger type
             uboStride = sizeof(uint32_t);
         uniformBuffer = std::make_shared<Buffer>(uboStride * MAX_FRAMES_IN_FLIGHT * DRAW_COUNT, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -526,18 +539,18 @@ private:
             .Write();
 
         createSyncObjects();
-        initImgui();
+        // initImgui();
     }
 
     void endSingleTimeCommands(CommandBuffer cmdBuffer)
     {
-        VkSubmitInfo submitInfo{};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        vk::SubmitInfo submitInfo;
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &cmdBuffer.handle;
+        vk::CommandBuffer cmdbuf = cmdBuffer.handle;
+        submitInfo.pCommandBuffers = &cmdbuf;
         
-        vkQueueSubmit(device.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-        vkQueueWaitIdle(device.graphicsQueue);
+        Device::Instance().graphicsQueue.submit(submitInfo);
+        Device::Instance().graphicsQueue.waitIdle();
 
         commandPool->FreeCommandBuffer(cmdBuffer);
     }
@@ -556,15 +569,14 @@ private:
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
-            vkCreateSemaphore(device.device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) == VkSuccess();
-            vkCreateSemaphore(device.device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) == VkSuccess();
-            vkCreateFence(device.device, &fenceInfo, nullptr, &inFlightFences[i]) == VkSuccess();
+            vkCreateSemaphore(*Device::Instance(), & semaphoreInfo, nullptr, & imageAvailableSemaphores[i]) == VkSuccess();
+            vkCreateSemaphore(*Device::Instance(), &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) == VkSuccess();
+            vkCreateFence(*Device::Instance(), &fenceInfo, nullptr, &inFlightFences[i]) == VkSuccess();
         }
     }
 
     void recordCommandBuffer(CommandBuffer& commandBuffer, uint32_t imageIndex)
     {
-        
         auto builder = CommandBuilder(commandBuffer)
             .BeginCommands()
             .BeginRenderPass(*fb, *renderPass)
@@ -587,32 +599,33 @@ private:
             .BindPipeline(*pipelinePP)
             .BindDescriptorSet(pipelinePP->layoutHandle, *descriptorSetPP)
             .DrawQuad()
-            .EndRenderPass()
+            .EndRenderPass();
 
             //.PipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
             //    { // already converted to eTransferSrcOptimal by renderpass (attachment config)
             //        fbUI->attachments[0]->Image()->Barrier(vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eColorAttachmentOptimal,
             //            vk::AccessFlagBits::eColorAttachmentWrite, vk::AccessFlagBits::eColorAttachmentWrite)
             //    })
-
-            .BeginRenderPass(*fbUI, *renderPassUI);
-        ImGui::Render();
-        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), builder.cmdBuf.handle);
-        builder.EndRenderPass()
-            .PipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+        editor.RenderPassUI(builder);
+        //     .BeginRenderPass(*fbUI, *renderPassUI);
+        // ImGui::Render();
+        // ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), builder.cmdBuf.handle);
+        // builder.EndRenderPass()
+        auto& uiImg = *editor.fbUI->attachments[0]->Image();
+            builder.PipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
                 { // already converted to eTransferSrcOptimal by renderpass (attachment config)
-                    fbUI->attachments[0]->Image()->Barrier(vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eTransferSrcOptimal,
+                    ImageMemoryBarrier(*uiImg, vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eTransferSrcOptimal,
                         vk::AccessFlagBits::eColorAttachmentWrite, vk::AccessFlagBits::eTransferRead),
-                    swapChain->swapChainImages[imageIndex]->Barrier(vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal,
+                    ImageMemoryBarrier(SwapChain::Instance().images[imageIndex], vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal,
                         vk::AccessFlagBits::eNone, vk::AccessFlagBits::eTransferWrite),
                 })
-            .CopyImage(*fbUI->attachments[0]->Image(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT, *swapChain->swapChainImages[imageIndex],
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT, { swapChain->swapChainExtent.width, swapChain->swapChainExtent.height, 1 })
+            .CopyImage(*uiImg, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT, SwapChain::Instance().images[imageIndex],
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT, { SwapChain::Instance().Width(), SwapChain::Instance().Height(), 1})
             .PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
                 {
                     //fbColor->Barrier(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                     //    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT),
-                    swapChain->swapChainImages[imageIndex]->Barrier(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::ePresentSrcKHR,
+                    ImageMemoryBarrier(SwapChain::Instance().images[imageIndex], vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::ePresentSrcKHR,
                         vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eNone),
                 })
             .EndCommands();
@@ -639,7 +652,7 @@ private:
         auto camPos = glm::translate(glm::identity<glm::mat4>(), pos);
         // model *= glm::scale(glm::identity<glm::mat4>(), glm::vec3(0.1, 0.1, 0.1));
         glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        glm::mat4 proj = glm::perspective(glm::radians(45.0f), swapChain->swapChainExtent.width / (float)swapChain->swapChainExtent.height, 0.1f, 1000.0f);
+        glm::mat4 proj = glm::perspective(glm::radians(45.0f), SwapChain::Instance().Width() / (float)SwapChain::Instance().Height(), 0.1f, 1000.0f);
         //proj[1][1] *= -1;
         vp = proj * view * camPos;
         auto models = &((glm::mat4*)storageBuffer->Ptr())[currentFrame * DRAW_COUNT];
@@ -670,21 +683,21 @@ private:
             glfwPollEvents();
 
             //imgui new frame
-            ImGui_ImplVulkan_NewFrame();
-            ImGui_ImplGlfw_NewFrame();
-            ImGui::NewFrame();
-            //imgui commands
-            ImGui::ShowDemoWindow();
-           
-            if (ImGui::Begin("Viewport"))
-            {
-                ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-                ImGui::Image(viewportImgDs, ImVec2{ viewportPanelSize.x, viewportPanelSize.y });
-                ImGui::End();
-            }
-
-            ImGui::EndFrame();
-
+            // ImGui_ImplVulkan_NewFrame();
+            // ImGui_ImplGlfw_NewFrame();
+            // ImGui::NewFrame();
+            // //imgui commands
+            // ImGui::ShowDemoWindow();
+            // 
+            // if (ImGui::Begin("Viewport"))
+            // {
+            //     ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+            //     ImGui::Image(viewportImgDs, ImVec2{ viewportPanelSize.x, viewportPanelSize.y });
+            //     ImGui::End();
+            // }
+            // 
+            // ImGui::EndFrame();
+            editor.Render();
             drawFrame();
             frames++;
             auto seconds = timer.ElapsedSeconds();
@@ -696,7 +709,7 @@ private:
                 frames = 0;
             }
         }
-        vkDeviceWaitIdle(device.device);
+        Device::Instance().waitIdle();
     }
     void drawFrame()
     {
@@ -704,32 +717,32 @@ private:
         static float elapsed = 0;
 
         Timer t;
-        vkWaitForFences(device.device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
-        vkResetFences(device.device, 1, &inFlightFences[currentFrame]);
+        vkWaitForFences(*Device::Instance(), 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+        vkResetFences(*Device::Instance(), 1, &inFlightFences[currentFrame]);
         elapsed += t.Elapsed();
 
         vkResetCommandBuffer(commandBuffers[currentFrame].handle, 0);
         updateUniformBuffer(currentFrame);
 
-        uint32_t imageIndex;
-        VkResult result = vkAcquireNextImageKHR(device.device, swapChain->swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+        auto result = SwapChain::Instance().acquireNextImage(UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE);
         if (sumT.ElapsedSeconds() >= 1.0f)
         {
             Logger::Info("\t", elapsed, " ms (", 100 * elapsed / sumT.Elapsed(), "%)");
             sumT.Restart();
             elapsed = 0;
         }
-
-        if (result == VK_ERROR_OUT_OF_DATE_KHR)
+        
+        if (result.first == vk::Result::eErrorOutOfDateKHR)
         {
-            swapChain->recreateSwapChain();
+            //swapChain->recreateSwapChain();
             return;
         }
-        else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+        else if (result.first != vk::Result::eSuccess && result.first != vk::Result::eSuboptimalKHR)
         {
             throw std::runtime_error("failed to acquire swap chain image!");
         }
-        recordCommandBuffer(commandBuffers[currentFrame], imageIndex);
+        uint32_t imgIdx = result.second;
+        recordCommandBuffer(commandBuffers[currentFrame], imgIdx);
 
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -747,7 +760,7 @@ private:
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
-        vkQueueSubmit(device.graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) == VkSuccess();
+        vkQueueSubmit(*Device::Instance().graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) == VkSuccess();
 
         VkPresentInfoKHR presentInfo{};
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -755,20 +768,20 @@ private:
         presentInfo.waitSemaphoreCount = 1;
         presentInfo.pWaitSemaphores = signalSemaphores;
 
-        VkSwapchainKHR swapChains[] = { swapChain->swapChain };
+        VkSwapchainKHR swapChains[] = { *SwapChain::Instance()};
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapChains;
-        presentInfo.pImageIndices = &imageIndex;
+        presentInfo.pImageIndices = &imgIdx;
 
         presentInfo.pResults = nullptr; // Optional
         
-        result = vkQueuePresentKHR(device.presentQueue, &presentInfo);
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized)
+        auto res = Device::Instance().graphicsQueue.presentKHR(presentInfo);
+        if (res == vk::Result::eErrorOutOfDateKHR || res == vk::Result::eSuboptimalKHR || framebufferResized)
         {
             framebufferResized = false;
-            swapChain->recreateSwapChain();
+            //swapChain->recreateSwapChain();
         }
-        else if (result != VK_SUCCESS)
+        else if (res != vk::Result::eSuccess)
         {
             throw std::runtime_error("failed to present swap chain image!");
         }
@@ -801,7 +814,7 @@ private:
         pool_info.poolSizeCount = std::size(pool_sizes);
         pool_info.pPoolSizes = pool_sizes;
 
-        vkCreateDescriptorPool(*Device::Instance2(), &pool_info, nullptr, &imguiPool);
+        vkCreateDescriptorPool(*Device::Instance(), &pool_info, nullptr, &imguiPool);
 
         // 2: initialize imgui library
 
@@ -814,10 +827,10 @@ private:
 
         //this initializes imgui for Vulkan
         ImGui_ImplVulkan_InitInfo init_info = {};
-        init_info.Instance = **ctx->instance2;
-        init_info.PhysicalDevice = Device::Instance().physicalDevice;
-        init_info.Device = Device::Instance().device;
-        init_info.Queue = Device::Instance().graphicsQueue;
+        init_info.Instance = *Instance::StaticInstance();
+        init_info.PhysicalDevice = *PhysicalDevice::Instance();
+        init_info.Device = *Device::Instance();
+        init_info.Queue = *Device::Instance().graphicsQueue;
         init_info.DescriptorPool = imguiPool;
         init_info.MinImageCount = 3;
         init_info.ImageCount = 3;
@@ -843,13 +856,14 @@ private:
         viewportImgDs = ImGui_ImplVulkan_AddTexture(textureSampler->handle, **fbColor, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
 private:
+    Engine engine;
     VkDescriptorSet viewportImgDs;
 
-    VulkanWindow window = VulkanWindow(1920 * 0.8f, 1080 * 0.8f);
-    std::shared_ptr<VulkanContext> ctx = std::make_shared<VulkanContext>(window);
-    Device device = Device(ctx);
+    Window window = Window(1920 * 0.8f, 1080 * 0.8f);
+    std::unique_ptr<Nork::Input> input = std::make_unique<Nork::Input>(window.glfwWindow);
+    Editor::Editor editor;
+
     std::shared_ptr<RenderPass> renderPass;
-    std::shared_ptr<SwapChain> swapChain;
 
     std::shared_ptr<ImageView> depthImage;
     std::shared_ptr<ImageView> gPos;

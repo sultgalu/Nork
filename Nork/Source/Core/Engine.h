@@ -1,14 +1,13 @@
 #pragma once
-#include "NorkWindow.h"
 #include "Core/CameraController.h"
 #include "Scene/Scene.h"
 #include "RenderingSystem.h"
 #include "PhysicsSystem.h"
 #include "ScriptSystem.h"
+#include "Modules/Renderer/Vulkan/Window.h"
 
 namespace Nork
 {
-
 	class Engine
 	{
 	public:
@@ -19,7 +18,6 @@ namespace Nork
 		void StartPhysics(bool startScript = true);
 		void StopPhysics();
 	public:
-		Nork::Window window;
 		Scene scene;
 
 		RenderingSystem renderingSystem = RenderingSystem(scene.registry);

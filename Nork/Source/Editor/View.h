@@ -18,9 +18,9 @@ namespace Nork::Editor {
 		virtual ~View() {}
 		virtual void Content() = 0;
 	protected:
-		Engine& GetEngine() { return _GetEngine(); }
-		Window& GetWindow() { return GetEngine().window; }
-		const Input& GetInput() { return GetEngine().window.Input(); }
+		Engine& GetEngine() { return Engine::Get(); }
+		Renderer::Vulkan::Window& GetWindow() { return Renderer::Vulkan::Window::Instance(); }
+		const Input& GetInput() { return Input::Instance(); }
 		Scene& GetScene() { return GetEngine().scene; }
 		PhysicsSystem& GetPhysics() { return GetEngine().physicsSystem; }
 		RenderingSystem& GetRenderer() { return GetEngine().renderingSystem; }

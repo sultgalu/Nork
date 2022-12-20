@@ -1,9 +1,9 @@
 #pragma once
 
-#include "VkSuccess.h"
-#include "Device.h"
+#include "Modules/Renderer/Vulkan/Device.h"
 #include "DeviceMemory.h"
 
+using namespace Nork::Renderer::Vulkan;
 class Buffer
 {
 public:
@@ -16,21 +16,21 @@ public:
         bufferInfo.usage = usage;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        vkCreateBuffer(Device::Instance().device, &bufferInfo, nullptr, &handle) == VkSuccess();
+        vkCreateBuffer(*Device::Instance(), &bufferInfo, nullptr, &handle) == VkSuccess();
 
         VkMemoryRequirements memreq;
-        vkGetBufferMemoryRequirements(Device::Instance().device, handle, &memreq);
+        vkGetBufferMemoryRequirements(*Device::Instance(), handle, &memreq);
         memory = std::make_shared<DeviceMemory>(vk::MemoryAllocateInfo(memreq.size,
             Device::Instance().findMemoryType(memreq.memoryTypeBits, memFlags)));
 
         memOffset = 0;
-        vkBindBufferMemory(Device::Instance().device, handle, **memory, memOffset);
+        vkBindBufferMemory(*Device::Instance(), handle, **memory, memOffset);
         if (autoMap)
             memory->Map();
 	}
     ~Buffer()
     {
-        vkDestroyBuffer(Device::Instance().device, handle, nullptr);
+        vkDestroyBuffer(*Device::Instance(), handle, nullptr);
     }
     void* Ptr()
     {

@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "ScriptSystem.h"
 #include "App/Application.h"
+#include "Modules/Renderer/Vulkan/Window.h"
 
 namespace Nork {
 	void ScriptSystem::Update()
@@ -21,7 +22,7 @@ namespace Nork {
 			engine.physicsSystem.pipeline.coefficient = 0.2f;
 			playerPl.SetIntensity(200);
 			// playerPl.light->color = glm::vec4(1.0f, 0.4f, 0.8f, 1.0f);
-			Application::Get().engine.window.Resize(1920, 1080);
+			Renderer::Vulkan::Window::Instance().Resize(1920, 1080);
 			// if (engine.renderingSystem.viewports.empty())
 			//  	engine.renderingSystem.viewports.push_back();
 			return true;
@@ -33,7 +34,7 @@ namespace Nork {
 		auto front = cam.front;
 		front.y = 0;
 		front = glm::normalize(front);
-		auto& input = Application::Get().engine.window.Input();
+		auto& input = Input::Instance();
 		glm::vec3 translation = { 0, 0, 0 };
 		if (input.IsDown(Key::A))
 			translation -= cam.right;
@@ -44,7 +45,7 @@ namespace Nork {
 		if (input.IsDown(Key::D))
 			translation += cam.right;
 		if (input.IsDown(Key::Esc))
-			Application::Get().engine.window.Close();
+			Renderer::Vulkan::Window::Instance().Close();
 		if (input.IsDown(Key::Down) && speed > 0)
 			speed /= 1.1f;
 		if (input.IsDown(Key::Up))

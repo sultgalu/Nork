@@ -1,7 +1,8 @@
 #pragma once
 
-#include "Device.h"
+#include "Modules/Renderer/Vulkan/Device.h"
 
+using namespace Nork::Renderer::Vulkan;
 struct SubPass
 {
 public:
@@ -181,11 +182,11 @@ public:
         renderPassInfo.dependencyCount = config.dependencies.size();
         renderPassInfo.pDependencies = config.dependencies.data();
 
-        vkCreateRenderPass(Device::Instance().device, &renderPassInfo, nullptr, &handle) == VkSuccess();
+        vkCreateRenderPass(*Device::Instance(), &renderPassInfo, nullptr, &handle) == VkSuccess();
     }
     ~RenderPass()
     {
-        vkDestroyRenderPass(Device::Instance().device, handle, nullptr);
+        vkDestroyRenderPass(*Device::Instance(), handle, nullptr);
     }
 public:
     VkRenderPass handle;

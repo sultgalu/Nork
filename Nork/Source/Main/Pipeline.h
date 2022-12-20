@@ -3,6 +3,7 @@
 #include "ShaderModule.h"
 #include "RenderPass.h"
 
+using namespace Nork::Renderer::Vulkan;
 template<class T>
 concept VertexConcept = requires()
 {
@@ -199,19 +200,19 @@ public:
         pipelineInfo.pDynamicState = &dynamicState;
 
         auto layoutInfo = createInfo.LayoutInfo();
-        vkCreatePipelineLayout(Device::Instance().device, &layoutInfo, nullptr, &layoutHandle) == VkSuccess();
+        vkCreatePipelineLayout(*Device::Instance(), &layoutInfo, nullptr, &layoutHandle) == VkSuccess();
 
         pipelineInfo.layout = layoutHandle;
         pipelineInfo.renderPass = renderPass.handle;
         pipelineInfo.subpass = subpass;
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional, VK_PIPELINE_CREATE_DERIVATIVE_BIT = true
         pipelineInfo.basePipelineIndex = -1; // Optional, VK_PIPELINE_CREATE_DERIVATIVE_BIT = true
-        vkCreateGraphicsPipelines(Device::Instance().device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &handle) == VkSuccess();
+        vkCreateGraphicsPipelines(*Device::Instance(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &handle) == VkSuccess();
     }
     ~Pipeline()
     {
-        vkDestroyPipeline(Device::Instance().device, handle, nullptr);
-        vkDestroyPipelineLayout(Device::Instance().device, layoutHandle, nullptr);
+        vkDestroyPipeline(*Device::Instance(), handle, nullptr);
+        vkDestroyPipelineLayout(*Device::Instance(), layoutHandle, nullptr);
     }
 public:
     VkPipelineLayout layoutHandle;
@@ -231,7 +232,7 @@ public:
         createInfo.codeSize = code.size() * sizeof(uint32_t);
         createInfo.pCode = code.data();
 
-        vkCreateShaderModule(Device::Instance().device, &createInfo, nullptr, &handle) == VkSuccess();
+        vkCreateShaderModule(*Device::Instance(), &createInfo, nullptr, &handle) == VkSuccess();
 
         vertShaderStageInfo = VkPipelineShaderStageCreateInfo{};
         vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;

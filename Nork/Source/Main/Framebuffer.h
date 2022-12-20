@@ -3,6 +3,7 @@
 #include "Image.h"
 #include "RenderPass.h"
 
+using namespace Nork::Renderer::Vulkan;
 class Framebuffer
 {
 public:
@@ -24,7 +25,7 @@ public:
     }
     ~Framebuffer()
     {
-        vkDestroyFramebuffer(Device::Instance().device, handle, nullptr);
+        vkDestroyFramebuffer(*Device::Instance(), handle, nullptr);
     }
 private:
     Framebuffer(uint32_t width, uint32_t height, const RenderPass& renderPass, const std::vector<VkImageView>& attachments)
@@ -39,7 +40,7 @@ private:
         framebufferInfo.height = height;
         framebufferInfo.layers = 1;
 
-        vkCreateFramebuffer(Device::Instance().device, &framebufferInfo, nullptr, &handle) == VkSuccess();
+        vkCreateFramebuffer(*Device::Instance(), &framebufferInfo, nullptr, &handle) == VkSuccess();
     }
 public:
     VkFramebuffer handle;

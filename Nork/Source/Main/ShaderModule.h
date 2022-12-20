@@ -1,7 +1,7 @@
 #pragma once
+#include "Modules/Renderer/Vulkan/Device.h"
 
-#include "Device.h"
-
+using namespace Nork::Renderer::Vulkan;
 class ShaderModule
 {
 public:
@@ -13,11 +13,11 @@ public:
         createInfo.codeSize = code.size() * sizeof(uint32_t);
         createInfo.pCode = code.data();
 
-        vkCreateShaderModule(Device::Instance().device, &createInfo, nullptr, &handle) == VkSuccess();
+        vkCreateShaderModule(*Device::Instance(), &createInfo, nullptr, &handle) == VkSuccess();
     }
     ~ShaderModule()
     {
-        vkDestroyShaderModule(Device::Instance().device, handle, nullptr);
+        vkDestroyShaderModule(*Device::Instance(), handle, nullptr);
     }
 public:
     VkShaderModule handle;

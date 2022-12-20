@@ -3,19 +3,16 @@
 #include "App/Application.h"
 #include "Panels/include/All.h"
 #include "Menus/include/All.h"
+#include "Modules/Renderer/Vulkan/Window.h"
+#include "Main/Framebuffer.h"
 
 namespace Nork::Editor
 {
 	static CommonData* _commonData;
-	static Engine* _engine;
 	static Editor* _editor;
 	CommonData& _GetCommonData()
 	{
 		return *_commonData;
-	}
-	Engine& _GetEngine()
-	{
-		return *_engine;
 	}
 	Editor& _GetEditor()
 	{
@@ -114,7 +111,7 @@ namespace Nork::Editor
 		Logger::Info("OPENnnnnnnnNNNNNNNNNNNNNNed: ", name);
 		return &cam;
 	}
-	void InitImGui()
+	void InitImgui()
 	{
 		ImGui::CreateContext();
 
@@ -148,14 +145,14 @@ namespace Nork::Editor
 		//ImGui_ImplOpenGL3_Init();
 		//ImGui_ImplGlfw_InitForOpenGL(Application::Get().engine.window.Underlying().GetContext().glfwWinPtr, false);
 	}
-	Editor::Editor(Engine& engine)
-		: engine(engine)
+	void InitImguiForVulkanAndGlfw();
+	Editor::Editor()
 	{
-		_engine = &engine;
 		_commonData = &data;
 		_editor = this;
 
-		InitImGui();
+		InitImgui();
+		InitImguiForVulkanAndGlfw();
 		panels.push_back(std::make_shared<HierarchyPanel>());
 		panels.push_back(std::make_shared<InspectorPanel>());
 		panels.push_back(std::make_shared<PhysicsSettingsPanel>());
@@ -169,10 +166,131 @@ namespace Nork::Editor
 	{
 		return *_editor;
 	}
+	void Editor::createRenderPassUI()
+	{
+		uint32_t colAtt = 0, depthAtt = 1;
+		RenderPass::Config config(1, 1);
+		config.Attachment(colAtt, AttachmentDescription::ColorForLaterCopy((VkFormat)Format::rgba8Unorm, true));
 
+		auto sPass = SubPass(0)
+			.ColorAttachment(colAtt);
+
+		config.AddSubPass(sPass);
+
+		config.DependencyExternalSrc(sPass, SubPassDependency()
+			.SrcStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT)
+			.DstStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT)
+			.SrcAccessMask(VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT)
+			.DstAccessMask(VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT));
+
+		renderPassUI = std::make_shared<RenderPass>(config);
+	}
+	void Editor::InitImguiForVulkanAndGlfw()
+	{
+		textureSampler = std::make_shared<Sampler>();
+		auto w = SwapChain::Instance().Width();
+		auto h = SwapChain::Instance().Height();
+		{
+			using enum vk::ImageUsageFlagBits;
+			auto fbColor_ = std::make_shared<Image>(ImageCreateInfo(w, h, Format::rgba8Unorm, eColorAttachment | eInputAttachment | eTransferSrc | eSampled),
+				vk::MemoryPropertyFlagBits::eDeviceLocal);
+			fbColor = std::make_shared<ImageView>(ImageViewCreateInfo(fbColor_, vk::ImageAspectFlagBits::eColor), textureSampler);
+		}
+
+		createRenderPassUI();
+		
+		auto uiImg = std::make_shared<Image>(ImageCreateInfo(w, h, Format::rgba8Unorm, 
+			vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc), 
+			vk::MemoryPropertyFlagBits::eDeviceLocal);
+		auto uiImgView = std::make_shared<ImageView>(ImageViewCreateInfo(uiImg, vk::ImageAspectFlagBits::eColor), nullptr);
+		fbUI = std::make_shared<Framebuffer>(w, h, *renderPassUI, std::vector<std::shared_ptr<ImageView>>{ uiImgView });
+		
+		commandPool = std::make_shared<CommandPool>();
+
+		using namespace Nork::Renderer::Vulkan;
+		//1: create descriptor pool for IMGUI
+		// the size of the pool is very oversize, but it's copied from imgui demo itself.
+		VkDescriptorPoolSize pool_sizes[] =
+		{
+			{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+			{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+			{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+		};
+
+		VkDescriptorPoolCreateInfo pool_info = {};
+		pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+		pool_info.maxSets = 1000;
+		pool_info.poolSizeCount = std::size(pool_sizes);
+		pool_info.pPoolSizes = pool_sizes;
+
+		vkCreateDescriptorPool(*Device::Instance(), &pool_info, nullptr, &imguiPool);
+
+		// 2: initialize imgui library
+
+		//this initializes the core structures of imgui
+		// ImGui::CreateContext();
+
+		//this initializes imgui for SDL
+		ImGui_ImplGlfw_InitForVulkan(Window::Instance().glfwWindow, true);
+		// ImGui_ImplSDL2_InitForVulkan(_window);
+
+		//this initializes imgui for Vulkan
+		ImGui_ImplVulkan_InitInfo init_info = {};
+		init_info.Instance = *Instance::StaticInstance();
+		init_info.PhysicalDevice = *PhysicalDevice::Instance();
+		init_info.Device = *Device::Instance();
+		init_info.Queue = *Device::Instance().graphicsQueue;
+		init_info.DescriptorPool = imguiPool;
+		init_info.MinImageCount = 3;
+		init_info.ImageCount = 3;
+		init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+		init_info.Subpass = 0;
+
+		ImGui_ImplVulkan_Init(&init_info, renderPassUI->handle);
+
+		//execute a gpu command to upload imgui font textures
+		auto cmdBuf = CommandBuilder(*commandPool)
+			.BeginCommands();
+		ImGui_ImplVulkan_CreateFontsTexture(cmdBuf.cmdBuf.handle);
+		cmdBuf.EndCommands();
+		vk::SubmitInfo submitInfo;
+		submitInfo.commandBufferCount = 1;
+		vk::CommandBuffer cmdbuf = cmdBuf.cmdBuf.handle;
+		submitInfo.pCommandBuffers = &cmdbuf;
+		Device::Instance().graphicsQueue.submit(submitInfo);
+		Device::Instance().graphicsQueue.waitIdle();
+		commandPool->FreeCommandBuffer(cmdBuf.cmdBuf);
+
+		//could use smt like below
+		//immediate_submit([&](VkCommandBuffer cmd)
+		//    {
+		//    });
+
+		//clear font textures from cpu data
+		ImGui_ImplVulkan_DestroyFontUploadObjects();
+
+		viewportImgDs = ImGui_ImplVulkan_AddTexture(textureSampler->handle, **fbColor, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	}
+	void Editor::RenderPassUI(CommandBuilder& builder)
+	{
+		auto rpb = builder.BeginRenderPass(*fbUI, *renderPassUI);
+		ImGui::Render();
+		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), builder.cmdBuf.handle);
+		rpb.EndRenderPass();
+	}
 	void Editor::Render()
 	{
 		//ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 		//ImGui::DockSpace(3, ImVec2(100, 1000));
@@ -204,7 +322,7 @@ namespace Nork::Editor
 			}
 		}
 
-		ImGui::Render();
+		// ImGui::Render();
 		//ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 		ImGuiIO& io = ImGui::GetIO();
@@ -216,20 +334,21 @@ namespace Nork::Editor
 			glfwMakeContextCurrent(backup_current_context);
 		}
 
-		if (engine.window.Input().IsJustPressed(Key::F1))
+		if (Input::Instance().IsJustPressed(Key::F1))
 		{
 			data.gameMode = !data.gameMode;
 			if (data.gameMode)
 			{
 				//glfwSetInputMode(Application::Get().engine.window.Underlying().GetContext().glfwWinPtr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-				engine.StartPhysics();
+				Engine::Get().StartPhysics();
 			}
 			else
 			{
 				//glfwSetInputMode(Application::Get().engine.window.Underlying().GetContext().glfwWinPtr, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-				engine.StopPhysics();
+				Engine::Get().StopPhysics();
 			}
 		}
+		ImGui::EndFrame();
 	}
 	void Editor::Update()
 	{
@@ -241,7 +360,7 @@ namespace Nork::Editor
 	{
 		auto& imIO = ImGui::GetIO();
 		auto ptr = &imIO;
-		auto& input = Application::Get().engine.window.Input();
+		auto& input = Input::Instance();
 		imIO.MouseWheel += (float)input.ScrollOffs();
 
 		//evMan.Subscribe<Events::MouseDown>([&imIO](const Event& ev)
@@ -268,12 +387,12 @@ namespace Nork::Editor
 		//imIO.AddFocusEvent(true);
 		//imIO.AddFocusEvent(false);
 
-		if (engine.window.Input().IsJustPressed(Key::F2))
+		if (input.IsJustPressed(Key::F2))
 		{
-			if (engine.physicsUpdate)
-				engine.StopPhysics();
+			if (Engine::Get().physicsUpdate)
+				Engine::Get().StopPhysics();
 			else
-				engine.StartPhysics(false);
+				Engine::Get().StartPhysics(false);
 		}
 	}
 	void Editor::DrawPanelManager()

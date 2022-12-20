@@ -1,10 +1,10 @@
 #pragma once
 
-#include "SwapChain.h"
 #include "Pipeline.h"
 #include "DescriptorSet.h"
 #include "Framebuffer.h"
 
+using namespace Nork::Renderer::Vulkan;
 class CommandBuilder;
 class CommandBuffer
 {
@@ -25,13 +25,13 @@ public:
         VkCommandPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        poolInfo.queueFamilyIndex = Device::Instance().graphicsQueueFamily;
+        poolInfo.queueFamilyIndex = PhysicalDevice::Instance().graphicsQueueFamily;
 
-        vkCreateCommandPool(Device::Instance().device, &poolInfo, nullptr, &handle) == VkSuccess();
+        vkCreateCommandPool(*Device::Instance(), &poolInfo, nullptr, &handle) == VkSuccess();
     }
     ~CommandPool()
     {
-        vkDestroyCommandPool(Device::Instance().device, handle, nullptr);
+        vkDestroyCommandPool(*Device::Instance(), handle, nullptr);
     }
     std::vector<CommandBuffer> CreateCommandBuffers(uint32_t count)
     {
@@ -42,7 +42,7 @@ public:
         allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         allocInfo.commandPool = handle;
         allocInfo.commandBufferCount = cmdBufHandles.size();
-        vkAllocateCommandBuffers(Device::Instance().device, &allocInfo, cmdBufHandles.data()) == VkSuccess();
+        vkAllocateCommandBuffers(*Device::Instance(), &allocInfo, cmdBufHandles.data()) == VkSuccess();
         std::vector<CommandBuffer> cmdBuffers;
         cmdBuffers.reserve(count);
         for (auto& handle : cmdBufHandles)
@@ -59,11 +59,11 @@ public:
         handles.reserve(cmdBufs.size());
         for (auto& cmdBuf : cmdBufs)
             handles.push_back(cmdBuf.handle);
-        vkFreeCommandBuffers(Device::Instance().device, handle, handles.size(), handles.data());
+        vkFreeCommandBuffers(*Device::Instance(), handle, handles.size(), handles.data());
     }
     void FreeCommandBuffer(CommandBuffer cmdBuf)
     {
-        vkFreeCommandBuffers(Device::Instance().device, handle, 1, &cmdBuf.handle);
+        vkFreeCommandBuffers(*Device::Instance(), handle, 1, &cmdBuf.handle);
     }
 public:
     VkCommandPool handle;
@@ -173,7 +173,7 @@ public:
     {
         VkRect2D scissor{};
         scissor.offset = { offsX, offsY };
-        scissor.extent = { width, height }; // swapChain.swapChainExtent;
+        scissor.extent = { width, height };
         vkCmdSetScissor(cmdBuf.handle, 0, 1, &scissor);
         scissorSet = true;
         return *this;
@@ -238,7 +238,7 @@ public:
         vkCmdCopyBufferToImage(cmdBuf.handle, buffer.handle , *img, layout, 1, &region);
         return *this;
     }
-    Self& CopyImage(const ImageBase& src, VkImageLayout srcLayout, VkImageAspectFlags srcAspect, const ImageBase& dst, VkImageLayout dstLayout, VkImageAspectFlags dstAspect, VkExtent3D extent)
+    Self& CopyImage(vk::Image src, VkImageLayout srcLayout, VkImageAspectFlags srcAspect, vk::Image dst, VkImageLayout dstLayout, VkImageAspectFlags dstAspect, VkExtent3D extent)
     {
         VkImageCopy copy{};
         copy.dstSubresource.aspectMask = dstAspect;
@@ -254,7 +254,7 @@ public:
         copy.srcOffset = VkOffset3D{ 0, 0, 0 };
         copy.dstOffset = VkOffset3D{ 0, 0, 0 };
         copy.extent = extent;
-        vkCmdCopyImage(cmdBuf.handle, *src, srcLayout, *dst, dstLayout, 1, &copy);
+        vkCmdCopyImage(cmdBuf.handle, src, srcLayout, dst, dstLayout, 1, &copy);
         return *this;
     }
     Self& CopyBuffer(const Buffer& src, const Buffer& dst, VkDeviceSize size, VkDeviceSize srcOffs = 0, VkDeviceSize dstOffs = 0)
@@ -269,12 +269,3 @@ public:
 public:
     CommandBuffer cmdBuf;
 };
-
-using CommandBuilder_ = CommandBuilder;
-RenderPassBuilder::RenderPassBuilder(CommandBuilder& cmdBuilder, const Framebuffer& fb)
-    : cmdBuilder(cmdBuilder), cmdBuf(cmdBuilder.cmdBuf), fb(fb)
-{}
-CommandBuilder_ CommandBuffer::CommandBuilder()
-{
-    return CommandBuilder_(*this);
-}

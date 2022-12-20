@@ -1,12 +1,12 @@
 #pragma once
-#include "Device.h"
-#include "VkSuccess.h"
+#include "Modules/Renderer/Vulkan/Device.h"
 
+using namespace Nork::Renderer::Vulkan;
 class DeviceMemory: public vk::raii::DeviceMemory
 {
 public:
 	DeviceMemory(const vk::MemoryAllocateInfo& allocInfo)
-		:allocInfo(allocInfo), vk::raii::DeviceMemory(Device::Instance2(), allocInfo)
+		:allocInfo(allocInfo), vk::raii::DeviceMemory(Device::Instance(), allocInfo)
 	{}
 	void* Map()
 	{
