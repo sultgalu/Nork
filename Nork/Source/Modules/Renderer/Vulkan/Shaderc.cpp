@@ -1,7 +1,7 @@
 #include "Shaderc.h"
 #include <shaderc/shaderc.hpp>
 
-namespace Nork {
+namespace Nork::Renderer::Vulkan {
 
     // Returns GLSL shader source text after preprocessing.
     std::string preprocess_shader(const std::string& source_name,

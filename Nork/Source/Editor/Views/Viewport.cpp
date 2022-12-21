@@ -19,22 +19,21 @@ namespace Nork::Editor {
 
 	void ViewportView::Content()
 	{
-		/*auto texture = sceneView->pipeline->FinalTexture();
-
-		glm::vec2 texSize(texture->GetWidth(), texture->GetHeight());
-		glm::vec2 displaySize = GetDisplaySize(texSize);
-
-		constexpr auto uv_min = glm::vec2(0, 1);
-		constexpr auto uv_max = glm::vec2(1, 0);
-		ImGui::Image((ImTextureID)texture->GetHandle(), ImVec2(displaySize.x, displaySize.y), ImVec2(uv_min.x, uv_min.y),
-			ImVec2(uv_max.x, uv_max.y), ImVec4(1, 1, 1, 1), ImVec4(0, 0, 0, 0));
-		
 		if (ImGui::IsItemHovered())
 		{
-			camController->UpdateByKeyInput(*sceneView->camera, ImGui::GetIO().DeltaTime * 500);
-			camController->UpdateByMouseInput(*sceneView->camera);
-		}*/
+			// camController->UpdateByKeyInput(*sceneView->camera, ImGui::GetIO().DeltaTime * 500);
+			// camController->UpdateByMouseInput(*sceneView->camera);
+		}
+		if (viewportImgDs != VK_NULL_HANDLE)
+		{
+			glm::vec2 texSize(image->Image()->Width(), image->Image()->Height());
+			ImVec2 displaySize = ImGui::GetContentRegionAvail(); //GetDisplaySize(texSize);
 
+			constexpr auto uv_min = glm::vec2(0, 1);
+			constexpr auto uv_max = glm::vec2(1, 0);
+			ImGui::Image(viewportImgDs, ImVec2(displaySize.x, displaySize.y));
+		}
+		     
 		mouseState.isViewportHovered = ImGui::IsItemHovered();
 		mouseState.isViewportDoubleClicked = mouseState.isViewportHovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
 		mouseState.isViewportClicked = mouseState.isViewportHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left);

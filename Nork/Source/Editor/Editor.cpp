@@ -4,7 +4,7 @@
 #include "Panels/include/All.h"
 #include "Menus/include/All.h"
 #include "Modules/Renderer/Vulkan/Window.h"
-#include "Main/Framebuffer.h"
+#include "Modules/Renderer/Vulkan/Framebuffer.h"
 
 namespace Nork::Editor
 {
@@ -168,6 +168,7 @@ namespace Nork::Editor
 	}
 	void Editor::createRenderPassUI()
 	{
+		using namespace Nork::Renderer::Vulkan;
 		uint32_t colAtt = 0, depthAtt = 1;
 		RenderPass::Config config(1, 1);
 		config.Attachment(colAtt, AttachmentDescription::ColorForLaterCopy((VkFormat)Format::rgba8Unorm, true));
@@ -187,15 +188,16 @@ namespace Nork::Editor
 	}
 	void Editor::InitImguiForVulkanAndGlfw()
 	{
+		using namespace Nork::Renderer::Vulkan;
 		textureSampler = std::make_shared<Sampler>();
 		auto w = SwapChain::Instance().Width();
 		auto h = SwapChain::Instance().Height();
-		{
-			using enum vk::ImageUsageFlagBits;
-			auto fbColor_ = std::make_shared<Image>(ImageCreateInfo(w, h, Format::rgba8Unorm, eColorAttachment | eInputAttachment | eTransferSrc | eSampled),
-				vk::MemoryPropertyFlagBits::eDeviceLocal);
-			fbColor = std::make_shared<ImageView>(ImageViewCreateInfo(fbColor_, vk::ImageAspectFlagBits::eColor), textureSampler);
-		}
+		// {
+		// 	using enum vk::ImageUsageFlagBits;
+		// 	auto fbColor_ = std::make_shared<Image>(ImageCreateInfo(w, h, Format::rgba8Unorm, eColorAttachment | eInputAttachment | eTransferSrc | eSampled),
+		// 		vk::MemoryPropertyFlagBits::eDeviceLocal);
+		// 	fbColor = std::make_shared<ImageView>(ImageViewCreateInfo(fbColor_, vk::ImageAspectFlagBits::eColor), textureSampler);
+		// }
 
 		createRenderPassUI();
 		
@@ -278,9 +280,9 @@ namespace Nork::Editor
 		//clear font textures from cpu data
 		ImGui_ImplVulkan_DestroyFontUploadObjects();
 
-		viewportImgDs = ImGui_ImplVulkan_AddTexture(textureSampler->handle, **fbColor, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		// viewportImgDs = ImGui_ImplVulkan_AddTexture(textureSampler->handle, **fbColor, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	}
-	void Editor::RenderPassUI(CommandBuilder& builder)
+	void Editor::RenderPassUI(Renderer::Vulkan::CommandBuilder& builder)
 	{
 		auto rpb = builder.BeginRenderPass(*fbUI, *renderPassUI);
 		ImGui::Render();

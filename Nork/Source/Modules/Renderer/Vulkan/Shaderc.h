@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Nork {
+namespace Nork::Renderer::Vulkan {
 	enum class ShaderType
 	{
 		None, Vertex, Fragment, Geometry, Compute

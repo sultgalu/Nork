@@ -2,7 +2,6 @@
 #include "Device.h"
 
 namespace Nork::Renderer::Vulkan {
-
     struct SwapChainCreateInfo : vk::SwapchainCreateInfoKHR
     {
         SwapChainCreateInfo(vk::SurfaceKHR surface, const vk::SurfaceCapabilitiesKHR& capabilities,

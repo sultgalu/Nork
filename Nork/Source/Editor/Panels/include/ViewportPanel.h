@@ -14,8 +14,9 @@ namespace Nork::Editor {
 		void SetIndex(int idx) { name = "Viewport  " + std::to_string(idx); }
 		void OnContentSkipped() override;
 		bool DeleteOnClose() const override { return true; }
-	protected:
+	public:
 		ViewportView viewportView;
+	protected:
 		std::string name = "Viewport";
 		std::shared_ptr<Components::Camera> camera;
 	};
