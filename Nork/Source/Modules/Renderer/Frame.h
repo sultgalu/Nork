@@ -6,6 +6,7 @@
 #include "Vulkan/Shaderc.h"
 #include "Vulkan/Image.h"
 #include "LoadUtils.h"
+#include "Vulkan/Semaphore.h"
 
 namespace Nork::Renderer {
     using namespace Vulkan;
@@ -18,7 +19,6 @@ namespace Nork::Renderer {
     inline static constexpr uint32_t DRAW_COUNT = DRAW_BATCH_COUNT * INSTANCE_COUNT;
     inline static constexpr uint32_t INVALID_FRAME_IDX = UINT_MAX;
 
-
     struct SSBO
     {
         glm::mat4 model;
@@ -29,50 +29,112 @@ namespace Nork::Renderer {
         glm::vec3 pos;
         glm::vec3 color;
         glm::vec2 texCoord;
-        static const std::array<VkVertexInputAttributeDescription, 3>& getAttributeDescriptions()
+        static const std::array<vk::VertexInputAttributeDescription, 3>& getAttributeDescriptions()
         {
             static auto val = getAttributeDescriptions_();
             return val;
         }
-        static const VkVertexInputBindingDescription& getBindingDescription()
+        static const vk::VertexInputBindingDescription& getBindingDescription()
         {
             static auto val = getBindingDescription_();
             return val;
         }
     private:
-        static const VkVertexInputBindingDescription getBindingDescription_()
+        static const vk::VertexInputBindingDescription getBindingDescription_()
         {
-            VkVertexInputBindingDescription bindingDescription{};
+            vk::VertexInputBindingDescription bindingDescription;
             bindingDescription.binding = 0;
             bindingDescription.stride = sizeof(Vertex);
-            bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+            bindingDescription.inputRate = vk::VertexInputRate::eVertex;
 
             return bindingDescription;
         }
-
-        static const std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions_()
+        static const std::array<vk::VertexInputAttributeDescription, 3> getAttributeDescriptions_()
         {
-            std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
+            std::array<vk::VertexInputAttributeDescription, 3> attributeDescriptions{};
 
             attributeDescriptions[0].binding = 0;
             attributeDescriptions[0].location = 0;
-            attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+            attributeDescriptions[0].format = vk::Format::eR32G32B32Sfloat;
             attributeDescriptions[0].offset = offsetof(Vertex, pos);
 
             attributeDescriptions[1].binding = 0;
             attributeDescriptions[1].location = 1;
-            attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+            attributeDescriptions[1].format = vk::Format::eR32G32B32Sfloat;
             attributeDescriptions[1].offset = offsetof(Vertex, color);
 
             attributeDescriptions[2].binding = 0;
             attributeDescriptions[2].location = 2;
-            attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+            attributeDescriptions[2].format = vk::Format::eR32G32Sfloat;
             attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
 
             return attributeDescriptions;
         }
     };
 
+    std::unordered_map<VkDescriptorType, uint32_t> DescriptorCounts(const std::vector<std::shared_ptr<DescriptorSetLayout>>& layouts)
+    {
+        std::unordered_map<VkDescriptorType, uint32_t> result;
+        for (auto& layout : layouts)
+            for (auto& binding : layout->bindings)
+                result[binding.descriptorType] += binding.descriptorCount;
+        return result;
+    }
+
+    class Commands
+    {
+    public:
+        static Commands& Instance()
+        {
+            static Commands instance;
+            return instance;
+        }
+        struct OneTimeSubmit
+        {
+            OneTimeSubmit(std::shared_ptr<CommandPool> pool)
+                :cmd(pool), sem(0)
+            {
+            }
+            ~OneTimeSubmit()
+            {
+            }
+            CommandBuffer cmd;
+            TimelineSemaphore sem;
+        };
+        void WaitAll(std::chrono::nanoseconds pollingTimeout = std::chrono::milliseconds(1))
+        {
+            std::vector<vk::Semaphore> handles;
+            handles.reserve(oneTimeSubmits.size());
+            for (auto& submit : oneTimeSubmits)
+                handles.push_back(*submit->sem);
+            std::vector<uint64_t> waitValues(handles.size(), 1);
+            //Device::Instance().graphicsQueue.waitIdle();
+            vk::Result res = vk::Result::eTimeout; 
+            while ((res = Device::Instance().waitSemaphores(vk::SemaphoreWaitInfo({}, handles, waitValues), pollingTimeout.count()))
+                != vk::Result::eSuccess)
+            {
+                Logger::Error("waitSemaphores returned ", vk::to_string(res), 
+                    " with ", std::to_string(pollingTimeout.count()), "ns timout");
+            }
+            oneTimeSubmits.clear();
+        }
+        void OneTime(std::shared_ptr<CommandPool> commandPool, std::function<void(CommandBuffer&)> fun, bool waitForCompletion = true)
+        {
+            //oneTimeSubmits.emplace_back(std::make_unique<OneTimeSubmit>(commandPool));
+            auto& cmd = oneTimeSubmits.emplace_back(std::make_unique<OneTimeSubmit>(commandPool))->cmd;
+            cmd.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
+            fun(cmd);
+            cmd.end();
+            Device::Instance().graphicsQueue.submit(vk::SubmitInfo().setCommandBuffers(*cmd));
+            if (waitForCompletion)
+            {
+                Device::Instance().graphicsQueue.waitIdle();
+                oneTimeSubmits.pop_back();
+            }
+        }
+    public:
+        std::vector<std::unique_ptr<OneTimeSubmit>> oneTimeSubmits;
+    };
 
     class State
     {
@@ -87,15 +149,39 @@ namespace Nork::Renderer {
                 using enum vk::MemoryPropertyFlagBits;
                 hostVisibleFlags = eHostVisible | eHostCoherent | eDeviceLocal;
             }
-            drawCommandsBuffer = std::make_shared<Buffer>(sizeof(VkDrawIndexedIndirectCommand) * MAX_FRAMES_IN_FLIGHT * DRAW_BATCH_COUNT, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-                hostVisibleFlags, true);
+            drawCommandsBuffer = std::make_shared<Buffer>(Vulkan::BufferCreateInfo(sizeof(VkDrawIndexedIndirectCommand) * MAX_FRAMES_IN_FLIGHT * DRAW_BATCH_COUNT,
+                vk::BufferUsageFlagBits::eIndirectBuffer), hostVisibleFlags, true);
             uboStride = PhysicalDevice::Instance().physicalDeviceProperties.limits.minUniformBufferOffsetAlignment;
             if (uboStride < sizeof(uint32_t)) // never, but maybe i'll change uint32_t for a larger type
                 uboStride = sizeof(uint32_t);
-            uniformBuffer = std::make_shared<Buffer>(uboStride * MAX_FRAMES_IN_FLIGHT * DRAW_COUNT, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                hostVisibleFlags, true);
-            storageBuffer = std::make_shared<Buffer>(sizeof(SSBO) * MAX_FRAMES_IN_FLIGHT * DRAW_COUNT, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                hostVisibleFlags, true);
+            uniformBuffer = std::make_shared<Buffer>(Vulkan::BufferCreateInfo(uboStride * MAX_FRAMES_IN_FLIGHT * DRAW_COUNT,
+                vk::BufferUsageFlagBits::eUniformBuffer), hostVisibleFlags, true);
+            storageBuffer = std::make_shared<Buffer>(Vulkan::BufferCreateInfo(sizeof(SSBO) * MAX_FRAMES_IN_FLIGHT * DRAW_COUNT, 
+                vk::BufferUsageFlagBits::eStorageBuffer), hostVisibleFlags, true);
+
+            textureSampler = std::make_shared<Sampler>();
+            textureImage = createTextureImage("texture.png");
+            textureImage2 = createTextureImage("clown.png");
+            textureView = std::make_shared<ImageView>(ImageViewCreateInfo(textureImage, vk::ImageAspectFlagBits::eColor), textureSampler);
+            textureView2 = std::make_shared<ImageView>(ImageViewCreateInfo(textureImage2, vk::ImageAspectFlagBits::eColor), textureSampler);
+
+            descriptorSetLayoutGPass = DescriptorSetLayout::Builder()
+                .Binding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT)
+                .Binding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+                .Binding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, MAX_IMG_ARR_SIZE, true)
+                .Build();
+            descriptorPool = std::make_shared<DescriptorPool>(DescriptorCounts({
+                descriptorSetLayoutGPass }), 1);
+            descriptorSet = std::make_shared<DescriptorSet>(*descriptorPool, *descriptorSetLayoutGPass, MAX_IMG_ARR_SIZE);
+
+            auto writer = descriptorSet->Writer()
+                .Buffer(0, *uniformBuffer, 0, sizeof(uint32_t), true)
+                .Buffer(1, *storageBuffer, 0, storageBuffer->memory->allocInfo.allocationSize);
+            for (size_t i = 0; i < MAX_IMG_ARR_SIZE; i++)
+            {
+                writer.Image(2, i % 3 ? *textureView2 : *textureView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, i);
+            }
+            writer.Write();
         }
         void createIndexBuffer()
         {
@@ -103,12 +189,14 @@ namespace Nork::Renderer {
             VkDeviceSize bufferSize = stride * drawRepeat;
 
             using enum vk::MemoryPropertyFlagBits;
-            Buffer stagingBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, eHostVisible | eHostCoherent, true);
+            Buffer stagingBuffer(Vulkan::BufferCreateInfo(bufferSize, vk::BufferUsageFlagBits::eTransferSrc),
+                eHostVisible | eHostCoherent, true);
             for (size_t i = 0; i < drawRepeat; i++)
             {
                 memcpy((char*)stagingBuffer.Ptr() + stride * i, indices.data(), stride);
             }
-            indexBuffer = std::make_shared<Buffer>(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+            indexBuffer = std::make_shared<Buffer>(Vulkan::BufferCreateInfo(bufferSize, 
+                vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer),
                 vk::MemoryPropertyFlagBits::eDeviceLocal);
 
             copyBuffer(stagingBuffer, *indexBuffer, bufferSize);
@@ -118,31 +206,106 @@ namespace Nork::Renderer {
             VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
             using enum vk::MemoryPropertyFlagBits;
-            Buffer stagingBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, eHostVisible | eHostCoherent);
+            Buffer stagingBuffer(Vulkan::BufferCreateInfo(bufferSize, vk::BufferUsageFlagBits::eTransferSrc),
+                eHostVisible | eHostCoherent);
 
             memcpy(stagingBuffer.memory->Map(), vertices.data(), (size_t)bufferSize);
-            vertexBuffer = std::make_shared<Buffer>(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            vertexBuffer = std::make_shared<Buffer>(Vulkan::BufferCreateInfo(bufferSize,
+                vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer),
                 vk::MemoryPropertyFlagBits::eDeviceLocal);
 
             copyBuffer(stagingBuffer, *vertexBuffer, bufferSize);
         }
         void copyBuffer(const Buffer& srcBuffer, const Buffer& dstBuffer, VkDeviceSize size)
         {
-            auto cmdBuf = CommandBuilder(*commandPool)
-                .BeginCommands()
-                .CopyBuffer(srcBuffer, dstBuffer, size)
-                .EndCommands();
-
-            vk::SubmitInfo submitInfo;
-            submitInfo.commandBufferCount = 1;
-            vk::CommandBuffer cmdbuf = cmdBuf.handle;
-            submitInfo.pCommandBuffers = &cmdbuf;
-
-            Device::Instance().graphicsQueue.submit(submitInfo);
-            Device::Instance().graphicsQueue.waitIdle();
-
-            commandPool->FreeCommandBuffer(cmdBuf);
+            Commands::Instance().OneTime(commandPool, [&](CommandBuffer& cmd)
+                {
+                    cmd.copyBuffer(*srcBuffer, *dstBuffer, vk::BufferCopy(0, 0, size));
+                });
         }
+        std::shared_ptr<Vulkan::Image> createTextureImage(const std::string& path)
+        {
+            auto image = Renderer::LoadUtils::LoadImage(path, true);
+            auto imgSize = image.data.size();
+
+            using enum vk::MemoryPropertyFlagBits;
+            Buffer stagingBuffer(Vulkan::BufferCreateInfo(imgSize, vk::BufferUsageFlagBits::eTransferSrc),
+                eHostVisible | eHostCoherent);
+            memcpy(stagingBuffer.memory->Map(), image.data.data(), imgSize);
+
+            auto texImg = std::make_shared<Vulkan::Image>(ImageCreateInfo(image.width, image.height, Format::rgba8Unorm,
+                vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled), eDeviceLocal);
+
+            transitionImageLayout(*texImg.operator*(), texImg->Format(), vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+            copyBufferToImage(stagingBuffer, *texImg, image.width, image.height);
+            transitionImageLayout(**texImg, texImg->Format(), vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+            return texImg;
+        }
+        void transitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout)
+        {
+            vk::ImageMemoryBarrier barrier{};
+            barrier.oldLayout = oldLayout;
+            barrier.newLayout = newLayout;
+            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.image = image;
+            barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+            barrier.subresourceRange.baseMipLevel = 0;
+            barrier.subresourceRange.levelCount = 1;
+            barrier.subresourceRange.baseArrayLayer = 0;
+            barrier.subresourceRange.layerCount = 1;
+            barrier.dstAccessMask = {}; // later
+            barrier.srcAccessMask = {}; // later
+            vk::PipelineStageFlags sourceStage;
+            vk::PipelineStageFlags destinationStage;
+
+            if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eTransferDstOptimal)
+            {
+                barrier.srcAccessMask = {};
+                barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+
+                sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
+                destinationStage = vk::PipelineStageFlagBits::eTransfer;
+            }
+            else if (oldLayout == vk::ImageLayout::eTransferDstOptimal && newLayout == vk::ImageLayout::eShaderReadOnlyOptimal)
+            {
+                barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+                barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+
+                sourceStage = vk::PipelineStageFlagBits::eTransfer;
+                destinationStage = vk::PipelineStageFlagBits::eFragmentShader;
+            }
+            else
+            {
+                throw std::invalid_argument("unsupported layout transition!");
+            }
+
+            Commands::Instance().OneTime(commandPool, [&](CommandBuffer& cmd)
+                {
+                    cmd.pipelineBarrier(sourceStage, destinationStage, vk::DependencyFlagBits::eByRegion, {}, {}, barrier);
+                });
+        }
+        void copyBufferToImage(const Buffer& buffer, const Vulkan::Image& image, uint32_t width, uint32_t height)
+        {
+            vk::BufferImageCopy region{};
+            region.bufferOffset = 0;
+            region.bufferRowLength = 0;
+            region.bufferImageHeight = 0;
+
+            region.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+            region.imageSubresource.mipLevel = 0;
+            region.imageSubresource.baseArrayLayer = 0;
+            region.imageSubresource.layerCount = 1;
+
+            region.imageOffset = vk::Offset3D(0, 0, 0);
+            region.imageExtent = vk::Extent3D(width, height, 1);
+
+            Commands::Instance().OneTime(commandPool, [&](CommandBuffer& cmd)
+                {
+                    cmd.copyBufferToImage(*buffer, *image, vk::ImageLayout::eTransferDstOptimal, region);
+                });
+        }
+
 
         ~State()
         {
@@ -227,7 +390,17 @@ namespace Nork::Renderer {
         std::shared_ptr<Buffer> storageBuffer; // 268 MB is MAX for DeviceLocal HostVisible Coherent
         std::shared_ptr<Buffer> drawCommandsBuffer;
 
+        std::shared_ptr<Sampler> textureSampler;
+        std::shared_ptr<Vulkan::Image> textureImage;
+        std::shared_ptr<Vulkan::Image> textureImage2;
+        std::shared_ptr<ImageView> textureView;
+        std::shared_ptr<ImageView> textureView2;
+
         std::shared_ptr<CommandPool> commandPool; // dup
+
+        std::shared_ptr<DescriptorPool> descriptorPool;
+        std::shared_ptr<DescriptorSetLayout> descriptorSetLayoutGPass;
+        std::shared_ptr<DescriptorSet> descriptorSet;
     };
 	class RenderPass_
 	{
@@ -270,118 +443,43 @@ namespace Nork::Renderer {
         data.resize(data.size() - 2);
         return data;
     }
-        std::unordered_map<VkDescriptorType, uint32_t> DescriptorCounts(const std::vector<std::shared_ptr<DescriptorSetLayout>>& layouts)
-        {
-            std::unordered_map<VkDescriptorType, uint32_t> result;
-            for (auto& layout : layouts)
-                for (auto& binding : layout->bindings)
-                    result[binding.descriptorType] += binding.descriptorCount;
-            return result;
-        }
-        std::shared_ptr<Vulkan::Image> createTextureImage(const std::string& path)
-        {
-            auto image = Renderer::LoadUtils::LoadImage(path, true);
-            auto imgSize = image.data.size();
-
-            using enum vk::MemoryPropertyFlagBits;
-            Buffer stagingBuffer(imgSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, eHostVisible | eHostCoherent);
-            memcpy(stagingBuffer.memory->Map(), image.data.data(), imgSize);
-
-            auto texImg = std::make_shared<Vulkan::Image>(ImageCreateInfo(image.width, image.height, Format::rgba8Unorm,
-                vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled), eDeviceLocal);
-
-            transitionImageLayout(*texImg.operator*(), (VkFormat)texImg->Format(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-            copyBufferToImage(stagingBuffer, *texImg, image.width, image.height);
-            transitionImageLayout(**texImg, (VkFormat)texImg->Format(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-            return texImg;
-        }
-        void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
-        {
-            VkImageMemoryBarrier barrier{};
-            barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-            barrier.oldLayout = oldLayout;
-            barrier.newLayout = newLayout;
-            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.image = image;
-            barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            barrier.subresourceRange.baseMipLevel = 0;
-            barrier.subresourceRange.levelCount = 1;
-            barrier.subresourceRange.baseArrayLayer = 0;
-            barrier.subresourceRange.layerCount = 1;
-            barrier.srcAccessMask = 0; // TODO
-            barrier.dstAccessMask = 0; // TODO
-            VkPipelineStageFlags sourceStage;
-            VkPipelineStageFlags destinationStage;
-
-            if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
-            {
-                barrier.srcAccessMask = 0;
-                barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-                sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-                destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            }
-            else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-            {
-                barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-                sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-                destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-            }
-            else
-            {
-                throw std::invalid_argument("unsupported layout transition!");
-            }
-
-            auto cmdBuf = CommandBuilder(*commandPool)
-                .BeginCommands()
-                .PipelineBarrier(sourceStage, destinationStage, std::vector<VkImageMemoryBarrier>{ barrier })
-                .EndCommands();
-
-            endSingleTimeCommands(cmdBuf);
-        }
-        void copyBufferToImage(const Buffer& buffer, const Vulkan::Image& image, uint32_t width, uint32_t height)
-        {
-            VkBufferImageCopy region{};
-            region.bufferOffset = 0;
-            region.bufferRowLength = 0;
-            region.bufferImageHeight = 0;
-
-            region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            region.imageSubresource.mipLevel = 0;
-            region.imageSubresource.baseArrayLayer = 0;
-            region.imageSubresource.layerCount = 1;
-
-            region.imageOffset = { 0, 0, 0 };
-            region.imageExtent = {
-                width,
-                height,
-                1
-            };
-
-            auto cmdBuf = CommandBuilder(*commandPool)
-                .BeginCommands()
-                .CopyBufferToImage(buffer, image, region)
-                .EndCommands();
-
-            endSingleTimeCommands(cmdBuf);
-        }
-        void endSingleTimeCommands(CommandBuffer cmdBuffer)
-        {
-            vk::SubmitInfo submitInfo;
-            submitInfo.commandBufferCount = 1;
-            vk::CommandBuffer cmdbuf = cmdBuffer.handle;
-            submitInfo.pCommandBuffers = &cmdbuf;
-
-            Device::Instance().graphicsQueue.submit(submitInfo);
-            Device::Instance().graphicsQueue.waitIdle();
-
-            commandPool->FreeCommandBuffer(cmdBuffer);
-        }
-
         virtual void recordCommandBuffer(CommandBuffer& commandBuffer, uint32_t imageIndex, uint32_t currentFrame, State& state) = 0;
+        void BeginRenderPass(vk::RenderPass renderPass, Vulkan::Framebuffer& fb, CommandBuffer& cmd)
+        {
+            vk::RenderPassBeginInfo beginInfo;
+            beginInfo.renderPass = renderPass;
+            beginInfo.framebuffer = *fb;
+            beginInfo.renderArea.offset = vk::Offset2D();
+            beginInfo.renderArea.extent = vk::Extent2D(fb.Width(), fb.Height());
+
+            std::vector<vk::ClearValue> clearValues;
+            clearValues.reserve(fb.Attachments().size());
+            for (auto& att : fb.Attachments())
+            {
+                auto format = att->Image()->Format();
+                vk::ClearValue clearValue{};
+                using enum vk::Format;
+                if (format == eD32Sfloat || format == eD16Unorm)
+                    clearValue.depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
+                else if (format == eR8G8B8A8Srgb || format == eR8G8B8A8Unorm)
+                    clearValue.color = vk::ClearColorValue(std::array<float, 4> {0.0f, 0.0f, 0.0f, 1.0f});
+                else
+                    std::unreachable();
+                clearValues.push_back(clearValue);
+            }
+
+            beginInfo.clearValueCount = clearValues.size();
+            beginInfo.pClearValues = clearValues.data();
+            cmd.beginRenderPass(beginInfo, vk::SubpassContents::eInline);
+        }
+        vk::Viewport ViewportFull(const Vulkan::Framebuffer& fb)
+        {
+            return vk::Viewport(0, 0, fb.Width(), fb.Height(), 0, 1);
+        }
+        vk::Rect2D ScissorFull(const Vulkan::Framebuffer& fb)
+        {
+            return vk::Rect2D({ 0, 0 }, { fb.Width(), fb.Height() });
+        }
 public:
         std::shared_ptr<CommandPool> commandPool; // dup
 	};
@@ -392,8 +490,7 @@ public:
         {
             createRenderPass();
 
-            textureSampler = std::make_shared<Sampler>();
-
+            auto textureSampler = std::make_shared<Sampler>();
             auto w = SwapChain::Instance().Width();
             auto h = SwapChain::Instance().Height();
             using enum vk::ImageUsageFlagBits;
@@ -411,171 +508,191 @@ public:
             auto gCol_ = std::make_shared<Image>(ImageCreateInfo(w, h, Format::rgba8Unorm, eColorAttachment | eInputAttachment),
                 vk::MemoryPropertyFlagBits::eDeviceLocal);
             gCol = std::make_shared<ImageView>(ImageViewCreateInfo(gCol_, vk::ImageAspectFlagBits::eColor), textureSampler);
-            fb = std::make_shared<Framebuffer>(w, h, *renderPass, std::vector<std::shared_ptr<ImageView>>{ gPos, gCol, fbColor, depthImage });
+            fb = std::make_shared<Framebuffer>(FramebufferCreateInfo(w, h, **renderPass, { gPos, gCol, fbColor, depthImage }));
             // Imgui
             // auto uiImg = std::make_shared<Image>(ImageCreateInfo(w, h, Format::rgba8Unorm, eColorAttachment | eTransferSrc),
             //     vk::MemoryPropertyFlagBits::eDeviceLocal);
             // auto uiImgView = std::make_shared<ImageView>(ImageViewCreateInfo(uiImg, vk::ImageAspectFlagBits::eColor), textureSampler);
             // fbUI = std::make_shared<Framebuffer>(w, h, *renderPassUI, std::vector<std::shared_ptr<ImageView>>{ uiImgView });
-
-            descriptorSetLayoutGPass = DescriptorSetLayout::Builder()
-                .Binding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT)
-                .Binding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-                .Binding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, MAX_IMG_ARR_SIZE, true)
-                .Build();
-            descriptorSetLayoutLPass = DescriptorSetLayout::Builder()
-                .Binding(0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT)
-                .Binding(1, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT)
-                .Build();
             descriptorSetLayoutPP = DescriptorSetLayout::Builder()
                 .Binding(0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT)
+                .Binding(1, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT)
+                .Binding(2, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT)
                 .Build();
 
-            //descriptorPool = std::make_shared<DescriptorPool>(*descriptorSetLayoutGPass);
             descriptorPool = std::make_shared<DescriptorPool>(DescriptorCounts({
-                descriptorSetLayoutGPass, descriptorSetLayoutLPass, descriptorSetLayoutPP
-                }), 3);
-            descriptorSet = std::make_shared<DescriptorSet>(*descriptorPool, *descriptorSetLayoutGPass, MAX_IMG_ARR_SIZE);
-            descriptorSetLPass = std::make_shared<DescriptorSet>(*descriptorPool, *descriptorSetLayoutLPass);
+                descriptorSetLayoutPP
+                }), 1);
             descriptorSetPP = std::make_shared<DescriptorSet>(*descriptorPool, *descriptorSetLayoutPP);
-            createGraphicsPipeline();
+            createGraphicsPipeline(state);
 
-            textureImage = createTextureImage("texture.png");
-            textureImage2 = createTextureImage("clown.png");
-            textureView = std::make_shared<ImageView>(ImageViewCreateInfo(textureImage, vk::ImageAspectFlagBits::eColor), textureSampler);
-            textureView2 = std::make_shared<ImageView>(ImageViewCreateInfo(textureImage2, vk::ImageAspectFlagBits::eColor), textureSampler);
-
-            auto writer = descriptorSet->Writer()
-                .Buffer(0, *state.uniformBuffer, 0, sizeof(uint32_t), true)
-                .Buffer(1, *state.storageBuffer, 0, state.storageBuffer->memory->allocInfo.allocationSize);
-            for (size_t i = 0; i < MAX_IMG_ARR_SIZE; i++)
-            {
-                writer.Image(2, i % 3 ? *textureView2 : *textureView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, i);
-            }
-            writer.Write();
-            descriptorSetLPass->Writer()
+            descriptorSetPP->Writer()
                 .Image(0, *gPos, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)
                 .Image(1, *gCol, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)
-                .Write();
-            descriptorSetPP->Writer()
-                .Image(0, *fbColor, VK_IMAGE_LAYOUT_GENERAL, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)
+                .Image(2, *fbColor, VK_IMAGE_LAYOUT_GENERAL, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)
                 .Write();
         }
-        void createGraphicsPipeline()
+        void createGraphicsPipeline(State& state)
         {
             ShaderModule vertShaderModule(LoadShader("Source/Shaders/shader.vert", { {"MAX_IMG_ARR_SIZE", std::to_string(MAX_IMG_ARR_SIZE)} }), VK_SHADER_STAGE_VERTEX_BIT);
             ShaderModule fragShaderModule(LoadShader("Source/Shaders/shader.frag"), VK_SHADER_STAGE_FRAGMENT_BIT);
-            VkPushConstantRange p{};
+            vk::PushConstantRange p;
             p.size = sizeof(glm::mat4);
-            p.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-            PipelineInfo info = PipelineInfo()
+            p.stageFlags = vk::ShaderStageFlagBits::eVertex;
+            pipelineLayout = std::make_shared<PipelineLayout>(
+                PipelineLayoutCreateInfo({ state.descriptorSetLayoutGPass->handle,
+                    descriptorSetLayoutPP->handle, descriptorSetLayoutPP->handle }, { p }));
+            pipelineGPass = std::make_shared<Pipeline>(PipelineCreateInfo()
+                .Layout(**pipelineLayout)
                 .AddShader(vertShaderModule)
                 .AddShader(fragShaderModule)
                 .VertexInput<Vertex>()
-                .InputAssembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+                .InputAssembly(vk::PrimitiveTopology::eTriangleList)
                 .Rasterization(false) // TRUE
                 .Multisampling()
                 .ColorBlend(2)
-                .Layout(descriptorSetLayoutGPass->handle, { p })
-                .DepthStencil(true, true, VK_COMPARE_OP_LESS);
-            pipelineGPass = std::make_shared<Pipeline>(info, *renderPass, 0);
+                .RenderPass(**renderPass, 0)
+                .DepthStencil(true, true, vk::CompareOp::eLess));
 
             ShaderModule vertShaderModule3(LoadShader("Source/Shaders/pp.vert"), VK_SHADER_STAGE_VERTEX_BIT);
             ShaderModule fragShaderModule3(LoadShader("Source/Shaders/lPass.frag"), VK_SHADER_STAGE_FRAGMENT_BIT);
-            PipelineInfo info3 = PipelineInfo()
+            pipelineLPass = std::make_shared<Pipeline>(PipelineCreateInfo()
+                .Layout(**pipelineLayout)
                 .AddShader(vertShaderModule3)
                 .AddShader(fragShaderModule3)
                 .VertexInputHardCoded()
-                .InputAssembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+                .InputAssembly(vk::PrimitiveTopology::eTriangleList)
                 .Rasterization(false)
                 .Multisampling()
                 .ColorBlend(1)
-                .Layout(descriptorSetLayoutLPass->handle)
-                .DepthStencil(false);
-            pipelineLPass = std::make_shared<Pipeline>(info3, *renderPass, 1);
+                .RenderPass(**renderPass, 1)
+                .DepthStencil(false));
 
             ShaderModule vertShaderModule2(LoadShader("Source/Shaders/pp.vert"), VK_SHADER_STAGE_VERTEX_BIT);
             ShaderModule fragShaderModule2(LoadShader("Source/Shaders/pp.frag"), VK_SHADER_STAGE_FRAGMENT_BIT);
-            PipelineInfo info2 = PipelineInfo()
+            pipelinePP = std::make_shared<Pipeline>(PipelineCreateInfo()
+                .Layout(**pipelineLayout)
                 .AddShader(vertShaderModule2)
                 .AddShader(fragShaderModule2)
                 .VertexInputHardCoded()
-                .InputAssembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+                .InputAssembly(vk::PrimitiveTopology::eTriangleList)
                 .Rasterization(false)
                 .Multisampling()
                 .ColorBlend(1)
-                .Layout(descriptorSetLayoutPP->handle)
-                .DepthStencil(false);
-            pipelinePP = std::make_shared<Pipeline>(info2, *renderPass, 2);
+                .RenderPass(**renderPass, 2)
+                .DepthStencil(false));
         }
         void createRenderPass()
         {
-            uint32_t gPosAtt = 0, gColAtt = 1, lPassAtt = 2, depthAtt = 3;
-            RenderPass::Config config(4, 3);
-            config.Attachment(gPosAtt, AttachmentDescription::ColorInternalUse((VkFormat)Format::rgba8Unorm).FinalLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL));
-            config.Attachment(gColAtt, AttachmentDescription::ColorInternalUse((VkFormat)Format::rgba8Unorm).FinalLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL));
-            config.Attachment(lPassAtt, AttachmentDescription::ColorForLaterCopy((VkFormat)Format::rgba8Unorm).FinalLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
-            config.Attachment(depthAtt, AttachmentDescription::CleanDepth());
+            RenderPassCreateInfo createInfo;
 
-            auto gPass = SubPass(0)
-                .ColorAttachment(gPosAtt)
-                .ColorAttachment(gColAtt)
-                .DepthAttachment(depthAtt);
-            auto lPass = SubPass(1)
-                .InputAttachment(gPosAtt, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-                .InputAttachment(gColAtt, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-                .ColorAttachment(lPassAtt);
-            auto ppPass = SubPass(2)
-                .ColorAttachment(lPassAtt, VK_IMAGE_LAYOUT_GENERAL)
-                .InputAttachment(lPassAtt, VK_IMAGE_LAYOUT_GENERAL);
+            uint32_t gPosAttIdx = 0, gColAttIdx = 1, lPassAttIdx = 2, depthAttIdx = 3;
+            createInfo.Attachments(std::vector<AttachmentDescription>(4));
+            createInfo.attachments[gPosAttIdx]
+                .setFormat(Format::rgba8Unorm)
+                .setFinalLayout(vk::ImageLayout::eColorAttachmentOptimal)
+                .setLoadOp(vk::AttachmentLoadOp::eClear);
+            createInfo.attachments[gColAttIdx] = createInfo.attachments[gPosAttIdx];
+            createInfo.attachments[lPassAttIdx]
+                .setFormat(Format::rgba8Unorm)
+                .setLoadOp(vk::AttachmentLoadOp::eClear)
+                .setStoreOp(vk::AttachmentStoreOp::eStore)
+                .setFinalLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+            createInfo.attachments[depthAttIdx]
+                .setFormat(Format::depth32)
+                .setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
+                .setLoadOp(vk::AttachmentLoadOp::eClear);
 
-            config.AddSubPass(gPass)
-                .AddSubPass(lPass)
-                .AddSubPass(ppPass);
+            uint32_t gPass = 0, lPass = 1, ppPass = 2;
+            std::vector<SubpassDescription> subPasses(3);
+            subPasses[gPass]
+                .ColorAttachments({ 
+                    { gPosAttIdx, vk::ImageLayout::eColorAttachmentOptimal },
+                    { gColAttIdx, vk::ImageLayout::eColorAttachmentOptimal }
+                    })
+                .DepthAttachment(depthAttIdx);
+            subPasses[lPass]
+                .ColorAttachments({ { lPassAttIdx, vk::ImageLayout::eColorAttachmentOptimal } })
+                .InputAttachments({
+                    { gPosAttIdx, vk::ImageLayout::eShaderReadOnlyOptimal },
+                    { gColAttIdx, vk::ImageLayout::eShaderReadOnlyOptimal }
+                    });
+            subPasses[ppPass]
+                .ColorAttachments({ { lPassAttIdx, vk::ImageLayout::eGeneral } })
+                .InputAttachments({ { lPassAttIdx, vk::ImageLayout::eGeneral } });
+            createInfo.Subpasses(subPasses);
+            
+            createInfo.Dependencies({
+                vk::SubpassDependency(VK_SUBPASS_EXTERNAL, gPass)
+                .setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests)
+                .setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests)
+                .setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite),
 
-            config.DependencyExternalSrc(gPass, SubPassDependency()
-                .SrcStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT)
-                .DstStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT)
-                .DstAccessMask(VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT));
-            config.Dependency(gPass, lPass, SubPassDependency()
-                .SrcStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT)
-                .SrcAccessMask(VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT)
-                .DstStageMask(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
-                .DstAccessMask(VK_ACCESS_INPUT_ATTACHMENT_READ_BIT)
-                .Flags_ByRegion());
-            config.Dependency(lPass, ppPass, SubPassDependency()
-                .SrcStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT)
-                .SrcAccessMask(VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT)
-                .DstStageMask(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
-                .DstAccessMask(VK_ACCESS_INPUT_ATTACHMENT_READ_BIT)
-                .Flags_ByRegion());
+                vk::SubpassDependency(gPass, lPass)
+                .setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
+                .setSrcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite)
+                .setDstStageMask(vk::PipelineStageFlagBits::eFragmentShader)
+                .setDstAccessMask(vk::AccessFlagBits::eInputAttachmentRead)
+                .setDependencyFlags(vk::DependencyFlagBits::eByRegion),
 
-            renderPass = std::make_shared<RenderPass>(config);
+                vk::SubpassDependency(lPass, ppPass)
+                .setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
+                .setSrcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite)
+                .setDstStageMask(vk::PipelineStageFlagBits::eFragmentShader)
+                .setDstAccessMask(vk::AccessFlagBits::eInputAttachmentRead)
+                .setDependencyFlags(vk::DependencyFlagBits::eByRegion)
+                });
+            renderPass = std::make_shared<RenderPass>(createInfo);
         }
-        void recordCommandBuffer(CommandBuffer& commandBuffer, uint32_t imageIndex, uint32_t currentFrame, State& state) override
+        void recordCommandBuffer(CommandBuffer& cmd, uint32_t imageIndex, uint32_t currentFrame, State& state) override
         {
-            auto builder = CommandBuilder(commandBuffer)
-                .BeginRenderPass(*fb, *renderPass)
-                .Viewport().Scissor()
+            BeginRenderPass(**renderPass, *fb, cmd);
+            cmd.setViewport(0, ViewportFull(*fb));
+            cmd.setScissor(0, ScissorFull(*fb));
 
-                .BindPipeline(*pipelineGPass)
-                .PushConstants(*pipelineGPass, VK_SHADER_STAGE_VERTEX_BIT, &state.vp, sizeof(glm::mat4))
-                .BindVB(*state.vertexBuffer)
-                .BindIB(*state.indexBuffer, VK_INDEX_TYPE_UINT16)
-                .BindDescriptorSet(pipelineGPass->layoutHandle, *descriptorSet, { currentFrame * state.uboStride * DRAW_COUNT })
-                //.DrawIndexed(indices.size(), 1'000'000)
-                .DrawIndexedIndirect(*state.drawCommandsBuffer, DRAW_BATCH_COUNT, sizeof(VkDrawIndexedIndirectCommand) * currentFrame * DRAW_BATCH_COUNT)
+            cmd.pushConstants<glm::mat4>(**pipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, state.vp);
+            cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, **pipelineGPass);
 
-                .NextSubPass()
-                .BindPipeline(*pipelineLPass)
-                .BindDescriptorSet(pipelineLPass->layoutHandle, *descriptorSetLPass)
-                .DrawQuad()
+            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, **pipelineLayout, 0,
+                { (vk::DescriptorSet)state.descriptorSet->handle, (vk::DescriptorSet)descriptorSetPP->handle }, 
+                { currentFrame * state.uboStride * DRAW_COUNT });
 
-                .NextSubPass()
-                .BindPipeline(*pipelinePP)
-                .BindDescriptorSet(pipelinePP->layoutHandle, *descriptorSetPP)
-                .DrawQuad()
-                .EndRenderPass();
+            cmd.bindVertexBuffers(0, **state.vertexBuffer, { 0 });
+            cmd.bindIndexBuffer(**state.indexBuffer, 0, vk::IndexType::eUint16);
+            cmd.drawIndexedIndirect(**state.drawCommandsBuffer, sizeof(VkDrawIndexedIndirectCommand) * currentFrame * DRAW_BATCH_COUNT,
+                DRAW_BATCH_COUNT, sizeof(vk::DrawIndexedIndirectCommand));
+
+            cmd.nextSubpass(vk::SubpassContents::eInline);
+            cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, **pipelineLPass);
+            cmd.DrawQuad();
+
+            cmd.nextSubpass(vk::SubpassContents::eInline);
+            cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, **pipelinePP);
+            cmd.DrawQuad();
+
+            cmd.endRenderPass();
+         //    auto builder = CommandBuilder(commandBuffer)
+         //        .BeginRenderPass(*fb, *renderPass)
+         //        .Viewport().Scissor()
+         // 
+         //        .BindPipeline(*pipelineGPass)
+         //        .PushConstants(*pipelineGPass, VK_SHADER_STAGE_VERTEX_BIT, &state.vp, sizeof(glm::mat4))
+         //        .BindVB(*state.vertexBuffer)
+         //        .BindIB(*state.indexBuffer, VK_INDEX_TYPE_UINT16)
+         //        .BindDescriptorSet(pipelineGPass->layoutHandle, *descriptorSet, { currentFrame * state.uboStride * DRAW_COUNT })
+         //        //.DrawIndexed(indices.size(), 1'000'000)
+         //        .DrawIndexedIndirect(*state.drawCommandsBuffer, DRAW_BATCH_COUNT, sizeof(VkDrawIndexedIndirectCommand) * currentFrame * DRAW_BATCH_COUNT)
+         // 
+         //        .NextSubPass()
+         //        .BindPipeline(*pipelineLPass)
+         //        .BindDescriptorSet(pipelineLPass->layoutHandle, *descriptorSetLPass)
+         //        .DrawQuad()
+         // 
+         //        .NextSubPass()
+         //        .BindPipeline(*pipelinePP)
+         //        .BindDescriptorSet(pipelinePP->layoutHandle, *descriptorSetPP)
+         //        .DrawQuad()
+         //        .EndRenderPass();
         }
     public:
 
@@ -587,56 +704,148 @@ public:
         std::shared_ptr<ImageView> fbColor;
         std::shared_ptr<Framebuffer> fb;
 
-        VkDescriptorPool imguiPool;
         std::shared_ptr<DescriptorPool> descriptorPool;
-
-        std::shared_ptr<DescriptorSetLayout> descriptorSetLayoutGPass;
-        std::shared_ptr<DescriptorSet> descriptorSet;
         std::shared_ptr<DescriptorSetLayout> descriptorSetLayoutPP;
         std::shared_ptr<DescriptorSet> descriptorSetPP;
-        std::shared_ptr<DescriptorSetLayout> descriptorSetLayoutLPass;
-        std::shared_ptr<DescriptorSet> descriptorSetLPass;
 
+        std::shared_ptr<PipelineLayout> pipelineLayout;
         std::shared_ptr<Pipeline> pipelineGPass;
         std::shared_ptr<Pipeline> pipelineLPass;
         std::shared_ptr<Pipeline> pipelinePP;
-
-        std::shared_ptr<Sampler> textureSampler;
-        std::shared_ptr<Vulkan::Image> textureImage;
-        std::shared_ptr<Vulkan::Image> textureImage2;
-        std::shared_ptr<ImageView> textureView;
-        std::shared_ptr<ImageView> textureView2;
     };
     class EditorPass : public RenderPass_
     {
     public:     
         EditorPass()
         {
+            createRenderPassUI();
+            using namespace Nork::Renderer::Vulkan;
+            auto w = SwapChain::Instance().Width();
+            auto h = SwapChain::Instance().Height();
+            auto uiImg = std::make_shared<Vulkan::Image>(ImageCreateInfo(w, h, Format::rgba8Unorm,
+                vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc),
+                vk::MemoryPropertyFlagBits::eDeviceLocal);
+            auto uiImgView = std::make_shared<ImageView>(ImageViewCreateInfo(uiImg, vk::ImageAspectFlagBits::eColor), nullptr);
+            fbUI = std::make_shared<Framebuffer>(FramebufferCreateInfo(w, h, **renderPassUI, { uiImgView }));
+            //auto imgFormat = Format::rgba8Unorm; //  SwapChain::Instance().createInfo.imageFormat;
+            //for (auto& img : SwapChain::Instance().images)
+            //{
+            //    auto imgView = std::make_shared<ImageView>(ImageViewCreateInfo(img, imgFormat, vk::ImageAspectFlagBits::eColor), nullptr);
+            //    auto fb = std::make_shared<Framebuffer>(w, h, *renderPassUI, std::vector<std::shared_ptr<ImageView>>{ imgView });
+            //    swapChainfbs.push_back(fb);
+            //}
+            InitImguiForVulkan();
         }
-        void recordCommandBuffer(CommandBuffer& commandBuffer, uint32_t imageIndex, uint32_t currentFrame, State& state) override
+        ~EditorPass()
         {
-            auto builder = commandBuffer.CommandBuilder();
-            Editor::Editor::Get().RenderPassUI(builder);
+            ImGui_ImplVulkan_Shutdown();
+        }
+        void createRenderPassUI()
+        {
+            using namespace Nork::Renderer::Vulkan;
+            RenderPassCreateInfo createInfo;
 
-            auto& uiImg = *Editor::Editor::Get().fbUI->attachments[0]->Image();
-            builder.PipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                { // already converted to eTransferSrcOptimal by renderpass (attachment config)
+            uint32_t colAtt = 0;
+            createInfo.Attachments(std::vector<AttachmentDescription>(1));
+            createInfo.attachments[colAtt]
+                .setFormat(Format::rgba8Unorm)
+                .setLoadOp(vk::AttachmentLoadOp::eClear)
+                .setStoreOp(vk::AttachmentStoreOp::eStore)
+                .setFinalLayout(vk::ImageLayout::eTransferSrcOptimal);
+
+            uint32_t sPass = 0;
+            createInfo.Subpasses({ 
+                SubpassDescription().ColorAttachments({ { colAtt, vk::ImageLayout::eColorAttachmentOptimal } })
+                });
+
+            createInfo.Dependencies({
+                vk::SubpassDependency(VK_SUBPASS_EXTERNAL, sPass)
+                .setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests)
+                .setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests)
+                .setSrcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite)
+                .setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite),
+                });
+            renderPassUI = std::make_shared<RenderPass>(createInfo);
+        }
+        void InitImguiForVulkan()
+        {
+            using namespace Nork::Renderer::Vulkan;
+            std::unordered_map<VkDescriptorType, uint32_t> pool_sizes =
+            {
+                { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+                { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+                { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+                { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+                { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+                { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+                { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+                { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+                { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+            };
+
+            imguiPool = std::make_shared<DescriptorPool>(pool_sizes, 1000);
+            
+            //this initializes imgui for Vulkan
+            ImGui_ImplVulkan_InitInfo init_info = {};
+            init_info.Instance = *Instance::StaticInstance();
+            init_info.PhysicalDevice = *PhysicalDevice::Instance();
+            init_info.Device = *Device::Instance();
+            init_info.Queue = *Device::Instance().graphicsQueue;
+            init_info.DescriptorPool = imguiPool->handle;
+            init_info.MinImageCount = 3;
+            init_info.ImageCount = 3;
+            init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+            init_info.Subpass = 0;
+
+            ImGui_ImplVulkan_Init(&init_info, **renderPassUI);
+
+            //execute a gpu command to upload imgui font textures
+            Commands::Instance().OneTime(commandPool, [&](CommandBuffer& cmd)
+                {
+                    ImGui_ImplVulkan_CreateFontsTexture(*cmd);
+                });
+            // commandPool->FreeCommandBuffer(cmdBuf.cmdBuf);
+
+            //clear font textures from cpu data
+            ImGui_ImplVulkan_DestroyFontUploadObjects();
+        }
+        void recordCommandBuffer(CommandBuffer& cmd, uint32_t imageIndex, uint32_t currentFrame, State& state) override
+        {
+            //auto builder = commandBuffer.CommandBuilder();
+            //auto rpb = builder.BeginRenderPass(*swapChainfbs[imageIndex], *renderPassUI);
+            //auto rpb = builder.BeginRenderPass(*fbUI, *renderPassUI);
+            BeginRenderPass(**renderPassUI, *fbUI, cmd);
+            ImGui::Render();
+            ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), *cmd);
+            cmd.endRenderPass();
+            //rpb.EndRenderPass();
+
+            auto& uiImg = *fbUI->Attachments()[0]->Image();
+            cmd.pipelineBarrier(vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eTransfer,
+                vk::DependencyFlagBits::eByRegion, {}, {}, {
                     ImageMemoryBarrier(*uiImg, vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eTransferSrcOptimal,
                         vk::AccessFlagBits::eColorAttachmentWrite, vk::AccessFlagBits::eTransferRead),
                     ImageMemoryBarrier(SwapChain::Instance().images[imageIndex], vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal,
                         vk::AccessFlagBits::eNone, vk::AccessFlagBits::eTransferWrite),
-                })
-                .CopyImage(*uiImg, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT, SwapChain::Instance().images[imageIndex],
-                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT, { SwapChain::Instance().Width(), SwapChain::Instance().Height(), 1 })
-                .PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                    {
-                        //fbColor->Barrier(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                        //    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT),
-                        ImageMemoryBarrier(SwapChain::Instance().images[imageIndex], vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::ePresentSrcKHR,
+                });
+            cmd.copyImage(*uiImg, vk::ImageLayout::eTransferSrcOptimal, 
+                SwapChain::Instance().images[imageIndex], vk::ImageLayout::eTransferDstOptimal, 
+                vk::ImageCopy(
+                    vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1), {}, 
+                    vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1), {},
+                    { SwapChain::Instance().Width(), SwapChain::Instance().Height(), 1 }
+            ));
+            cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eBottomOfPipe,
+                vk::DependencyFlagBits::eByRegion, {}, {}, {
+                    ImageMemoryBarrier(SwapChain::Instance().images[imageIndex], vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::ePresentSrcKHR,
                             vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eNone),
-                    });
+                });
         }
-
+        std::shared_ptr<Vulkan::Framebuffer> fbUI;
+        std::shared_ptr<DescriptorPool> imguiPool;
+        std::shared_ptr<Renderer::Vulkan::RenderPass> renderPassUI;
     public:
     };
 	class RenderLoop
@@ -646,7 +855,7 @@ public:
         {
             createSyncObjects();
             commandPool = std::make_shared<CommandPool>();
-            commandBuffers = commandPool->CreateCommandBuffers(MAX_FRAMES_IN_FLIGHT);
+            commandBuffers = CommandBuffer::Create(commandPool, MAX_FRAMES_IN_FLIGHT);
             renderPasses.push_back(std::make_shared<DeferredPass>(state));
             renderPasses.push_back(std::make_shared<EditorPass>());
         }
@@ -669,7 +878,7 @@ public:
             vkResetFences(*Device::Instance(), 1, &inFlightFences[currentFrame]);
             elapsed += t.Elapsed();
 
-            vkResetCommandBuffer(commandBuffers[currentFrame].handle, 0);
+            commandBuffers[currentFrame].reset();
             state.updateUniformBuffer(currentFrame);
 
             auto result = SwapChain::Instance().acquireNextImage(UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE);
@@ -693,31 +902,29 @@ public:
         }
         void EndFrame(uint32_t imgIdx)
         {
-            VkSubmitInfo submitInfo{};
-            submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+            vk::SubmitInfo submitInfo{};
 
-            VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
-            VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+            vk::Semaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
+            vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
             submitInfo.waitSemaphoreCount = 1;
             submitInfo.pWaitSemaphores = waitSemaphores;
             submitInfo.pWaitDstStageMask = waitStages;
 
             submitInfo.commandBufferCount = 1;
-            submitInfo.pCommandBuffers = &commandBuffers[currentFrame].handle;
+            submitInfo.setCommandBuffers(*commandBuffers[currentFrame]);
 
-            VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
+            vk::Semaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
             submitInfo.signalSemaphoreCount = 1;
             submitInfo.pSignalSemaphores = signalSemaphores;
 
-            vkQueueSubmit(*Device::Instance().graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) == VkSuccess();
+            // vkQueueSubmit(*Device::Instance().graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) == VkSuccess();
+            Device::Instance().graphicsQueue.submit(submitInfo, inFlightFences[currentFrame]);
 
-            VkPresentInfoKHR presentInfo{};
-            presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
+            vk::PresentInfoKHR presentInfo;
             presentInfo.waitSemaphoreCount = 1;
             presentInfo.pWaitSemaphores = signalSemaphores;
 
-            VkSwapchainKHR swapChains[] = { *SwapChain::Instance() };
+            vk::SwapchainKHR swapChains[] = { *SwapChain::Instance() };
             presentInfo.swapchainCount = 1;
             presentInfo.pSwapchains = swapChains;
             presentInfo.pImageIndices = &imgIdx;
@@ -741,13 +948,12 @@ public:
             auto imgIdx = BeginFrame();
             if (imgIdx == INVALID_FRAME_IDX)
                 return;
-            commandBuffers[currentFrame].CommandBuilder().BeginCommands();
+            commandBuffers[currentFrame].begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
             for (auto& pass : renderPasses)
             {
                 pass->recordCommandBuffer(commandBuffers[currentFrame], imgIdx, currentFrame, state);
-                //recordCommandBuffer(commandBuffers[currentFrame], imgIdx);
             }
-            commandBuffers[currentFrame].CommandBuilder().EndCommands();
+            commandBuffers[currentFrame].end();
             EndFrame(imgIdx);
         }
         void createSyncObjects()

@@ -159,10 +159,10 @@
     <ClCompile Include="Source\Components\Impl\Drawable.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Main\Shaderc.cpp">
+    <ClCompile Include="Source\Modules\Renderer\Vulkan\VulkanWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\Vulkan\VulkanWindow.cpp">
+    <ClCompile Include="Source\Modules\Renderer\Vulkan\Shaderc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -389,9 +389,6 @@
     <ClInclude Include="Source\Core\GLTFReader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Main\Shaderc.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Modules\Renderer\Vulkan\VulkanContext.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -407,40 +404,43 @@
     <ClInclude Include="Source\Modules\Renderer\Vulkan\Device.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Main\Texture.h">
+    <ClInclude Include="Source\Modules\Renderer\Vulkan\Semaphore.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Main\Buffer.h">
+    <ClInclude Include="Source\Modules\Renderer\Frame.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Main\DeviceMemory.h">
+    <ClInclude Include="Source\Modules\Renderer\Vulkan\Buffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Main\Image.h">
+    <ClInclude Include="Source\Modules\Renderer\Vulkan\CommandBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Main\Sampler.h">
+    <ClInclude Include="Source\Modules\Renderer\Vulkan\DescriptorSet.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Main\Pipeline.h">
+    <ClInclude Include="Source\Modules\Renderer\Vulkan\DeviceMemory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Main\DescriptorSet.h">
+    <ClInclude Include="Source\Modules\Renderer\Vulkan\Framebuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Main\ShaderModule.h">
+    <ClInclude Include="Source\Modules\Renderer\Vulkan\Image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Main\CommandBuffer.h">
+    <ClInclude Include="Source\Modules\Renderer\Vulkan\RenderPass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Main\Semaphore.h">
+    <ClInclude Include="Source\Modules\Renderer\Vulkan\Sampler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Main\RenderPass.h">
+    <ClInclude Include="Source\Modules\Renderer\Vulkan\Pipeline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Main\Framebuffer.h">
+    <ClInclude Include="Source\Modules\Renderer\Vulkan\Shaderc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Modules\Renderer\Vulkan\ShaderModule.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

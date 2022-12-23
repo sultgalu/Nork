@@ -81,25 +81,24 @@ namespace Nork::Renderer::Vulkan {
 
             deviceFeatures.samplerAnisotropy = VK_TRUE;
             deviceFeatures.multiDrawIndirect = VK_TRUE;
+            // non-uniform indexing
+            deviceFeatures2.shaderSampledImageArrayNonUniformIndexing = true;
+            deviceFeatures2.runtimeDescriptorArray = true;
+            deviceFeatures2.descriptorBindingVariableDescriptorCount = true;
+            deviceFeatures2.descriptorBindingPartiallyBound = true;
+            // timeline semaphores
+            deviceFeatures2.timelineSemaphore = true;
 
             this->queueCreateInfoCount = queueCreateInfos.size();
             this->pQueueCreateInfos = queueCreateInfos.data();
             this->pEnabledFeatures = &deviceFeatures;
             this->enabledExtensionCount = deviceExtensions.size();
             this->ppEnabledExtensionNames = deviceExtensions.data();
-
-            descriptor_indexing_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
-
-            // Enable non-uniform indexing
-            descriptor_indexing_features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
-            descriptor_indexing_features.runtimeDescriptorArray = VK_TRUE;
-            descriptor_indexing_features.descriptorBindingVariableDescriptorCount = VK_TRUE;
-            descriptor_indexing_features.descriptorBindingPartiallyBound = VK_TRUE;
-            this->pNext = &descriptor_indexing_features;
+            this->pNext = &deviceFeatures2;
         }
         std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
         vk::PhysicalDeviceFeatures deviceFeatures;
-        VkPhysicalDeviceDescriptorIndexingFeatures descriptor_indexing_features{};
+        vk::PhysicalDeviceVulkan12Features deviceFeatures2;
     };
 
     class Device : public vk::raii::Device

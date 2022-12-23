@@ -2,13 +2,13 @@
 
 //#extension GL_ARB_shader_draw_parameters : require
 
-layout(binding = 0) uniform UniformBufferObject {
+layout(set = 0, binding = 0) uniform UniformBufferObject {
     uint[10] idx;
 } ubo;
 struct SSBO_{
     mat4 model;
 };
-layout(binding = 1) readonly buffer SSBO {
+layout(set = 0, binding = 1) readonly buffer SSBO {
     SSBO_[] d;
 } ssbo;
 

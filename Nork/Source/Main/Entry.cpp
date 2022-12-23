@@ -27,13 +27,6 @@ PhysicalDevice* PhysicalDevice::instance = nullptr;
 SwapChain* SwapChain::instance = nullptr;
 Instance* Instance::staticInstance = nullptr;
 Window* Window::staticInstance = nullptr;
-RenderPassBuilder::RenderPassBuilder(CommandBuilder& cmdBuilder, const Framebuffer& fb)
-    : cmdBuilder(cmdBuilder), cmdBuf(cmdBuilder.cmdBuf), fb(fb)
-{}
-CommandBuilder CommandBuffer::CommandBuilder()
-{
-    return class CommandBuilder(*this);
-}
 DescriptorSet::Writer_ DescriptorSet::Writer()
 {
     return Writer_(*this);
@@ -46,8 +39,8 @@ int main()
     Engine engine;
     Window window = Window(1920 * 0.8f, 1080 * 0.8f);
     std::unique_ptr<Nork::Input> input = std::make_unique<Nork::Input>(window.glfwWindow);
-    Renderer::RenderLoop renderer;
     Editor::Editor editor;
+    Renderer::RenderLoop renderer;
     editor.AddViewportPanel();
     std::shared_ptr<ImageView> vpImg = nullptr;
     for (auto& pass : renderer.renderPasses)

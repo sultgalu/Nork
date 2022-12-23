@@ -236,7 +236,7 @@
     <ClInclude Include="Source\Modules\Renderer\Vulkan\RenderPass.h" />
     <ClInclude Include="Source\Modules\Renderer\Vulkan\Sampler.h" />
     <ClInclude Include="Source\Modules\Renderer\Vulkan\Pipeline.h" />
-    <ClInclude Include="Source\Main\Semaphore.h" />
+    <ClInclude Include="Source\Modules\Renderer\Vulkan\Semaphore.h" />
     <ClInclude Include="Source\Modules\Renderer\Vulkan\Shaderc.h" />
     <ClInclude Include="Source\Modules\Renderer\Vulkan\ShaderModule.h" />
     <ClInclude Include="Source\Modules\Renderer\Vulkan\SwapChain.h" />

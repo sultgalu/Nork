@@ -85,22 +85,7 @@ namespace Nork::Renderer::Vulkan {
 			poolInfo.poolSizeCount = poolSizes.size();
 			poolInfo.pPoolSizes = poolSizes.data();
 			poolInfo.maxSets = maxSets;
-
-			vkCreateDescriptorPool(*Device::Instance(), &poolInfo, nullptr, &handle) == VkSuccess();
-		}
-		DescriptorPool(const DescriptorSetLayout& layout, uint32_t maxSets = 1)
-		{
-			std::vector<VkDescriptorPoolSize> descriptorCounts;
-			descriptorCounts.reserve(layout.bindings.size());
-			for (auto& binding : layout.bindings)
-			{
-				descriptorCounts.push_back(VkDescriptorPoolSize{ .type = binding.descriptorType, .descriptorCount = binding.descriptorCount });
-			}
-			VkDescriptorPoolCreateInfo poolInfo{};
-			poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-			poolInfo.poolSizeCount = descriptorCounts.size();
-			poolInfo.pPoolSizes = descriptorCounts.data();
-			poolInfo.maxSets = maxSets;
+			// poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
 			vkCreateDescriptorPool(*Device::Instance(), &poolInfo, nullptr, &handle) == VkSuccess();
 		}
@@ -214,15 +199,15 @@ namespace Nork::Renderer::Vulkan {
 			for (auto& buf : buffers)
 			{
 				VkDescriptorType type = VK_DESCRIPTOR_TYPE_MAX_ENUM;
-				if (buf.buf.bufferInfo.usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
+				if (buf.buf.createInfo.usage & vk::BufferUsageFlagBits::eUniformBuffer)
 					type = buf.dynamic ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-				else if (buf.buf.bufferInfo.usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)
+				else if (buf.buf.createInfo.usage & vk::BufferUsageFlagBits::eStorageBuffer)
 					type = buf.dynamic ? VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 				else
 					std::unreachable();
 
 				bufferInfos.push_back(VkDescriptorBufferInfo{
-					.buffer = buf.buf.handle,
+					.buffer = *buf.buf,
 					.offset = buf.offset,
 					.range = buf.size,
 					});

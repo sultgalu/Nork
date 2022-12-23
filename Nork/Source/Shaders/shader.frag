@@ -9,7 +9,7 @@ layout(location = 3) nonuniformEXT flat in uint imgIdx;
 layout(location = 0) out vec3 outPos;
 layout(location = 1) out vec4 outColor;
 
-layout(binding = 2) uniform sampler2D[] texSampler;
+layout(set = 0, binding = 2) uniform sampler2D[] texSampler;
 
 void main() {
     // outPos = worldPos;

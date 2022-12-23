@@ -11,18 +11,63 @@ namespace Nork::Renderer::Vulkan {
         T::getAttributeDescriptions();
     };
 
-    class PipelineInfo
+    struct PipelineLayoutCreateInfo : vk::PipelineLayoutCreateInfo
+    {
+        PipelineLayoutCreateInfo(PipelineLayoutCreateInfo&&) = default;
+        PipelineLayoutCreateInfo(const std::vector<vk::DescriptorSetLayout>& descriptorSetLayout,
+            const std::vector<vk::PushConstantRange>& pushConstantRanges)
+        {
+            this->descriptorSetLayout = descriptorSetLayout;
+            this->pushConstants = pushConstantRanges;
+            this->setSetLayouts(descriptorSetLayout);
+            if (pushConstants.size() > 0)
+                this->setPushConstantRanges(pushConstants); // Optional
+        }
+        std::vector<vk::DescriptorSetLayout> descriptorSetLayout;
+        std::vector<vk::PushConstantRange> pushConstants;
+    };
+
+    struct PipelineCreateInfo: vk::GraphicsPipelineCreateInfo
     {
     public:
-        using Self = PipelineInfo;
+        using Self = PipelineCreateInfo;
+        PipelineCreateInfo()
+        {
+            data->dynamicStates = {
+                vk::DynamicState::eViewport,
+                vk::DynamicState::eScissor
+            };
+
+            data->dynamicState.setDynamicStates(data->dynamicStates);
+            data->viewportState.viewportCount = 1;
+            data->viewportState.scissorCount = 1;
+
+            data->colorBlendState.logicOpEnable = VK_FALSE;
+            data->colorBlendState.logicOp = vk::LogicOp::eCopy; // Optional
+            data->colorBlendState.blendConstants = std::array {0.f, 0.f, 0.f, 0.f}; // Optional
+
+            this->pVertexInputState = &data->vertexInput;
+            this->pInputAssemblyState = &data->inputAssembly;
+            this->pViewportState = &data->viewportState;
+            this->pRasterizationState = &data->rasterization;
+            this->pMultisampleState = &data->multisampling;
+            this->pDepthStencilState = &data->depthStencil;
+            this->pDynamicState = &data->dynamicState;
+            this->pColorBlendState = &data->colorBlendState;
+            UpdateArrayPointers();
+
+            this->basePipelineHandle = nullptr; // Optional, VK_PIPELINE_CREATE_DERIVATIVE_BIT = true
+            this->basePipelineIndex = -1; // Optional, VK_PIPELINE_CREATE_DERIVATIVE_BIT = true
+        }
+        void UpdateArrayPointers()
+        {
+            this->setStages(data->shaderStages);
+            data->colorBlendState.setAttachments(data->colorBlendAttachments);
+        }
         Self& AddShader(const ShaderModule& shad, const char* entry = "main")
         {
-            VkPipelineShaderStageCreateInfo info{};
-            info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-            info.stage = shad.stage;
-            info.module = shad.handle;
-            info.pName = entry;
-            shaderStage.push_back(info);
+            data->shaderStages.push_back(vk::PipelineShaderStageCreateInfo({}, (vk::ShaderStageFlagBits)shad.stage, shad.handle, entry));
+            UpdateArrayPointers();
             return *this;
         }
         template<VertexConcept T>
@@ -30,196 +75,134 @@ namespace Nork::Renderer::Vulkan {
         {
             auto& bindingDescription = T::getBindingDescription();
             auto& attributeDescriptions = T::getAttributeDescriptions();
-            vertexInput = VkPipelineVertexInputStateCreateInfo{};
-            vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-            vertexInput.vertexBindingDescriptionCount = 1;
-            vertexInput.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-            vertexInput.pVertexBindingDescriptions = &bindingDescription;
-            vertexInput.pVertexAttributeDescriptions = attributeDescriptions.data();
+            data->vertexInput.setVertexAttributeDescriptions(attributeDescriptions);
+            data->vertexInput.setVertexBindingDescriptions(bindingDescription);
             return *this;
         }
         Self& VertexInputHardCoded()
         {
-            vertexInput = VkPipelineVertexInputStateCreateInfo{};
-            vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-            vertexInput.vertexBindingDescriptionCount = 0;
-            vertexInput.vertexAttributeDescriptionCount = 0;
-            vertexInput.pVertexBindingDescriptions = nullptr;
-            vertexInput.pVertexAttributeDescriptions = nullptr;
+            data->vertexInput.setVertexAttributeDescriptions({});
+            data->vertexInput.setVertexBindingDescriptions({});
             return *this;
         }
-        Self& InputAssembly(VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+        Self& InputAssembly(vk::PrimitiveTopology topology = vk::PrimitiveTopology::eTriangleList)
         {
-            inputAssembly = VkPipelineInputAssemblyStateCreateInfo{};
-            inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-            inputAssembly.topology = topology;
-            inputAssembly.primitiveRestartEnable = VK_FALSE;
+            data->inputAssembly.topology = topology;
+            data->inputAssembly.primitiveRestartEnable = false;
             return *this;
         }
         Self& Rasterization(bool cullFace)
         {
-            rasterization = VkPipelineRasterizationStateCreateInfo{};
-            rasterization.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-            rasterization.depthClampEnable = VK_FALSE; // clamp frags outside of near/far plane, eg. for shadowmaps 
-            rasterization.rasterizerDiscardEnable = VK_FALSE; // disables output to fragment shader
-            rasterization.polygonMode = VK_POLYGON_MODE_FILL;
-            rasterization.lineWidth = 1.0f;
-            rasterization.cullMode = cullFace ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_NONE;
-            rasterization.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-            rasterization.depthBiasEnable = VK_FALSE;
-            rasterization.depthBiasConstantFactor = 0.0f; // Optional
-            rasterization.depthBiasClamp = 0.0f; // Optional
-            rasterization.depthBiasSlopeFactor = 0.0f; // Optional
+            data->rasterization.depthClampEnable = false; // clamp frags outside of near/far plane, eg. for shadowmaps 
+            data->rasterization.rasterizerDiscardEnable = false; // disables output to fragment shader
+            data->rasterization.polygonMode = vk::PolygonMode::eFill;
+            data->rasterization.lineWidth = 1.0f;
+            data->rasterization.cullMode = cullFace ? vk::CullModeFlagBits::eBack : vk::CullModeFlagBits::eNone;
+            data->rasterization.frontFace = vk::FrontFace::eCounterClockwise;
+            data->rasterization.depthBiasEnable = false;
+            data->rasterization.depthBiasConstantFactor = 0.0f; // Optional
+            data->rasterization.depthBiasClamp = 0.0f; // Optional
+            data->rasterization.depthBiasSlopeFactor = 0.0f; // Optional
             return *this;
         }
         Self& Multisampling()
         {
-            multisampling = VkPipelineMultisampleStateCreateInfo{};
-            multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-            multisampling.sampleShadingEnable = VK_FALSE;
-            multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-            multisampling.minSampleShading = 1.0f; // Optional
-            multisampling.pSampleMask = nullptr; // Optional
-            multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
-            multisampling.alphaToOneEnable = VK_FALSE; // Optional
+            data->multisampling.sampleShadingEnable = false;
+            data->multisampling.rasterizationSamples = vk::SampleCountFlagBits::e1;
+            data->multisampling.minSampleShading = 1.0f; // Optional
+            data->multisampling.pSampleMask = nullptr; // Optional
+            data->multisampling.alphaToCoverageEnable = false; // Optional
+            data->multisampling.alphaToOneEnable = false; // Optional
             return *this;
         }
         Self& ColorBlend(uint32_t attachmentCount)
         {
-            this->attachmentCount = attachmentCount;
+            vk::PipelineColorBlendAttachmentState colorBlendAttachment;
+            {
+                using enum vk::ColorComponentFlagBits;
+                colorBlendAttachment.colorWriteMask = eR | eG | eB | eA;
+            }
+            colorBlendAttachment.blendEnable = false;
+            colorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eOne; // Optional
+            colorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eZero; // Optional
+            colorBlendAttachment.colorBlendOp = vk::BlendOp::eAdd; // Optional
+            colorBlendAttachment.srcAlphaBlendFactor = vk::BlendFactor::eOne; // Optional
+            colorBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eZero; // Optional
+            colorBlendAttachment.alphaBlendOp = vk::BlendOp::eAdd; // Optional
+            data->colorBlendAttachments = std::vector<vk::PipelineColorBlendAttachmentState>(attachmentCount, colorBlendAttachment);
+
+            UpdateArrayPointers();
             return *this;
         }
-        Self& Layout(const VkDescriptorSetLayout& descriptorSetLayout, std::vector<VkPushConstantRange> pushConstants = {})
-        {
-            this->descriptorSetLayout = descriptorSetLayout;
-            this->pushConstants = pushConstants;
-            return *this;
-        }
-        VkPipelineLayoutCreateInfo LayoutInfo()
-        {
-            auto pipelineLayoutInfo = VkPipelineLayoutCreateInfo{};
-            pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-            pipelineLayoutInfo.setLayoutCount = 1;
-            pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
-            pipelineLayoutInfo.pushConstantRangeCount = pushConstants.size(); // Optional
-            pipelineLayoutInfo.pPushConstantRanges = pushConstants.size() == 0 ? nullptr : pushConstants.data(); // Optional
-            return pipelineLayoutInfo;
-        }
-        Self& DepthStencil(bool depthTest, VkCompareOp op = VK_COMPARE_OP_LESS)
+        Self& DepthStencil(bool depthTest, vk::CompareOp op = vk::CompareOp::eLess)
         {
             return DepthStencil(depthTest, depthTest, op);
         }
-        Self& DepthStencil(bool depthTest, bool depthWrite, VkCompareOp op = VK_COMPARE_OP_LESS)
+        Self& DepthStencil(bool depthTest, bool depthWrite, vk::CompareOp op = vk::CompareOp::eLess)
         {
-            depthStencil = VkPipelineDepthStencilStateCreateInfo{};
-            depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-            depthStencil.depthTestEnable = depthTest;
-            depthStencil.depthWriteEnable = depthWrite;
-            depthStencil.depthCompareOp = op;
-            depthStencil.depthBoundsTestEnable = VK_FALSE;
-            depthStencil.minDepthBounds = 0.0f; // Optional
-            depthStencil.maxDepthBounds = 1.0f; // Optional
-            depthStencil.stencilTestEnable = VK_FALSE;
-            depthStencil.front = {}; // Optional
-            depthStencil.back = {}; // Optional
+            data->depthStencil.depthTestEnable = depthTest;
+            data->depthStencil.depthWriteEnable = depthWrite;
+            data->depthStencil.depthCompareOp = op;
+            data->depthStencil.depthBoundsTestEnable = false;
+            data->depthStencil.minDepthBounds = 0.0f; // Optional
+            data->depthStencil.maxDepthBounds = 1.0f; // Optional
+            data->depthStencil.stencilTestEnable = false;
+            data->depthStencil.front = vk::StencilOpState(); // Optional
+            data->depthStencil.back = vk::StencilOpState(); // Optional
             return *this;
         }
-        VkPipelineColorBlendStateCreateInfo ColorBlendAttachments()
+        Self& RenderPass(vk::RenderPass renderPass, uint32_t subpass)
         {
-            auto colorBlendAttachment = VkPipelineColorBlendAttachmentState{};
-            colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-            colorBlendAttachment.blendEnable = false;
-            colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
-            colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-            colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD; // Optional
-            colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
-            colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-            colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD; // Optional
-
-            colorBlendAttachments = std::vector<VkPipelineColorBlendAttachmentState>(attachmentCount, colorBlendAttachment);
-
-            auto colorBlending = VkPipelineColorBlendStateCreateInfo{};
-            colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-            colorBlending.logicOpEnable = VK_FALSE;
-            colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
-            colorBlending.attachmentCount = colorBlendAttachments.size();
-            colorBlending.pAttachments = colorBlendAttachments.data();
-            colorBlending.blendConstants[0] = 0.0f; // Optional
-            colorBlending.blendConstants[1] = 0.0f; // Optional
-            colorBlending.blendConstants[2] = 0.0f; // Optional
-            colorBlending.blendConstants[3] = 0.0f; // Optional
-            return colorBlending;
+            this->renderPass = renderPass;
+            this->subpass = subpass;
+            return *this;
+        }
+        Self& Layout(vk::PipelineLayout layout)
+        {
+            this->layout = layout;
+            return *this;
         }
     public:
-        std::vector<VkPipelineShaderStageCreateInfo> shaderStage;
-        VkPipelineVertexInputStateCreateInfo vertexInput;
-        VkPipelineInputAssemblyStateCreateInfo inputAssembly;
-        VkPipelineRasterizationStateCreateInfo rasterization;
-        VkPipelineMultisampleStateCreateInfo multisampling;
+        struct Data
+        {
+            std::vector<vk::DynamicState> dynamicStates;
+            vk::PipelineDynamicStateCreateInfo dynamicState;
+            vk::PipelineViewportStateCreateInfo viewportState;
 
-        uint32_t attachmentCount;
-        std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
-        VkPipelineDepthStencilStateCreateInfo depthStencil;
+            std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
+            vk::PipelineVertexInputStateCreateInfo vertexInput;
+            vk::PipelineInputAssemblyStateCreateInfo inputAssembly;
+            vk::PipelineRasterizationStateCreateInfo rasterization;
+            vk::PipelineMultisampleStateCreateInfo multisampling;
+            vk::PipelineColorBlendStateCreateInfo colorBlendState;
 
-        VkDescriptorSetLayout descriptorSetLayout;
-        std::vector<VkPushConstantRange> pushConstants;
+            std::vector<vk::PipelineColorBlendAttachmentState> colorBlendAttachments;
+            vk::PipelineDepthStencilStateCreateInfo depthStencil;
+
+            vk::DescriptorSetLayout descriptorSetLayout;
+            std::vector<vk::PushConstantRange> pushConstants;
+        };
+        std::unique_ptr<Data> data = std::make_unique<Data>();
     };
-
-    class Pipeline
+    class PipelineLayout : public vk::raii::PipelineLayout
     {
     public:
-        Pipeline(PipelineInfo createInfo, const RenderPass& renderPass, uint32_t subpass)
-            : renderPassConfig(renderPass.config)
-        {
-            std::vector<VkDynamicState> dynamicStates = {
-                VK_DYNAMIC_STATE_VIEWPORT,
-                VK_DYNAMIC_STATE_SCISSOR
-            };
-
-            VkPipelineDynamicStateCreateInfo dynamicState{};
-            dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-            dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
-            dynamicState.pDynamicStates = dynamicStates.data();
-            VkPipelineViewportStateCreateInfo viewportState{};
-            viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-            viewportState.viewportCount = 1;
-            viewportState.scissorCount = 1;
-
-            VkGraphicsPipelineCreateInfo pipelineInfo{};
-            pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-            pipelineInfo.stageCount = createInfo.shaderStage.size();
-            pipelineInfo.pStages = createInfo.shaderStage.data();
-            pipelineInfo.pVertexInputState = &createInfo.vertexInput;
-            pipelineInfo.pInputAssemblyState = &createInfo.inputAssembly;
-            pipelineInfo.pViewportState = &viewportState;
-            pipelineInfo.pRasterizationState = &createInfo.rasterization;
-            pipelineInfo.pMultisampleState = &createInfo.multisampling;
-            pipelineInfo.pDepthStencilState = &createInfo.depthStencil;
-            auto bs = createInfo.ColorBlendAttachments();
-            pipelineInfo.pColorBlendState = &bs;
-            pipelineInfo.pDynamicState = &dynamicState;
-
-            auto layoutInfo = createInfo.LayoutInfo();
-            vkCreatePipelineLayout(*Device::Instance(), &layoutInfo, nullptr, &layoutHandle) == VkSuccess();
-
-            pipelineInfo.layout = layoutHandle;
-            pipelineInfo.renderPass = renderPass.handle;
-            pipelineInfo.subpass = subpass;
-            pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional, VK_PIPELINE_CREATE_DERIVATIVE_BIT = true
-            pipelineInfo.basePipelineIndex = -1; // Optional, VK_PIPELINE_CREATE_DERIVATIVE_BIT = true
-            vkCreateGraphicsPipelines(*Device::Instance(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &handle) == VkSuccess();
-        }
-        ~Pipeline()
-        {
-            vkDestroyPipeline(*Device::Instance(), handle, nullptr);
-            vkDestroyPipelineLayout(*Device::Instance(), layoutHandle, nullptr);
-        }
+        PipelineLayout(PipelineLayoutCreateInfo&& createInfo)
+            : vk::raii::PipelineLayout(Device::Instance(), createInfo),
+            createInfo(std::move(createInfo))
+        {}
     public:
-        VkPipelineLayout layoutHandle;
-        VkPipeline handle;
-        const RenderPass::Config& renderPassConfig; // renderPass must be compatible with this
-    private:
-        Pipeline() = default;
+        PipelineLayoutCreateInfo createInfo;
+    };
+    class Pipeline : public  vk::raii::Pipeline
+    {
+    public:
+        Pipeline(PipelineCreateInfo& createInfo)
+            : vk::raii::Pipeline(Device::Instance(), nullptr, createInfo),
+            createInfo(std::move(createInfo))
+        {}
+    public:
+        PipelineCreateInfo createInfo;
     };
 
     class Shader

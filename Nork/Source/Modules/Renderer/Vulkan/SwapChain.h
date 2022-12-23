@@ -17,10 +17,11 @@ namespace Nork::Renderer::Vulkan {
             this->minImageCount = imgCount;
             auto format = chooseSwapSurfaceFormat();
             this->imageFormat = format.format;
+            // this->flags = vk::SwapchainCreateFlagBitsKHR::eMutableFormat;
             this->imageColorSpace = format.colorSpace;
             this->imageExtent = extent;
             this->imageArrayLayers = 1;
-            this->imageUsage = vk::ImageUsageFlagBits::eTransferDst; // VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT use VK_IMAGE_USAGE_TRANSFER_DST_BIT if it is not a destination (we need this)
+            this->imageUsage = vk::ImageUsageFlagBits::eTransferDst; //::eColorAttachment;
 
             if (PhysicalDevice::Instance().graphicsQueueFamily != PhysicalDevice::Instance().presentQueueFamily)
             {

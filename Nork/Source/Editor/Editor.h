@@ -13,14 +13,14 @@ namespace Nork::Editor {
 	{
 	public:
 		Editor();
+		~Editor();
 		static Editor& Get();
 		void Render();
 		void Update();
 		void UpdateImguiInputs();
 		void AddViewportPanel();
 		void AddPanel(std::shared_ptr<Panel>);
-		void RenderPassUI(Renderer::Vulkan::CommandBuilder& builder);
-		void createRenderPassUI();
+		
 		void InitImguiForVulkanAndGlfw();
 	private:
 		void DrawPanelManager();
@@ -41,12 +41,5 @@ namespace Nork::Editor {
 		CommonData data;
 		int viewportPanelCount = 0;
 	public:
-		VkDescriptorPool imguiPool;
-		std::shared_ptr<Renderer::Vulkan::RenderPass> renderPassUI;
-		std::shared_ptr<Renderer::Vulkan::Framebuffer> fbUI;
-		std::shared_ptr<Renderer::Vulkan::CommandPool> commandPool;
-		// VkDescriptorSet viewportImgDs;
-		// std::shared_ptr<ImageView> fbColor;
-		std::shared_ptr<Renderer::Vulkan::Sampler> textureSampler;
 	};
 }

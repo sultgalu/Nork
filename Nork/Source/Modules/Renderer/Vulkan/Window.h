@@ -140,11 +140,15 @@ namespace Nork::Renderer::Vulkan {
                 default:
                     break;
                 }
+                // bug in validation (UNASSIGNED-input-attachment-descriptor-not-in-subpass) check if resolved at:
+                // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4628
+                if (pCallbackData->messageIdNumber == -392708513)
+                    return false;
                 // Message is important enough to show
                 Logger::Error("VULKAN validation layer: ", type, ": ", pCallbackData->pMessage, "\n");
             }
 
-            return VK_FALSE;
+            return false;
         }
         void CreateSurface()
         {
@@ -220,7 +224,8 @@ namespace Nork::Renderer::Vulkan {
         static Window* staticInstance;
 
         inline static const std::vector<const char*> deviceExtensions = {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME
         };
 #ifdef NDEBUG
         const std::vector<const char*> validationLayers = {};
