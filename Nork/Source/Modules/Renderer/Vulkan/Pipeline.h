@@ -66,7 +66,7 @@ namespace Nork::Renderer::Vulkan {
         }
         Self& AddShader(const ShaderModule& shad, const char* entry = "main")
         {
-            data->shaderStages.push_back(vk::PipelineShaderStageCreateInfo({}, (vk::ShaderStageFlagBits)shad.stage, shad.handle, entry));
+            data->shaderStages.push_back(vk::PipelineShaderStageCreateInfo({}, shad.stage, *shad, entry));
             UpdateArrayPointers();
             return *this;
         }

@@ -4,125 +4,113 @@
 #include "Buffer.h"
 
 namespace Nork::Renderer::Vulkan {
-	class DescriptorSetLayout
+	struct DescriptorSetLayoutCreateInfo : vk::DescriptorSetLayoutCreateInfo
 	{
-	public:
-		class Builder;
-		DescriptorSetLayout(const DescriptorSetLayout&) = delete; // no move constructor will be declared implicitly
-		DescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding> bindings, const std::vector<bool>& bindlesses)
-			: bindings(bindings)
+		DescriptorSetLayoutCreateInfo(DescriptorSetLayoutCreateInfo&&) = default;
+		DescriptorSetLayoutCreateInfo()
 		{
-			VkDescriptorSetLayoutCreateInfo layoutInfo{};
-			//layoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
-			layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-			layoutInfo.bindingCount = bindings.size();
-			layoutInfo.pBindings = bindings.data();
-
-			const VkDescriptorBindingFlagsEXT flags_ =
-				VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT |
-				VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT; // VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | // VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
-			std::vector<VkDescriptorBindingFlagsEXT> flags;
-			for (size_t i = 0; i < bindings.size(); i++)
-				flags.push_back(bindlesses[i] ? flags_ : 0);
-
-			VkDescriptorSetLayoutBindingFlagsCreateInfo binding_flags = {};
-			binding_flags.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
-			binding_flags.bindingCount = flags.size();
-			binding_flags.pBindingFlags = flags.data();
-			layoutInfo.pNext = &binding_flags;
-
-			vkCreateDescriptorSetLayout(*Device::Instance(), &layoutInfo, nullptr, &handle) == VkSuccess();
+			setPNext(&bindingFlagsCreateInfo);
 		}
-		~DescriptorSetLayout()
+		DescriptorSetLayoutCreateInfo& Binding(uint32_t idx, vk::DescriptorType type, vk::ShaderStageFlags shaderStage, uint32_t arraySize = 1, bool bindless = false)
 		{
-			vkDestroyDescriptorSetLayout(*Device::Instance(), handle, nullptr);
-		}
-	public:
-		VkDescriptorSetLayout handle;
-		std::vector<VkDescriptorSetLayoutBinding> bindings;
-	private:
-	};
-
-	class DescriptorSetLayout::Builder
-	{
-	public:
-		using Self = Builder;
-		Self& Binding(uint32_t idx, VkDescriptorType type, VkShaderStageFlags shaderStage, uint32_t arraySize = 1, bool bindless = false)
-		{
-			bindings.push_back(VkDescriptorSetLayoutBinding{
-				.binding = idx,
-				.descriptorType = type,
-				.descriptorCount = arraySize,
-				.stageFlags = shaderStage,
-				.pImmutableSamplers = nullptr,
-				});
-			bindlesses.push_back(bindless);
+			bindings.push_back(vk::DescriptorSetLayoutBinding(idx, type, arraySize, shaderStage));
+			bindingFlags.push_back(bindless ? bindlessFlagBits : (vk::DescriptorBindingFlagsEXT)0);
+			UpdateArrayPointers();
 			return *this;
 		}
-		std::shared_ptr<DescriptorSetLayout> Build()
+	private:
+		void UpdateArrayPointers()
 		{
-			return std::make_shared<DescriptorSetLayout>(bindings, bindlesses);
+			setBindings(bindings);
+			bindingFlagsCreateInfo.setBindingFlags(bindingFlags);
 		}
 	public:
-		std::vector<VkDescriptorSetLayoutBinding> bindings;
-		std::vector<bool> bindlesses;
+		std::vector<vk::DescriptorSetLayoutBinding> bindings;
+		std::vector<vk::DescriptorBindingFlagsEXT> bindingFlags;
+		vk::DescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsCreateInfo;
+		static constexpr vk::DescriptorBindingFlagsEXT bindlessFlagBits =
+			vk::DescriptorBindingFlagBits::eVariableDescriptorCount |
+			vk::DescriptorBindingFlagBits::ePartiallyBound;
+			// vk::DescriptorBindingFlagBits::eUpdateAfterBind |
+			// vk::DescriptorBindingFlagBits::eUpdateUnusedWhilePending;
 	};
-
-	class DescriptorPool
+	class DescriptorSetLayout: public vk::raii::DescriptorSetLayout
 	{
 	public:
-		DescriptorPool(const std::unordered_map<VkDescriptorType, uint32_t> descriptorCounts, uint32_t maxSets = 1)
-		{
-			std::vector<VkDescriptorPoolSize> poolSizes;
-			poolSizes.reserve(descriptorCounts.size());
-			for (auto& [type, count] : descriptorCounts)
-			{
-				poolSizes.push_back(VkDescriptorPoolSize{ .type = type, .descriptorCount = count });
-			}
-
-			VkDescriptorPoolCreateInfo poolInfo{};
-			poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-			poolInfo.poolSizeCount = poolSizes.size();
-			poolInfo.pPoolSizes = poolSizes.data();
-			poolInfo.maxSets = maxSets;
-			// poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-
-			vkCreateDescriptorPool(*Device::Instance(), &poolInfo, nullptr, &handle) == VkSuccess();
-		}
-		~DescriptorPool()
-		{
-			vkDestroyDescriptorPool(*Device::Instance(), handle, nullptr);
-		}
+		DescriptorSetLayout(DescriptorSetLayoutCreateInfo& createInfo)
+			: vk::raii::DescriptorSetLayout(Device::Instance(), createInfo),
+			createInfo(std::move(createInfo))
+		{}
 	public:
-		VkDescriptorPool handle;
+		DescriptorSetLayoutCreateInfo createInfo;
 	};
 
-	class DescriptorSet
+	struct DescriptorPoolCreateInfo: vk::DescriptorPoolCreateInfo
+	{
+		DescriptorPoolCreateInfo(DescriptorPoolCreateInfo&&) = default;
+		DescriptorPoolCreateInfo(const std::vector<vk::DescriptorPoolSize> poolSizes, uint32_t maxSets)
+			: poolSizes(poolSizes)
+		{
+			setPoolSizes(this->poolSizes);
+			setMaxSets(maxSets);
+			setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet);
+		}
+		std::vector<vk::DescriptorPoolSize> poolSizes;
+	};
+
+	class DescriptorPool: public vk::raii::DescriptorPool
 	{
 	public:
-		class Writer_;
-		DescriptorSet(const DescriptorPool& pool, const DescriptorSetLayout& layout, uint32_t dynamicDescSize = 0)
+		DescriptorPool(DescriptorPoolCreateInfo&& createInfo)
+			: vk::raii::DescriptorPool(Device::Instance(), createInfo),
+			createInfo(std::move(createInfo))
+		{}
+		std::vector<vk::DescriptorSet> AllocateDescriptorSets(const vk::DescriptorSetAllocateInfo& allocInfo)
 		{
-			VkDescriptorSetAllocateInfo allocInfo{};
-			allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-			allocInfo.descriptorPool = pool.handle;
-			allocInfo.descriptorSetCount = 1;
-			allocInfo.pSetLayouts = &layout.handle;
+			auto sets = Device::Instance().allocateDescriptorSets(allocInfo);
+			std::vector<vk::DescriptorSet> handles;
+			for (auto& set : sets)
+				handles.push_back(set.release());
+			return handles;
+		}
+	public:
+		DescriptorPoolCreateInfo createInfo;
+	};
+
+	struct DescriptorSetAllocateInfo : vk::DescriptorSetAllocateInfo
+	{
+		DescriptorSetAllocateInfo(DescriptorSetAllocateInfo&&) = default;
+		DescriptorSetAllocateInfo(const std::shared_ptr<DescriptorPool>& pool, 
+			const std::shared_ptr<DescriptorSetLayout>& layout, uint32_t dynamicDescSize = 0)
+			: pool(pool), layout(layout)
+		{
+			this->descriptorPool = **pool;
+			this->descriptorSetCount = 1;
+			setSetLayouts(**layout);
 
 			if (dynamicDescSize != 0)
 			{
-				VkDescriptorSetVariableDescriptorCountAllocateInfo variable_info = {};
-				variable_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO;
-				variable_info.descriptorSetCount = 1;
-				variable_info.pDescriptorCounts = &dynamicDescSize;
-				allocInfo.pNext = &variable_info;
+				variableDescInfo.descriptorSetCount = 1;
+				variableDescInfo.pDescriptorCounts = &dynamicDescSize;
+				setPNext(&variableDescInfo);
 			}
-
-			vkAllocateDescriptorSets(*Device::Instance(), &allocInfo, &handle) == VkSuccess();
 		}
+		std::shared_ptr<DescriptorPool> pool;
+		std::shared_ptr<DescriptorSetLayout> layout;
+		vk::DescriptorSetVariableDescriptorCountAllocateInfo variableDescInfo;
+	};
+
+	class DescriptorSet: public vk::raii::DescriptorSet
+	{
+	public:
+		class Writer_;
+		DescriptorSet(DescriptorSetAllocateInfo&& createInfo)
+			: vk::raii::DescriptorSet(Device::Instance(), createInfo.pool->AllocateDescriptorSets(createInfo)[0], **createInfo.pool),
+			createInfo(std::move(createInfo))
+		{}
 		Writer_ Writer();
 	public:
-		VkDescriptorSet handle;
+		DescriptorSetAllocateInfo createInfo;
 	};
 
 	class DescriptorSet::Writer_
@@ -164,7 +152,7 @@ namespace Nork::Renderer::Vulkan {
 				.arrIdx = arrIdx,
 				.bindIdx = bindIdx,
 				.info = VkDescriptorImageInfo{
-					.sampler = img.sampler->handle,
+					.sampler = **img.sampler,
 					.imageView = *img,
 					.imageLayout = layout,
 				},
@@ -187,7 +175,7 @@ namespace Nork::Renderer::Vulkan {
 
 				VkWriteDescriptorSet write{};
 				write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				write.dstSet = dSet.handle;
+				write.dstSet = *dSet;
 				write.dstBinding = img.bindIdx;
 				write.dstArrayElement = img.arrIdx;
 				write.descriptorType = img.type;
@@ -214,7 +202,7 @@ namespace Nork::Renderer::Vulkan {
 
 				VkWriteDescriptorSet write{};
 				write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				write.dstSet = dSet.handle;
+				write.dstSet = *dSet;
 				write.dstBinding = buf.bindIdx;
 				write.dstArrayElement = 0;
 				write.descriptorCount = 1;

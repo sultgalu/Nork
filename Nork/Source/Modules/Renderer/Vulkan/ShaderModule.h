@@ -2,26 +2,14 @@
 #include "Device.h"
 
 namespace Nork::Renderer::Vulkan {
-    class ShaderModule
+    class ShaderModule: public vk::raii::ShaderModule
     {
     public:
-        ShaderModule(const std::vector<uint32_t>& code, VkShaderStageFlagBits stage)
-            : stage(stage)
-        {
-            createInfo = VkShaderModuleCreateInfo{};
-            createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-            createInfo.codeSize = code.size() * sizeof(uint32_t);
-            createInfo.pCode = code.data();
-
-            vkCreateShaderModule(*Device::Instance(), &createInfo, nullptr, &handle) == VkSuccess();
-        }
-        ~ShaderModule()
-        {
-            vkDestroyShaderModule(*Device::Instance(), handle, nullptr);
-        }
+        ShaderModule(const std::vector<uint32_t>& code, vk::ShaderStageFlagBits stage)
+            : stage(stage), vk::raii::ShaderModule(Device::Instance(),
+                vk::ShaderModuleCreateInfo({}, code.size() * sizeof(code[0]), code.data()))
+        {}
     public:
-        VkShaderModule handle;
-        VkShaderModuleCreateInfo createInfo;
-        VkShaderStageFlagBits stage;
+        vk::ShaderStageFlagBits stage;
     };
 }

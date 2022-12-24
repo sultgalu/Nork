@@ -2,40 +2,41 @@
 #include "Device.h"
 
 namespace Nork::Renderer::Vulkan {
-    class Sampler
+
+    struct SamplerCreateInfo : vk::SamplerCreateInfo
+    {
+        SamplerCreateInfo(vk::Filter filter = vk::Filter::eLinear, vk::SamplerAddressMode addressMode = vk::SamplerAddressMode::eRepeat)
+        {
+            this->magFilter = filter;
+            this->minFilter = filter;
+            this->addressModeU = addressMode;
+            this->addressModeV = addressMode;
+            this->addressModeW = addressMode;
+
+            this->mipmapMode = vk::SamplerMipmapMode::eLinear;
+            this->mipLodBias = 0.0f;
+            this->minLod = 0.0f;
+            this->maxLod = 0.0f;
+
+            this->anisotropyEnable = true;
+            this->maxAnisotropy = PhysicalDevice::Instance().physicalDeviceProperties.limits.maxSamplerAnisotropy;
+
+            this->borderColor = vk::BorderColor::eIntOpaqueBlack;;
+            this->unnormalizedCoordinates = true;
+            this->compareEnable = true;
+            this->compareOp = vk::CompareOp::eAlways;
+
+            this->unnormalizedCoordinates = false;
+        }
+    };
+    class Sampler: public vk::raii::Sampler
     {
     public:
-        Sampler(VkFilter filter = VK_FILTER_LINEAR, VkSamplerAddressMode addressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkSamplerMipmapMode mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR)
+        Sampler(const SamplerCreateInfo& createInfo = SamplerCreateInfo())
+            : vk::raii::Sampler(Device::Instance(), createInfo), createInfo(createInfo)
         {
-            samplerInfo = VkSamplerCreateInfo{};
-            samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-            samplerInfo.magFilter = filter;
-            samplerInfo.minFilter = filter;
-            samplerInfo.addressModeU = addressMode;
-            samplerInfo.addressModeV = addressMode;
-            samplerInfo.addressModeW = addressMode;
-
-            samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-            samplerInfo.mipLodBias = 0.0f;
-            samplerInfo.minLod = 0.0f;
-            samplerInfo.maxLod = 0.0f;
-
-            samplerInfo.anisotropyEnable = VK_TRUE;
-            samplerInfo.maxAnisotropy = PhysicalDevice::Instance().physicalDeviceProperties.limits.maxSamplerAnisotropy;
-
-            samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-            samplerInfo.unnormalizedCoordinates = VK_FALSE;
-            samplerInfo.compareEnable = VK_FALSE;
-            samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-
-            vkCreateSampler(*Device::Instance(), &samplerInfo, nullptr, &handle) == VkSuccess();
-        }
-        ~Sampler()
-        {
-            vkDestroySampler(*Device::Instance(), handle, nullptr);
         }
     public:
-        VkSampler handle;
-        VkSamplerCreateInfo samplerInfo;
+        SamplerCreateInfo createInfo;
     };
 }

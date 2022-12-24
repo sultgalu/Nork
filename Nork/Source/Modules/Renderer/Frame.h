@@ -72,12 +72,12 @@ namespace Nork::Renderer {
         }
     };
 
-    std::unordered_map<VkDescriptorType, uint32_t> DescriptorCounts(const std::vector<std::shared_ptr<DescriptorSetLayout>>& layouts)
+    std::vector<vk::DescriptorPoolSize> DescriptorCounts(const std::vector<std::shared_ptr<DescriptorSetLayout>>& layouts)
     {
-        std::unordered_map<VkDescriptorType, uint32_t> result;
+        std::vector<vk::DescriptorPoolSize> result;
         for (auto& layout : layouts)
-            for (auto& binding : layout->bindings)
-                result[binding.descriptorType] += binding.descriptorCount;
+            for (auto& binding : layout->createInfo.bindings)
+                result.push_back({ binding.descriptorType, binding.descriptorCount });
         return result;
     }
 
@@ -89,26 +89,66 @@ namespace Nork::Renderer {
             static Commands instance;
             return instance;
         }
-        struct OneTimeSubmit
+        struct Submit
         {
-            OneTimeSubmit(std::shared_ptr<CommandPool> pool)
-                :cmd(pool), sem(0)
+            Submit(const Submit&) = delete;
+            Submit(const std::shared_ptr<CommandPool>& pool)
+                : cmd(pool), sem(initialValue), pool(pool)
             {
             }
-            ~OneTimeSubmit()
+            ~Submit()
             {
+                ;
             }
+            static constexpr uint64_t initialValue = 0;
+            static constexpr uint64_t signalValue = 1;
+            // hold these until completion
+            std::vector<std::shared_ptr<Buffer>> buffers; // external
+            std::shared_ptr<CommandPool> pool; // external
             CommandBuffer cmd;
             TimelineSemaphore sem;
+            std::function<void()> onComplete = nullptr;
+        };
+        struct SubmitProxy
+        {
+            Submit& submit;
+            Commands& cmds;
+            void WaitForCompletion()
+            {
+                vk::Result res = vk::Result::eTimeout;
+                while ((res = Device::Instance().waitSemaphores(vk::SemaphoreWaitInfo({}, *submit.sem, Submit::signalValue), 10'000))
+                    != vk::Result::eSuccess)
+                {
+                    Logger::Error("waitSemaphores returned ", vk::to_string(res),
+                        " with ", std::to_string(10'000), "ns timout");
+                }
+                if (submit.onComplete != nullptr)
+                    submit.onComplete();
+                for (size_t i = 0; i < cmds.submits.size(); i++)
+                {
+                    auto& s = cmds.submits[i];
+                    if (std::addressof(*s) == std::addressof(submit))
+                    {
+                        cmds.submits.erase(cmds.submits.begin() + i);
+                        return;
+                    }
+                }
+            }
+            void OnComplete(std::function<void()> cb)
+            {
+                submit.onComplete = cb;
+            }
         };
         void WaitAll(std::chrono::nanoseconds pollingTimeout = std::chrono::milliseconds(1))
         {
+            if (submits.size() == 0)
+                return;
+
             std::vector<vk::Semaphore> handles;
-            handles.reserve(oneTimeSubmits.size());
-            for (auto& submit : oneTimeSubmits)
+            handles.reserve(submits.size());
+            for (auto& submit : submits)
                 handles.push_back(*submit->sem);
-            std::vector<uint64_t> waitValues(handles.size(), 1);
-            //Device::Instance().graphicsQueue.waitIdle();
+            std::vector<uint64_t> waitValues(handles.size(), Submit::signalValue);
             vk::Result res = vk::Result::eTimeout; 
             while ((res = Device::Instance().waitSemaphores(vk::SemaphoreWaitInfo({}, handles, waitValues), pollingTimeout.count()))
                 != vk::Result::eSuccess)
@@ -116,24 +156,30 @@ namespace Nork::Renderer {
                 Logger::Error("waitSemaphores returned ", vk::to_string(res), 
                     " with ", std::to_string(pollingTimeout.count()), "ns timout");
             }
-            oneTimeSubmits.clear();
+            for (auto& submit : submits)
+                if (submit->onComplete != nullptr)
+                    submit->onComplete();
+            submits.clear();
         }
-        void OneTime(std::shared_ptr<CommandPool> commandPool, std::function<void(CommandBuffer&)> fun, bool waitForCompletion = true)
+        SubmitProxy Submit(const std::shared_ptr<CommandPool>& commandPool, std::function<void(CommandBuffer&)> fun)
         {
-            //oneTimeSubmits.emplace_back(std::make_unique<OneTimeSubmit>(commandPool));
-            auto& cmd = oneTimeSubmits.emplace_back(std::make_unique<OneTimeSubmit>(commandPool))->cmd;
-            cmd.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
-            fun(cmd);
-            cmd.end();
-            Device::Instance().graphicsQueue.submit(vk::SubmitInfo().setCommandBuffers(*cmd));
-            if (waitForCompletion)
-            {
-                Device::Instance().graphicsQueue.waitIdle();
-                oneTimeSubmits.pop_back();
-            }
+            auto& submit = *submits.emplace_back(std::make_unique<struct Submit>(commandPool));
+
+            submit.cmd.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
+            fun(submit.cmd);
+            submit.cmd.end();
+
+            auto timelineInfo = vk::TimelineSemaphoreSubmitInfo()
+                .setSignalSemaphoreValues(Submit::signalValue);
+            Device::Instance().graphicsQueue.submit(vk::SubmitInfo()
+                .setCommandBuffers(*submit.cmd)
+                .setSignalSemaphores(*submit.sem)
+                .setPNext(&timelineInfo)
+            );
+            return SubmitProxy{ .submit = submit, .cmds = *this };
         }
     public:
-        std::vector<std::unique_ptr<OneTimeSubmit>> oneTimeSubmits;
+        std::vector<std::unique_ptr<struct Submit>> submits;
     };
 
     class State
@@ -165,14 +211,14 @@ namespace Nork::Renderer {
             textureView = std::make_shared<ImageView>(ImageViewCreateInfo(textureImage, vk::ImageAspectFlagBits::eColor), textureSampler);
             textureView2 = std::make_shared<ImageView>(ImageViewCreateInfo(textureImage2, vk::ImageAspectFlagBits::eColor), textureSampler);
 
-            descriptorSetLayoutGPass = DescriptorSetLayout::Builder()
-                .Binding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT)
-                .Binding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-                .Binding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, MAX_IMG_ARR_SIZE, true)
-                .Build();
-            descriptorPool = std::make_shared<DescriptorPool>(DescriptorCounts({
-                descriptorSetLayoutGPass }), 1);
-            descriptorSet = std::make_shared<DescriptorSet>(*descriptorPool, *descriptorSetLayoutGPass, MAX_IMG_ARR_SIZE);
+            descriptorSetLayoutGPass = std::make_shared<DescriptorSetLayout>(DescriptorSetLayoutCreateInfo()
+                .Binding(0, vk::DescriptorType::eUniformBufferDynamic, vk::ShaderStageFlagBits::eVertex)
+                .Binding(1, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eVertex)
+                .Binding(2, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, MAX_IMG_ARR_SIZE, true));
+
+            descriptorPool = std::make_shared<DescriptorPool>(DescriptorPoolCreateInfo(DescriptorCounts({
+                descriptorSetLayoutGPass }), 1));
+            descriptorSet = std::make_shared<DescriptorSet>(DescriptorSetAllocateInfo(descriptorPool, descriptorSetLayoutGPass, MAX_IMG_ARR_SIZE));
 
             auto writer = descriptorSet->Writer()
                 .Buffer(0, *uniformBuffer, 0, sizeof(uint32_t), true)
@@ -189,11 +235,11 @@ namespace Nork::Renderer {
             VkDeviceSize bufferSize = stride * drawRepeat;
 
             using enum vk::MemoryPropertyFlagBits;
-            Buffer stagingBuffer(Vulkan::BufferCreateInfo(bufferSize, vk::BufferUsageFlagBits::eTransferSrc),
+            auto stagingBuffer = std::make_shared<Buffer>(Vulkan::BufferCreateInfo(bufferSize, vk::BufferUsageFlagBits::eTransferSrc),
                 eHostVisible | eHostCoherent, true);
             for (size_t i = 0; i < drawRepeat; i++)
             {
-                memcpy((char*)stagingBuffer.Ptr() + stride * i, indices.data(), stride);
+                memcpy((char*)stagingBuffer->Ptr() + stride * i, indices.data(), stride);
             }
             indexBuffer = std::make_shared<Buffer>(Vulkan::BufferCreateInfo(bufferSize, 
                 vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer),
@@ -206,22 +252,25 @@ namespace Nork::Renderer {
             VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
             using enum vk::MemoryPropertyFlagBits;
-            Buffer stagingBuffer(Vulkan::BufferCreateInfo(bufferSize, vk::BufferUsageFlagBits::eTransferSrc),
+            auto stagingBuffer = std::make_shared<Buffer>(Vulkan::BufferCreateInfo(bufferSize, vk::BufferUsageFlagBits::eTransferSrc),
                 eHostVisible | eHostCoherent);
 
-            memcpy(stagingBuffer.memory->Map(), vertices.data(), (size_t)bufferSize);
+            memcpy(stagingBuffer->memory->Map(), vertices.data(), (size_t)bufferSize);
             vertexBuffer = std::make_shared<Buffer>(Vulkan::BufferCreateInfo(bufferSize,
                 vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer),
                 vk::MemoryPropertyFlagBits::eDeviceLocal);
 
             copyBuffer(stagingBuffer, *vertexBuffer, bufferSize);
         }
-        void copyBuffer(const Buffer& srcBuffer, const Buffer& dstBuffer, VkDeviceSize size)
+        void copyBuffer(const std::shared_ptr<Buffer>& srcBuffer, const Buffer& dstBuffer, VkDeviceSize size)
         {
-            Commands::Instance().OneTime(commandPool, [&](CommandBuffer& cmd)
+            Commands::Instance().Submit(commandPool, [&](CommandBuffer& cmd)
                 {
-                    cmd.copyBuffer(*srcBuffer, *dstBuffer, vk::BufferCopy(0, 0, size));
-                });
+                    cmd.copyBuffer(**srcBuffer, *dstBuffer, vk::BufferCopy(0, 0, size));
+                })
+                .OnComplete([srcBuffer]()
+                    {
+                    });
         }
         std::shared_ptr<Vulkan::Image> createTextureImage(const std::string& path)
         {
@@ -229,9 +278,9 @@ namespace Nork::Renderer {
             auto imgSize = image.data.size();
 
             using enum vk::MemoryPropertyFlagBits;
-            Buffer stagingBuffer(Vulkan::BufferCreateInfo(imgSize, vk::BufferUsageFlagBits::eTransferSrc),
+            auto stagingBuffer = std::make_shared<Buffer>(Vulkan::BufferCreateInfo(imgSize, vk::BufferUsageFlagBits::eTransferSrc),
                 eHostVisible | eHostCoherent);
-            memcpy(stagingBuffer.memory->Map(), image.data.data(), imgSize);
+            memcpy(stagingBuffer->memory->Map(), image.data.data(), imgSize);
 
             auto texImg = std::make_shared<Vulkan::Image>(ImageCreateInfo(image.width, image.height, Format::rgba8Unorm,
                 vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled), eDeviceLocal);
@@ -280,12 +329,12 @@ namespace Nork::Renderer {
                 throw std::invalid_argument("unsupported layout transition!");
             }
 
-            Commands::Instance().OneTime(commandPool, [&](CommandBuffer& cmd)
+            Commands::Instance().Submit(commandPool, [&](CommandBuffer& cmd)
                 {
                     cmd.pipelineBarrier(sourceStage, destinationStage, vk::DependencyFlagBits::eByRegion, {}, {}, barrier);
                 });
         }
-        void copyBufferToImage(const Buffer& buffer, const Vulkan::Image& image, uint32_t width, uint32_t height)
+        void copyBufferToImage(const std::shared_ptr<Buffer>& buffer, const Vulkan::Image& image, uint32_t width, uint32_t height)
         {
             vk::BufferImageCopy region{};
             region.bufferOffset = 0;
@@ -300,12 +349,14 @@ namespace Nork::Renderer {
             region.imageOffset = vk::Offset3D(0, 0, 0);
             region.imageExtent = vk::Extent3D(width, height, 1);
 
-            Commands::Instance().OneTime(commandPool, [&](CommandBuffer& cmd)
+            Commands::Instance().Submit(commandPool, [&](CommandBuffer& cmd)
                 {
-                    cmd.copyBufferToImage(*buffer, *image, vk::ImageLayout::eTransferDstOptimal, region);
-                });
+                    cmd.copyBufferToImage(**buffer, *image, vk::ImageLayout::eTransferDstOptimal, region);
+                })
+                .OnComplete([buffer]()
+                    {
+                    });
         }
-
 
         ~State()
         {
@@ -509,21 +560,16 @@ public:
                 vk::MemoryPropertyFlagBits::eDeviceLocal);
             gCol = std::make_shared<ImageView>(ImageViewCreateInfo(gCol_, vk::ImageAspectFlagBits::eColor), textureSampler);
             fb = std::make_shared<Framebuffer>(FramebufferCreateInfo(w, h, **renderPass, { gPos, gCol, fbColor, depthImage }));
-            // Imgui
-            // auto uiImg = std::make_shared<Image>(ImageCreateInfo(w, h, Format::rgba8Unorm, eColorAttachment | eTransferSrc),
-            //     vk::MemoryPropertyFlagBits::eDeviceLocal);
-            // auto uiImgView = std::make_shared<ImageView>(ImageViewCreateInfo(uiImg, vk::ImageAspectFlagBits::eColor), textureSampler);
-            // fbUI = std::make_shared<Framebuffer>(w, h, *renderPassUI, std::vector<std::shared_ptr<ImageView>>{ uiImgView });
-            descriptorSetLayoutPP = DescriptorSetLayout::Builder()
-                .Binding(0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT)
-                .Binding(1, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT)
-                .Binding(2, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_SHADER_STAGE_FRAGMENT_BIT)
-                .Build();
+            
+            descriptorSetLayoutPP = std::make_shared<DescriptorSetLayout>(DescriptorSetLayoutCreateInfo()
+                .Binding(0, vk::DescriptorType::eInputAttachment, vk::ShaderStageFlagBits::eFragment)
+                .Binding(1, vk::DescriptorType::eInputAttachment, vk::ShaderStageFlagBits::eFragment)
+                .Binding(2, vk::DescriptorType::eInputAttachment, vk::ShaderStageFlagBits::eFragment));
 
-            descriptorPool = std::make_shared<DescriptorPool>(DescriptorCounts({
-                descriptorSetLayoutPP
-                }), 1);
-            descriptorSetPP = std::make_shared<DescriptorSet>(*descriptorPool, *descriptorSetLayoutPP);
+            descriptorPool = std::make_shared<DescriptorPool>(
+                DescriptorPoolCreateInfo(DescriptorCounts({ descriptorSetLayoutPP }), 1));
+
+            descriptorSetPP = std::make_shared<DescriptorSet>(DescriptorSetAllocateInfo(descriptorPool, descriptorSetLayoutPP));
             createGraphicsPipeline(state);
 
             descriptorSetPP->Writer()
@@ -534,14 +580,15 @@ public:
         }
         void createGraphicsPipeline(State& state)
         {
-            ShaderModule vertShaderModule(LoadShader("Source/Shaders/shader.vert", { {"MAX_IMG_ARR_SIZE", std::to_string(MAX_IMG_ARR_SIZE)} }), VK_SHADER_STAGE_VERTEX_BIT);
-            ShaderModule fragShaderModule(LoadShader("Source/Shaders/shader.frag"), VK_SHADER_STAGE_FRAGMENT_BIT);
+            ShaderModule vertShaderModule(LoadShader("Source/Shaders/shader.vert", 
+                { {"MAX_IMG_ARR_SIZE", std::to_string(MAX_IMG_ARR_SIZE)} }), vk::ShaderStageFlagBits::eVertex);
+            ShaderModule fragShaderModule(LoadShader("Source/Shaders/shader.frag"), vk::ShaderStageFlagBits::eFragment);
             vk::PushConstantRange p;
             p.size = sizeof(glm::mat4);
             p.stageFlags = vk::ShaderStageFlagBits::eVertex;
             pipelineLayout = std::make_shared<PipelineLayout>(
-                PipelineLayoutCreateInfo({ state.descriptorSetLayoutGPass->handle,
-                    descriptorSetLayoutPP->handle, descriptorSetLayoutPP->handle }, { p }));
+                PipelineLayoutCreateInfo({ **state.descriptorSetLayoutGPass,
+                    **descriptorSetLayoutPP,** descriptorSetLayoutPP }, { p }));
             pipelineGPass = std::make_shared<Pipeline>(PipelineCreateInfo()
                 .Layout(**pipelineLayout)
                 .AddShader(vertShaderModule)
@@ -554,8 +601,8 @@ public:
                 .RenderPass(**renderPass, 0)
                 .DepthStencil(true, true, vk::CompareOp::eLess));
 
-            ShaderModule vertShaderModule3(LoadShader("Source/Shaders/pp.vert"), VK_SHADER_STAGE_VERTEX_BIT);
-            ShaderModule fragShaderModule3(LoadShader("Source/Shaders/lPass.frag"), VK_SHADER_STAGE_FRAGMENT_BIT);
+            ShaderModule vertShaderModule3(LoadShader("Source/Shaders/pp.vert"), vk::ShaderStageFlagBits::eVertex);
+            ShaderModule fragShaderModule3(LoadShader("Source/Shaders/lPass.frag"), vk::ShaderStageFlagBits::eFragment);
             pipelineLPass = std::make_shared<Pipeline>(PipelineCreateInfo()
                 .Layout(**pipelineLayout)
                 .AddShader(vertShaderModule3)
@@ -568,8 +615,8 @@ public:
                 .RenderPass(**renderPass, 1)
                 .DepthStencil(false));
 
-            ShaderModule vertShaderModule2(LoadShader("Source/Shaders/pp.vert"), VK_SHADER_STAGE_VERTEX_BIT);
-            ShaderModule fragShaderModule2(LoadShader("Source/Shaders/pp.frag"), VK_SHADER_STAGE_FRAGMENT_BIT);
+            ShaderModule vertShaderModule2(LoadShader("Source/Shaders/pp.vert"), vk::ShaderStageFlagBits::eVertex);
+            ShaderModule fragShaderModule2(LoadShader("Source/Shaders/pp.frag"), vk::ShaderStageFlagBits::eFragment);
             pipelinePP = std::make_shared<Pipeline>(PipelineCreateInfo()
                 .Layout(**pipelineLayout)
                 .AddShader(vertShaderModule2)
@@ -654,7 +701,7 @@ public:
             cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, **pipelineGPass);
 
             cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, **pipelineLayout, 0,
-                { (vk::DescriptorSet)state.descriptorSet->handle, (vk::DescriptorSet)descriptorSetPP->handle }, 
+                { **state.descriptorSet, **descriptorSetPP }, 
                 { currentFrame * state.uboStride * DRAW_COUNT });
 
             cmd.bindVertexBuffers(0, **state.vertexBuffer, { 0 });
@@ -770,22 +817,22 @@ public:
         void InitImguiForVulkan()
         {
             using namespace Nork::Renderer::Vulkan;
-            std::unordered_map<VkDescriptorType, uint32_t> pool_sizes =
+            std::vector<vk::DescriptorPoolSize> pool_sizes =
             {
-                { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
-                { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
-                { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
-                { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
-                { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
-                { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
-                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
-                { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
-                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
-                { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
-                { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+                { vk::DescriptorType::eSampler, 1000 },
+                { vk::DescriptorType::eCombinedImageSampler, 1000 },
+                { vk::DescriptorType::eSampledImage, 1000 },
+                { vk::DescriptorType::eStorageImage, 1000 },
+                { vk::DescriptorType::eUniformTexelBuffer, 1000 },
+                { vk::DescriptorType::eStorageTexelBuffer, 1000 },
+                { vk::DescriptorType::eUniformBuffer , 1000 },
+                { vk::DescriptorType::eStorageBuffer, 1000 },
+                { vk::DescriptorType::eUniformBufferDynamic, 1000 },
+                { vk::DescriptorType::eStorageBufferDynamic, 1000 },
+                { vk::DescriptorType::eInputAttachment, 1000 }
             };
 
-            imguiPool = std::make_shared<DescriptorPool>(pool_sizes, 1000);
+            imguiPool = std::make_shared<DescriptorPool>(DescriptorPoolCreateInfo(pool_sizes, 1000));
             
             //this initializes imgui for Vulkan
             ImGui_ImplVulkan_InitInfo init_info = {};
@@ -793,7 +840,7 @@ public:
             init_info.PhysicalDevice = *PhysicalDevice::Instance();
             init_info.Device = *Device::Instance();
             init_info.Queue = *Device::Instance().graphicsQueue;
-            init_info.DescriptorPool = imguiPool->handle;
+            init_info.DescriptorPool = **imguiPool;
             init_info.MinImageCount = 3;
             init_info.ImageCount = 3;
             init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
@@ -802,14 +849,14 @@ public:
             ImGui_ImplVulkan_Init(&init_info, **renderPassUI);
 
             //execute a gpu command to upload imgui font textures
-            Commands::Instance().OneTime(commandPool, [&](CommandBuffer& cmd)
+            Commands::Instance().Submit(commandPool, [&](CommandBuffer& cmd)
                 {
                     ImGui_ImplVulkan_CreateFontsTexture(*cmd);
-                });
-            // commandPool->FreeCommandBuffer(cmdBuf.cmdBuf);
-
-            //clear font textures from cpu data
-            ImGui_ImplVulkan_DestroyFontUploadObjects();
+                }).OnComplete([]()
+                    { //clear font textures from cpu data
+                        ImGui_ImplVulkan_DestroyFontUploadObjects();
+                    });
+                //.WaitForCompletion();
         }
         void recordCommandBuffer(CommandBuffer& cmd, uint32_t imageIndex, uint32_t currentFrame, State& state) override
         {
@@ -945,6 +992,7 @@ public:
         }
         void DrawFrame()
         {
+            Commands::Instance().WaitAll();
             auto imgIdx = BeginFrame();
             if (imgIdx == INVALID_FRAME_IDX)
                 return;

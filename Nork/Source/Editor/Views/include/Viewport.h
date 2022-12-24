@@ -22,7 +22,7 @@ namespace Nork::Editor {
 				// destroy?
 			this->image = image;
 			this->sampler = sampler;
-			viewportImgDs = ImGui_ImplVulkan_AddTexture(sampler->handle, **image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+			viewportImgDs = ImGui_ImplVulkan_AddTexture(**sampler, **image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		}
 	public:
 		std::shared_ptr<Renderer::Vulkan::ImageView> image;
