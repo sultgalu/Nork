@@ -2,6 +2,7 @@
 
 #include "DeviceMemory.h"
 #include "Sampler.h"
+#include "../MemoryAllocator.h"
 
 namespace Nork::Renderer::Vulkan {
     struct Format
@@ -73,18 +74,16 @@ namespace Nork::Renderer::Vulkan {
             : ImageBase(Device::Instance(), createInfo), createInfo(createInfo)
         {
             auto memreq = this->getMemoryRequirements();
-            VkMemoryAllocateInfo i;
-            memory = std::make_shared<DeviceMemory>(vk::MemoryAllocateInfo(memreq.size,
-                Device::Instance().findMemoryType(memreq.memoryTypeBits, memFlags)));
+            memory = MemoryAllocator::Instance().Allocate(memreq, memFlags);
 
-            bindMemory(**memory, 0);
+            bindMemory(**memory->pool->memory, memory->offset);
         }
         uint32_t Width() const override { return createInfo.extent.width; }
         uint32_t Height() const override { return createInfo.extent.height; }
         vk::Format Format() const override { return createInfo.format; }
     public:
         ImageCreateInfo createInfo;
-        std::shared_ptr<DeviceMemory> memory;
+        MemoryAllocation memory;
     };
 
     struct ImageViewCreateInfo : vk::ImageViewCreateInfo

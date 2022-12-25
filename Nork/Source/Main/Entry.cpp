@@ -18,6 +18,7 @@
 #include "Modules/Renderer/Vulkan/CommandBuffer.h"
 #include "Editor/Panels/include/ViewportPanel.h"
 #include "Modules/Renderer/Frame.h"
+#include "Modules/Renderer/MemoryAllocator.h"
 
 using namespace Nork;
 using namespace Nork::Renderer::Vulkan;
@@ -27,6 +28,7 @@ PhysicalDevice* PhysicalDevice::instance = nullptr;
 SwapChain* SwapChain::instance = nullptr;
 Instance* Instance::staticInstance = nullptr;
 Window* Window::staticInstance = nullptr;
+Renderer::MemoryAllocator* Renderer::MemoryAllocator::instance = nullptr;
 DescriptorSet::Writer_ DescriptorSet::Writer()
 {
     return Writer_(*this);

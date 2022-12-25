@@ -2,6 +2,7 @@
 
 #include "Device.h"
 #include "DeviceMemory.h"
+#include "../MemoryAllocator.h"
 
 namespace Nork::Renderer::Vulkan {
     struct BufferCreateInfo: vk::BufferCreateInfo
@@ -17,19 +18,18 @@ namespace Nork::Renderer::Vulkan {
             :vk::raii::Buffer(Device::Instance(), createInfo), createInfo(createInfo)
         {
             auto memreq = getMemoryRequirements();
-            memory = std::make_shared<DeviceMemory>(vk::MemoryAllocateInfo(memreq.size,
-                Device::Instance().findMemoryType(memreq.memoryTypeBits, memFlags)));
+            // memory = std::make_shared<DeviceMemory>(vk::MemoryAllocateInfo(memreq.size,
+            //     Device::Instance().findMemoryType(memreq.memoryTypeBits, memFlags)));
+            memory = MemoryAllocationWrapper(
+                MemoryAllocator::Instance().Allocate(memreq, memFlags));
 
-            memOffset = 0;
-            bindMemory(**memory, memOffset);
+            bindMemory(*memory.DeviceMemory(), memory.Offset());
             if (autoMap)
-                memory->Map();
+                memory.Map();
         }
         void* Ptr()
         {
-            if (!memory->IsMapped())
-                std::unreachable();
-            return memory->ptr;
+            return memory.Ptr();
         }
         template<class T>
         void operator=(const T& val)
@@ -39,7 +39,6 @@ namespace Nork::Renderer::Vulkan {
     public:
         BufferCreateInfo createInfo;
 
-        std::shared_ptr<DeviceMemory> memory;
-        vk::DeviceSize memOffset;
+        MemoryAllocationWrapper memory;
     };
 }

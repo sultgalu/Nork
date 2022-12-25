@@ -7,6 +7,7 @@
 #include "Vulkan/Image.h"
 #include "LoadUtils.h"
 #include "Vulkan/Semaphore.h"
+#include "MemoryAllocator.h"
 
 namespace Nork::Renderer {
     using namespace Vulkan;
@@ -80,7 +81,6 @@ namespace Nork::Renderer {
                 result.push_back({ binding.descriptorType, binding.descriptorCount });
         return result;
     }
-
     class Commands
     {
     public:
@@ -222,7 +222,7 @@ namespace Nork::Renderer {
 
             auto writer = descriptorSet->Writer()
                 .Buffer(0, *uniformBuffer, 0, sizeof(uint32_t), true)
-                .Buffer(1, *storageBuffer, 0, storageBuffer->memory->allocInfo.allocationSize);
+                .Buffer(1, *storageBuffer, 0, storageBuffer->memory.Size());
             for (size_t i = 0; i < MAX_IMG_ARR_SIZE; i++)
             {
                 writer.Image(2, i % 3 ? *textureView2 : *textureView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, i);
@@ -255,7 +255,7 @@ namespace Nork::Renderer {
             auto stagingBuffer = std::make_shared<Buffer>(Vulkan::BufferCreateInfo(bufferSize, vk::BufferUsageFlagBits::eTransferSrc),
                 eHostVisible | eHostCoherent);
 
-            memcpy(stagingBuffer->memory->Map(), vertices.data(), (size_t)bufferSize);
+            memcpy(stagingBuffer->memory.Map(), vertices.data(), (size_t)bufferSize);
             vertexBuffer = std::make_shared<Buffer>(Vulkan::BufferCreateInfo(bufferSize,
                 vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer),
                 vk::MemoryPropertyFlagBits::eDeviceLocal);
@@ -280,7 +280,7 @@ namespace Nork::Renderer {
             using enum vk::MemoryPropertyFlagBits;
             auto stagingBuffer = std::make_shared<Buffer>(Vulkan::BufferCreateInfo(imgSize, vk::BufferUsageFlagBits::eTransferSrc),
                 eHostVisible | eHostCoherent);
-            memcpy(stagingBuffer->memory->Map(), image.data.data(), imgSize);
+            memcpy(stagingBuffer->memory.Map(), image.data.data(), imgSize);
 
             auto texImg = std::make_shared<Vulkan::Image>(ImageCreateInfo(image.width, image.height, Format::rgba8Unorm,
                 vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled), eDeviceLocal);
@@ -546,7 +546,7 @@ public:
             auto h = SwapChain::Instance().Height();
             using enum vk::ImageUsageFlagBits;
             using Image = Vulkan::Image;
-            auto depthImage_ = std::make_shared<Image>(ImageCreateInfo(w, h, Format::depth32, eDepthStencilAttachment),
+            auto depthImage_ = std::make_shared<Image>(ImageCreateInfo(w, h, Format::depth16, eDepthStencilAttachment),
                 vk::MemoryPropertyFlagBits::eDeviceLocal);
             depthImage = std::make_shared<ImageView>(ImageViewCreateInfo(depthImage_, vk::ImageAspectFlagBits::eDepth), textureSampler);
             auto fbColor_ = std::make_shared<Image>(ImageCreateInfo(w, h, Format::rgba8Unorm, eColorAttachment | eInputAttachment | eTransferSrc | eSampled),
@@ -646,7 +646,7 @@ public:
                 .setStoreOp(vk::AttachmentStoreOp::eStore)
                 .setFinalLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
             createInfo.attachments[depthAttIdx]
-                .setFormat(Format::depth32)
+                .setFormat(Format::depth16)
                 .setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
                 .setLoadOp(vk::AttachmentLoadOp::eClear);
 
@@ -899,6 +899,7 @@ public:
 	{
 	public:
         RenderLoop()
+            : allocator(PhysicalDevice::Instance())
         {
             createSyncObjects();
             commandPool = std::make_shared<CommandPool>();
@@ -1024,6 +1025,7 @@ public:
             }
         }
 	public:
+        MemoryAllocator allocator;
         State state;
         std::vector<std::shared_ptr<RenderPass_>> renderPasses;
         std::vector<CommandBuffer> commandBuffers;

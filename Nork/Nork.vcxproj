@@ -226,6 +226,7 @@
     <ClCompile Include="Source\App\Application.cpp" />
     <ClInclude Include="Source\Core\GLTFReader.h" />
     <ClInclude Include="Source\Modules\Renderer\Frame.h" />
+    <ClInclude Include="Source\Modules\Renderer\MemoryAllocator.h" />
     <ClInclude Include="Source\Modules\Renderer\Vulkan\Buffer.h" />
     <ClInclude Include="Source\Modules\Renderer\Vulkan\CommandBuffer.h" />
     <ClInclude Include="Source\Modules\Renderer\Vulkan\DescriptorSet.h" />
@@ -233,6 +234,7 @@
     <ClInclude Include="Source\Modules\Renderer\Vulkan\DeviceMemory.h" />
     <ClInclude Include="Source\Modules\Renderer\Vulkan\Framebuffer.h" />
     <ClInclude Include="Source\Modules\Renderer\Vulkan\Image.h" />
+    <ClInclude Include="Source\Modules\Renderer\Vulkan\PhysicalDevice.h" />
     <ClInclude Include="Source\Modules\Renderer\Vulkan\RenderPass.h" />
     <ClInclude Include="Source\Modules\Renderer\Vulkan\Sampler.h" />
     <ClInclude Include="Source\Modules\Renderer\Vulkan\Pipeline.h" />
