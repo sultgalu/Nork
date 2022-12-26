@@ -76,14 +76,14 @@ namespace Nork::Renderer::Vulkan {
             auto memreq = this->getMemoryRequirements();
             memory = MemoryAllocator::Instance().Allocate(memreq, memFlags);
 
-            bindMemory(**memory->pool->memory, memory->offset);
+            bindMemory(**memory.Underlying(), memory.PoolOffset());
         }
         uint32_t Width() const override { return createInfo.extent.width; }
         uint32_t Height() const override { return createInfo.extent.height; }
         vk::Format Format() const override { return createInfo.format; }
     public:
         ImageCreateInfo createInfo;
-        MemoryAllocation memory;
+        Renderer::DeviceMemory memory;
     };
 
     struct ImageViewCreateInfo : vk::ImageViewCreateInfo

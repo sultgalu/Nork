@@ -29,6 +29,8 @@ SwapChain* SwapChain::instance = nullptr;
 Instance* Instance::staticInstance = nullptr;
 Window* Window::staticInstance = nullptr;
 Renderer::MemoryAllocator* Renderer::MemoryAllocator::instance = nullptr;
+Renderer::Commands* Renderer::Commands::instance = nullptr;
+Renderer::MemoryTransfer* Renderer::MemoryTransfer::instance = nullptr;
 DescriptorSet::Writer_ DescriptorSet::Writer()
 {
     return Writer_(*this);

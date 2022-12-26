@@ -14,31 +14,18 @@ namespace Nork::Renderer::Vulkan {
     {
     public:
         Buffer(const Buffer&) = delete;
-        Buffer(const BufferCreateInfo& createInfo, vk::MemoryPropertyFlags memFlags, bool autoMap = false)
+        Buffer(const BufferCreateInfo& createInfo)
             :vk::raii::Buffer(Device::Instance(), createInfo), createInfo(createInfo)
+        {}
+        void BindMemory(std::shared_ptr<DeviceMemory> memory, vk::DeviceSize offset)
         {
-            auto memreq = getMemoryRequirements();
-            // memory = std::make_shared<DeviceMemory>(vk::MemoryAllocateInfo(memreq.size,
-            //     Device::Instance().findMemoryType(memreq.memoryTypeBits, memFlags)));
-            memory = MemoryAllocationWrapper(
-                MemoryAllocator::Instance().Allocate(memreq, memFlags));
-
-            bindMemory(*memory.DeviceMemory(), memory.Offset());
-            if (autoMap)
-                memory.Map();
+            bindMemory(**memory, offset);
+            this->memory = memory;
         }
-        void* Ptr()
-        {
-            return memory.Ptr();
-        }
-        template<class T>
-        void operator=(const T& val)
-        {
-            *((T*)Ptr()) = val;
-        }
+    private:
+        using vk::raii::Buffer::bindMemory;
     public:
         BufferCreateInfo createInfo;
-
-        MemoryAllocationWrapper memory;
+        std::shared_ptr<DeviceMemory> memory = nullptr;
     };
 }

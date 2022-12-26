@@ -4,6 +4,7 @@
 #include "Vulkan/PhysicalDevice.h"
 
 namespace Nork::Renderer {
+    class DeviceMemory;
     class MemoryAllocator
     {
     public:
@@ -18,12 +19,6 @@ namespace Nork::Renderer {
             uint32_t index;
             vk::MemoryPropertyFlags flags;
             Heap& heap;
-            bool IsHostCoherent() const { return IsBitSet(vk::MemoryPropertyFlagBits::eHostCoherent); }
-            bool IsHostCached() const { return IsBitSet(vk::MemoryPropertyFlagBits::eHostCached); }
-            bool IsHostVisible() const { return IsBitSet(vk::MemoryPropertyFlagBits::eHostVisible); }
-            bool IsDeviceLocal() const { return IsBitSet(vk::MemoryPropertyFlagBits::eDeviceLocal); }
-        private:
-            bool IsBitSet(vk::MemoryPropertyFlagBits bit) const { return (flags & bit) == bit; }
         public:
             vk::DeviceSize allocated = 0;
             std::vector<std::shared_ptr<Pool>> pools;
@@ -48,115 +43,21 @@ namespace Nork::Renderer {
         };
         struct Allocation
         {
-            vk::DeviceSize offset;
+            vk::DeviceSize poolOffset;
             vk::DeviceSize size;
             std::shared_ptr<Pool> pool;
             uint32_t suitableMemoryTypeBits;
         };
-        MemoryAllocator(const Vulkan::PhysicalDevice& physicalDevice)
-        {
-            auto& memprops = physicalDevice.memProperties;
-            for (auto& heap : memprops.memoryHeaps)
-            {
-                if (heap.size != 0)
-                    heaps.push_back(Heap{ .size = heap.size });
-            }
-            for (uint32_t i = 0; i < memprops.memoryTypeCount; i++)
-            {
-                auto& t = memprops.memoryTypes[i];
-                if (!t.propertyFlags)
-                    continue;
-                types.push_back(MemoryType{
-                    .index = i,
-                    .flags = t.propertyFlags,
-                    .heap = heaps[t.heapIndex],
-                    });
-            }
-            instance = this;
-        }
-        // desiredFlags are in priority order
-        std::shared_ptr<Allocation> Allocate(vk::MemoryRequirements req, vk::MemoryPropertyFlags requiredFlags,
-            const std::vector<vk::MemoryPropertyFlags>& desiredFlags = {})
-        {
-            auto allocation = std::make_shared<Allocation>();
-            allocation->size = req.size;
-
-            uint32_t suitableTypeBits = FindSuitableMemoryTypes(req.memoryTypeBits, requiredFlags, desiredFlags);
-            allocation->suitableMemoryTypeBits = suitableTypeBits;
-
-            uint32_t typeIdx = GetMemoryTypeWithMostAvailableMemory(allocation->suitableMemoryTypeBits);
-            auto poolOpt = FindPool(typeIdx, allocation->size);
-            std::shared_ptr<Pool> pool;
-            if (poolOpt)
-                pool = poolOpt.value();
-            else // should check if memType has enough memory for another pool allocation
-                // should also check if allocation->size is not greater than poolSize and handle if it is   
-            {
-                pool = std::make_shared<Pool>(types[typeIdx], poolSize);
-                types[typeIdx].allocated += pool->size;
-                types[typeIdx].pools.push_back(pool);
-            }
-            vk::DeviceSize alignmentOffset = req.alignment - pool->offset % req.alignment;
-            pool->offset += alignmentOffset;
-            allocation->offset = pool->offset;
-            pool->offset += allocation->size;
-
-            allocation->pool = pool;
-            pool->allocations.push_back(allocation);
-            return allocation;
-        }
-        std::optional<std::shared_ptr<Pool>> FindPool(uint32_t typeIndex, vk::DeviceSize size)
-        {
-            for (auto& pool : types[typeIndex].pools)
-            {
-                if (pool->size - pool->offset >= size)
-                    return pool;
-            }
-            return std::nullopt;
-        }
-        uint32_t GetMemoryTypeWithMostAvailableMemory(uint32_t typeBits)
-        {
-            uint32_t result = 0;
-            uint32_t mostMemory = 0;
-            for (uint32_t i = 0; i < types.size(); i++)
-            {
-                if ((typeBits & (1 << i)) && types[i].heap.size > mostMemory)
-                {
-                    result = i;
-                    mostMemory = types[i].heap.size;
-                }
-            }
-            return result;
-        }
+    public:
+        MemoryAllocator(const Vulkan::PhysicalDevice& physicalDevice);
+        DeviceMemory Allocate(vk::MemoryRequirements req, vk::MemoryPropertyFlags requiredFlags,
+            const std::vector<vk::MemoryPropertyFlags>& desiredFlags = {}); // desiredFlags are in priority order
+    private:
+        std::optional<std::shared_ptr<Pool>> FindPool(uint32_t typeIndex, vk::DeviceSize size);
+        uint32_t GetMemoryTypeWithMostAvailableMemory(uint32_t typeBits);
         uint32_t FindSuitableMemoryTypes(uint32_t typeBitsFilter, vk::MemoryPropertyFlags requiredFlags,
-            const std::vector<vk::MemoryPropertyFlags>& desiredFlags = {})
-        {
-            uint32_t typeBitsRequired = GetMemoryTypeBits(typeBitsFilter, requiredFlags);
-            std::vector<uint32_t> typeBitsVec;
-            for (auto& flag : desiredFlags)
-                typeBitsVec.push_back(GetMemoryTypeBits(typeBitsFilter, flag) & typeBitsRequired);
-            uint32_t suitableTypeBits = typeBitsRequired;
-            for (auto& typeBits : typeBitsVec)
-            {
-                if ((suitableTypeBits & typeBits) != 0)
-                    suitableTypeBits &= typeBits;
-            }
-            if (suitableTypeBits == 0)
-                std::unreachable();
-            return suitableTypeBits;
-        }
-        uint32_t GetMemoryTypeBits(uint32_t typeBits, vk::MemoryPropertyFlags flags)
-        {
-            uint32_t result = 0;
-            for (uint32_t i = 0; i < types.size(); i++)
-            {
-                if ((typeBits & (1 << i)) && (types[i].flags & flags) == flags)
-                {
-                    result |= (1 << i);
-                }
-            }
-            return result;
-        }
+            const std::vector<vk::MemoryPropertyFlags>& desiredFlags = {});
+        uint32_t GetMemoryTypeBits(uint32_t typeBits, vk::MemoryPropertyFlags flags);
     public:
         std::vector<Heap> heaps;
         std::vector<MemoryType> types;
@@ -175,20 +76,21 @@ namespace Nork::Renderer {
     };
     
     using MemoryAllocation = std::shared_ptr<MemoryAllocator::Allocation>;
-    struct MemoryAllocationWrapper
+    class DeviceMemory // wrapper around MemoryAllocation
     {
-        MemoryAllocationWrapper() = default;
-        MemoryAllocationWrapper(const MemoryAllocation& alloc)
+    public:
+        DeviceMemory() = default;
+        DeviceMemory(const MemoryAllocation& alloc)
             : allocation(alloc)
         {}
-        MemoryAllocation allocation;
-        Vulkan::DeviceMemory& DeviceMemory()
+        
+        std::shared_ptr<Vulkan::DeviceMemory> Underlying()
         {
-            return *allocation->pool->memory;
+            return allocation->pool->memory;
         }
-        vk::DeviceSize Offset()
+        vk::DeviceSize PoolOffset()
         {
-            return allocation->offset;
+            return allocation->poolOffset;
         }
         vk::DeviceSize Size()
         {
@@ -200,7 +102,7 @@ namespace Nork::Renderer {
             if (IsMapped()) std::unreachable();
             if (!allocation->pool->memory->IsMapped())
                 allocation->pool->memory->Map();
-            ptr = (uint8_t*)allocation->pool->memory->ptr + allocation->offset + offset;
+            ptr = (uint8_t*)allocation->pool->memory->ptr + allocation->poolOffset + offset;
             return reinterpret_cast<T*>(ptr);
         }
         template<class T = void>
@@ -223,6 +125,15 @@ namespace Nork::Renderer {
         {
             return ptr != nullptr;
         }
+        bool IsHostCoherent() const { return IsBitSet(vk::MemoryPropertyFlagBits::eHostCoherent); }
+        bool IsHostCached() const { return IsBitSet(vk::MemoryPropertyFlagBits::eHostCached); }
+        bool IsHostVisible() const { return IsBitSet(vk::MemoryPropertyFlagBits::eHostVisible); }
+        bool IsDeviceLocal() const { return IsBitSet(vk::MemoryPropertyFlagBits::eDeviceLocal); }
+    private:
+        bool IsBitSet(vk::MemoryPropertyFlagBits bit) const { return (allocation->pool->memType.flags & bit) == bit; }
+    public:
+        MemoryAllocation allocation;
+        // should implement reference counting on pool's ptr, so can unmap pool's memory when possible
         void* ptr = nullptr;
     };
 }

@@ -198,6 +198,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Components\Impl\Drawable.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Buffer.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\MemoryAllocator.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Vulkan\Shaderc.cpp" />
     <ClCompile Include="Source\Modules\Physics\Pipeline\Collision.cpp" />
     <ClCompile Include="Source\Modules\Physics\Algorithms\Clip.cpp" />
@@ -225,8 +227,11 @@
     <ClCompile Include="Source\Modules\Renderer\LoadUtils.cpp" />
     <ClCompile Include="Source\App\Application.cpp" />
     <ClInclude Include="Source\Core\GLTFReader.h" />
+    <ClInclude Include="Source\Modules\Renderer\Buffer.h" />
+    <ClInclude Include="Source\Modules\Renderer\Commands.h" />
     <ClInclude Include="Source\Modules\Renderer\Frame.h" />
     <ClInclude Include="Source\Modules\Renderer\MemoryAllocator.h" />
+    <ClInclude Include="Source\Modules\Renderer\MemoryTransfer.h" />
     <ClInclude Include="Source\Modules\Renderer\Vulkan\Buffer.h" />
     <ClInclude Include="Source\Modules\Renderer\Vulkan\CommandBuffer.h" />
     <ClInclude Include="Source\Modules\Renderer\Vulkan\DescriptorSet.h" />
