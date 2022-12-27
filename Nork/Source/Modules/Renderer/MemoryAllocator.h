@@ -4,6 +4,12 @@
 #include "Vulkan/PhysicalDevice.h"
 
 namespace Nork::Renderer {
+    struct MemoryFlags
+    {
+        using enum vk::MemoryPropertyFlagBits;
+        vk::MemoryPropertyFlags required;
+        std::vector<vk::MemoryPropertyFlags> optional; // in priority-order
+    };
     class DeviceMemory;
     class MemoryAllocator
     {
@@ -50,13 +56,11 @@ namespace Nork::Renderer {
         };
     public:
         MemoryAllocator(const Vulkan::PhysicalDevice& physicalDevice);
-        DeviceMemory Allocate(vk::MemoryRequirements req, vk::MemoryPropertyFlags requiredFlags,
-            const std::vector<vk::MemoryPropertyFlags>& desiredFlags = {}); // desiredFlags are in priority order
+        DeviceMemory Allocate(vk::MemoryRequirements req, const MemoryFlags& flags); // desiredFlags are in priority order
     private:
         std::optional<std::shared_ptr<Pool>> FindPool(uint32_t typeIndex, vk::DeviceSize size);
         uint32_t GetMemoryTypeWithMostAvailableMemory(uint32_t typeBits);
-        uint32_t FindSuitableMemoryTypes(uint32_t typeBitsFilter, vk::MemoryPropertyFlags requiredFlags,
-            const std::vector<vk::MemoryPropertyFlags>& desiredFlags = {});
+        uint32_t FindSuitableMemoryTypes(uint32_t typeBitsFilter, const MemoryFlags& flags);
         uint32_t GetMemoryTypeBits(uint32_t typeBits, vk::MemoryPropertyFlags flags);
     public:
         std::vector<Heap> heaps;
@@ -112,7 +116,8 @@ namespace Nork::Renderer {
         }
         void* Ptr()
         {
-            if (!IsMapped()) std::unreachable();
+            if (!IsMapped()) 
+                Map();
             return ptr;
         }
         template<class T = void>

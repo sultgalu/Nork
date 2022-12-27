@@ -33,6 +33,8 @@ namespace Nork::Renderer::Vulkan {
             deviceFeatures2.descriptorBindingPartiallyBound = true;
             // timeline semaphores
             deviceFeatures2.timelineSemaphore = true;
+            // synchronization2
+            deviceFeatures3.synchronization2 = true;
 
             this->queueCreateInfoCount = queueCreateInfos.size();
             this->pQueueCreateInfos = queueCreateInfos.data();
@@ -40,10 +42,12 @@ namespace Nork::Renderer::Vulkan {
             this->enabledExtensionCount = deviceExtensions.size();
             this->ppEnabledExtensionNames = deviceExtensions.data();
             this->pNext = &deviceFeatures2;
+            deviceFeatures2.pNext = &deviceFeatures3;
         }
         std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
         vk::PhysicalDeviceFeatures deviceFeatures;
         vk::PhysicalDeviceVulkan12Features deviceFeatures2;
+        vk::PhysicalDeviceVulkan13Features deviceFeatures3;
     };
 
     class Device : public vk::raii::Device

@@ -7,7 +7,7 @@
 namespace Nork::Renderer::Vulkan {
     struct BufferCreateInfo: vk::BufferCreateInfo
     {
-        BufferCreateInfo(vk::DeviceSize size, vk::BufferUsageFlagBits usage)
+        BufferCreateInfo(vk::DeviceSize size, vk::BufferUsageFlags usage)
             : vk::BufferCreateInfo({}, size, usage) {}
     };
     class Buffer: public vk::raii::Buffer

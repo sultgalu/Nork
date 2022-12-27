@@ -74,7 +74,7 @@ namespace Nork::Renderer::Vulkan {
             : ImageBase(Device::Instance(), createInfo), createInfo(createInfo)
         {
             auto memreq = this->getMemoryRequirements();
-            memory = MemoryAllocator::Instance().Allocate(memreq, memFlags);
+            memory = MemoryAllocator::Instance().Allocate(memreq, MemoryFlags { .required = memFlags });
 
             bindMemory(**memory.Underlying(), memory.PoolOffset());
         }

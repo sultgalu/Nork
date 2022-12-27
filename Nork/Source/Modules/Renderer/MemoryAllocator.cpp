@@ -22,13 +22,12 @@ namespace Nork::Renderer {
         }
         instance = this;
     }
-    DeviceMemory MemoryAllocator::Allocate(vk::MemoryRequirements req,
-        vk::MemoryPropertyFlags requiredFlags, const std::vector<vk::MemoryPropertyFlags>& desiredFlags)
+    DeviceMemory MemoryAllocator::Allocate(vk::MemoryRequirements req, const MemoryFlags& flags)
     {
         auto allocation = std::make_shared<Allocation>();
         allocation->size = req.size;
 
-        uint32_t suitableTypeBits = FindSuitableMemoryTypes(req.memoryTypeBits, requiredFlags, desiredFlags);
+        uint32_t suitableTypeBits = FindSuitableMemoryTypes(req.memoryTypeBits, flags);
         allocation->suitableMemoryTypeBits = suitableTypeBits;
 
         uint32_t typeIdx = GetMemoryTypeWithMostAvailableMemory(allocation->suitableMemoryTypeBits);
@@ -77,12 +76,11 @@ namespace Nork::Renderer {
         }
         return result;
     }
-    uint32_t MemoryAllocator::FindSuitableMemoryTypes(uint32_t typeBitsFilter, vk::MemoryPropertyFlags requiredFlags,
-        const std::vector<vk::MemoryPropertyFlags>& desiredFlags)
+    uint32_t MemoryAllocator::FindSuitableMemoryTypes(uint32_t typeBitsFilter, const MemoryFlags& flags)
     {
-        uint32_t typeBitsRequired = GetMemoryTypeBits(typeBitsFilter, requiredFlags);
+        uint32_t typeBitsRequired = GetMemoryTypeBits(typeBitsFilter, flags.required);
         std::vector<uint32_t> typeBitsVec;
-        for (auto& flag : desiredFlags)
+        for (auto& flag : flags.optional)
             typeBitsVec.push_back(GetMemoryTypeBits(typeBitsFilter, flag) & typeBitsRequired);
         uint32_t suitableTypeBits = typeBitsRequired;
         for (auto& typeBits : typeBitsVec)

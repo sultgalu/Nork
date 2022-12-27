@@ -43,7 +43,7 @@ namespace Nork::Renderer::Vulkan {
         {
             clear(); // make sure cmd gets destroyed before pool
         }
-        CommandBuffer(std::shared_ptr<CommandPool> pool)
+        CommandBuffer(const std::shared_ptr<CommandPool>& pool)
             : CommandBuffer(pool, pool->CreateCommandBuffer())
         {}
         static std::vector<CommandBuffer> Create(std::shared_ptr<CommandPool> pool, uint32_t count)

@@ -12,7 +12,6 @@
     {
       "name": "imgui",
       "features": [ "glfw-binding", "vulkan-binding", "docking-experimental" ]
-    },
-    "vulkan-memory-allocator"
+    }
   ]
 }

@@ -80,7 +80,66 @@ namespace Nork::Renderer {
 				result.push_back({ binding.descriptorType, binding.descriptorCount });
 		return result;
 	}
-	
+
+	struct BufferView
+	{
+		Buffer* buffer;
+		vk::DeviceSize offset;
+		vk::DeviceSize size;
+	};
+	class DeviceResource
+	{
+	public:
+		DeviceResource(vk::BufferUsageFlags usage, const MemoryFlags& memFlags, vk::DeviceSize size,
+			vk::PipelineStageFlags2 syncStages, vk::AccessFlags2 syncAccess)
+			: usage(usage |= vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst),
+			memFlags(memFlags), size(size), syncStages(syncStages), syncAccess(syncAccess)
+		{
+			buffer = Buffer::Create(usage, size, memFlags);
+		}
+		void Resize(vk::DeviceSize newSize)
+		{
+			oldBuffer = buffer;
+			buffer = Buffer::Create(usage, newSize, memFlags);
+			buffer->writes = std::move(oldBuffer->writes);
+			buffer->writeData = std::move(oldBuffer->writeData);
+			Commands::Instance().Submit([&](Vulkan::CommandBuffer& cmd)
+				{
+					auto barrier = vk::BufferMemoryBarrier2();
+			barrier.setBuffer(**oldBuffer->Underlying())
+				.setSrcAccessMask(vk::AccessFlagBits2::eTransferWrite)
+				.setDstAccessMask(vk::AccessFlagBits2::eTransferRead)
+				.setSrcStageMask(vk::PipelineStageFlagBits2::eTransfer)
+				.setDstStageMask(vk::PipelineStageFlagBits2::eTransfer)
+				.setOffset(0).setSize(oldBuffer->memory.Size());
+			cmd.pipelineBarrier2(vk::DependencyInfo(vk::DependencyFlagBits::eByRegion).setBufferMemoryBarriers(barrier));
+			cmd.copyBuffer(**oldBuffer->Underlying(), **buffer->Underlying(), vk::BufferCopy(0, 0, size));
+				});
+
+			for (auto& view : views)
+			{
+				view->buffer = buffer.get();
+			}
+			size = newSize;
+		}
+		void FlushWrites()
+		{
+			buffer->FlushWrites(syncStages, syncAccess);
+		}
+	public:
+		std::vector<std::shared_ptr<BufferView>> views;
+
+		std::shared_ptr<Buffer> buffer;
+		std::shared_ptr<Buffer> oldBuffer;
+
+		vk::PipelineStageFlags2 syncStages;
+		vk::AccessFlags2 syncAccess;
+
+		MemoryFlags memFlags;
+		vk::DeviceSize size;
+		vk::BufferUsageFlags usage;
+	};
+
 	class State
 	{
 	public:
@@ -90,20 +149,39 @@ namespace Nork::Renderer {
 
 			vertexBuffer = Buffer::Create(
 				vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer,
-				sizeof(vertices[0]) * vertices.size(), vk::MemoryPropertyFlagBits::eDeviceLocal);
-			vertexBuffer->Upload(vertices.data());
-			//MemoryTransfer::Instance().CopyToBuffer(*vertexBuffer, vertices.data());
+				sizeof(vertices[0]) * vertices.size(), MemoryFlags{ .required = MemoryFlags::eDeviceLocal });
+			// TEST
+			// auto vbSize = sizeof(vertices[0]) * vertices.size();
+			// uint32_t parts = 5;
+			// auto vbSizeTrimmed = vbSize - vbSize % parts;
+			// auto remainder = vbSize - vbSizeTrimmed;
+			// vk::DeviceSize partSize = vbSizeTrimmed / parts;
+			// for (size_t i = 0; i < parts; i++)
+			// {
+			// 	vk::DeviceSize offset = partSize * i;
+			// 	vertexBuffer->Write((uint8_t*)vertices.data() + offset, partSize, offset);
+			// }
+			// if (remainder > 0)
+			// 	vertexBuffer->Write(vertices.data() + vbSizeTrimmed, remainder, vbSizeTrimmed);
+			//  vertexBuffer->FlushWrites();
+			// TEST
+			vertexBuffer->Write(vertices.data());
+			vertexBuffer->FlushWrites({}, {});
 
-			indexBuffer = Buffer::Create(
+			auto ibSize = sizeof(indices[0]) * indices.size();
+			indexBuffer = std::make_shared<DeviceResource>(
 				vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer,
-				sizeof(indices[0]) * indices.size(), vk::MemoryPropertyFlagBits::eDeviceLocal);
-			indexBuffer->Upload(indices.data());
-			//MemoryTransfer::Instance().CopyToBuffer(*indexBuffer, indices.data());
+				MemoryFlags{ .required = MemoryFlags::eDeviceLocal }, ibSize,
+				vk::PipelineStageFlagBits2::eIndexInput, vk::AccessFlagBits2::eIndexRead);
+			// indexBuffer->buffer->Write(indices.data(), ibSize / 2, 0);
+			// indexBuffer->FlushWrites();
+			indexBuffer->buffer->Write((uint8_t*)indices.data(), ibSize, 0);
+			indexBuffer->FlushWrites();
 
-			vk::MemoryPropertyFlags hostVisibleFlags;
+			MemoryFlags hostVisibleFlags;
 			{
 				using enum vk::MemoryPropertyFlagBits;
-				hostVisibleFlags = eHostVisible | eHostCoherent | eDeviceLocal;
+				hostVisibleFlags.required = eHostVisible | eHostCoherent | eDeviceLocal;
 			}
 			drawCommandsBuffer = Buffer::CreateHostWritable(vk::BufferUsageFlagBits::eIndirectBuffer,
 				sizeof(vk::DrawIndexedIndirectCommand) * MAX_FRAMES_IN_FLIGHT * DRAW_BATCH_COUNT, hostVisibleFlags);
@@ -112,8 +190,8 @@ namespace Nork::Renderer {
 				uboStride = sizeof(uint32_t);
 			uniformBuffer = Buffer::CreateHostWritable(vk::BufferUsageFlagBits::eUniformBuffer,
 				uboStride * MAX_FRAMES_IN_FLIGHT * DRAW_COUNT, hostVisibleFlags);
-			storageBuffer = Buffer::CreateHostWritable(vk::BufferUsageFlagBits::eStorageBuffer,
-				sizeof(SSBO) * MAX_FRAMES_IN_FLIGHT * DRAW_COUNT, hostVisibleFlags);
+			storageBuffer = Buffer::Create(vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst,
+				sizeof(SSBO) * MAX_FRAMES_IN_FLIGHT * DRAW_COUNT, MemoryFlags{ .required = MemoryFlags::eDeviceLocal });
 
 			using namespace Vulkan;
 			textureSampler = std::make_shared<Sampler>();
@@ -148,12 +226,36 @@ namespace Nork::Renderer {
 			auto texImg = std::make_shared<Vulkan::Image>(ImageCreateInfo(image.width, image.height, Format::rgba8Unorm,
 				vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled), vk::MemoryPropertyFlagBits::eDeviceLocal);
 
-			MemoryTransfer::Instance().CopyToImage(**texImg, image.data.data(), image.data.size(), image.width, image.height);
+			MemoryTransfer::Instance().UploadToImage(**texImg, image.data.data(), image.data.size(), image.width, image.height,
+				vk::PipelineStageFlagBits2::eVertexShader, vk::AccessFlagBits2::eShaderSampledRead);
 			return texImg;
 		}
-		~State()
+		void UpdateSSBO(uint32_t currentFrame)
 		{
+			static Timer sumT;
+			static uint32_t frames = 0;
+			static float elapsed = 0;
 
+			for (size_t i = 0; i < DRAW_COUNT; i++)
+			{
+				auto model = glm::translate(glm::identity<glm::mat4>(), glm::vec3(objOffset * i, 0, 0));
+				if (!Input::Instance().IsDown(Key::Shift))
+					storageBuffer->Write(&model, sizeof(model), (currentFrame * DRAW_COUNT + i) * sizeof(model));
+			}
+
+			Timer t;
+			storageBuffer->FlushWrites(vk::PipelineStageFlagBits2::eVertexShader, vk::AccessFlagBits2::eShaderStorageRead);
+			// storageBuffer->FlushWrites({}, {});
+
+			frames++;
+			elapsed += t.Elapsed();
+			if (sumT.ElapsedSeconds() >= 1.0f)
+			{
+				Logger::Info("\t", elapsed / frames, " ms (", 100 * elapsed / sumT.Elapsed(), "%)");
+				sumT.Restart();
+				frames = 0;
+				elapsed = 0;
+			}
 		}
 		void updateUniformBuffer(uint32_t currentFrame)
 		{
@@ -164,7 +266,6 @@ namespace Nork::Renderer {
 			float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 			//glm::mat4 model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-			static auto offs = 1.0f;
 			static auto pos = glm::vec3(0, 0.5, -1);
 			if (Input::Instance().IsDown(Key::Up)) pos.y += 0.1f;
 			if (Input::Instance().IsDown(Key::Down)) pos.y -= 0.1f;
@@ -172,20 +273,18 @@ namespace Nork::Renderer {
 			if (Input::Instance().IsDown(Key::Left)) pos.x -= 0.1f;
 			if (Input::Instance().IsDown(Key::W)) pos.z += 0.1f;
 			if (Input::Instance().IsDown(Key::S)) pos.z -= 0.1f;
-			if (Input::Instance().IsDown(Key::D)) offs *= 0.9f;
-			if (Input::Instance().IsDown(Key::A)) offs *= 1.1f;
+			if (Input::Instance().IsDown(Key::D)) objOffset *= 0.99f;
+			if (Input::Instance().IsDown(Key::A)) objOffset *= 1.01f;
 			auto camPos = glm::translate(glm::identity<glm::mat4>(), pos);
 			// model *= glm::scale(glm::identity<glm::mat4>(), glm::vec3(0.1, 0.1, 0.1));
 			glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 			glm::mat4 proj = glm::perspective(glm::radians(45.0f), SwapChain::Instance().Width() / (float)SwapChain::Instance().Height(), 0.1f, 1000.0f);
 			//proj[1][1] *= -1;
 			vp = proj * view * camPos;
-			auto models = &((glm::mat4*)storageBuffer->Ptr())[currentFrame * DRAW_COUNT];
 			auto modelIdxs = &((char*)uniformBuffer->Ptr())[currentFrame * DRAW_COUNT * uboStride];
 			for (size_t i = 0; i < DRAW_COUNT; i++)
 			{
 				*(uint32_t*)(&modelIdxs[i * uboStride]) = currentFrame * DRAW_COUNT + i;
-				models[i] = glm::translate(glm::identity<glm::mat4>(), glm::vec3(objOffset * i, 0, 0));
 			}
 
 			auto drawCmds = (VkDrawIndexedIndirectCommand*)drawCommandsBuffer->Ptr() + DRAW_BATCH_COUNT * currentFrame;
@@ -226,12 +325,12 @@ namespace Nork::Renderer {
 		};
 		float objOffset = 1.0f;
 		std::shared_ptr<Buffer> vertexBuffer;
-		std::shared_ptr<Buffer> indexBuffer;
+		std::shared_ptr<DeviceResource> indexBuffer;
 
 		glm::mat4 vp;
 		uint32_t uboStride;
 		std::shared_ptr<HostWritableBuffer> uniformBuffer;
-		std::shared_ptr<HostWritableBuffer> storageBuffer; // 268 MB is MAX for DeviceLocal HostVisible Coherent
+		std::shared_ptr<Buffer> storageBuffer; // 268 MB is MAX for DeviceLocal HostVisible Coherent
 		std::shared_ptr<HostWritableBuffer> drawCommandsBuffer;
 
 		std::shared_ptr<Vulkan::Sampler> textureSampler;
@@ -441,8 +540,8 @@ namespace Nork::Renderer {
 			createInfo.attachments[lPassAttIdx]
 				.setFormat(Format::rgba8Unorm)
 				.setLoadOp(vk::AttachmentLoadOp::eClear)
-				.setStoreOp(vk::AttachmentStoreOp::eStore)
-				.setFinalLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+				.setFinalLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+				.setStoreOp(vk::AttachmentStoreOp::eStore);
 			createInfo.attachments[depthAttIdx]
 				.setFormat(Format::depth16)
 				.setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
@@ -468,11 +567,6 @@ namespace Nork::Renderer {
 			createInfo.Subpasses(subPasses);
 
 			createInfo.Dependencies({
-				vk::SubpassDependency(VK_SUBPASS_EXTERNAL, gPass)
-				.setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests)
-				.setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests)
-				.setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite),
-
 				vk::SubpassDependency(gPass, lPass)
 				.setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
 				.setSrcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite)
@@ -485,7 +579,13 @@ namespace Nork::Renderer {
 				.setSrcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite)
 				.setDstStageMask(vk::PipelineStageFlagBits::eFragmentShader)
 				.setDstAccessMask(vk::AccessFlagBits::eInputAttachmentRead)
-				.setDependencyFlags(vk::DependencyFlagBits::eByRegion)
+				.setDependencyFlags(vk::DependencyFlagBits::eByRegion),
+				
+				vk::SubpassDependency(ppPass, VK_SUBPASS_EXTERNAL)
+				.setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
+				.setSrcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite)
+				.setDstStageMask(vk::PipelineStageFlagBits::eFragmentShader)
+				.setDstAccessMask(vk::AccessFlagBits::eShaderRead)
 				});
 			renderPass = std::make_shared<RenderPass>(createInfo);
 		}
@@ -504,7 +604,7 @@ namespace Nork::Renderer {
 				{ currentFrame * state.uboStride * DRAW_COUNT });
 
 			cmd.bindVertexBuffers(0, **state.vertexBuffer->Underlying(), {0});
-			cmd.bindIndexBuffer(**state.indexBuffer->Underlying(), 0, vk::IndexType::eUint16);
+			cmd.bindIndexBuffer(**state.indexBuffer->buffer->Underlying(), 0, vk::IndexType::eUint16);
 			cmd.drawIndexedIndirect(**state.drawCommandsBuffer->Underlying(), sizeof(VkDrawIndexedIndirectCommand) * currentFrame * DRAW_BATCH_COUNT,
 				DRAW_BATCH_COUNT, sizeof(vk::DrawIndexedIndirectCommand));
 
@@ -517,28 +617,19 @@ namespace Nork::Renderer {
 			cmd.DrawQuad();
 
 			cmd.endRenderPass();
-			//    auto builder = CommandBuilder(commandBuffer)
-			//        .BeginRenderPass(*fb, *renderPass)
-			//        .Viewport().Scissor()
+
+			// auto barrierLPass = vk::ImageMemoryBarrier2()
+			// 	.setImage(**fbColor->Image())
+			// 	.setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1))
 			// 
-			//        .BindPipeline(*pipelineGPass)
-			//        .PushConstants(*pipelineGPass, VK_SHADER_STAGE_VERTEX_BIT, &state.vp, sizeof(glm::mat4))
-			//        .BindVB(*state.vertexBuffer)
-			//        .BindIB(*state.indexBuffer, VK_INDEX_TYPE_UINT16)
-			//        .BindDescriptorSet(pipelineGPass->layoutHandle, *descriptorSet, { currentFrame * state.uboStride * DRAW_COUNT })
-			//        //.DrawIndexed(indices.size(), 1'000'000)
-			//        .DrawIndexedIndirect(*state.drawCommandsBuffer, DRAW_BATCH_COUNT, sizeof(VkDrawIndexedIndirectCommand) * currentFrame * DRAW_BATCH_COUNT)
+			// 	.setOldLayout(vk::ImageLayout::eGeneral)
+			// 	.setSrcStageMask(vk::PipelineStageFlagBits2::eColorAttachmentOutput)
+			// 	.setSrcAccessMask(vk::AccessFlagBits2::eColorAttachmentWrite)
 			// 
-			//        .NextSubPass()
-			//        .BindPipeline(*pipelineLPass)
-			//        .BindDescriptorSet(pipelineLPass->layoutHandle, *descriptorSetLPass)
-			//        .DrawQuad()
-			// 
-			//        .NextSubPass()
-			//        .BindPipeline(*pipelinePP)
-			//        .BindDescriptorSet(pipelinePP->layoutHandle, *descriptorSetPP)
-			//        .DrawQuad()
-			//        .EndRenderPass();
+			// 	.setNewLayout(vk::ImageLayout::eColorAttachmentOptimal)
+			// 	.setDstStageMask(vk::PipelineStageFlagBits2::eVertexInput)
+			// 	.setDstAccessMask(vk::AccessFlagBits2::eShaderSampledRead);
+			// cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barrierLPass));
 		}
 	public:
 
@@ -573,13 +664,6 @@ namespace Nork::Renderer {
 				vk::MemoryPropertyFlagBits::eDeviceLocal);
 			auto uiImgView = std::make_shared<ImageView>(ImageViewCreateInfo(uiImg, vk::ImageAspectFlagBits::eColor), nullptr);
 			fbUI = std::make_shared<Framebuffer>(FramebufferCreateInfo(w, h, **renderPassUI, { uiImgView }));
-			//auto imgFormat = Format::rgba8Unorm; //  SwapChain::Instance().createInfo.imageFormat;
-			//for (auto& img : SwapChain::Instance().images)
-			//{
-			//    auto imgView = std::make_shared<ImageView>(ImageViewCreateInfo(img, imgFormat, vk::ImageAspectFlagBits::eColor), nullptr);
-			//    auto fb = std::make_shared<Framebuffer>(w, h, *renderPassUI, std::vector<std::shared_ptr<ImageView>>{ imgView });
-			//    swapChainfbs.push_back(fb);
-			//}
 			InitImguiForVulkan();
 		}
 		~EditorPass()
@@ -605,11 +689,11 @@ namespace Nork::Renderer {
 				});
 
 			createInfo.Dependencies({
-				vk::SubpassDependency(VK_SUBPASS_EXTERNAL, sPass)
-				.setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests)
-				.setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests)
-				.setSrcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite)
-				.setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite),
+				vk::SubpassDependency(sPass, VK_SUBPASS_EXTERNAL)
+				.setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
+				.setSrcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite)
+				.setDstStageMask(vk::PipelineStageFlagBits::eTransfer)
+				.setDstAccessMask(vk::AccessFlagBits::eTransferRead),
 				});
 			renderPassUI = std::make_shared<RenderPass>(createInfo);
 		}
@@ -651,11 +735,11 @@ namespace Nork::Renderer {
 			Commands::Instance().Submit([&](CommandBuffer& cmd)
 				{
 					ImGui_ImplVulkan_CreateFontsTexture(*cmd);
-				}).OnComplete([]()
-					{ //clear font textures from cpu data
-						ImGui_ImplVulkan_DestroyFontUploadObjects();
-					});
-				//.WaitForCompletion();
+				});
+			Commands::Instance().OnRenderFinished([]()
+				{ //clear font textures from cpu data
+					ImGui_ImplVulkan_DestroyFontUploadObjects();
+				});
 		}
 		void recordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imageIndex, uint32_t currentFrame, State& state) override
 		{
@@ -666,13 +750,21 @@ namespace Nork::Renderer {
 			cmd.endRenderPass();
 
 			auto& uiImg = *fbUI->Attachments()[0]->Image();
-			cmd.pipelineBarrier(vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eTransfer,
-				vk::DependencyFlagBits::eByRegion, {}, {}, {
-					ImageMemoryBarrier(*uiImg, vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eTransferSrcOptimal,
-						vk::AccessFlagBits::eColorAttachmentWrite, vk::AccessFlagBits::eTransferRead),
-					ImageMemoryBarrier(SwapChain::Instance().images[imageIndex], vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal,
-						vk::AccessFlagBits::eNone, vk::AccessFlagBits::eTransferWrite),
-				});
+			auto barrierSc = vk::ImageMemoryBarrier2()
+				.setImage(SwapChain::Instance().images[imageIndex])
+				.setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1))
+
+				.setOldLayout(vk::ImageLayout::eUndefined)
+				.setSrcStageMask(vk::PipelineStageFlagBits2::eTopOfPipe)
+				.setSrcAccessMask(vk::AccessFlagBits2::eNone)
+
+				.setNewLayout(vk::ImageLayout::eTransferDstOptimal)
+				.setDstStageMask(vk::PipelineStageFlagBits2::eTransfer)
+				.setDstAccessMask(vk::AccessFlagBits2::eTransferWrite);
+
+			cmd.pipelineBarrier2(vk::DependencyInfo(vk::DependencyFlagBits::eByRegion)
+				.setImageMemoryBarriers(barrierSc));
+
 			cmd.copyImage(*uiImg, vk::ImageLayout::eTransferSrcOptimal,
 				SwapChain::Instance().images[imageIndex], vk::ImageLayout::eTransferDstOptimal,
 				vk::ImageCopy(
@@ -680,11 +772,16 @@ namespace Nork::Renderer {
 					vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1), {},
 					{ SwapChain::Instance().Width(), SwapChain::Instance().Height(), 1 }
 			));
-			cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eBottomOfPipe,
-				vk::DependencyFlagBits::eByRegion, {}, {}, {
-					ImageMemoryBarrier(SwapChain::Instance().images[imageIndex], vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::ePresentSrcKHR,
-							vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eNone),
-				});
+
+			barrierSc
+				.setOldLayout(barrierSc.newLayout)
+				.setSrcStageMask(barrierSc.dstStageMask)
+				.setSrcAccessMask(barrierSc.dstAccessMask)
+
+				.setNewLayout(vk::ImageLayout::ePresentSrcKHR)
+				.setDstStageMask(vk::PipelineStageFlagBits2::eBottomOfPipe)
+				.setDstAccessMask(vk::AccessFlagBits2::eNone);
+			cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barrierSc));
 		}
 		std::shared_ptr<Vulkan::Framebuffer> fbUI;
 		std::shared_ptr<Vulkan::DescriptorPool> imguiPool;
@@ -698,44 +795,34 @@ namespace Nork::Renderer {
 			: allocator(Vulkan::PhysicalDevice::Instance())
 		{
 			using namespace Vulkan;
+			Commands::Instance().Begin(0); // begin initialize phase
+
+			state = std::make_unique<State>();
 			createSyncObjects();
-			commandPool = std::make_shared<CommandPool>();
-			commandBuffers = CommandBuffer::Create(commandPool, MAX_FRAMES_IN_FLIGHT);
-			renderPasses.push_back(std::make_shared<DeferredPass>(state));
+			renderPasses.push_back(std::make_shared<DeferredPass>(*state));
 			renderPasses.push_back(std::make_shared<EditorPass>());
+
+			Commands::Instance().End();
+			Commands::Instance().Submit(); // end initialize phase
 		}
 		~RenderLoop()
 		{
 			using namespace Vulkan;
 			for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 			{
-				vkDestroySemaphore(*Device::Instance(), renderFinishedSemaphores[i], nullptr);
 				vkDestroySemaphore(*Device::Instance(), imageAvailableSemaphores[i], nullptr);
-				vkDestroyFence(*Device::Instance(), inFlightFences[i], nullptr);
 			}
 		}
 		uint32_t BeginFrame()
 		{
 			using namespace Vulkan;
-			static Timer sumT;
-			static float elapsed = 0;
 
-			Timer t;
-			vkWaitForFences(*Device::Instance(), 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
-			vkResetFences(*Device::Instance(), 1, &inFlightFences[currentFrame]);
-			elapsed += t.Elapsed();
-
-			commandBuffers[currentFrame].reset();
-			state.updateUniformBuffer(currentFrame);
+			Commands::Instance().Begin(currentFrame);
+			state->updateUniformBuffer(currentFrame);
+			state->UpdateSSBO(currentFrame);
 
 			auto result = SwapChain::Instance().acquireNextImage(UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE);
-			if (sumT.ElapsedSeconds() >= 1.0f)
-			{
-				Logger::Info("\t", elapsed, " ms (", 100 * elapsed / sumT.Elapsed(), "%)");
-				sumT.Restart();
-				elapsed = 0;
-			}
-
+			
 			if (result.first == vk::Result::eErrorOutOfDateKHR)
 			{
 				//swapChain->recreateSwapChain();
@@ -750,36 +837,17 @@ namespace Nork::Renderer {
 		void EndFrame(uint32_t imgIdx)
 		{
 			using namespace Vulkan;
-			vk::SubmitInfo submitInfo{};
 
-			vk::Semaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
-			vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
-			submitInfo.waitSemaphoreCount = 1;
-			submitInfo.pWaitSemaphores = waitSemaphores;
-			submitInfo.pWaitDstStageMask = waitStages;
-
-			submitInfo.commandBufferCount = 1;
-			submitInfo.setCommandBuffers(*commandBuffers[currentFrame]);
-
-			vk::Semaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
-			submitInfo.signalSemaphoreCount = 1;
-			submitInfo.pSignalSemaphores = signalSemaphores;
-
+			Commands::Instance().Submit(true, { imageAvailableSemaphores[currentFrame] });
 			// vkQueueSubmit(*Device::Instance().graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) == VkSuccess();
-			Device::Instance().graphicsQueue.submit(submitInfo, inFlightFences[currentFrame]);
-
-			vk::PresentInfoKHR presentInfo;
-			presentInfo.waitSemaphoreCount = 1;
-			presentInfo.pWaitSemaphores = signalSemaphores;
-
-			vk::SwapchainKHR swapChains[] = { *SwapChain::Instance() };
-			presentInfo.swapchainCount = 1;
-			presentInfo.pSwapchains = swapChains;
-			presentInfo.pImageIndices = &imgIdx;
-
-			presentInfo.pResults = nullptr; // Optional
-
-			auto res = Device::Instance().graphicsQueue.presentKHR(presentInfo);
+			// Device::Instance().graphicsQueue.submit(submitInfo, inFlightFences[currentFrame]);
+			
+			auto res = Device::Instance().graphicsQueue.presentKHR(
+				vk::PresentInfoKHR()
+				.setWaitSemaphores(**Commands::Instance().renderFinishedSemaphores2[currentFrame])
+				.setSwapchains(*SwapChain::Instance())
+				.setImageIndices(imgIdx)
+			);
 			if (res == vk::Result::eErrorOutOfDateKHR || res == vk::Result::eSuboptimalKHR || framebufferResized)
 			{
 				framebufferResized = false;
@@ -794,24 +862,23 @@ namespace Nork::Renderer {
 		void DrawFrame()
 		{
 			using namespace Vulkan;
-			Commands::Instance().WaitAll();
+			// Commands::Instance().WaitAll();
 			auto imgIdx = BeginFrame();
 			if (imgIdx == INVALID_FRAME_IDX)
 				return;
-			commandBuffers[currentFrame].begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
+			// commandBuffers[currentFrame].begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
 			for (auto& pass : renderPasses)
 			{
-				pass->recordCommandBuffer(commandBuffers[currentFrame], imgIdx, currentFrame, state);
+				pass->recordCommandBuffer(*Commands::Instance().cmds[currentFrame], imgIdx, currentFrame, *state);
 			}
-			commandBuffers[currentFrame].end();
+			Commands::Instance().End();
+			// commandBuffers[currentFrame].end();
 			EndFrame(imgIdx);
 		}
 		void createSyncObjects()
 		{
 			using namespace Vulkan;
 			imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-			renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-			inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
 
 			VkSemaphoreCreateInfo semaphoreInfo{};
 			semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -822,22 +889,15 @@ namespace Nork::Renderer {
 			for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 			{
 				vkCreateSemaphore(*Device::Instance(), &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) == VkSuccess();
-				vkCreateSemaphore(*Device::Instance(), &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) == VkSuccess();
-				vkCreateFence(*Device::Instance(), &fenceInfo, nullptr, &inFlightFences[i]) == VkSuccess();
 			}
 		}
 	public:
 		MemoryAllocator allocator;
-		Commands commands;
+		Commands commands = Commands(MAX_FRAMES_IN_FLIGHT);
 		MemoryTransfer transfer;
-		State state;
+		std::unique_ptr<State> state;
 		std::vector<std::shared_ptr<RenderPass_>> renderPasses;
-		std::vector<Vulkan::CommandBuffer> commandBuffers;
-		std::shared_ptr<Vulkan::CommandPool> commandPool;
-
 		std::vector<VkSemaphore> imageAvailableSemaphores;
-		std::vector<VkSemaphore> renderFinishedSemaphores;
-		std::vector<VkFence> inFlightFences;
 		uint32_t currentFrame = 0;
 		bool framebufferResized = false;
 	};

@@ -45,21 +45,12 @@ int main()
     std::unique_ptr<Nork::Input> input = std::make_unique<Nork::Input>(window.glfwWindow);
     Editor::Editor editor;
     Renderer::RenderLoop renderer;
-    editor.AddViewportPanel();
     std::shared_ptr<ImageView> vpImg = nullptr;
     for (auto& pass : renderer.renderPasses)
     {
         if (auto dp = std::dynamic_pointer_cast<Renderer::DeferredPass>(pass))
         {
             vpImg = dp->fbColor;
-            break;
-        }
-    }
-    for (auto& panel : editor.panels)
-    {
-        if (auto vpp = std::dynamic_pointer_cast<Editor::ViewportPanel>(panel))
-        {
-            vpp->viewportView.SetImage(vpImg, vpImg->sampler);
             break;
         }
     }
@@ -72,6 +63,15 @@ int main()
         {
             glfwPollEvents();
             editor.Render();
+            for (auto& panel : editor.panels) // laziness...
+            {
+                if (auto vpp = std::dynamic_pointer_cast<Editor::ViewportPanel>(panel))
+                {
+                    if (vpp->viewportView.image != vpImg)
+                        vpp->viewportView.SetImage(vpImg, vpImg->sampler);
+                    break;
+                }
+            }
             renderer.DrawFrame();
             //drawFrame();
             frames++;

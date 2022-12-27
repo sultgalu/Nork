@@ -49,4 +49,17 @@ namespace Nork::Renderer::Vulkan {
 	public:
 		const uint64_t initialValue;
 	};
+
+	class BinarySemaphore : public vk::raii::Semaphore
+	{
+	public:
+		BinarySemaphore()
+			: BinarySemaphore(vk::SemaphoreTypeCreateInfo(vk::SemaphoreType::eBinary))
+		{}
+	private:
+		BinarySemaphore(const vk::SemaphoreTypeCreateInfo& typeInfo)
+			: vk::raii::Semaphore(Device::Instance(), vk::SemaphoreCreateInfo({}, & typeInfo))
+		{}
+	public:
+	};
 }

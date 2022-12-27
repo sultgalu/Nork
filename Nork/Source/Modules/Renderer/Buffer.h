@@ -1,8 +1,10 @@
 #pragma once
 
 #include "Vulkan/Buffer.h"
+#include "Commands.h"
 
 namespace Nork::Renderer {
+	struct BufferCopy; // avoid circular dep.
 
 	class HostWritableBuffer;
 	class Buffer
@@ -12,48 +14,46 @@ namespace Nork::Renderer {
 		Buffer(std::shared_ptr<Vulkan::Buffer> buffer, DeviceMemory memory)
 			: underlying(buffer), memory(memory)
 		{}
-		static std::shared_ptr<Buffer> Create(vk::BufferUsageFlagBits usage, vk::DeviceSize size, 
-			vk::MemoryPropertyFlags memFlags, const std::vector<vk::MemoryPropertyFlags>& desiredMemFlags = {});
-		static std::shared_ptr<HostWritableBuffer> CreateHostWritable(vk::BufferUsageFlagBits usage, vk::DeviceSize size,
-			vk::MemoryPropertyFlags memFlags, const std::vector<vk::MemoryPropertyFlags>& desiredMemFlags = {});
-		void Upload(const void* data)
+		static std::shared_ptr<Buffer> Create(vk::BufferUsageFlags usage,
+			vk::DeviceSize size, const MemoryFlags& memFlags);
+		static std::shared_ptr<HostWritableBuffer> CreateHostWritable(vk::BufferUsageFlags usage,
+			vk::DeviceSize size, const MemoryFlags& memFlags);
+
+		void Write(const void* data)
 		{
-			Upload(data, memory.Size(), 0);
+			Write(data, memory.Size(), 0);
 		}
-		virtual void Upload(const void* data, vk::DeviceSize size, vk::DeviceSize offset = 0)
+		void Write(const void* data, vk::DeviceSize size, vk::DeviceSize offset);
+		void FlushWrites(vk::PipelineStageFlags2 syncStages, vk::AccessFlags2 syncAccess);
+	protected:
+		virtual void Upload(vk::PipelineStageFlags2 syncStages, vk::AccessFlags2 syncAccess)
 		{
-			UploadWithStagingBuffer(data, size, offset);
+			UploadWithStagingBuffer(syncStages, syncAccess);
 		}
-		void UploadWithStagingBuffer(const void* data, vk::DeviceSize size, vk::DeviceSize offset = 0);
-		// template<class T>
-		// void operator=(const T& val)
-		// {
-		// 	Upload(val, sizeof(val));
-		// }
+		void UploadWithStagingBuffer(vk::PipelineStageFlags2 syncStages, vk::AccessFlags2 syncAccess);
+	public:
 		std::shared_ptr<Vulkan::Buffer>& Underlying()
 		{
 			return underlying;
 		}
 	public:
+		std::vector<BufferCopy> writes;
+		std::vector<uint8_t> writeData;
+
 		std::shared_ptr<Vulkan::Buffer> underlying;
 		DeviceMemory memory;
 	};
 
 	class HostWritableBuffer : public Buffer
 	{
-	public:
+	protected:
 		using Buffer::Buffer;
-		// HostWritableBuffer(std::shared_ptr<Vulkan::Buffer> buffer, DeviceMemory memory)
-		// 	: Buffer(buffer, memory)
-		// {}
-		void Upload(const void* data, vk::DeviceSize size, vk::DeviceSize offset = 0) override
+		void Upload(vk::PipelineStageFlags2 syncStages, vk::AccessFlags2 syncAccess) override
 		{
-			UploadWithMemcpy(data, size, offset);
+			UploadWithMemcpy();
 		}
-		void UploadWithMemcpy(const void* data, vk::DeviceSize size, vk::DeviceSize offset = 0)
-		{
-			std::memcpy((uint8_t*)memory.Ptr() + offset, data, size);
-		}
+		void UploadWithMemcpy();
+	public:
 		template<class T = void>
 		T* Ptr()
 		{
@@ -61,7 +61,6 @@ namespace Nork::Renderer {
 				memory.Map();
 			return reinterpret_cast<T*>(memory.Ptr());
 		}
-	public:
 	};
 
 }
