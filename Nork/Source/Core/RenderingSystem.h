@@ -13,6 +13,7 @@ namespace Nork {
 	public:
 		static RenderingSystem& Instance();
 		RenderingSystem(entt::registry& registry);
+		~RenderingSystem();
 	public:
 		std::shared_ptr<Renderer::Mesh> NewMesh(uint32_t vertexCount, uint32_t indexCount)
 		{

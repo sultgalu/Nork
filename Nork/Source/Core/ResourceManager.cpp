@@ -104,10 +104,14 @@ namespace Nork {
 		static Resources<T> instance;
 		return instance;
 	}
-	
+
+	template<class T> void Resources<T>::Clear()
+	{
+		cache.clear();
+	}
 	template Resources<std::shared_ptr<Components::Model>>;
 	template Resources<std::shared_ptr<Renderer::Mesh>>;
-	template Resources<std::shared_ptr<Renderer::Image>>;
+	template Resources<std::shared_ptr<Renderer::Texture>>;
 
 	static Renderer::GLTF::GLTF LoadGLTF(const fs::path& path)
 	{
@@ -151,8 +155,8 @@ namespace Nork {
 	template<> TextureResources::ResourceType TextureResources::Load(const fs::path& path) const
 	{
 		Logger::Info("Loading texture ", path);
-
-		return RenderingSystem::Instance().LoadImage(path.string());
+		auto img = RenderingSystem::Instance().LoadImage(path.string());
+		return Renderer::Resources::Instance().Textures().AddTexture(img);
 	}
 	template<> ModelResources::ResourceType ModelResources::Load(const fs::path& path) const
 	{
@@ -240,9 +244,7 @@ namespace Nork {
 	{
 		Logger::Info("Importing model from ", path);
 
-		std::unreachable();
-
-		/*if (path.extension() == ".gltf")
+		if (path.extension() == ".gltf")
 		{
 			auto model = GLTFReader(path).Read();
 			ModelResources::Instance().Add(model, path.stem());
@@ -255,18 +257,17 @@ namespace Nork {
 
 			for (auto& meshData : meshDatas)
 			{
-				auto mesh = RenderingSystem::Instance().world.AddMesh(meshData.vertices.size(), meshData.indices.size());
-				mesh.Vertices().CopyFrom(meshData.vertices.data(), meshData.vertices.size());
-				mesh.Indices().CopyFrom(meshData.indices.data(), meshData.indices.size());
+				auto mesh = RenderingSystem::Instance().NewMesh(meshData.vertices, meshData.indices);
 				MeshResources::Instance().SaveAs(mesh, fs::path(meshData.meshName).stem());
 
-				auto material = RenderingSystem::Instance().world.AddMaterial();
-				material->baseColorFactor = meshData.material.diffuse;
-				material->roughnessFactor = 1 - meshData.material.specular;
+				auto material = RenderingSystem::Instance().NewMaterial();
+				auto data = material->Data();
+				data->baseColorFactor = meshData.material.diffuse;
+				data->roughnessFactor = 1 - meshData.material.specular;
 				for (auto& pair : meshData.material.textureMaps)
 				{
 					auto tex = TextureResources::Instance().Get(pair.second);
-					material.SetTextureMap(tex, pair.first);
+					material->SetTextureMap(tex, pair.first);
 				}
 
 				model->meshes.push_back(Components::Mesh{ .mesh = mesh, .material = material });
@@ -275,7 +276,7 @@ namespace Nork {
 			ModelResources::Instance().SaveAs(model, path.stem());
 			return model;
 		}
-		throw GeneralResourceException("no importer for " + path.extension().string());*/
+		throw GeneralResourceException("no importer for " + path.extension().string());
 	}
 	void ResourceUtils::ExportModel(const ModelResources::ResourceType& model, const fs::path& path)
 	{

@@ -4,6 +4,8 @@
 #include "Editor/Editor.h"
 #include "Modules/Renderer/Data/Vertex.h"
 #include "Core/PolygonBuilder.h"
+#include "Editor/Utils/EditorImage.h"
+
 
 namespace Nork::Editor {
 
@@ -113,13 +115,13 @@ namespace Nork::Editor {
 	}
 	template<> void SceneNodeView::ShowComponent(Components::PointLight& pointLight, bool& changed)
 	{
-		/*changed |= ImGui::ColorEdit4("Color##Plight", (float*)&(pointLight.light->color.r));
+		changed |= ImGui::ColorEdit4("Color##Plight", (float*)&(pointLight.Data()->color.r));
 
 		int pow = pointLight.GetIntensity();
 		if (changed |= ImGui::DragInt("Intensity", &(pow), 1, 0, 10000))
 			pointLight.SetIntensity(pow);
 
-		if (!node->GetEntity().HasComponent<Components::PointShadowMap>())
+		/*if (!node->GetEntity().HasComponent<Components::PointShadowMap>())
 		{
 			if (ImGui::Button("Add shadow"))
 			{
@@ -230,7 +232,6 @@ namespace Nork::Editor {
 	}
 	template<> void SceneNodeView::ShowComponent(Components::Drawable& dr, bool& changed)
 	{
-		/*
 		static int imgSize = 100;
 		const auto model = dr.GetModel();
 		if (!model->meshes.empty())
@@ -273,9 +274,10 @@ namespace Nork::Editor {
 				// ImGui::Text("Material ID:"); ImGui::SameLine();
 				// ImGui::Text(matPath.string().c_str());
 
-				ImGui::ColorEdit3("Base Color Factor", &model->meshes[meshIdx].material->baseColorFactor.r, ImGuiColorEditFlags_DefaultOptions_ | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
-				ImGui::SliderFloat("Roughness Factor", &model->meshes[meshIdx].material->roughnessFactor, 0, 1);
-				ImGui::SliderFloat("Metallic Factor", &model->meshes[meshIdx].material->metallicFactor, 0, 1);
+				auto material = model->meshes[meshIdx].material->Data();
+				ImGui::ColorEdit3("Base Color Factor", &material->baseColorFactor.r, ImGuiColorEditFlags_DefaultOptions_ | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
+				ImGui::SliderFloat("Roughness Factor", &material->roughnessFactor, 0, 1);
+				ImGui::SliderFloat("Metallic Factor", &material->metallicFactor, 0, 1);
 				
 				// if (ImGui::Button("Save Material"))
 				// {
@@ -285,17 +287,20 @@ namespace Nork::Editor {
 				{
 					auto displayTex = [&](Renderer::TextureMap type)
 					{
-						auto tex = model->meshes[meshIdx].material.GetTextureMap(type);
-						ImGui::Image((ImTextureID)tex->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
+						static EditorImage img;
+
+						auto tex = model->meshes[meshIdx].material->GetTextureMap(type);
+						img = tex->image;
+						ImGui::Image(img.descritptorSet, ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
 							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
-						ImGui::Text("Width: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->GetWidth()).c_str());
-						ImGui::Text("Height: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->GetHeight()).c_str());
-						ImGui::Text("Format: "); ImGui::SameLine(); ImGui::Text(Renderer::TextureFormatToString(tex->GetAttributes().format));
+						ImGui::Text("Width: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->image->img->Width()).c_str());
+						ImGui::Text("Height: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->image->img->Width()).c_str());
+						ImGui::Text("Format: "); ImGui::SameLine(); ImGui::Text(vk::to_string(tex->image->img->Format()).c_str());
 
 						ImGui::EndTabItem();
 						if (ImGui::Button("Default"))
 						{
-							model->meshes[meshIdx].material.SetDefaultTexture(type);
+							model->meshes[meshIdx].material->SetDefaultTexture(type);
 						}
 						if (ImGui::Button("Load texture"))
 						{
@@ -305,7 +310,7 @@ namespace Nork::Editor {
 								auto newTex = TextureResources::Instance().Get(p);
 								if (newTex != nullptr)
 								{
-									model->meshes[meshIdx].material.SetTextureMap(newTex, type);
+									model->meshes[meshIdx].material->SetTextureMap(newTex, type);
 								}
 							}
 						}
@@ -399,7 +404,7 @@ namespace Nork::Editor {
 			{
 				ResourceUtils::ExportModel(model, p);
 			}
-		}*/
+		}
 	}
 	template<> void SceneNodeView::ShowComponent(Components::Physics& phx, bool& changed)
 	{

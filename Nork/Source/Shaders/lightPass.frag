@@ -125,7 +125,7 @@ void main()
 	F0 = mix(F0, material.albedo, material.metallic);
 
 	vec3 Lo = vec3(0.0);
-	/*for (uint i = uint(0); i < dShadowCount; i++)
+	for (uint i = uint(0); i < dShadowCount; i++)
 	{
 		uint j = i * 2;
 		uint li = dirIdxs[j / 4][j % 4];
@@ -158,12 +158,12 @@ void main()
 		float attenuation = 1.0 / (distance * distance); // inverse-square law. More physically correct but gives less manual control
 		vec3 lightDir = normalize(worldPos - pLs[li].position);
 		Lo += pbr(lightDir, pLs[li].color.rgb, material, worldPos, normal, viewDir, attenuation);
-	}*/
-	for (uint i = 0; i < 1; i++)
+	}
+	/*for (uint i = 0; i < 1; i++)
 	{
 		uint li = i;
 		Lo += pbr(normalize(dLs[li].direction), dLs[li].color.rgb, material, worldPos, normal, viewDir, 1.0f);
-	}
+	}*/
 	vec3 ambient = vec3(0.03) * material.albedo; // *ao
 	vec3 color = ambient + Lo;
 	fColor = vec4(color, 1.0f);

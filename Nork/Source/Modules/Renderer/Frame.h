@@ -632,11 +632,11 @@ namespace Nork::Renderer::Demo {
 			ImGui_ImplVulkan_Init(&init_info, **renderPassUI);
 
 			//execute a gpu command to upload imgui font textures
-			Commands::Instance().Submit([&](CommandBuffer& cmd)
+			Commands::Instance().TransferCommand([&](CommandBuffer& cmd)
 				{
 					ImGui_ImplVulkan_CreateFontsTexture(*cmd);
 				});
-			Commands::Instance().OnRenderFinished([]()
+			Commands::Instance().OnTransfersFinished([]()
 				{ //clear font textures from cpu data
 					ImGui_ImplVulkan_DestroyFontUploadObjects();
 				});
@@ -696,15 +696,15 @@ namespace Nork::Renderer::Demo {
 			: allocator(Vulkan::PhysicalDevice::Instance())
 		{
 			using namespace Vulkan;
-			Commands::Instance().Begin(0);
+			//Commands::Instance().Begin(0);
 
 			state = std::make_unique<State>();
 			createSyncObjects();
 			renderPasses.push_back(std::make_shared<DeferredPass>(*state));
 			renderPasses.push_back(std::make_shared<EditorPass>());
 
-			Commands::Instance().End();
-			Commands::Instance().Submit();
+			//Commands::Instance().End();
+			//Commands::Instance().Submit();
 		}
 		~RenderLoop()
 		{
@@ -718,7 +718,9 @@ namespace Nork::Renderer::Demo {
 		{
 			using namespace Vulkan;
 
-			Commands::Instance().Begin(currentFrame);
+			Commands::Instance().NextFrame(currentFrame);
+			Commands::Instance().BeginTransferCommandBuffer();
+			Commands::Instance().BeginRenderCommandBuffer();
 			state->storageBuffer->OnNewFrame();
 			state->updateUniformBuffer(currentFrame);
 			state->UpdateSSBO(currentFrame);
@@ -740,7 +742,8 @@ namespace Nork::Renderer::Demo {
 		{
 			using namespace Vulkan;
 
-			Commands::Instance().Submit(true, { imageAvailableSemaphores[currentFrame] });
+			Commands::Instance().SubmitTransferCommands();
+			Commands::Instance().SubmitRenderCommands(true, { imageAvailableSemaphores[currentFrame] });
 			
 			auto res = Device::Instance().graphicsQueue.presentKHR(
 				vk::PresentInfoKHR()
@@ -766,9 +769,10 @@ namespace Nork::Renderer::Demo {
 				return;
 			for (auto& pass : renderPasses)
 			{
-				pass->recordCommandBuffer(*Commands::Instance().cmds[currentFrame], imgIdx, currentFrame, *state);
+				pass->recordCommandBuffer(*Commands::Instance().renderCmds[currentFrame], imgIdx, currentFrame, *state);
 			}
-			Commands::Instance().End();
+			Commands::Instance().EndTransferCommandBuffer();
+			Commands::Instance().EndRenderCommandBuffer();
 			EndFrame(imgIdx);
 		}
 		void createSyncObjects()

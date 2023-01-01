@@ -16,7 +16,7 @@ int main()
 	Editor::Editor editor;
 	Engine engine;
 
-	Renderer::Commands::Instance().BeginOutOfFrame();
+	Renderer::Commands::Instance().BeginTransferCommandBuffer();
 	//editor.SetDisplayTexture(engine.renderingSystem.deferredPipeline.lightFb->Color());
 
 	/*int dim = 10;
@@ -205,7 +205,8 @@ int main()
 	// engine.StartPhysics();
 	// engine.scene.Load("C:/Users/Norbi/source/repos/Nork/Nork/Assets/scenes/coll.json");
 
-	Renderer::Commands::Instance().EndSubmitAndWaitOutOfFrame();
+	Renderer::Commands::Instance().EndTransferCommandBuffer();
+	Renderer::Commands::Instance().SubmitTransferCommands();
 	while (!Renderer::Vulkan::Window::Instance().ShouldClose())
 	{
 		Input::Instance().Update();

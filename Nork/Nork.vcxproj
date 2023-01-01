@@ -198,6 +198,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Components\Impl\Drawable.cpp" />
+    <ClCompile Include="Source\Editor\Utils\EditorImage.cpp" />
     <ClCompile Include="Source\Main\Entry2.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Buffer.cpp" />
     <ClCompile Include="Source\Modules\Renderer\DeferredPass.cpp" />
@@ -231,6 +232,7 @@
     <ClCompile Include="Source\Modules\Renderer\LoadUtils.cpp" />
     <ClCompile Include="Source\App\Application.cpp" />
     <ClInclude Include="Source\Core\GLTFReader.h" />
+    <ClInclude Include="Source\Editor\Utils\EditorImage.h" />
     <ClInclude Include="Source\Modules\Renderer\Buffer.h" />
     <ClInclude Include="Source\Modules\Renderer\BufferCopy.h" />
     <ClInclude Include="Source\Modules\Renderer\Commands.h" />

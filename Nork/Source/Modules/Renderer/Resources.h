@@ -27,39 +27,15 @@ public:
 	class TextureDesriptors
 	{
 	public:
-		TextureDesriptors()
-		{
-			defaultSampler = std::make_shared<Vulkan::Sampler>();
-			for (size_t i = 0; i < img_arr_size; i++)
-			{
-				freeTextureIdxs.insert(i);
-			}
-			textures.resize(img_arr_size);
-		}
-		std::shared_ptr<Texture> AddTexture(std::shared_ptr<Image>& img)
-		{
-			uint32_t idx = *freeTextureIdxs.begin();
-			freeTextureIdxs.erase(freeTextureIdxs.begin());
-			if (!img->sampler)
-				img->sampler = defaultSampler;
-
-			descriptorSet->Writer()
-				.Image(3, *img->view, vk::ImageLayout::eShaderReadOnlyOptimal,
-					*img->sampler, vk::DescriptorType::eCombinedImageSampler, idx)
-				.Write();
-			textures[idx] = img;
-			return std::make_shared<Texture>(img, idx);
-		}
-		void RemoveTexture(uint32_t idx)
-		{
-			textures[idx] = nullptr;
-			freeTextureIdxs.insert(idx);
-		}
+		TextureDesriptors(std::shared_ptr<Vulkan::DescriptorSet>& descriptorSet);
+		std::shared_ptr<Texture> AddTexture(std::shared_ptr<Image>& img);
+		void RemoveTexture(uint32_t idx);
 	public:
 		std::shared_ptr<Vulkan::Sampler> defaultSampler;
 		std::vector<std::shared_ptr<Image>> textures;
 		std::set<uint32_t> freeTextureIdxs;
 		std::shared_ptr<Vulkan::DescriptorSet> descriptorSet;
+		std::shared_ptr<Texture> diffuse, normal, metallicRoughness; // default textures
 	};
 	uint32_t DynamicOffset(const Buffer& buffer)
 	{
@@ -88,7 +64,7 @@ public:
 	}
 	TextureDesriptors& Textures()
 	{
-		return textureDescriptors;
+		return *textureDescriptors;
 	}
 public:
 	// make type Descriptor, in it store params passed to desclayout, store these in descSet, 
@@ -111,7 +87,7 @@ public:
 	// only d-buffing when written should be applied to drawParams/drawCommands, 
 	// then it is not required to refill the buffers every frame 
 
-	TextureDesriptors textureDescriptors;
+	std::unique_ptr<TextureDesriptors> textureDescriptors;
 
 	std::shared_ptr<Vulkan::DescriptorPool> descriptorPool;
 	std::shared_ptr<Vulkan::DescriptorSetLayout> descriptorSetLayout;

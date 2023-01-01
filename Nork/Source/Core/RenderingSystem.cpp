@@ -214,6 +214,15 @@ Renderer::Renderer* Renderer::Renderer::instance = nullptr;
 	};
 	static Client rendererClient;
 	static RenderingSystem* instance;
+	RenderingSystem::~RenderingSystem()
+	{
+		// clear every reference to renderer objects before deleting it
+		ModelResources::Instance().Clear();
+		MeshResources::Instance().Clear();
+		TextureResources::Instance().Clear();
+		registry.clear<Components::Drawable, Components::DirLight, Components::PointLight>();
+		renderer = nullptr;
+	}
 	RenderingSystem::RenderingSystem(entt::registry& registry)
 		: registry(registry)
 	{
@@ -329,8 +338,9 @@ Renderer::Renderer* Renderer::Renderer::instance = nullptr;
 	}
 	std::shared_ptr<Renderer::Image> RenderingSystem::LoadImage(const std::string& path)
 	{
-		auto data = Renderer::LoadUtils::LoadImage("path", true);
+		auto data = Renderer::LoadUtils::LoadImage(path, true);
 
+		// format: is it linear or sRGB? usually the latter but should be checked
 		auto texImg = std::make_shared<Renderer::Image>(data.width, data.height, Renderer::Vulkan::Format::rgba8Unorm,
 			vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::ImageAspectFlagBits::eColor,
 			vk::PipelineStageFlagBits2::eFragmentShader, vk::AccessFlagBits2::eShaderSampledRead);

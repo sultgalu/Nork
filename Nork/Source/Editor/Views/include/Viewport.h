@@ -2,6 +2,7 @@
 
 #include "../../View.h"
 #include "Modules/Renderer/Vulkan/Image.h"
+#include "Editor/Utils/EditorImage.h"
 
 namespace Nork::Editor {
 	class ViewportView: public View
@@ -16,18 +17,8 @@ namespace Nork::Editor {
 			bool isViewportDoubleClicked = false;
 			bool isViewportClicked = false;
 		};
-		void SetImage(std::shared_ptr<Renderer::Vulkan::ImageView> image, std::shared_ptr<Renderer::Vulkan::Sampler> sampler)
-		{
-			// if (viewportImgDs != VK_NULL_HANDLE)
-				// destroy?
-			this->image = image;
-			this->sampler = sampler;
-			viewportImgDs = ImGui_ImplVulkan_AddTexture(**sampler, **image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-		}
 	public:
-		std::shared_ptr<Renderer::Vulkan::ImageView> image;
-		std::shared_ptr<Renderer::Vulkan::Sampler> sampler;
-		VkDescriptorSet viewportImgDs = VK_NULL_HANDLE;
+		EditorImage image;
 		MouseState mouseState;
 		// std::shared_ptr<SceneView> sceneView;
 		std::shared_ptr<Components::Camera> camera;

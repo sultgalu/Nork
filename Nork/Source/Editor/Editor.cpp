@@ -144,7 +144,6 @@ namespace Nork::Editor
 		//ImGui_ImplOpenGL3_Init();
 		//ImGui_ImplGlfw_InitForOpenGL(Application::Get().engine.window.Underlying().GetContext().glfwWinPtr, false);
 	}
-	void InitImguiForVulkanAndGlfw();
 	Editor::~Editor()
 	{
 		ImGui_ImplGlfw_Shutdown();

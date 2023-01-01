@@ -65,6 +65,7 @@ namespace Nork {
 
 		static Resources& Instance();
 		const std::unordered_map<fs::path, T>& Cache() { return cache; }
+		void Clear();
 	private:
 		T Load(const fs::path&) const;
 		void Set(T&, const T&) const;
@@ -83,7 +84,7 @@ namespace Nork {
 
 	using ModelResources = Resources<std::shared_ptr<Components::Model>>;
 	using MeshResources = Resources<std::shared_ptr<Renderer::Mesh>>;
-	using TextureResources = Resources<std::shared_ptr<Renderer::Image>>;
+	using TextureResources = Resources<std::shared_ptr<Renderer::Texture>>;
 
 	enum class ModelTemplate { Cube, Sphere };
 	class ResourceUtils

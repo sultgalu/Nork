@@ -48,12 +48,12 @@ int main2()
     Engine engine;
 
     Renderer::Demo::RenderLoop renderer;
-    std::shared_ptr<ImageView> vpImg = nullptr;
+    std::shared_ptr<Renderer::Image> vpImg = nullptr;
     for (auto& pass : renderer.renderPasses)
     {
         if (auto dp = std::dynamic_pointer_cast<Renderer::Demo::DeferredPass>(pass))
         {
-            vpImg = dp->fbColor->view;
+            vpImg = dp->fbColor;
             break;
         }
     }
@@ -68,15 +68,15 @@ int main2()
         {
             Input::Instance().Update();
             editor.Render();
-            for (auto& panel : editor.panels) // laziness...
-            {
-                if (auto vpp = std::dynamic_pointer_cast<Editor::ViewportPanel>(panel))
-                {
-                    if (vpp->viewportView.image != vpImg)
-                        vpp->viewportView.SetImage(vpImg, sampler);
-                    break;
-                }
-            }
+            // for (auto& panel : editor.panels) // laziness...
+            // {
+            //     if (auto vpp = std::dynamic_pointer_cast<Editor::ViewportPanel>(panel))
+            //     {
+            //         if (vpp->viewportView.image != vpImg)
+            //             vpp->viewportView.SetImage(vpImg, sampler);
+            //         break;
+            //     }
+            // }
             renderer.DrawFrame();
             //drawFrame();
             frames++;

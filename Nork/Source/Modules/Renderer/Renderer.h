@@ -25,15 +25,15 @@ public:
 	{
 		instance = this;
 		using namespace Vulkan;
-		Commands::Instance().Begin(0); // begin initialize phase
+		Commands::Instance().BeginTransferCommandBuffer(); // begin initialize phase
 
 		resources = std::make_unique<Resources>();
 		createSyncObjects();
 		renderPasses.push_back(std::make_shared<DeferredPass>());
 		renderPasses.push_back(std::make_shared<EditorPass>());
 
-		Commands::Instance().End();
-		Commands::Instance().Submit(); // end initialize phase
+		Commands::Instance().EndTransferCommandBuffer();
+		Commands::Instance().SubmitTransferCommands(); // end initialize phase
 	}
 	~Renderer()
 	{
@@ -49,8 +49,9 @@ public:
 		using namespace Vulkan;
 
 		currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-		Commands::Instance().Begin(currentFrame);
-
+		Commands::Instance().NextFrame(currentFrame);
+		Commands::Instance().BeginRenderCommandBuffer();
+		Commands::Instance().BeginTransferCommandBuffer();
 		// start CPU expensive stuff that does not yet require the next image
 		resources->OnNewFrame(currentFrame);
 		if (client)
@@ -92,7 +93,8 @@ public:
 	{
 		using namespace Vulkan;
 
-		Commands::Instance().Submit(true, { imageAvailableSemaphores[currentFrame] });
+		Commands::Instance().SubmitTransferCommands();
+		Commands::Instance().SubmitRenderCommands(true, { imageAvailableSemaphores[currentFrame] });
 
 		auto res = Device::Instance().graphicsQueue.presentKHR(
 			vk::PresentInfoKHR()
@@ -117,9 +119,10 @@ public:
 			return;
 		for (auto& pass : renderPasses)
 		{
-			pass->recordCommandBuffer(*Commands::Instance().cmds[currentFrame], imgIdx, currentFrame);
+			pass->recordCommandBuffer(*Commands::Instance().renderCmds[currentFrame], imgIdx, currentFrame);
 		}
-		Commands::Instance().End();
+		Commands::Instance().EndRenderCommandBuffer();
+		Commands::Instance().EndTransferCommandBuffer();
 		EndFrame(imgIdx);
 	}
 	void createSyncObjects()

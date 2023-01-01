@@ -530,7 +530,7 @@ namespace Nork::Renderer::GLTF {
 		virtual void FromJson(const JsonObject& json) override
 		{
 			version = json.Get<std::string>("version");
-			version = json.Get<std::string>("generator");
+			generator = json.Get<std::string>("generator");
 		}
 		virtual bool Validate() const override
 		{

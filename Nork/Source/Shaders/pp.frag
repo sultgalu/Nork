@@ -8,9 +8,11 @@ void main() {
 	vec3 color = subpassLoad(frame).rgb;
   // outColor = color; //.grba;
   // outColor = vec4(1.0);
-  float gamma = 1.0f;
   float exposure = 10.0f;
 	color = vec3(1.0f) - exp(-color * exposure);
-	outColor.rgb = pow(color, vec3(1.0f / gamma));
+  // float gamma = 0.1;
+	// color = pow(color, vec3(1.0f / gamma));
+  // gamma correction happens when you render / copy to sRGB image (from linear to gamma space)
+  outColor.rgb = color.rgb;
   outColor.a = 1.0f;
 }

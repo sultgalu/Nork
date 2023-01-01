@@ -85,11 +85,11 @@ public:
 		ImGui_ImplVulkan_Init(&init_info, **renderPassUI);
 
 		//execute a gpu command to upload imgui font textures
-		Commands::Instance().Submit([&](CommandBuffer& cmd)
+		Commands::Instance().TransferCommand([&](CommandBuffer& cmd)
 		{
 			ImGui_ImplVulkan_CreateFontsTexture(*cmd);
 		});
-		Commands::Instance().OnRenderFinished([]()
+		Commands::Instance().OnTransfersFinished([]()
 		{ //clear font textures from cpu data
 			ImGui_ImplVulkan_DestroyFontUploadObjects();
 		});

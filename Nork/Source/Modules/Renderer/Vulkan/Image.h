@@ -11,6 +11,7 @@ namespace Nork::Renderer::Vulkan {
         constexpr static auto rgba8Srgb = vk::Format::eR8G8B8A8Srgb;
         constexpr static auto rgba16f = vk::Format::eR16G16B16A16Sfloat;
         constexpr static auto rgba32f = vk::Format::eR32G32B32A32Sfloat;
+        constexpr static auto rgba16Unorm = vk::Format::eR16G16B16A16Unorm;
         constexpr static auto depth32 = vk::Format::eD32Sfloat;
         constexpr static auto depth16 = vk::Format::eD16Unorm;
     };

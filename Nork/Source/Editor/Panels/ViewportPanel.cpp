@@ -17,7 +17,7 @@ namespace Nork::Editor {
 			{
 				if (auto dp = std::dynamic_pointer_cast<Renderer::DeferredPass>(pass))
 				{
-					viewportView.SetImage(dp->fbColor->view, std::make_shared<Renderer::Vulkan::Sampler>());
+					viewportView.image = dp->fbColor;
 					return;
 				}
 			}

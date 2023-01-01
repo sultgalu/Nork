@@ -19,7 +19,7 @@ namespace Nork{
 			for (auto& buf : gltf.buffers)
 				buffers.push_back(FileUtils::ReadBinary<char>(SrcPath(buf.uri).string()));
 			for (auto& img : gltf.images)
-				//images.push_back(TextureResources::Instance().Get(SrcPath(img.uri)));
+				images.push_back(TextureResources::Instance().Get(SrcPath(img.uri)));
 			for (auto& mat : gltf.materials)
 				materials.push_back(CreateMaterial(mat));
 			for (size_t i = 0; i < gltf.meshes.size(); i++)
@@ -28,7 +28,7 @@ namespace Nork{
 				for (size_t j = 0; j < gltf.meshes[i].primitives.size(); j++)
 				{
 					auto mesh = CreateRendererMesh(j, i);
-					// MeshResources::Instance().Add(mesh, (dstFolder / std::to_string(i) / std::to_string(j)).replace_extension(".bin"));
+					MeshResources::Instance().Add(mesh, (dstFolder / std::to_string(i) / std::to_string(j)).replace_extension(".bin"));
 					meshes.back().push_back(mesh);
 				}
 			}
@@ -39,7 +39,6 @@ namespace Nork{
 		}
 		void AddMeshRecursive(int nodeIdx, const glm::mat4& parentTransform = glm::identity<glm::mat4>())
 		{
-			std::unreachable();
 			const Renderer::GLTF::Node& node = gltf.nodes[nodeIdx];
 			std::optional<glm::mat4> transform;
 			if (node.HasTransform())
@@ -54,46 +53,45 @@ namespace Nork{
 				for (size_t i = 0; i < meshGltf.primitives.size(); i++)
 				{
 					auto& mesh = meshes[node.mesh][i];
-					// if (!mesh.Empty())
-					// {
-					// 	auto matIdx = meshGltf.primitives[i].material;
-					// 	model->meshes.push_back(Components::Mesh{
-					// 		.mesh = mesh,
-					// 		.material = matIdx == -1 ? defaultMaterial : materials[matIdx],
-					// 		.localTransform = transform
-					// 		});
-					// }
+					if (mesh)
+					{
+						auto matIdx = meshGltf.primitives[i].material;
+						model->meshes.push_back(Components::Mesh{
+							.mesh = mesh,
+							.material = matIdx == -1 ? defaultMaterial : materials[matIdx],
+							.localTransform = transform
+							});
+					}
 				}
 			}
 		}
-		Renderer::Material CreateMaterial(const Renderer::GLTF::Material& mat)
+		std::shared_ptr<Renderer::Material> CreateMaterial(const Renderer::GLTF::Material& mat)
 		{
-			std::unreachable();
-			/*auto material = RenderingSystem::Instance().world.AddMaterial();
-			material->baseColorFactor = mat.pbrMetallicRoughness.baseColorFactor;
-			material->roughnessFactor = mat.pbrMetallicRoughness.roughnessFactor;
-			material->metallicFactor = mat.pbrMetallicRoughness.metallicFactor;
+			auto material = RenderingSystem::Instance().NewMaterial();
+			auto data = material->Data();
+			data->baseColorFactor = mat.pbrMetallicRoughness.baseColorFactor;
+			data->roughnessFactor = mat.pbrMetallicRoughness.roughnessFactor;
+			data->metallicFactor = mat.pbrMetallicRoughness.metallicFactor;
 			if (mat.alphaMode == mat.MASK)
-				material->alphaCutoff = mat.alphaCutoff;
+				data->alphaCutoff = mat.alphaCutoff;
 			// material->specularExponent = mat.pbrMetallicRoughness.extras.Get<float>("specularExponent"); has official extension
 			if (mat.pbrMetallicRoughness.baseColorTexture.Validate())
-				material.SetTextureMap(images[gltf.textures[mat.pbrMetallicRoughness.baseColorTexture.index].source], Renderer::TextureMap::BaseColor);
+				material->SetTextureMap(images[gltf.textures[mat.pbrMetallicRoughness.baseColorTexture.index].source], Renderer::TextureMap::BaseColor);
 			if (mat.pbrMetallicRoughness.metallicRoughnessTexture.Validate())
-				material.SetTextureMap(images[gltf.textures[mat.pbrMetallicRoughness.metallicRoughnessTexture.index].source], Renderer::TextureMap::MetallicRoughness);
+				material->SetTextureMap(images[gltf.textures[mat.pbrMetallicRoughness.metallicRoughnessTexture.index].source], Renderer::TextureMap::MetallicRoughness);
 			if (mat.normalTexture.Validate())
-				material.SetTextureMap(images[gltf.textures[mat.normalTexture.index].source], Renderer::TextureMap::Normal);
-			return material;*/
+				material->SetTextureMap(images[gltf.textures[mat.normalTexture.index].source], Renderer::TextureMap::Normal);
+			return material;
 		}
-		Renderer::Mesh CreateRendererMesh(int idx, int meshIdx)
+		std::shared_ptr<Renderer::Mesh> CreateRendererMesh(int idx, int meshIdx)
 		{
-			std::unreachable();
 			using namespace Renderer;
 
 			auto& prim = gltf.meshes[meshIdx].primitives[idx];
 			if (prim.mode != GL_TRIANGLES)
 			{
 				Logger::Warning("skipping primitive ", idx, " of mesh ", meshIdx, ", its mode is not GL_TRIANGLES, but ", prim.mode);
-				return Mesh();
+				return nullptr;
 			}
 			int posAccIdx = prim.Accessor(GLTF::Attribute::position);
 			int normAccIdx = prim.Accessor(GLTF::Attribute::normal);
@@ -101,7 +99,7 @@ namespace Nork{
 			if (posAccIdx == -1 || normAccIdx == -1 || texAccIdx == -1)
 			{
 				Logger::Warning("skipping primitive ", idx, " of mesh ", meshIdx, ", incorrect vertex accessors (missing accessor)");
-				return Mesh();
+				return nullptr;
 			}
 			auto posAcc = gltf.accessors[posAccIdx];
 			auto normAcc = gltf.accessors[normAccIdx];
@@ -110,17 +108,17 @@ namespace Nork{
 			if (idxAcc.type != GLTF::Accessor::SCALAR || posAcc.type != GLTF::Accessor::VEC3 || normAcc.type != GLTF::Accessor::VEC3 || texAcc.type != GLTF::Accessor::VEC2)
 			{
 				Logger::Warning("skipping primitive ", idx, " of mesh ", meshIdx, ", incorrect vertex accessors (bad type)");
-				return Mesh();
+				return nullptr;
 			}
 			if (posAcc.componentType != GL_FLOAT || normAcc.componentType != GL_FLOAT || texAcc.componentType != GL_FLOAT)
 			{
 				Logger::Warning("skipping primitive ", idx, " of mesh ", meshIdx, ", incorrect vertex accessors (bad componentType)");
-				return Mesh();
+				return nullptr;
 			}
 			if (posAcc.count != normAcc.count || normAcc.count != texAcc.count)
 			{
 				Logger::Warning("skipping primitive ", idx, " of mesh ", meshIdx, ", incorrect vertex accessors (counts not equal)");
-				return Mesh();
+				return nullptr;
 			}
 			auto posStride = glm::max<int>(gltf.bufferViews[posAcc.bufferView].byteStride, sizeof(glm::vec3)) / sizeof(float);
 			auto normStride = glm::max<int>(gltf.bufferViews[normAcc.bufferView].byteStride, sizeof(glm::vec3)) / sizeof(float);
@@ -157,7 +155,7 @@ namespace Nork{
 			{
 				SetTangent(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]);
 			}
-			//return RenderingSystem::Instance().world.AddMesh(vertices, indices);
+			return RenderingSystem::Instance().NewMesh(vertices, indices);
 		}
 		template<class T> std::vector<uint32_t> GetIndices(const Renderer::GLTF::Primitive& prim)
 		{
@@ -202,10 +200,10 @@ namespace Nork{
 		fs::path dstFolder; // relative
 
 		std::vector<std::vector<char>> buffers;
-		//std::vector<std::shared_ptr<Texture2D>> images;
-		std::vector<Renderer::Material> materials;
-		std::vector<std::vector<Renderer::Mesh>> meshes;
-		//Material defaultMaterial = RenderingSystem::Instance().world.AddMaterial(); // should be GLTF default
+		std::vector<std::shared_ptr<Renderer::Texture>> images;
+		std::vector<std::shared_ptr<Renderer::Material>> materials;
+		std::vector<std::vector<std::shared_ptr<Renderer::Mesh>>> meshes;
+		std::shared_ptr<Renderer::Material> defaultMaterial = RenderingSystem::Instance().NewMaterial(); // should be GLTF default
 
 		std::shared_ptr<Components::Model> model;
 	};

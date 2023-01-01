@@ -2,6 +2,17 @@
 
 namespace Nork::Renderer {
 
+namespace Formats {
+static constexpr vk::Format depth = Vulkan::Format::depth32;
+static constexpr vk::Format pos = Vulkan::Format::rgba32f;
+static constexpr vk::Format norm = Vulkan::Format::rgba32f;
+
+static constexpr vk::Format baseCol = Vulkan::Format::rgba32f;
+static constexpr vk::Format final = Vulkan::Format::rgba32f;
+
+static constexpr vk::Format metRough = Vulkan::Format::rgba16f;
+}
+
 DeferredPass::DeferredPass()
 {
 	createRenderPass();
@@ -9,13 +20,13 @@ DeferredPass::DeferredPass()
 	auto w = Vulkan::SwapChain::Instance().Width();
 	auto h = Vulkan::SwapChain::Instance().Height();
 	using enum vk::ImageUsageFlagBits;
-	depthImage = std::make_shared<Image>(w, h, Vulkan::Format::depth32, eDepthStencilAttachment, vk::ImageAspectFlagBits::eDepth);
-	fbColor = std::make_shared<Image>(w, h, Vulkan::Format::rgba32f, eColorAttachment | eInputAttachment | eTransferSrc | eSampled,
+	depthImage = std::make_shared<Image>(w, h, Formats::depth, eDepthStencilAttachment, vk::ImageAspectFlagBits::eDepth);
+	fbColor = std::make_shared<Image>(w, h, Formats::final, eColorAttachment | eInputAttachment | eTransferSrc | eSampled,
 		vk::ImageAspectFlagBits::eColor);
-	gPos = std::make_shared<Image>(w, h, Vulkan::Format::rgba32f, eColorAttachment | eInputAttachment, vk::ImageAspectFlagBits::eColor);
-	gNorm = std::make_shared<Image>(w, h, Vulkan::Format::rgba32f, eColorAttachment | eInputAttachment, vk::ImageAspectFlagBits::eColor);
-	gMR = std::make_shared<Image>(w, h, Vulkan::Format::rgba32f, eColorAttachment | eInputAttachment, vk::ImageAspectFlagBits::eColor);
-	gCol = std::make_shared<Image>(w, h, Vulkan::Format::rgba32f, eColorAttachment | eInputAttachment, vk::ImageAspectFlagBits::eColor);
+	gPos = std::make_shared<Image>(w, h, Formats::pos, eColorAttachment | eInputAttachment, vk::ImageAspectFlagBits::eColor);
+	gCol = std::make_shared<Image>(w, h, Formats::baseCol, eColorAttachment | eInputAttachment, vk::ImageAspectFlagBits::eColor);
+	gNorm = std::make_shared<Image>(w, h, Formats::norm, eColorAttachment | eInputAttachment, vk::ImageAspectFlagBits::eColor);
+	gMR = std::make_shared<Image>(w, h, Formats::metRough, eColorAttachment | eInputAttachment, vk::ImageAspectFlagBits::eColor);
 	fb = std::make_shared<Vulkan::Framebuffer>(Vulkan::FramebufferCreateInfo(w, h, **renderPass,
 		{ gPos->view, gCol->view, gNorm->view, gMR->view, fbColor->view, depthImage->view }));
 
@@ -105,14 +116,17 @@ void DeferredPass::createRenderPass()
 	uint32_t gPosAttIdx = 0, gColAttIdx = 1, gNormAttIdx = 2, gMRAttIdx = 3, lPassAttIdx = 4, depthAttIdx = 5;
 	createInfo.Attachments(std::vector<AttachmentDescription>(6));
 	createInfo.attachments[gPosAttIdx]
-		.setFormat(Format::rgba32f)
+		.setFormat(Formats::pos)
 		.setFinalLayout(vk::ImageLayout::eColorAttachmentOptimal)
 		.setLoadOp(vk::AttachmentLoadOp::eClear);
 	createInfo.attachments[gColAttIdx] = createInfo.attachments[gPosAttIdx];
 	createInfo.attachments[gNormAttIdx] = createInfo.attachments[gPosAttIdx];
 	createInfo.attachments[gMRAttIdx] = createInfo.attachments[gPosAttIdx];
+	createInfo.attachments[gColAttIdx].setFormat(Formats::baseCol);
+	createInfo.attachments[gNormAttIdx].setFormat(Formats::norm);
+	createInfo.attachments[gMRAttIdx].setFormat(Formats::metRough);
 	createInfo.attachments[lPassAttIdx]
-		.setFormat(Format::rgba32f)
+		.setFormat(Formats::final)
 		.setLoadOp(vk::AttachmentLoadOp::eClear)
 		.setFinalLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
 		.setStoreOp(vk::AttachmentStoreOp::eStore);

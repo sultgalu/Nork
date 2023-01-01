@@ -36,12 +36,12 @@ struct BufferView : BufferPointer<T>
 	{
 		if (count > this->count)
 			std::unreachable();
-		this->buffer->Write(data, count * sizeof(T), this->offset + offsetCount * sizeof(T));
+		this->buffer->Write(data, count * sizeof(T), (this->offset + offsetCount) * sizeof(T));
 	}
-	BufferElement<T> operator[](const size_t& idx)
-	{
-		return BufferElement<T>(this->buffer, this->offset + idx * sizeof(T));
-	}
+	// BufferElement<T> operator[](const size_t& idx)
+	// {
+	// 	return BufferElement<T>(this->buffer, (this->offset + idx) * sizeof(T));
+	// }
 };
 template<class T>
 class DeviceArrays
@@ -196,7 +196,6 @@ public:
 	}
 	void OnElementDestroy(BufferElement<T>& element)
 	{
-		auto ptr = elements[element.offset].lock();
 		elements[element.offset].reset();
 		releasedElementsByFrame[0].push_back(element.offset);
 	}

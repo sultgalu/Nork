@@ -37,7 +37,7 @@ namespace Nork::Renderer {
                 hostOffset += copy.size;
             }
 
-            Commands::Instance().Submit([&](Vulkan::CommandBuffer& cmd)
+            Commands::Instance().TransferCommand([&](Vulkan::CommandBuffer& cmd)
             {
                 cmd.copyBuffer(**transfer->buffer->Underlying(), **dst.Underlying(), vkCopies);
 
@@ -53,7 +53,7 @@ namespace Nork::Renderer {
                 }
             });
             // syncrhonize later stagingbuffer usage on CPU (timeline sem)
-            Commands::Instance().OnRenderFinished([transfer]()
+            Commands::Instance().OnTransfersFinished([transfer]()
                 {
                 });
         }
@@ -65,7 +65,7 @@ namespace Nork::Renderer {
             auto transfer = AllocateTransfer(size);
             memcpy(transfer->HostPtr(), data, size);
 
-            Commands::Instance().Submit([&](Vulkan::CommandBuffer& cmd)
+            Commands::Instance().TransferCommand([&](Vulkan::CommandBuffer& cmd)
                 {
                     auto barrier = vk::ImageMemoryBarrier2()
                         .setImage(img)
@@ -80,7 +80,7 @@ namespace Nork::Renderer {
 
             CopyBufferToImage(transfer, img, extent, offset);
 
-            Commands::Instance().Submit([&](Vulkan::CommandBuffer& cmd)
+            Commands::Instance().TransferCommand([&](Vulkan::CommandBuffer& cmd)
                 {
                     auto barrier = vk::ImageMemoryBarrier2()
                         .setImage(img)
@@ -110,11 +110,11 @@ namespace Nork::Renderer {
             region.imageOffset = vk::Offset3D(offset);
             region.imageExtent = vk::Extent3D(extent, 1);
 
-            Commands::Instance().Submit([&](Vulkan::CommandBuffer& cmd)
+            Commands::Instance().TransferCommand([&](Vulkan::CommandBuffer& cmd)
                 {
                     cmd.copyBufferToImage(**transfer->buffer->Underlying(), image, vk::ImageLayout::eTransferDstOptimal, region);
                 });
-            Commands::Instance().OnRenderFinished([transfer]()
+            Commands::Instance().OnTransfersFinished([transfer]()
                 {
                 });
         }
@@ -127,6 +127,9 @@ namespace Nork::Renderer {
         }
         std::shared_ptr<Transfer> AllocateTransfer(vk::DeviceSize size)
         {
+            if (stagingBuffer->memory.Size() < size)
+                std::unreachable();
+
             vk::DeviceSize offset = 0;
             auto it = transfers.begin();
             while (it != transfers.end())
@@ -140,23 +143,33 @@ namespace Nork::Renderer {
                 auto availableSize = transfer->offset - offset;
                 if (availableSize >= size)
                 {
-                    goto found;
+                    break;
                 }
                 offset = transfer->offset + transfer->size; 
                 ++it;
             }
-            if (stagingBuffer->memory.Size() - offset >= size)
+            if (stagingBuffer->memory.Size() - offset < size)
             {
-                goto found;
+                // not enough space left in stagingbuffer, wait for writes to complete
+                FlushTransfers();
+                it = transfers.begin();
+                offset = 0;
             }
-            std::unreachable();
-        found:
+
             auto transfer = std::make_shared<Transfer>();
             transfer->buffer = stagingBuffer;
             transfer->offset = offset;
             transfer->size = size;
             transfers.insert(it, transfer);
             return transfer;
+        }
+    private:
+        void FlushTransfers() // submit, wait for completion, restart with emtpy stagingBuffer
+        {
+            Commands::Instance().EndTransferCommandBuffer();
+            Commands::Instance().SubmitTransferCommands();
+            Commands::Instance().BeginTransferCommandBuffer();
+            transfers.clear();
         }
     public:
         std::shared_ptr<HostWritableBuffer> stagingBuffer;

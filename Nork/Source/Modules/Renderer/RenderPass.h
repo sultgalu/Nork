@@ -63,10 +63,12 @@ public:
 			using enum vk::Format;
 			if (format == eD32Sfloat || format == eD16Unorm)
 				clearValue.depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
-			else if (format == eR8G8B8A8Srgb || format == eR8G8B8A8Unorm || format == Format::rgba16f || format == Format::rgba32f)
-				clearValue.color = vk::ClearColorValue(std::array<float, 4> {0.0f, 0.0f, 0.0f, 1.0f});
+			// else if (format == eR8G8B8A8Srgb || format == eR8G8B8A8Unorm || format == Format::rgba16f || format == Format::rgba32f)
+			// 	clearValue.color = vk::ClearColorValue(std::array<float, 4> {0.0f, 0.0f, 0.0f, 1.0f});
+			// else
+			// 	std::unreachable();
 			else
-				std::unreachable();
+				clearValue.color = vk::ClearColorValue(std::array<float, 4> {0.0f, 0.0f, 0.0f, 1.0f});
 			clearValues.push_back(clearValue);
 		}
 

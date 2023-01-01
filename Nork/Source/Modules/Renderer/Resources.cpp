@@ -16,7 +16,7 @@ static constexpr auto dps_size = MemoryAllocator::poolSize / 4;
 static constexpr auto dcs_size = MemoryAllocator::poolSize / 4;
 Texture::~Texture()
 {
-	Resources::Instance().textureDescriptors.RemoveTexture(descriptorIdx);
+	Resources::Instance().textureDescriptors->RemoveTexture(descriptorIdx);
 }
 Resources::Resources()
 {
@@ -109,6 +109,51 @@ Resources::Resources()
 		.Buffer(5, *pointLightParams->Underlying(), 0, DynamicSize(*pointLightParams), vk::DescriptorType::eUniformBufferDynamic)
 		.Write();
 
-	textureDescriptors.descriptorSet = descriptorSet;
+	textureDescriptors = std::make_unique<TextureDesriptors>(descriptorSet);
+}
+
+// ----------------- TEXTURES ----------------
+
+Resources::TextureDesriptors::TextureDesriptors(std::shared_ptr<Vulkan::DescriptorSet>& descriptorSet)
+	: descriptorSet(descriptorSet)
+{
+	defaultSampler = std::make_shared<Vulkan::Sampler>();
+	for (size_t i = 0; i < img_arr_size; i++)
+	{
+		freeTextureIdxs.insert(i);
+	}
+	textures.resize(img_arr_size);
+
+	auto createTexture = [&](vk::Format format, const std::vector<float>& data)
+	{
+		auto texImg = std::make_shared<Image>(1, 1, format,
+			vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::ImageAspectFlagBits::eColor,
+			vk::PipelineStageFlagBits2::eVertexShader, vk::AccessFlagBits2::eShaderSampledRead);
+
+		texImg->Write(data.data(), data.size() * sizeof(data[0]), vk::ImageLayout::eShaderReadOnlyOptimal);
+		return AddTexture(texImg);
+	};
+	diffuse = createTexture(Vulkan::Format::rgba32f, { 1.0f, 1.0f, 1.0f, 1.0f });
+	normal = createTexture(Vulkan::Format::rgba32f, { 0.5f, 0.5f, 1.0f, 0.0f }); // 'a' unused
+	metallicRoughness = createTexture(Vulkan::Format::rgba32f, { 0.0f, 1.0f, 1.0f, 0.0f }); // g=roughness, b=metallic
+}
+std::shared_ptr<Texture> Resources::TextureDesriptors::AddTexture(std::shared_ptr<Image>& img)
+{
+	uint32_t idx = *freeTextureIdxs.begin();
+	freeTextureIdxs.erase(freeTextureIdxs.begin());
+	if (!img->sampler)
+		img->sampler = defaultSampler;
+
+	descriptorSet->Writer()
+		.Image(3, *img->view, vk::ImageLayout::eShaderReadOnlyOptimal,
+			*img->sampler, vk::DescriptorType::eCombinedImageSampler, idx)
+		.Write();
+	textures[idx] = img;
+	return std::make_shared<Texture>(img, idx);
+}
+void Resources::TextureDesriptors::RemoveTexture(uint32_t idx)
+{
+	textures[idx] = nullptr;
+	freeTextureIdxs.insert(idx);
 }
 }

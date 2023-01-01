@@ -19,14 +19,14 @@ namespace Nork::Editor {
 
 	void ViewportView::Content()
 	{
-		if (viewportImgDs != VK_NULL_HANDLE)
+		if (image)
 		{
-			glm::vec2 texSize(image->Image()->Width(), image->Image()->Height());
+			glm::vec2 texSize(image.Img().img->Width(), image.Img().img->Height());
 			ImVec2 displaySize = ImGui::GetContentRegionAvail(); //GetDisplaySize(texSize);
 
 			constexpr auto uv_min = glm::vec2(0, 1);
 			constexpr auto uv_max = glm::vec2(1, 0);
-			ImGui::Image(viewportImgDs, ImVec2(displaySize.x, displaySize.y));
+			ImGui::Image(image.descritptorSet, ImVec2(displaySize.x, displaySize.y));
 			if (ImGui::IsItemHovered())
 			{
 				camController->UpdateByKeyInput(*camera, ImGui::GetIO().DeltaTime * 500);
