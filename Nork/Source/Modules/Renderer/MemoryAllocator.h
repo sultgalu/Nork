@@ -88,15 +88,15 @@ namespace Nork::Renderer {
             : allocation(alloc)
         {}
         
-        std::shared_ptr<Vulkan::DeviceMemory> Underlying()
+        std::shared_ptr<Vulkan::DeviceMemory> Underlying() const
         {
             return allocation->pool->memory;
         }
-        vk::DeviceSize PoolOffset()
+        vk::DeviceSize PoolOffset() const
         {
             return allocation->poolOffset;
         }
-        vk::DeviceSize Size()
+        vk::DeviceSize Size() const
         {
             return allocation->size;
         }

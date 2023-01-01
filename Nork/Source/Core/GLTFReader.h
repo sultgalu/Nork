@@ -3,7 +3,6 @@
 #include "RenderingSystem.h"
 
 namespace Nork{
-	using namespace Renderer;
 	class GLTFReader
 	{
 	public:
@@ -11,7 +10,7 @@ namespace Nork{
 		{
 			srcFolder = path.parent_path();
 			dstFolder = path.stem();
-			gltf = GLTF::GLTF::FromJson(JsonObject::ParseFormatted(FileUtils::ReadAsString(path.string())));
+			gltf = Renderer::GLTF::GLTF::FromJson(JsonObject::ParseFormatted(FileUtils::ReadAsString(path.string())));
 		}
 		std::shared_ptr<Components::Model> Read()
 		{
@@ -41,7 +40,7 @@ namespace Nork{
 		void AddMeshRecursive(int nodeIdx, const glm::mat4& parentTransform = glm::identity<glm::mat4>())
 		{
 			std::unreachable();
-			const GLTF::Node& node = gltf.nodes[nodeIdx];
+			const Renderer::GLTF::Node& node = gltf.nodes[nodeIdx];
 			std::optional<glm::mat4> transform;
 			if (node.HasTransform())
 				transform = parentTransform * node.Transform();
@@ -67,7 +66,7 @@ namespace Nork{
 				}
 			}
 		}
-		Material CreateMaterial(const GLTF::Material& mat)
+		Renderer::Material CreateMaterial(const Renderer::GLTF::Material& mat)
 		{
 			std::unreachable();
 			/*auto material = RenderingSystem::Instance().world.AddMaterial();
@@ -85,9 +84,10 @@ namespace Nork{
 				material.SetTextureMap(images[gltf.textures[mat.normalTexture.index].source], Renderer::TextureMap::Normal);
 			return material;*/
 		}
-		Mesh CreateRendererMesh(int idx, int meshIdx)
+		Renderer::Mesh CreateRendererMesh(int idx, int meshIdx)
 		{
 			std::unreachable();
+			using namespace Renderer;
 
 			auto& prim = gltf.meshes[meshIdx].primitives[idx];
 			if (prim.mode != GL_TRIANGLES)
@@ -129,11 +129,11 @@ namespace Nork{
 			std::span<float> normData = BufferView<glm::vec3>(normAcc);
 			std::span<float> texData = BufferView<glm::vec2>(texAcc);
 
-			std::vector<Renderer::Data::Vertex> vertices;
+			std::vector<Data::Vertex> vertices;
 			vertices.reserve(posAcc.count);
 			for (size_t i = 0; i < posAcc.count; i++)
 			{
-				vertices.push_back(Renderer::Data::Vertex{
+				vertices.push_back(Data::Vertex{
 					.position = *((glm::vec3*)&posData[i * posStride]),
 					.normal = *((glm::vec3*)&normData[i * normStride]),
 					.texCoords = *((glm::vec2*)&texData[i * texStride]),
@@ -159,7 +159,7 @@ namespace Nork{
 			}
 			//return RenderingSystem::Instance().world.AddMesh(vertices, indices);
 		}
-		template<class T> std::vector<uint32_t> GetIndices(const GLTF::Primitive& prim)
+		template<class T> std::vector<uint32_t> GetIndices(const Renderer::GLTF::Primitive& prim)
 		{
 			auto idxAcc = gltf.accessors[prim.indices];
 			auto idxStride = glm::max<int>(gltf.bufferViews[idxAcc.bufferView].byteStride / sizeof(T), 1);;
@@ -188,7 +188,7 @@ namespace Nork{
 			v2.tangent = tangent;
 			v3.tangent = tangent;
 		}
-		template<class S, class T = float> std::span<T> BufferView(const GLTF::Accessor& accessor)
+		template<class S, class T = float> std::span<T> BufferView(const Renderer::GLTF::Accessor& accessor)
 		{
 			auto bufferView = gltf.bufferViews[accessor.bufferView];
 			auto start = buffers[bufferView.buffer].data() + bufferView.byteOffset + accessor.byteOffset;
@@ -197,14 +197,14 @@ namespace Nork{
 		}
 		fs::path SrcPath(std::string uri) { return srcFolder / uri; }
 	private:
-		GLTF::GLTF gltf;
+		Renderer::GLTF::GLTF gltf;
 		fs::path srcFolder; // absolute
 		fs::path dstFolder; // relative
 
 		std::vector<std::vector<char>> buffers;
 		//std::vector<std::shared_ptr<Texture2D>> images;
-		std::vector<Material> materials;
-		std::vector<std::vector<Mesh>> meshes;
+		std::vector<Renderer::Material> materials;
+		std::vector<std::vector<Renderer::Mesh>> meshes;
 		//Material defaultMaterial = RenderingSystem::Instance().world.AddMaterial(); // should be GLTF default
 
 		std::shared_ptr<Components::Model> model;

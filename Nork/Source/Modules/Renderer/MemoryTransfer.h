@@ -1,17 +1,11 @@
 #pragma once
 
 #include "Buffer.h"
+#include "BufferCopy.h"
 #include "Vulkan/Image.h"
 #include "Commands.h"
 
 namespace Nork::Renderer {
-
-    struct BufferCopy
-    {
-        const void* data;
-        vk::DeviceSize size;
-        vk::DeviceSize dstOffset;
-    };
     class MemoryTransfer
     {
     public:
@@ -63,8 +57,10 @@ namespace Nork::Renderer {
                 {
                 });
         }
-        void UploadToImage(vk::Image img, const void* data, vk::DeviceSize size, uint32_t width, uint32_t height,
-            vk::PipelineStageFlagBits2 dstStage, vk::AccessFlagBits2 dstAccess)
+        void UploadToImage(vk::Image img, vk::Extent2D extent, vk::Offset2D offset, 
+            const void* data, vk::DeviceSize size,
+            vk::PipelineStageFlags2 dstStage, vk::AccessFlags2 dstAccess, 
+            vk::ImageLayout finalLayout, vk::ImageLayout initialLayout)
         {
             auto transfer = AllocateTransfer(size);
             memcpy(transfer->HostPtr(), data, size);
@@ -74,7 +70,7 @@ namespace Nork::Renderer {
                     auto barrier = vk::ImageMemoryBarrier2()
                         .setImage(img)
                         .setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1))
-                        .setOldLayout(vk::ImageLayout::eUndefined)
+                        .setOldLayout(initialLayout)
                         .setNewLayout(vk::ImageLayout::eTransferDstOptimal)
                         .setSrcStageMask(vk::PipelineStageFlagBits2::eTopOfPipe)
                         .setDstStageMask(vk::PipelineStageFlagBits2::eTransfer)
@@ -82,7 +78,7 @@ namespace Nork::Renderer {
                     cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barrier));
                  });
 
-            CopyBufferToImage(transfer, img, width, height);
+            CopyBufferToImage(transfer, img, extent, offset);
 
             Commands::Instance().Submit([&](Vulkan::CommandBuffer& cmd)
                 {
@@ -92,14 +88,14 @@ namespace Nork::Renderer {
                         .setOldLayout(vk::ImageLayout::eTransferDstOptimal)
                         .setSrcStageMask(vk::PipelineStageFlagBits2::eTransfer)
                         .setSrcAccessMask(vk::AccessFlagBits2::eTransferWrite)
-                        .setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+                        .setNewLayout(finalLayout)
                         .setDstStageMask(dstStage)
                         .setDstAccessMask(dstAccess);
                     cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barrier));
                 });
         }
     private:
-        void CopyBufferToImage(std::shared_ptr<Transfer>& transfer, vk::Image image, uint32_t width, uint32_t height)
+        void CopyBufferToImage(std::shared_ptr<Transfer>& transfer, vk::Image image, vk::Extent2D extent, vk::Offset2D offset)
         {
             vk::BufferImageCopy region;
             region.bufferOffset = transfer->offset;
@@ -111,8 +107,8 @@ namespace Nork::Renderer {
             region.imageSubresource.baseArrayLayer = 0;
             region.imageSubresource.layerCount = 1;
 
-            region.imageOffset = vk::Offset3D(0, 0, 0);
-            region.imageExtent = vk::Extent3D(width, height, 1);
+            region.imageOffset = vk::Offset3D(offset);
+            region.imageExtent = vk::Extent3D(extent, 1);
 
             Commands::Instance().Submit([&](Vulkan::CommandBuffer& cmd)
                 {

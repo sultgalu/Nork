@@ -8,8 +8,6 @@ namespace Nork::Editor {
 
 	void GraphicsSettingsPanel::Content()
 	{
-		auto& r = GetEngine().renderingSystem;
-
 		if (ImGui::TreeNodeEx("Memory", ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			using namespace Renderer;

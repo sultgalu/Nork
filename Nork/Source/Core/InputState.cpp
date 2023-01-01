@@ -83,6 +83,7 @@ namespace Nork {
 		typedChars.clear();
 		keyChanged.reset();
 		buttonChanged.reset();
+		glfwPollEvents();
 	}
 }
 

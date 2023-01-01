@@ -6,8 +6,8 @@
 namespace Nork::Renderer {
 	struct Object
 	{
-		Mesh mesh;
-		Material material;
-		//UBO<glm::mat4>::Element modelMatrix;
+		std::shared_ptr<Mesh> mesh;
+		std::shared_ptr<Material> material;
+		std::shared_ptr<BufferElement<glm::mat4>> modelMatrix;
 	};
 }

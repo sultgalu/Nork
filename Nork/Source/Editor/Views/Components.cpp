@@ -27,14 +27,15 @@ namespace Nork::Editor {
 
 	template<> void SceneNodeView::ShowComponent(Components::DirLight& dirLight, bool& changed)
 	{
-		//dirLight.RecalcVP();
+		// dirLight.RecalcVP();
 		// dirLight.light->Update();
-		/*auto dir = dirLight.light->direction;
+		auto light = dirLight.Data();
+		auto dir = light->direction;
 		changed |= ImGui::Checkbox("Sun", &dirLight.sun);
-		changed |= ImGui::SliderFloat3("Direction", &dirLight.light->direction.x, -1, 1, "%.5f");
-		changed |= ImGui::SliderFloat("Out Of Proj Value", &dirLight.light->outOfProjValue, 0, 1);
-		changed |= ImGui::ColorEdit3("Color (diffuse)", &(dirLight.light->color2.r));
-		changed |= ImGui::ColorEdit3("Color (ambient)", &(dirLight.light->color.r));
+		changed |= ImGui::SliderFloat3("Direction", &light->direction.x, -1, 1, "%.5f");
+		changed |= ImGui::SliderFloat("Out Of Proj Value", &light->outOfProjValue, 0, 1);
+		changed |= ImGui::ColorEdit3("Color (diffuse)", &(light->color2.r));
+		changed |= ImGui::ColorEdit3("Color (ambient)", &(light->color.r));
 		changed |= ImGui::DragFloat3("Position", &dirLight.position.x);
 		changed |= ImGui::DragFloat3("Rectangle", &dirLight.rectangle.x);
 		
@@ -45,7 +46,7 @@ namespace Nork::Editor {
 				node->GetEntity().AddComponent<Components::DirShadowMap>();
 			}
 		}
-		else if (ImGui::TreeNode("Shadow"))
+		/*else if (ImGui::TreeNode("Shadow"))
 		{
 			auto& shadowMap = node->GetEntity().GetComponent<Components::DirShadowMap>().map;
 			ImGui::DragFloat("Bias", (float*)&(shadowMap.shadow->bias), 0.001f);
@@ -61,23 +62,23 @@ namespace Nork::Editor {
 			ImGui::Text("Format: "); ImGui::SameLine(); ImGui::Text(Renderer::TextureFormatToString(tex->GetAttributes().format));
 			static bool fix = false;
 			static glm::ivec2 newSize;
-			static Renderer::TextureFormat newFormat;
+			// static Renderer::TextureFormat newFormat;
 			if (ImGui::Button("Change Resolution##DirLi"))
 			{
 				ImGui::OpenPopup("chgrespshad##dir");
 				newSize = { tex->GetWidth() , tex->GetHeight() };
-				newFormat = tex->GetAttributes().format;
+				// newFormat = tex->GetAttributes().format;
 			}
 			if (ImGui::BeginPopup("chgrespshad##dir"))
 			{
-				auto formatSelector = [&](Renderer::TextureFormat format)
-				{
-					ImGui::RadioButton(Renderer::TextureFormatToString(format), (int*)&newFormat, (int)format);
-				};
-				formatSelector(Renderer::TextureFormat::Depth16); ImGui::SameLine();
-				formatSelector(Renderer::TextureFormat::Depth24);
-				formatSelector(Renderer::TextureFormat::Depth32); ImGui::SameLine();
-				formatSelector(Renderer::TextureFormat::Depth32F);
+				// auto formatSelector = [&](Renderer::TextureFormat format)
+				// {
+				// 	ImGui::RadioButton(Renderer::TextureFormatToString(format), (int*)&newFormat, (int)format);
+				// };
+				// formatSelector(Renderer::TextureFormat::Depth16); ImGui::SameLine();
+				// formatSelector(Renderer::TextureFormat::Depth24);
+				// formatSelector(Renderer::TextureFormat::Depth32); ImGui::SameLine();
+				// formatSelector(Renderer::TextureFormat::Depth32F);
 				ImGui::Checkbox("Fix to VP ratio", &fix);
 				if (fix)
 				{

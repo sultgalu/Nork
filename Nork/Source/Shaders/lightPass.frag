@@ -1,22 +1,5 @@
-#type vertex
-
-#version 330 core
-
-layout(location = 0) in vec2 aPos;
-layout(location = 1) in vec2 aTexCoord;
-
-out vec2 texCoord;
-
-void main()
-{
-	gl_Position = vec4(aPos.x, aPos.y, 0.0f, 1.0f);
-	texCoord = aTexCoord;
-}
-
-#type fragment
-
-#version 430 core
-#extension ARB_bindless_texture : require
+#version 450
+#extension GL_EXT_nonuniform_qualifier: require // required only if we index samplers non-uniformly
 
 layout(location = 0) out vec4 fColor;
 
@@ -34,7 +17,7 @@ struct DirLight
 struct DirShadow
 {
 	float bias, biasMin;
-	sampler2DShadow shadMap;
+	uint shadMap;
 };
 
 struct PointLight
@@ -49,7 +32,7 @@ struct PointShadow
 {
 	float bias, biasMin;
 	float near, far;
-	samplerCubeShadow shadMap;
+	uint shadMap;
 };
 
 struct CullConfig
@@ -61,29 +44,29 @@ struct CullConfig
 	uvec2 cullRes;
 };
 
-layout(std140, binding = 1) uniform asd1
+layout(std140, set = 2, binding = 0) uniform asd1
 {
 	DirLight dLs[10];
 };
-layout(std140, binding = 2) uniform asd2
+layout(std140, set = 2, binding = 1) uniform asd2
 {
 	DirShadow dLSs[10];
 };
-layout(std140, binding = 3) uniform asd3
+layout(std140, set = 2, binding = 2) uniform asd3
 {
 	PointLight pLs[10];
 };
-layout(std140, binding = 4) uniform asd4
+layout(std140, set = 2, binding = 3) uniform asd4
 {
 	PointShadow pLSs[10];
 };
-layout(std140, binding = 8) uniform asd5
+layout(std140, set = 2, binding = 4) uniform asd5
 {
 	uint dLightCount, dShadowCount;
 	uint pad0, pad1;
 	uvec4 dirIdxs[1];
 };
-layout(std140, binding = 9) uniform asd6
+layout(std140, set = 2, binding = 5) uniform asd6
 {
 	uint pLightCount, pShadowCount;
 	uint pad2, pad3;
@@ -95,15 +78,17 @@ struct Materials
 	float metallic;
 	vec3 albedo;
 };
+layout(set = 2, binding = 6) uniform sampler2DShadow[] textureMaps;
 
-in vec2 texCoord;
+layout(push_constant) uniform constants
+{
+	layout(offset = 64) vec3 viewPos;
+} PushConstants;
 
-uniform vec3 viewPos;
-
-uniform sampler2D gPosition;
-uniform sampler2D gBaseColor;
-uniform sampler2D gNormal;
-uniform sampler2D gMetallicRoughness;
+layout(input_attachment_index = 0, set = 1, binding = 0) uniform subpassInput gPosition;
+layout(input_attachment_index = 1, set = 1, binding = 1) uniform subpassInput gBaseColor;
+layout(input_attachment_index = 2, set = 1, binding = 2) uniform subpassInput gNormal;
+layout(input_attachment_index = 3, set = 1, binding = 3) uniform subpassInput gMetallicRoughness;
 
 vec3 dLightShadow(DirLight light, Materials material, vec3 normal, vec3 viewDir, DirShadow shadow, vec3 worldPos);
 
@@ -123,24 +108,24 @@ vec3 F0 = vec3(0.04);
 
 void main()
 {
-	vec4 pos = texture(gPosition, texCoord).rgba;
+	vec4 pos = subpassLoad(gPosition).rgba;
 	if (pos.a == 0.0f)
 		discard;
 	vec3 worldPos = pos.rgb;
-	vec3 normal = texture(gNormal, texCoord).rgb;
+	vec3 normal = subpassLoad(gNormal).rgb;
 
 	Materials material;
-	material.albedo = texture(gBaseColor, texCoord).rgb;
-	vec2 metallicRoughness = texture(gMetallicRoughness, texCoord).rg;
+	material.albedo = subpassLoad(gBaseColor).rgb;
+	vec2 metallicRoughness = subpassLoad(gMetallicRoughness).rg;
 	material.roughness = metallicRoughness.r;
 	material.metallic = metallicRoughness.g;
 
-	vec3 viewDir = normalize(worldPos - viewPos);
+	vec3 viewDir = normalize(worldPos - PushConstants.viewPos);
 
 	F0 = mix(F0, material.albedo, material.metallic);
 
 	vec3 Lo = vec3(0.0);
-	for (uint i = uint(0); i < dShadowCount; i++)
+	/*for (uint i = uint(0); i < dShadowCount; i++)
 	{
 		uint j = i * 2;
 		uint li = dirIdxs[j / 4][j % 4];
@@ -173,10 +158,16 @@ void main()
 		float attenuation = 1.0 / (distance * distance); // inverse-square law. More physically correct but gives less manual control
 		vec3 lightDir = normalize(worldPos - pLs[li].position);
 		Lo += pbr(lightDir, pLs[li].color.rgb, material, worldPos, normal, viewDir, attenuation);
+	}*/
+	for (uint i = 0; i < 1; i++)
+	{
+		uint li = i;
+		Lo += pbr(normalize(dLs[li].direction), dLs[li].color.rgb, material, worldPos, normal, viewDir, 1.0f);
 	}
 	vec3 ambient = vec3(0.03) * material.albedo; // *ao
 	vec3 color = ambient + Lo;
 	fColor = vec4(color, 1.0f);
+	// fColor = subpassLoad(gBaseColor);
 }
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0)
@@ -258,13 +249,13 @@ float dShadow(DirLight light, DirShadow shadow, vec3 normal, vec3 worldPos)
 
 	fragPos = (fragPos + 1.0f) / 2.0f; // [-1;1] -> [0;1]
 	fragPos.z -= bias;
-	return clip(fragPos, light.outOfProj) * texture(shadow.shadMap, fragPos.xyz);
+	return clip(fragPos, light.outOfProj) * texture(textureMaps[shadow.shadMap], fragPos.xyz);
 }
 float pShadow(PointShadow shadow, vec3 normal, vec3 lightDir, vec3 distance)
 {
 	float distanceLen = length(distance);
 	float bias = max(shadow.bias * distanceLen * (1.0f - dot(normal, -lightDir)), shadow.biasMin); // for huge angle, bias = 0.05f (perpendicular)
-	return texture(shadow.shadMap, vec4(distance.xyz, distanceLen / shadow.far - bias));
+	return texture(textureMaps[shadow.shadMap], vec3(distance.xyz), distanceLen / shadow.far - bias);
 }
 // can be used instead of inverse-square for better manual control
 float CalcLuminosity(vec3 fromPos, vec3 toPos, float linear, float quadratic)

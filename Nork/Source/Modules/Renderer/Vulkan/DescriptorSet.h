@@ -47,8 +47,19 @@ namespace Nork::Renderer::Vulkan {
 
 	struct DescriptorPoolCreateInfo: vk::DescriptorPoolCreateInfo
 	{
+		static std::vector<vk::DescriptorPoolSize> DescriptorCounts(const std::vector<std::shared_ptr<Vulkan::DescriptorSetLayout>>& layouts)
+		{
+			std::vector<vk::DescriptorPoolSize> result;
+			for (auto& layout : layouts)
+				for (auto& binding : layout->createInfo.bindings)
+					result.push_back({ binding.descriptorType, binding.descriptorCount });
+			return result;
+		}
 		DescriptorPoolCreateInfo(DescriptorPoolCreateInfo&&) = default;
-		DescriptorPoolCreateInfo(const std::vector<vk::DescriptorPoolSize> poolSizes, uint32_t maxSets)
+		DescriptorPoolCreateInfo(const std::vector<std::shared_ptr<Vulkan::DescriptorSetLayout>>& layouts, uint32_t maxSets)
+			: DescriptorPoolCreateInfo(DescriptorCounts(layouts), maxSets)
+		{}
+		DescriptorPoolCreateInfo(const std::vector<vk::DescriptorPoolSize>& poolSizes, uint32_t maxSets)
 			: poolSizes(poolSizes)
 		{
 			setPoolSizes(this->poolSizes);
@@ -81,22 +92,23 @@ namespace Nork::Renderer::Vulkan {
 	{
 		DescriptorSetAllocateInfo(DescriptorSetAllocateInfo&&) = default;
 		DescriptorSetAllocateInfo(const std::shared_ptr<DescriptorPool>& pool, 
-			const std::shared_ptr<DescriptorSetLayout>& layout, uint32_t dynamicDescSize = 0)
-			: pool(pool), layout(layout)
+			const std::shared_ptr<DescriptorSetLayout>& layout, std::vector<uint32_t> dynamicDescSizes = {})
+			: pool(pool), layout(layout), dynamicDescSizes(dynamicDescSizes)
 		{
 			this->descriptorPool = **pool;
 			this->descriptorSetCount = 1;
 			setSetLayouts(**layout);
 
-			if (dynamicDescSize != 0)
+			if (!dynamicDescSizes.empty())
 			{
-				variableDescInfo.descriptorSetCount = 1;
-				variableDescInfo.pDescriptorCounts = &dynamicDescSize;
+				variableDescInfo.descriptorSetCount = this->dynamicDescSizes.size();
+				variableDescInfo.pDescriptorCounts = this->dynamicDescSizes.data();
 				setPNext(&variableDescInfo);
 			}
 		}
 		std::shared_ptr<DescriptorPool> pool;
 		std::shared_ptr<DescriptorSetLayout> layout;
+		std::vector<uint32_t> dynamicDescSizes;
 		vk::DescriptorSetVariableDescriptorCountAllocateInfo variableDescInfo;
 	};
 
@@ -120,104 +132,47 @@ namespace Nork::Renderer::Vulkan {
 		Writer_(DescriptorSet& dSet)
 			: dSet(dSet)
 		{}
-		struct Buffer_
+		Self& Buffer(uint32_t bindIdx, const Buffer& buf, vk::DeviceSize offset, vk::DeviceSize size, 
+			vk::DescriptorType type, uint32_t arrIdx = 0)
 		{
-			uint32_t bindIdx;
-			const Buffer& buf;
-			VkDeviceSize offset;
-			VkDeviceSize size;
-			bool dynamic;
-		};
-		Self& Buffer(uint32_t bindIdx, const Buffer& buf, VkDeviceSize offset, VkDeviceSize size, bool dynamic = false)
-		{
-			buffers.push_back(Buffer_{
-				.bindIdx = bindIdx,
-				.buf = buf,
-				.offset = offset,
-				.size = size,
-				.dynamic = dynamic,
-				});
+			buffers.push_back(vk::DescriptorBufferInfo(*buf, offset, size));
+			bufferWrites.push_back(vk::WriteDescriptorSet()
+				.setDstSet(*dSet).setDstBinding(bindIdx)
+				.setDstArrayElement(arrIdx).setDescriptorCount(1)
+				.setDescriptorType(type));
 			return *this;
 		}
-		struct Image_
+		Self& Image(uint32_t bindIdx, ImageView& img, vk::ImageLayout layout, Sampler& sampler, 
+			vk::DescriptorType type = vk::DescriptorType::eCombinedImageSampler, uint32_t arrIdx = 0)
 		{
-			uint32_t arrIdx;
-			uint32_t bindIdx;
-			VkDescriptorImageInfo info;
-			VkDescriptorType type;
-		};
-		Self& Image(uint32_t bindIdx, ImageView& img, VkImageLayout layout, VkDescriptorType type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, uint32_t arrIdx = 0)
-		{
-			images.push_back(Image_{
-				.arrIdx = arrIdx,
-				.bindIdx = bindIdx,
-				.info = VkDescriptorImageInfo{
-					.sampler = **img.sampler,
-					.imageView = *img,
-					.imageLayout = layout,
-				},
-				.type = type
-				});
+			images.push_back(vk::DescriptorImageInfo(*sampler, *img, layout));
+			imageWrites.push_back(vk::WriteDescriptorSet()
+				.setDstSet(*dSet).setDstBinding(bindIdx)
+				.setDstArrayElement(arrIdx).setDescriptorCount(1)
+				.setDescriptorType(type));
 			return *this;
 		}
 		DescriptorSet& Write()
 		{
-			std::vector<VkWriteDescriptorSet> writes;
-			writes.reserve(buffers.size() + images.size());
-			std::vector<VkDescriptorImageInfo> imageInfos;
-			imageInfos.reserve(images.size());
-			std::vector<VkDescriptorBufferInfo> bufferInfos;
-			bufferInfos.reserve(buffers.size());
-
-			for (auto& img : images)
+			for (size_t i = 0; i < imageWrites.size(); i++)
 			{
-				imageInfos.push_back(img.info);
-
-				VkWriteDescriptorSet write{};
-				write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				write.dstSet = *dSet;
-				write.dstBinding = img.bindIdx;
-				write.dstArrayElement = img.arrIdx;
-				write.descriptorType = img.type;
-				write.descriptorCount = 1;
-				write.pImageInfo = &imageInfos.back();
-
-				writes.push_back(write);
+				imageWrites[i].setImageInfo(images[i]);
 			}
-			for (auto& buf : buffers)
+			for (size_t i = 0; i < bufferWrites.size(); i++)
 			{
-				VkDescriptorType type = VK_DESCRIPTOR_TYPE_MAX_ENUM;
-				if (buf.buf.createInfo.usage & vk::BufferUsageFlagBits::eUniformBuffer)
-					type = buf.dynamic ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-				else if (buf.buf.createInfo.usage & vk::BufferUsageFlagBits::eStorageBuffer)
-					type = buf.dynamic ? VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-				else
-					std::unreachable();
-
-				bufferInfos.push_back(VkDescriptorBufferInfo{
-					.buffer = *buf.buf,
-					.offset = buf.offset,
-					.range = buf.size,
-					});
-
-				VkWriteDescriptorSet write{};
-				write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				write.dstSet = *dSet;
-				write.dstBinding = buf.bindIdx;
-				write.dstArrayElement = 0;
-				write.descriptorCount = 1;
-				write.pBufferInfo = &bufferInfos.back();
-				write.descriptorType = type;
-
-				writes.push_back(write);
+				bufferWrites[i].setBufferInfo(buffers[i]);
 			}
 
-			vkUpdateDescriptorSets(*Device::Instance(), writes.size(), writes.data(), 0, nullptr);
+			auto writes = bufferWrites;
+			writes.insert(writes.end(), imageWrites.begin(), imageWrites.end());
+			Device::Instance().updateDescriptorSets(writes, {});
 			return dSet;
 		}
 	public:
 		DescriptorSet& dSet;
-		std::vector<Buffer_> buffers;
-		std::vector<Image_> images;
+		std::vector<vk::WriteDescriptorSet> bufferWrites;
+		std::vector<vk::WriteDescriptorSet> imageWrites;
+		std::vector<vk::DescriptorBufferInfo> buffers;
+		std::vector<vk::DescriptorImageInfo> images;
 	};
 }

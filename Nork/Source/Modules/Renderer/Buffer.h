@@ -1,11 +1,11 @@
 #pragma once
 
 #include "Vulkan/Buffer.h"
+#include "MemoryAllocator.h"
 #include "Commands.h"
+#include "BufferCopy.h"
 
 namespace Nork::Renderer {
-	struct BufferCopy; // avoid circular dep.
-
 	class HostWritableBuffer;
 	class Buffer
 	{
@@ -23,7 +23,9 @@ namespace Nork::Renderer {
 		{
 			Write(data, memory.Size(), 0);
 		}
-		void Write(const void* data, vk::DeviceSize size, vk::DeviceSize offset);
+		// Overwrite data previously written by 'Write' method. 'pos' is returned by 'Write'
+		void OverWrite(const void* data, vk::DeviceSize size, uint32_t pos); 
+		uint32_t Write(const void* data, vk::DeviceSize size, vk::DeviceSize offset);
 		void FlushWrites(vk::PipelineStageFlags2 syncStages, vk::AccessFlags2 syncAccess);
 	protected:
 		virtual void Upload(vk::PipelineStageFlags2 syncStages, vk::AccessFlags2 syncAccess)

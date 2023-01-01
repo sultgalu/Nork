@@ -2,7 +2,6 @@
 
 #include "Device.h"
 #include "DeviceMemory.h"
-#include "../MemoryAllocator.h"
 
 namespace Nork::Renderer::Vulkan {
     struct BufferCreateInfo: vk::BufferCreateInfo

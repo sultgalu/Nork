@@ -106,8 +106,8 @@ namespace Nork {
 	}
 	
 	template Resources<std::shared_ptr<Components::Model>>;
-	// template Resources<Renderer::Mesh>;
-	// template Resources<std::shared_ptr<Renderer::Texture2D>>;
+	template Resources<std::shared_ptr<Renderer::Mesh>>;
+	template Resources<std::shared_ptr<Renderer::Image>>;
 
 	static Renderer::GLTF::GLTF LoadGLTF(const fs::path& path)
 	{
@@ -139,13 +139,12 @@ namespace Nork {
 			material.SetTextureMap(TextureResources::Instance().Get(texId), Renderer::TextureMap::Normal);
 		}*/
 	}
-	/*
+	
 	template<> MeshResources::ResourceType MeshResources::Load(const fs::path& path) const
 	{
 		Logger::Info("Loading mesh ", path);
-		std::unreachable();
 
-		/*return RenderingSystem::Instance().world.AddMesh(
+		return RenderingSystem::Instance().NewMesh(
 			FileUtils::ReadBinary<Renderer::Data::Vertex>((path / "vertices.bin").string()),
 			FileUtils::ReadBinary<uint32_t>((path / "indices.bin").string()));
 	}
@@ -153,19 +152,12 @@ namespace Nork {
 	{
 		Logger::Info("Loading texture ", path);
 
-		auto image = Renderer::LoadUtils::LoadImage(path.string());
-
-		std::unreachable();
-		return TextureBuilder()
-			.Attributes(TextureAttributes{ .width = image.width, .height = image.height, .format = image.format })
-			.Params(TextureParams::Tex2DParams())
-			.Create2DWithData(image.data.data());
-	}*/
+		return RenderingSystem::Instance().LoadImage(path.string());
+	}
 	template<> ModelResources::ResourceType ModelResources::Load(const fs::path& path) const
 	{
-		std::unreachable();
 		Logger::Info("Loading model ", path);
-		/*auto gltf = LoadGLTF(path);
+		auto gltf = LoadGLTF(path);
 		auto model = std::make_shared<Components::Model>();
 
 		if (gltf.meshes.empty())
@@ -176,16 +168,14 @@ namespace Nork {
 			const auto& indsBuf = gltf.buffers[gltf.bufferViews[gltf.accessors[prim.indices].bufferView].buffer];
 			// const auto& vertsBufs = gltf.buffers[gltf.bufferViews[gltf.accessors[prim.attributes.back().accessor].bufferView].buffer]; // all of this primitive's attributes should point to the same buffer (vertices) 
 			Components::Mesh mesh{ .mesh = MeshResources::Instance().Get(indsBuf.uri) };
-			mesh.material = RenderingSystem::Instance().world.AddMaterial();
+			mesh.material = RenderingSystem::Instance().NewMaterial();
 			if (prim.material != -1)
-				ParseMaterial(mesh.material, gltf.materials[prim.material], gltf);
+				ParseMaterial(*mesh.material, gltf.materials[prim.material], gltf);
 			model->meshes.push_back(mesh);
 		}
 		
-		return model;*/
+		return model;
 	}
-	
-	/*
 	
 	template<> void MeshResources::Set(MeshResources::ResourceType& dst, const MeshResources::ResourceType& src) const
 	{
@@ -198,19 +188,20 @@ namespace Nork {
 	template<> void MeshResources::Save(const MeshResources::ResourceType& val, const fs::path& path) const
 	{
 		Logger::Info("Saving Mesh to ", path);
+		std::unreachable();
 
-		fs::create_directory(path);
-		FileUtils::WriteBinary(val.Vertices().Data(), val.Vertices().SizeBytes(), (path / "vertices.bin").string());
-		FileUtils::WriteBinary(val.Indices().Data(), val.Indices().SizeBytes(), (path /"indices.bin").string());
+		// fs::create_directory(path);
+		// FileUtils::WriteBinary(val->vertices.data()..., val.Vertices().SizeBytes(), (path / "vertices.bin").string());
+		// FileUtils::WriteBinary(val.Indices().Data(), val.Indices().SizeBytes(), (path /"indices.bin").string());
 	}
 	template<> void TextureResources::Save(const TextureResources::ResourceType& val, const fs::path& path) const
 	{
 		std::unreachable();
-		Logger::Info("Saving Image (", val->GetWidth(), "x", val->GetHeight(), "x",
-			Renderer::TextureFormatToString(val->GetAttributes().format), ") to ", path);
-		Renderer::LoadUtils::WriteTexture(*val, path.string(), Renderer::ImageFormat::BMP);
+		// Logger::Info("Saving Image (", val->GetWidth(), "x", val->GetHeight(), "x",
+		// 	Renderer::TextureFormatToString(val->GetAttributes().format), ") to ", path);
+		// Renderer::LoadUtils::WriteTexture(*val, path.string(), Renderer::ImageFormat::BMP);
 	}
-	*/
+	
 	template<> void ModelResources::Set(ModelResources::ResourceType& dst, const ModelResources::ResourceType& src) const
 	{
 		*dst = *src;
@@ -317,27 +308,26 @@ namespace Nork {
 	}
 	static ModelResources::ResourceType& GetCube()
 	{
-		std::unreachable();
-		/*static bool initialized = false;
+		static bool initialized = false;
 		static fs::path gltfUri = "templates/cube_template.gltf";
 		if (!initialized)
 		{
 			fs::path bufUri = fs::path(gltfUri).replace_extension("");
 			if (!ModelResources::Instance().Exists(gltfUri))
 			{
-				MeshResources::Instance().SaveAs(RenderingSystem::Instance().world.AddMesh(
+				MeshResources::Instance().SaveAs(RenderingSystem::Instance().NewMesh(
 					Renderer::MeshFactory::CubeVertices(), Renderer::MeshFactory::CubeIndices()), bufUri);
 				ModelResources::Instance().SaveAs(std::make_shared<Components::Model>(
 					Components::Model{
 						.meshes = { Components::Mesh {
 							.mesh = { MeshResources::Instance().Get(bufUri) },
-							.material = RenderingSystem::Instance().world.AddMaterial()
+							.material = RenderingSystem::Instance().NewMaterial()
 						}}
 					}), gltfUri);
 				initialized = true;
 			}
 		}
-		return ModelResources::Instance().Get(gltfUri);*/
+		return ModelResources::Instance().Get(gltfUri);
 	}
 	ModelResources::ResourceType& ResourceUtils::GetTemplate(ModelTemplate type)
 	{

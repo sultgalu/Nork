@@ -2,7 +2,6 @@
 
 #include "DeviceMemory.h"
 #include "Sampler.h"
-#include "../MemoryAllocator.h"
 
 namespace Nork::Renderer::Vulkan {
     struct Format
@@ -40,10 +39,6 @@ namespace Nork::Renderer::Vulkan {
     {
     public:
         using vk::raii::Image::Image;
-        ~ImageBase()
-        {
-            ;
-        }
         virtual uint32_t Width() const = 0;
         virtual uint32_t Height() const = 0;
         virtual vk::Format Format() const = 0;
@@ -70,20 +65,20 @@ namespace Nork::Renderer::Vulkan {
     class Image : public ImageBase
     {
     public:
-        Image(const ImageCreateInfo& createInfo, vk::MemoryPropertyFlags memFlags)
+        Image(const ImageCreateInfo& createInfo)
             : ImageBase(Device::Instance(), createInfo), createInfo(createInfo)
+        {}
+        void BindMemory(const std::shared_ptr<DeviceMemory>& memory, vk::DeviceSize offset)
         {
-            auto memreq = this->getMemoryRequirements();
-            memory = MemoryAllocator::Instance().Allocate(memreq, MemoryFlags { .required = memFlags });
-
-            bindMemory(**memory.Underlying(), memory.PoolOffset());
+            bindMemory(**memory, offset);
+            this->memory = memory;
         }
         uint32_t Width() const override { return createInfo.extent.width; }
         uint32_t Height() const override { return createInfo.extent.height; }
         vk::Format Format() const override { return createInfo.format; }
     public:
         ImageCreateInfo createInfo;
-        Renderer::DeviceMemory memory;
+        std::shared_ptr<DeviceMemory> memory = nullptr;
     };
 
     struct ImageViewCreateInfo : vk::ImageViewCreateInfo
@@ -96,14 +91,15 @@ namespace Nork::Renderer::Vulkan {
         }
         ImageViewCreateInfo(vk::Image img, vk::Format format_, vk::ImageAspectFlagBits aspect, vk::ImageViewType type = vk::ImageViewType::e2D)
         {
-            image = img;
-            viewType = type;
-            format = format_;
-            subresourceRange.aspectMask = aspect;
-            subresourceRange.baseMipLevel = 0;
-            subresourceRange.levelCount = 1;
-            subresourceRange.baseArrayLayer = 0;
-            subresourceRange.layerCount = 1;
+            // this->components = 
+            this->image = img;
+            this->viewType = type;
+            this->format = format_;
+            this->subresourceRange.aspectMask = aspect;
+            this->subresourceRange.baseMipLevel = 0;
+            this->subresourceRange.levelCount = 1;
+            this->subresourceRange.baseArrayLayer = 0;
+            this->subresourceRange.layerCount = 1;
         }
         std::shared_ptr<Image> img = nullptr;
     };
@@ -111,8 +107,8 @@ namespace Nork::Renderer::Vulkan {
     class ImageView : public vk::raii::ImageView
     {
     public:
-        ImageView(const ImageViewCreateInfo& createInfo, std::shared_ptr<class Sampler> sampler = nullptr)
-            : createInfo(createInfo), vk::raii::ImageView(Device::Instance(), createInfo), sampler(sampler)
+        ImageView(const ImageViewCreateInfo& createInfo)
+            : createInfo(createInfo), vk::raii::ImageView(Device::Instance(), createInfo)
         {}
         std::shared_ptr<Image> Image()
         {
@@ -120,6 +116,5 @@ namespace Nork::Renderer::Vulkan {
         }
     public:
         ImageViewCreateInfo createInfo;
-        std::shared_ptr<class Sampler> sampler;
     };
 }

@@ -15,7 +15,7 @@
 
 namespace Nork::Renderer
 {
-    Image LoadUtils::LoadImage(std::string_view path, bool forceRGBA)
+ImageData LoadUtils::LoadImage(std::string_view path, bool forceRGBA)
     {
         int width = 0, height = 0, channels = 0;
 
@@ -23,7 +23,7 @@ namespace Nork::Renderer
 		size_t size = (size_t)width * height * (forceRGBA ? 4 : channels);
 		if (data)
 		{
-			auto image = Image{
+			auto image = ImageData{
 				.width = (uint32_t)width,
 				.height = (uint32_t)height,
 				.channels = (uint32_t)channels,
@@ -38,12 +38,12 @@ namespace Nork::Renderer
 		else
 		{
 			Logger::Error("Failed to load texture data from ", path);
-			return Image{
+			return ImageData{
 				.width = 1, .height = 1, .channels = 1, .data = std::vector<char>(1)
 			};
 		}
     }
-	static int WriteImage_stb(const Image& image, const std::string& path, ImageFormat format)
+	static int WriteImage_stb(const ImageData& image, const std::string& path, ImageFormat format)
 	{
 		switch (format)
 		{
@@ -57,7 +57,7 @@ namespace Nork::Renderer
 			std::unreachable();
 		}
 	}
-	void LoadUtils::WriteImage(const Image& image, const std::string& path, ImageFormat format)
+	void LoadUtils::WriteImage(const ImageData& image, const std::string& path, ImageFormat format)
 	{
 		if (WriteImage_stb(image, path, format) == 0)
 			Logger::Error("Failed to write image to ", path);
@@ -72,7 +72,7 @@ namespace Nork::Renderer
 		image.channels = image.data.size() / (image.width * image.height);
 		WriteImage(image, path, format);
 	}*/
-	std::array<Image, 6> LoadUtils::LoadCubemapImages(std::string dirPath, std::string extension)
+	std::array<ImageData, 6> LoadUtils::LoadCubemapImages(std::string dirPath, std::string extension)
 	{
 		static std::string suffixes[6]{
 			"right", "left","top","bottom","front","back",
@@ -81,7 +81,7 @@ namespace Nork::Renderer
 		if (dirPath.at(dirPath.size() - 1) != '/')
 			dirPath.append("/");
 
-		std::array<Image, 6> datas;
+		std::array<ImageData, 6> datas;
 		int width, height, nrChannels;
 
 		for (int i = 0; i < 6; i++)

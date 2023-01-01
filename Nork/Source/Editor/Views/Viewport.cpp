@@ -19,11 +19,6 @@ namespace Nork::Editor {
 
 	void ViewportView::Content()
 	{
-		if (ImGui::IsItemHovered())
-		{
-			// camController->UpdateByKeyInput(*sceneView->camera, ImGui::GetIO().DeltaTime * 500);
-			// camController->UpdateByMouseInput(*sceneView->camera);
-		}
 		if (viewportImgDs != VK_NULL_HANDLE)
 		{
 			glm::vec2 texSize(image->Image()->Width(), image->Image()->Height());
@@ -32,6 +27,11 @@ namespace Nork::Editor {
 			constexpr auto uv_min = glm::vec2(0, 1);
 			constexpr auto uv_max = glm::vec2(1, 0);
 			ImGui::Image(viewportImgDs, ImVec2(displaySize.x, displaySize.y));
+			if (ImGui::IsItemHovered())
+			{
+				camController->UpdateByKeyInput(*camera, ImGui::GetIO().DeltaTime * 500);
+				camController->UpdateByMouseInput(*camera);
+			}
 		}
 		     
 		mouseState.isViewportHovered = ImGui::IsItemHovered();
@@ -47,5 +47,7 @@ namespace Nork::Editor {
 		// mouseState.mousePosY = (int)actualPos2.y;
 	}
 	ViewportView::ViewportView()
-	{}
+	{
+		camera = std::make_shared<Components::Camera>();
+	}
 }

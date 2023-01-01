@@ -73,10 +73,10 @@ namespace Nork::Renderer::Vulkan {
         template<VertexConcept T>
         Self& VertexInput()
         {
-            auto& bindingDescription = T::getBindingDescription();
-            auto& attributeDescriptions = T::getAttributeDescriptions();
-            data->vertexInput.setVertexAttributeDescriptions(attributeDescriptions);
-            data->vertexInput.setVertexBindingDescriptions(bindingDescription);
+            data->vertexBindings = T::getBindingDescription();
+            data->vertexAttributes = T::getAttributeDescriptions();
+            data->vertexInput.setVertexAttributeDescriptions(data->vertexAttributes);
+            data->vertexInput.setVertexBindingDescriptions(data->vertexBindings);
             return *this;
         }
         Self& VertexInputHardCoded()
@@ -169,8 +169,11 @@ namespace Nork::Renderer::Vulkan {
             vk::PipelineDynamicStateCreateInfo dynamicState;
             vk::PipelineViewportStateCreateInfo viewportState;
 
-            std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
             vk::PipelineVertexInputStateCreateInfo vertexInput;
+            std::vector<vk::VertexInputAttributeDescription> vertexAttributes;
+            vk::VertexInputBindingDescription vertexBindings;
+
+            std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
             vk::PipelineInputAssemblyStateCreateInfo inputAssembly;
             vk::PipelineRasterizationStateCreateInfo rasterization;
             vk::PipelineMultisampleStateCreateInfo multisampling;

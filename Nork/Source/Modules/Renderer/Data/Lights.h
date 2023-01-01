@@ -14,8 +14,8 @@ namespace Nork::Renderer::Data
 	{
 		float bias = 0.006, biasMin = 0.0001,
 			near = 0, far = 50;
-		uint64_t shadMap;
-		uint64_t padding;
+		uint32_t shadMap;
+		uint32_t padding[3];
 	};
 	struct DirLight
 	{
@@ -28,6 +28,7 @@ namespace Nork::Renderer::Data
 	struct DirShadow
 	{
 		float bias = 0.01f, biasMin = 0.01f;
-		uint64_t shadMap;
+		uint32_t shadMap;
+		uint32_t padding;
 	};
 }

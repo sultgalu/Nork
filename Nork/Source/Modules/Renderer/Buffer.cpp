@@ -25,12 +25,19 @@ namespace Nork::Renderer {
 			return std::reinterpret_pointer_cast<HostWritableBuffer>(buffer);
 		std::unreachable();
 	}
-	void Buffer::Write(const void* data, vk::DeviceSize size, vk::DeviceSize offset)
+	void Buffer::OverWrite(const void* data, vk::DeviceSize size, uint32_t pos)
+	{
+		std::memcpy(&writeData[pos], data, size);
+	}
+	// TODO: writing to the same addresses should not be added but overwritten
+	uint32_t Buffer::Write(const void* data, vk::DeviceSize size, vk::DeviceSize offset)
 	{
 		writes.push_back(BufferCopy{
 			.size = size, .dstOffset = offset
 			});
+		auto pos = writeData.size();
 		writeData.insert(writeData.end(), (uint8_t*)data, (uint8_t*)data + size);
+		return pos;
 	}
 	void Buffer::FlushWrites(vk::PipelineStageFlags2 syncStages, vk::AccessFlags2 syncAccess)
 	{

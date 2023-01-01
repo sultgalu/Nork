@@ -1,13 +1,23 @@
 #pragma once
 
+#include "Modules/Renderer/Model/Lights.h"
+
 namespace Nork::Components
 {
 	struct PointLight
 	{
 		void SetIntensity(uint32_t val);
 		inline uint32_t GetIntensity() const { return intensity; }
-	private:
+	
 		uint32_t intensity;
+
+		const Renderer::PointLight& Data() const { return *rendererLight; }
+		Renderer::PointLight::Writer Data() { return rendererLight->Data(); }
+		auto operator->()
+		{
+			return Data();
+		}
+		std::shared_ptr<Renderer::PointLight> rendererLight;
 	};
 	struct PointShadowMap
 	{
@@ -20,9 +30,8 @@ namespace Nork::Components
 	
 	struct DirLight
 	{
-		inline glm::mat4 GetView() const { 
-			std::unreachable();
-			// return glm::lookAt(glm::vec3(0) - light->direction, glm::vec3(0), glm::vec3(0.0f, 1.0f, 0.0f)); 
+		inline glm::mat4 GetView() const {
+			return glm::lookAt(glm::vec3(0) - Data()->direction, glm::vec3(0), glm::vec3(0.0f, 1.0f, 0.0f));
 		}
 		inline void RecalcVP()
 		{
@@ -32,12 +41,19 @@ namespace Nork::Components
 			auto bottom = position.y - rectangle.y / 2;
 			auto near = position.z;
 			auto far = position.z + rectangle.z;
-			// light->VP = glm::ortho(left, right, bottom, top, near, far) * GetView();
+			Data()->VP = glm::ortho(left, right, bottom, top, near, far) * GetView();
 		}
 		glm::vec3 position = { 100, 0, 0 };
 		glm::vec3 rectangle = { 60, 60, 150 };
 		// float left = -30, right = 30, bottom = -30, top = 30, near = -50, far = 100;
 		bool sun = false;
+		const Renderer::DirLight& Data() const { return *rendererLight; }
+		Renderer::DirLight::Writer Data() { return rendererLight->Data(); }
+		auto operator->()
+		{
+			return Data();
+		}
+		std::shared_ptr<Renderer::DirLight> rendererLight;
 	};
 	struct DirShadowMap // should only exist if the same component has a dirLight as well
 	{

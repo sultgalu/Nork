@@ -29,13 +29,9 @@ layout(push_constant) uniform constants
 void main() {
     imgIdx = gl_InstanceIndex % MAX_IMG_ARR_SIZE; // gl_BaseInstanceARB; //gl_DrawIDARB gl_InstanceIndex% MAX_IMG_ARR_SIZE;
     SSBO_ d = ssbo.d[ubo.idx[gl_InstanceIndex]];
-    // float size = 1;
-    //vec3 translate = vec3(gl_InstanceIndex / size, mod(gl_InstanceIndex, size), 0) - vec3(size / 2, size / 2, 0);
-    //translate *= vec3(vec2(d.offs), 0);
-    //translate.z = -gl_InstanceIndex * 0.001 * 0.001 * 0.001;
     vec4 wPos = PushConstants.VP * d.model * vec4(inPosition, 1.0);
-    // vec4 wPos = PushConstants.render_matrix * vec4(inPosition + translate, 1.0);
-    //vec4 wPos = vec4(inPosition.xy, 0.0, 1.0);
+    // vec4 wPos = PushConstants.VP * vec4(inPosition, 1.0);
+    // vec4 wPos = vec4(inPosition, 1.0);
     worldPos = wPos.xyz;
     gl_Position = wPos;
     fragColor = inColor;

@@ -25,7 +25,7 @@ namespace Nork::Renderer {
             this->currentFrame = currentFrame;
 
             uint64_t waitValue = 1;
-            std::chrono::nanoseconds timeout = std::chrono::seconds(1);
+            std::chrono::nanoseconds timeout = std::chrono::seconds(10);
             auto res = Vulkan::Device::Instance().waitSemaphores(vk::SemaphoreWaitInfo({}, **renderFinishedSemaphores[currentFrame], waitValue), timeout.count());
             if (res != vk::Result::eSuccess)
                 std::unreachable();
@@ -37,17 +37,12 @@ namespace Nork::Renderer {
             cmds[currentFrame]->reset();
             cmds[currentFrame]->begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
         }
-        void End()
-        {
-            cmds[currentFrame]->end();
-        }
         void Submit(std::function<void(Vulkan::CommandBuffer&)> fun)
         {
-            // auto& submit = *submits.emplace_back(std::make_unique<struct Submit>(commandPool));
-
-            fun(*cmds[currentFrame]);
-
-            // Vulkan::Device::Instance().graphicsQueue.submit(vk::SubmitInfo().setCommandBuffers(*submit.cmd));
+            if (outOfFrameCmd)
+                fun(*outOfFrameCmd);
+            else
+                fun(*cmds[currentFrame]);
         }
         void OnRenderFinished(const std::function<void()>& cb)
         {
@@ -75,8 +70,27 @@ namespace Nork::Renderer {
                 .setPNext(&timelineInfo);
             Vulkan::Device::Instance().graphicsQueue.submit(submitInfo);
         }
+        void BeginOutOfFrame() // for initialization
+        {
+            outOfFrameCmd = std::make_shared<Vulkan::CommandBuffer>(commandPool);
+            outOfFrameCmd->begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
+        }
+        void EndSubmitAndWaitOutOfFrame()
+        {
+            outOfFrameCmd->end();
+            auto submitInfo = vk::SubmitInfo()
+                .setCommandBuffers(**outOfFrameCmd);
+            Vulkan::Device::Instance().graphicsQueue.submit(submitInfo);
+            Vulkan::Device::Instance().waitIdle();
+            outOfFrameCmd = nullptr;
+        }
+        void End()
+        {
+            cmds[currentFrame]->end();
+        }
     public:
         std::shared_ptr<Vulkan::CommandPool> commandPool;
+        std::shared_ptr<Vulkan::CommandBuffer> outOfFrameCmd = nullptr;
         std::vector<std::shared_ptr<Vulkan::CommandBuffer>> cmds;
         std::vector<std::shared_ptr<Vulkan::TimelineSemaphore>> renderFinishedSemaphores;
         std::vector<std::shared_ptr<Vulkan::BinarySemaphore>> renderFinishedSemaphores2;

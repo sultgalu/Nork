@@ -23,7 +23,7 @@ namespace Nork::Editor {
 		const Input& GetInput() { return Input::Instance(); }
 		Scene& GetScene() { return GetEngine().scene; }
 		PhysicsSystem& GetPhysics() { return GetEngine().physicsSystem; }
-		RenderingSystem& GetRenderer() { return GetEngine().renderingSystem; }
+		RenderingSystem& GetRenderer() { return RenderingSystem::Instance(); }
 		CommonData& GetCommonData() { return _GetCommonData(); }
 	private:
 	};

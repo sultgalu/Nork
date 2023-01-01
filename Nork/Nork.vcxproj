@@ -198,8 +198,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Components\Impl\Drawable.cpp" />
+    <ClCompile Include="Source\Main\Entry2.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Buffer.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\DeferredPass.cpp" />
     <ClCompile Include="Source\Modules\Renderer\MemoryAllocator.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\MemoryTransfer.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Resources.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Vulkan\Shaderc.cpp" />
     <ClCompile Include="Source\Modules\Physics\Pipeline\Collision.cpp" />
     <ClCompile Include="Source\Modules\Physics\Algorithms\Clip.cpp" />
@@ -228,10 +232,20 @@
     <ClCompile Include="Source\App\Application.cpp" />
     <ClInclude Include="Source\Core\GLTFReader.h" />
     <ClInclude Include="Source\Modules\Renderer\Buffer.h" />
+    <ClInclude Include="Source\Modules\Renderer\BufferCopy.h" />
     <ClInclude Include="Source\Modules\Renderer\Commands.h" />
+    <ClInclude Include="Source\Modules\Renderer\DeferredPass.h" />
+    <ClInclude Include="Source\Modules\Renderer\DeviceResource.h" />
+    <ClInclude Include="Source\Modules\Renderer\EditorPass.h" />
     <ClInclude Include="Source\Modules\Renderer\Frame.h" />
+    <ClInclude Include="Source\Modules\Renderer\Image.h" />
     <ClInclude Include="Source\Modules\Renderer\MemoryAllocator.h" />
     <ClInclude Include="Source\Modules\Renderer\MemoryTransfer.h" />
+    <ClInclude Include="Source\Modules\Renderer\Model\DeviceData.h" />
+    <ClInclude Include="Source\Modules\Renderer\Model\Lights.h" />
+    <ClInclude Include="Source\Modules\Renderer\Renderer.h" />
+    <ClInclude Include="Source\Modules\Renderer\RenderPass.h" />
+    <ClInclude Include="Source\Modules\Renderer\Resources.h" />
     <ClInclude Include="Source\Modules\Renderer\Vulkan\Buffer.h" />
     <ClInclude Include="Source\Modules\Renderer\Vulkan\CommandBuffer.h" />
     <ClInclude Include="Source\Modules\Renderer\Vulkan\DescriptorSet.h" />

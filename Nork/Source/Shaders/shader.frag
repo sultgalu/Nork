@@ -14,5 +14,5 @@ layout(set = 0, binding = 2) uniform sampler2D[] texSampler;
 void main() {
     // outPos = worldPos;
     outColor = texture(texSampler[imgIdx], fragTexCoord * 2.0);
-    // outColor = vec4(fragColor, 1.0);
+    //outColor = vec4(1.0);
 }

@@ -3,19 +3,32 @@
 namespace Nork::Editor {
 	ViewportPanel::ViewportPanel()
 	{
-		camera = std::make_shared<Components::Camera>();
-		GetCommonData().editorCameras.push_back(camera);
+		GetCommonData().editorCameras.push_back(viewportView.camera);
+		RenderingSystem::Instance().camera = viewportView.camera;
 
 		panelState.windowFlags = ImGuiWindowFlags_::ImGuiWindowFlags_NoScrollWithMouse |
 			ImGuiWindowFlags_MenuBar |
 			ImGuiWindowFlags_NoScrollbar;
 			//| ImGuiWindowFlags_NoSavedSettings;
+		if (Renderer::Renderer::Instance().instance)
+		{
+			auto& renderPasses = Renderer::Renderer::Instance().renderPasses;
+			for (auto& pass : renderPasses)
+			{
+				if (auto dp = std::dynamic_pointer_cast<Renderer::DeferredPass>(pass))
+				{
+					viewportView.SetImage(dp->fbColor->view, std::make_shared<Renderer::Vulkan::Sampler>());
+					return;
+				}
+			}
+			std::unreachable(); // could not find displayable img
+		}
 	}
 	ViewportPanel::~ViewportPanel()
 	{
 		for (size_t i = 0; i < GetCommonData().editorCameras.size(); i++)
 		{
-			if (GetCommonData().editorCameras[i] == camera)
+			if (GetCommonData().editorCameras[i] == viewportView.camera)
 			{
 				GetCommonData().editorCameras.erase(GetCommonData().editorCameras.begin() + i);
 			}
@@ -27,6 +40,7 @@ namespace Nork::Editor {
 		{
 			if (ImGui::BeginMenu("Camera"))
 			{
+				auto camera = viewportView.camera;
 				if (ImGui::BeginMenu("Behaviour"))
 				{
 					if (ImGui::MenuItem("FPS", 0, std::dynamic_pointer_cast<FpsCameraController>(viewportView.camController) != nullptr))
@@ -132,7 +146,7 @@ namespace Nork::Editor {
 				}
 				ImGui::EndMenu();
 			}*/
-			ImGui::DragFloat("Cam Base Speed", &camera->moveSpeed, 0.001f);
+			ImGui::DragFloat("Cam Base Speed", &viewportView.camera->moveSpeed, 0.001f);
 			ImGui::EndMenuBar();
 		}
 

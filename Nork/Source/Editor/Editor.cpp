@@ -153,7 +153,7 @@ namespace Nork::Editor
 	{
 		_commonData = &data;
 		_editor = this;
-
+		
 		InitImgui();
 		ImGui_ImplGlfw_InitForVulkan(Renderer::Vulkan::Window::Instance().glfwWindow, true);
 		
@@ -242,34 +242,24 @@ namespace Nork::Editor
 	}
 	void Editor::UpdateImguiInputs()
 	{
-		auto& imIO = ImGui::GetIO();
-		auto ptr = &imIO;
+		// auto& imIO = ImGui::GetIO();
+		// auto ptr = &imIO;
 		auto& input = Input::Instance();
-		imIO.MouseWheel += (float)input.ScrollOffs();
-
-		//evMan.Subscribe<Events::MouseDown>([&imIO](const Event& ev)
-		//	{
-		//		imIO.MouseDown[Events::ToInt(ev.As<Events::MouseDown>().button)] = true; // left, right, middle for imgui
-		//	});
-		//evMan.Subscribe<Events::MouseUp>([&imIO](const Event& ev)
-		//	{
-		//		imIO.MouseDown[Events::ToInt(ev.As<Events::MouseUp>().button)] = false; // left, right, middle for imgui
-		//	});
-		imIO.KeyShift = input.IsDown(Key::Shift);
-		imIO.KeyCtrl = input.IsDown(Key::Ctrl);
-		imIO.KeyAlt = input.IsDown(Key::Alt);
-		imIO.KeySuper = input.IsDown(Key::Super);
-		for (size_t i = 0; i < input.KeysDown().size(); i++)
-		{
-			imIO.KeysDown[i] = input.KeysDown()[i];
-		}
-
-		for (auto c : input.TypedCharacters())
-		{
-			imIO.AddInputCharacter(c);
-		}
-		//imIO.AddFocusEvent(true);
-		//imIO.AddFocusEvent(false);
+		// imIO.MouseWheel += (float)input.ScrollOffs();
+		// 
+		// imIO.KeyShift = input.IsDown(Key::Shift);
+		// imIO.KeyCtrl = input.IsDown(Key::Ctrl);
+		// imIO.KeyAlt = input.IsDown(Key::Alt);
+		// imIO.KeySuper = input.IsDown(Key::Super);
+		// for (size_t i = 0; i < input.KeysDown().size(); i++)
+		// {
+		// 	imIO.KeysDown[i] = input.KeysDown()[i];
+		// }
+		// 
+		// for (auto c : input.TypedCharacters())
+		// {
+		// 	imIO.AddInputCharacter(c);
+		// }
 
 		if (input.IsJustPressed(Key::F2))
 		{

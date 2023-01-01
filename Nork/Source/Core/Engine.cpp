@@ -13,10 +13,6 @@ namespace Nork
 	{
 		return *_engine;
 	}
-	RenderingSystem& RenderingSystem::Instance()
-	{
-		return Engine::Get().renderingSystem;
-	}
 	PhysicsSystem& PhysicsSystem::Instance()
 	{
 		return Engine::Get().physicsSystem;
@@ -89,7 +85,7 @@ namespace Nork
 			UpdateGlobalTransforms(); // Editor changes
 		}
 		// renderingSystem.BeginFrame();
-		// renderingSystem.Update(); // draw full updated data
+		renderingSystem.Update(); // draw full updated data
 		// renderingSystem.EndFrame(); 
 		Profiler::Clear();
 		// window.Refresh();

@@ -19,6 +19,7 @@
 #include "Editor/Panels/include/ViewportPanel.h"
 #include "Modules/Renderer/Frame.h"
 #include "Modules/Renderer/MemoryAllocator.h"
+#include "Modules/Renderer/Resources.h"
 
 using namespace Nork;
 using namespace Nork::Renderer::Vulkan;
@@ -29,6 +30,7 @@ SwapChain* SwapChain::instance = nullptr;
 Instance* Instance::staticInstance = nullptr;
 Window* Window::staticInstance = nullptr;
 Renderer::MemoryAllocator* Renderer::MemoryAllocator::instance = nullptr;
+Renderer::Resources* Renderer::Resources::instance = nullptr;
 Renderer::Commands* Renderer::Commands::instance = nullptr;
 Renderer::MemoryTransfer* Renderer::MemoryTransfer::instance = nullptr;
 DescriptorSet::Writer_ DescriptorSet::Writer()
@@ -36,39 +38,42 @@ DescriptorSet::Writer_ DescriptorSet::Writer()
     return Writer_(*this);
 }
 
-int main()
+int main2()
 {
     Logger::PushStream(std::cout);
 
-    Engine engine;
-    Window window = Window(1920 * 0.8f, 1080 * 0.8f);
+    auto window = Renderer::Vulkan::Window(1920 * 0.8f, 1080 * 0.8f);
     std::unique_ptr<Nork::Input> input = std::make_unique<Nork::Input>(window.glfwWindow);
     Editor::Editor editor;
-    Renderer::RenderLoop renderer;
+    Engine engine;
+
+    Renderer::Demo::RenderLoop renderer;
     std::shared_ptr<ImageView> vpImg = nullptr;
     for (auto& pass : renderer.renderPasses)
     {
-        if (auto dp = std::dynamic_pointer_cast<Renderer::DeferredPass>(pass))
+        if (auto dp = std::dynamic_pointer_cast<Renderer::Demo::DeferredPass>(pass))
         {
-            vpImg = dp->fbColor;
+            vpImg = dp->fbColor->view;
             break;
         }
     }
-
+    if (!vpImg)
+        std::unreachable();
+    auto sampler = std::make_shared<Renderer::Vulkan::Sampler>();
     try
     {
         Timer timer;
         uint32_t frames = 0;
         while (!glfwWindowShouldClose(Window::Instance().glfwWindow))
         {
-            glfwPollEvents();
+            Input::Instance().Update();
             editor.Render();
             for (auto& panel : editor.panels) // laziness...
             {
                 if (auto vpp = std::dynamic_pointer_cast<Editor::ViewportPanel>(panel))
                 {
                     if (vpp->viewportView.image != vpImg)
-                        vpp->viewportView.SetImage(vpImg, vpImg->sampler);
+                        vpp->viewportView.SetImage(vpImg, sampler);
                     break;
                 }
             }
@@ -88,8 +93,8 @@ int main()
     } catch (const std::exception& e)
     {
         std::cerr << e.what() << std::endl;
-        return EXIT_FAILURE;
+        return 1;
     }
 
-    return EXIT_SUCCESS;
+    return 0;
 }

@@ -15,7 +15,7 @@ namespace Nork::Components
 			Backward,
 		};
 
-		Camera() : Camera(45.0f, 1920.f / 1080.f, 0.1f, 1000.0f) {}
+		Camera();
 		Camera(float fieldOfViewDegrees, float aspectRatio, float nearClip, float farClip);
 		void Move(Direction direction, float delta);
 		void Zoom(float delta);
@@ -30,8 +30,8 @@ namespace Nork::Components
 		glm::mat4 view, projection, viewProjection;
 	private:
 		void UpdateFrontRight();
-		inline void UpdateView() { this->view = glm::lookAt(this->position, this->position + this->front, this->up); }
-		inline void UpdateProjection() { this->projection = glm::perspective(this->FOV, this->ratio, this->nearClip, this->farClip); }
-		inline void UpdateViewProjection() { this->viewProjection = this->projection * this->view; }
+		void UpdateView();
+		void UpdateProjection();
+		void UpdateViewProjection();
 	};
 }

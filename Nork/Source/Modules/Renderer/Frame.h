@@ -9,8 +9,10 @@
 #include "Vulkan/Semaphore.h"
 #include "MemoryAllocator.h"
 #include "MemoryTransfer.h"
+#include "DeviceResource.h"
+#include "Image.h"
 
-namespace Nork::Renderer {
+namespace Nork::Renderer::Demo {
 	inline static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
 	inline static constexpr uint32_t MAX_IMG_ARR_SIZE = 10;
@@ -29,18 +31,7 @@ namespace Nork::Renderer {
 		glm::vec3 pos;
 		glm::vec3 color;
 		glm::vec2 texCoord;
-		static const std::array<vk::VertexInputAttributeDescription, 3>& getAttributeDescriptions()
-		{
-			static auto val = getAttributeDescriptions_();
-			return val;
-		}
-		static const vk::VertexInputBindingDescription& getBindingDescription()
-		{
-			static auto val = getBindingDescription_();
-			return val;
-		}
-	private:
-		static const vk::VertexInputBindingDescription getBindingDescription_()
+		static const vk::VertexInputBindingDescription getBindingDescription()
 		{
 			vk::VertexInputBindingDescription bindingDescription;
 			bindingDescription.binding = 0;
@@ -49,9 +40,9 @@ namespace Nork::Renderer {
 
 			return bindingDescription;
 		}
-		static const std::array<vk::VertexInputAttributeDescription, 3> getAttributeDescriptions_()
+		static const std::vector<vk::VertexInputAttributeDescription> getAttributeDescriptions()
 		{
-			std::array<vk::VertexInputAttributeDescription, 3> attributeDescriptions{};
+			std::vector<vk::VertexInputAttributeDescription> attributeDescriptions(3);
 
 			attributeDescriptions[0].binding = 0;
 			attributeDescriptions[0].location = 0;
@@ -72,81 +63,11 @@ namespace Nork::Renderer {
 		}
 	};
 
-	std::vector<vk::DescriptorPoolSize> DescriptorCounts(const std::vector<std::shared_ptr<Vulkan::DescriptorSetLayout>>& layouts)
-	{
-		std::vector<vk::DescriptorPoolSize> result;
-		for (auto& layout : layouts)
-			for (auto& binding : layout->createInfo.bindings)
-				result.push_back({ binding.descriptorType, binding.descriptorCount });
-		return result;
-	}
-
-	struct BufferView
-	{
-		Buffer* buffer;
-		vk::DeviceSize offset;
-		vk::DeviceSize size;
-	};
-	class DeviceResource
-	{
-	public:
-		DeviceResource(vk::BufferUsageFlags usage, const MemoryFlags& memFlags, vk::DeviceSize size,
-			vk::PipelineStageFlags2 syncStages, vk::AccessFlags2 syncAccess)
-			: usage(usage |= vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst),
-			memFlags(memFlags), size(size), syncStages(syncStages), syncAccess(syncAccess)
-		{
-			buffer = Buffer::Create(usage, size, memFlags);
-		}
-		void Resize(vk::DeviceSize newSize)
-		{
-			oldBuffer = buffer;
-			buffer = Buffer::Create(usage, newSize, memFlags);
-			buffer->writes = std::move(oldBuffer->writes);
-			buffer->writeData = std::move(oldBuffer->writeData);
-			Commands::Instance().Submit([&](Vulkan::CommandBuffer& cmd)
-				{
-					auto barrier = vk::BufferMemoryBarrier2();
-			barrier.setBuffer(**oldBuffer->Underlying())
-				.setSrcAccessMask(vk::AccessFlagBits2::eTransferWrite)
-				.setDstAccessMask(vk::AccessFlagBits2::eTransferRead)
-				.setSrcStageMask(vk::PipelineStageFlagBits2::eTransfer)
-				.setDstStageMask(vk::PipelineStageFlagBits2::eTransfer)
-				.setOffset(0).setSize(oldBuffer->memory.Size());
-			cmd.pipelineBarrier2(vk::DependencyInfo(vk::DependencyFlagBits::eByRegion).setBufferMemoryBarriers(barrier));
-			cmd.copyBuffer(**oldBuffer->Underlying(), **buffer->Underlying(), vk::BufferCopy(0, 0, size));
-				});
-
-			for (auto& view : views)
-			{
-				view->buffer = buffer.get();
-			}
-			size = newSize;
-		}
-		void FlushWrites()
-		{
-			buffer->FlushWrites(syncStages, syncAccess);
-		}
-	public:
-		std::vector<std::shared_ptr<BufferView>> views;
-
-		std::shared_ptr<Buffer> buffer;
-		std::shared_ptr<Buffer> oldBuffer;
-
-		vk::PipelineStageFlags2 syncStages;
-		vk::AccessFlags2 syncAccess;
-
-		MemoryFlags memFlags;
-		vk::DeviceSize size;
-		vk::BufferUsageFlags usage;
-	};
-
 	class State
 	{
 	public:
 		State()
 		{
-			commandPool = std::make_shared<Vulkan::CommandPool>();
-
 			vertexBuffer = Buffer::Create(
 				vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer,
 				sizeof(vertices[0]) * vertices.size(), MemoryFlags{ .required = MemoryFlags::eDeviceLocal });
@@ -169,14 +90,11 @@ namespace Nork::Renderer {
 			vertexBuffer->FlushWrites({}, {});
 
 			auto ibSize = sizeof(indices[0]) * indices.size();
-			indexBuffer = std::make_shared<DeviceResource>(
+			indexBuffer = Buffer::Create(
 				vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer,
-				MemoryFlags{ .required = MemoryFlags::eDeviceLocal }, ibSize,
-				vk::PipelineStageFlagBits2::eIndexInput, vk::AccessFlagBits2::eIndexRead);
-			// indexBuffer->buffer->Write(indices.data(), ibSize / 2, 0);
-			// indexBuffer->FlushWrites();
-			indexBuffer->buffer->Write((uint8_t*)indices.data(), ibSize, 0);
-			indexBuffer->FlushWrites();
+				ibSize, MemoryFlags{ .required = MemoryFlags::eDeviceLocal });
+			indexBuffer->Write((uint8_t*)indices.data(), ibSize, 0);
+			indexBuffer->FlushWrites(vk::PipelineStageFlagBits2::eIndexInput, vk::AccessFlagBits2::eIndexRead);
 
 			MemoryFlags hostVisibleFlags;
 			{
@@ -190,44 +108,48 @@ namespace Nork::Renderer {
 				uboStride = sizeof(uint32_t);
 			uniformBuffer = Buffer::CreateHostWritable(vk::BufferUsageFlagBits::eUniformBuffer,
 				uboStride * MAX_FRAMES_IN_FLIGHT * DRAW_COUNT, hostVisibleFlags);
-			storageBuffer = Buffer::Create(vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst,
-				sizeof(SSBO) * MAX_FRAMES_IN_FLIGHT * DRAW_COUNT, MemoryFlags{ .required = MemoryFlags::eDeviceLocal });
+			storageBuffer = std::make_shared<DeviceElements<SSBO>>(vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst,
+				MemoryFlags{ .required = MemoryFlags::eDeviceLocal }, DRAW_COUNT * MAX_FRAMES_IN_FLIGHT, MAX_FRAMES_IN_FLIGHT,
+				vk::PipelineStageFlagBits2::eVertexShader, vk::AccessFlagBits2::eShaderStorageRead);
+			for (size_t i = 0; i < DRAW_COUNT; i++)
+			{
+				modelMatrices.push_back(storageBuffer->New());
+			}
 
 			using namespace Vulkan;
-			textureSampler = std::make_shared<Sampler>();
-			textureImage = createTextureImage("texture.png");
-			textureImage2 = createTextureImage("clown.png");
-			textureView = std::make_shared<ImageView>(ImageViewCreateInfo(textureImage, vk::ImageAspectFlagBits::eColor), textureSampler);
-			textureView2 = std::make_shared<ImageView>(ImageViewCreateInfo(textureImage2, vk::ImageAspectFlagBits::eColor), textureSampler);
+			texture = createTextureImage("texture.png");
+			texture2 = createTextureImage("clown.png");
 
 			descriptorSetLayoutGPass = std::make_shared<DescriptorSetLayout>(DescriptorSetLayoutCreateInfo()
 				.Binding(0, vk::DescriptorType::eUniformBufferDynamic, vk::ShaderStageFlagBits::eVertex)
 				.Binding(1, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eVertex)
 				.Binding(2, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, MAX_IMG_ARR_SIZE, true));
 
-			descriptorPool = std::make_shared<DescriptorPool>(DescriptorPoolCreateInfo(DescriptorCounts({
-				descriptorSetLayoutGPass }), 1));
-			descriptorSet = std::make_shared<DescriptorSet>(DescriptorSetAllocateInfo(descriptorPool, descriptorSetLayoutGPass, MAX_IMG_ARR_SIZE));
-
+			descriptorPool = std::make_shared<DescriptorPool>(
+				DescriptorPoolCreateInfo({ descriptorSetLayoutGPass }, 1));
+			descriptorSet = std::make_shared<DescriptorSet>(
+				DescriptorSetAllocateInfo(descriptorPool, descriptorSetLayoutGPass, { MAX_IMG_ARR_SIZE }));
+			
+			textureSampler = std::make_shared<Sampler>();
 			auto writer = descriptorSet->Writer()
-				.Buffer(0, *uniformBuffer->Underlying(), 0, sizeof(uint32_t), true)
-				.Buffer(1, *storageBuffer->Underlying(), 0, storageBuffer->memory.Size());
+				.Buffer(0, *uniformBuffer->Underlying(), 0, sizeof(uint32_t), vk::DescriptorType::eUniformBufferDynamic)
+				.Buffer(1, *storageBuffer->buffer->Underlying(), 0, storageBuffer->buffer->memory.Size(), vk::DescriptorType::eStorageBuffer);
 			for (size_t i = 0; i < MAX_IMG_ARR_SIZE; i++)
 			{
-				writer.Image(2, i % 3 ? *textureView2 : *textureView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, i);
+				writer.Image(2, i % 3 ? *texture2->view : *texture->view, vk::ImageLayout::eShaderReadOnlyOptimal,
+					*textureSampler, vk::DescriptorType::eCombinedImageSampler, i);
 			}
 			writer.Write();
 		}
-		std::shared_ptr<Vulkan::Image> createTextureImage(const std::string& path)
+		std::shared_ptr<Image> createTextureImage(const std::string& path)
 		{
-			using namespace Vulkan;
-			auto image = Renderer::LoadUtils::LoadImage(path, true);
+			auto image = LoadUtils::LoadImage(path, true);
 
-			auto texImg = std::make_shared<Vulkan::Image>(ImageCreateInfo(image.width, image.height, Format::rgba8Unorm,
-				vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled), vk::MemoryPropertyFlagBits::eDeviceLocal);
-
-			MemoryTransfer::Instance().UploadToImage(**texImg, image.data.data(), image.data.size(), image.width, image.height,
+			auto texImg = std::make_shared<Image>(image.width, image.height, Vulkan::Format::rgba8Unorm,
+				vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::ImageAspectFlagBits::eColor,
 				vk::PipelineStageFlagBits2::eVertexShader, vk::AccessFlagBits2::eShaderSampledRead);
+
+			texImg->Write(image.data.data(), image.data.size(), vk::ImageLayout::eShaderReadOnlyOptimal);
 			return texImg;
 		}
 		void UpdateSSBO(uint32_t currentFrame)
@@ -235,17 +157,26 @@ namespace Nork::Renderer {
 			static Timer sumT;
 			static uint32_t frames = 0;
 			static float elapsed = 0;
+			static glm::vec3 pos = glm::vec3(0);
+			if (Input::Instance().IsDown(Key::Alt)) pos.z -= 0.1f;
+			if (Input::Instance().IsDown(Key::Space)) pos.z += 0.1f;
+			if (Input::Instance().IsDown(Key::Ctrl)) pos.y -= 0.1f;
+			if (Input::Instance().IsDown(Key::M)) pos.y += 0.1f;
+			if (Input::Instance().IsDown(Key::E)) pos.x += 0.1f;
+			if (Input::Instance().IsDown(Key::Q)) pos.x -= 0.1f;
 
 			for (size_t i = 0; i < DRAW_COUNT; i++)
 			{
-				auto model = glm::translate(glm::identity<glm::mat4>(), glm::vec3(objOffset * i, 0, 0));
+				SSBO model = SSBO{ glm::translate(glm::identity<glm::mat4>(), pos + glm::vec3(objOffset * i, 0, -10)) };
+				auto& mm = modelMatrices[i];
 				if (!Input::Instance().IsDown(Key::Shift))
-					storageBuffer->Write(&model, sizeof(model), (currentFrame * DRAW_COUNT + i) * sizeof(model));
+					*mm = model;
+					//storageBuffer->buffer->Write(&model, sizeof(model), (currentFrame * DRAW_COUNT + i) * sizeof(model));
 			}
 
 			Timer t;
-			storageBuffer->FlushWrites(vk::PipelineStageFlagBits2::eVertexShader, vk::AccessFlagBits2::eShaderStorageRead);
-			// storageBuffer->FlushWrites({}, {});
+			storageBuffer->FlushWrites();
+			// storageBuffer->buffer->FlushWrites(vk::PipelineStageFlagBits2::eVertexShader, vk::AccessFlagBits2::eShaderStorageRead);
 
 			frames++;
 			elapsed += t.Elapsed();
@@ -266,21 +197,22 @@ namespace Nork::Renderer {
 			float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 			//glm::mat4 model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-			static auto pos = glm::vec3(0, 0.5, -1);
+			static auto front = glm::vec3(0, 0, -1);
+			static auto pos = glm::vec3(0, 0.5, 1);
 			if (Input::Instance().IsDown(Key::Up)) pos.y += 0.1f;
 			if (Input::Instance().IsDown(Key::Down)) pos.y -= 0.1f;
 			if (Input::Instance().IsDown(Key::Right)) pos.x += 0.1f;
 			if (Input::Instance().IsDown(Key::Left)) pos.x -= 0.1f;
-			if (Input::Instance().IsDown(Key::W)) pos.z += 0.1f;
-			if (Input::Instance().IsDown(Key::S)) pos.z -= 0.1f;
+			if (Input::Instance().IsDown(Key::W)) pos.z -= 0.1f;
+			if (Input::Instance().IsDown(Key::S)) pos.z += 0.1f;
 			if (Input::Instance().IsDown(Key::D)) objOffset *= 0.99f;
 			if (Input::Instance().IsDown(Key::A)) objOffset *= 1.01f;
-			auto camPos = glm::translate(glm::identity<glm::mat4>(), pos);
+			// auto camPos = glm::translate(glm::identity<glm::mat4>(), pos);
 			// model *= glm::scale(glm::identity<glm::mat4>(), glm::vec3(0.1, 0.1, 0.1));
-			glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+			glm::mat4 view = glm::lookAt(pos, pos + front, glm::vec3(0.0f, 1.0f, 0.0f));
 			glm::mat4 proj = glm::perspective(glm::radians(45.0f), SwapChain::Instance().Width() / (float)SwapChain::Instance().Height(), 0.1f, 1000.0f);
-			//proj[1][1] *= -1;
-			vp = proj * view * camPos;
+			proj[1][1] *= -1;
+			vp = proj * view;
 			auto modelIdxs = &((char*)uniformBuffer->Ptr())[currentFrame * DRAW_COUNT * uboStride];
 			for (size_t i = 0; i < DRAW_COUNT; i++)
 			{
@@ -300,15 +232,15 @@ namespace Nork::Renderer {
 		}
 	public:
 		const std::vector<Vertex> vertices = {
-		 {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-		{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-		{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-		{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+		 {{-1, -1, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
+		{{1, -1, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f}},
+		{{1, 1, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
+		{{-1, 1, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
 
-		{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-		{{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-		{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-		{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
+		{{-1, -1, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
+		{{1, -1, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f}},
+		{{1, 1, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
+		{{1, 1, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}}
 		};
 		const std::vector<float> quad = {
 			-1.0f, -1.0f, 0.0f, 0.0f,
@@ -325,21 +257,18 @@ namespace Nork::Renderer {
 		};
 		float objOffset = 1.0f;
 		std::shared_ptr<Buffer> vertexBuffer;
-		std::shared_ptr<DeviceResource> indexBuffer;
+		std::shared_ptr<Buffer> indexBuffer;
 
 		glm::mat4 vp;
 		uint32_t uboStride;
 		std::shared_ptr<HostWritableBuffer> uniformBuffer;
-		std::shared_ptr<Buffer> storageBuffer; // 268 MB is MAX for DeviceLocal HostVisible Coherent
+		std::shared_ptr<DeviceElements<SSBO>> storageBuffer; // 256 MB is MAX for DeviceLocal HostVisible Coherent
+		std::vector<std::shared_ptr<BufferElement<SSBO>>> modelMatrices;
 		std::shared_ptr<HostWritableBuffer> drawCommandsBuffer;
 
 		std::shared_ptr<Vulkan::Sampler> textureSampler;
-		std::shared_ptr<Vulkan::Image> textureImage;
-		std::shared_ptr<Vulkan::Image> textureImage2;
-		std::shared_ptr<Vulkan::ImageView> textureView;
-		std::shared_ptr<Vulkan::ImageView> textureView2;
-
-		std::shared_ptr<Vulkan::CommandPool> commandPool; // dup
+		std::shared_ptr<Image> texture;
+		std::shared_ptr<Image> texture2;
 
 		std::shared_ptr<Vulkan::DescriptorPool> descriptorPool;
 		std::shared_ptr<Vulkan::DescriptorSetLayout> descriptorSetLayoutGPass;
@@ -348,10 +277,6 @@ namespace Nork::Renderer {
 	class RenderPass_
 	{
 	public:
-		RenderPass_()
-		{
-			commandPool = std::make_shared<Vulkan::CommandPool>();
-		}
 		std::vector<uint32_t> LoadShader(const fs::path& srcFile, std::vector<std::array<std::string, 2>> macros = {})
 		{
 			using namespace Vulkan;
@@ -426,7 +351,6 @@ namespace Nork::Renderer {
 			return vk::Rect2D({ 0, 0 }, { fb.Width(), fb.Height() });
 		}
 	public:
-		std::shared_ptr<Vulkan::CommandPool> commandPool; // dup
 	};
 	class DeferredPass : public RenderPass_
 	{
@@ -435,42 +359,33 @@ namespace Nork::Renderer {
 		{
 			createRenderPass();
 
-			using namespace Vulkan;
-			auto textureSampler = std::make_shared<Sampler>();
-			auto w = SwapChain::Instance().Width();
-			auto h = SwapChain::Instance().Height();
+			auto w = Vulkan::SwapChain::Instance().Width();
+			auto h = Vulkan::SwapChain::Instance().Height();
 			using enum vk::ImageUsageFlagBits;
-			using Image = Vulkan::Image;
-			auto depthImage_ = std::make_shared<Image>(ImageCreateInfo(w, h, Format::depth16, eDepthStencilAttachment),
-				vk::MemoryPropertyFlagBits::eDeviceLocal);
-			depthImage = std::make_shared<ImageView>(ImageViewCreateInfo(depthImage_, vk::ImageAspectFlagBits::eDepth), textureSampler);
-			auto fbColor_ = std::make_shared<Image>(ImageCreateInfo(w, h, Format::rgba8Unorm, eColorAttachment | eInputAttachment | eTransferSrc | eSampled),
-				vk::MemoryPropertyFlagBits::eDeviceLocal);
-			fbColor = std::make_shared<ImageView>(ImageViewCreateInfo(fbColor_, vk::ImageAspectFlagBits::eColor), textureSampler);
+			depthImage = std::make_shared<Image>(w, h, Vulkan::Format::depth16, eDepthStencilAttachment, vk::ImageAspectFlagBits::eDepth);
+			fbColor = std::make_shared<Image>(w, h, Vulkan::Format::rgba8Unorm, eColorAttachment | eInputAttachment | eTransferSrc | eSampled,
+				vk::ImageAspectFlagBits::eColor);
+			gPos = std::make_shared<Image>(w, h, Vulkan::Format::rgba8Unorm, eColorAttachment | eInputAttachment, vk::ImageAspectFlagBits::eColor);
+			gCol = std::make_shared<Image>(w, h, Vulkan::Format::rgba8Unorm, eColorAttachment | eInputAttachment, vk::ImageAspectFlagBits::eColor);
+			fb = std::make_shared<Vulkan::Framebuffer>(Vulkan::FramebufferCreateInfo(w, h, **renderPass, { gPos->view, gCol->view, fbColor->view, depthImage->view }));
 
-			auto gPos_ = std::make_shared<Image>(ImageCreateInfo(w, h, Format::rgba8Unorm, eColorAttachment | eInputAttachment),
-				vk::MemoryPropertyFlagBits::eDeviceLocal);
-			gPos = std::make_shared<ImageView>(ImageViewCreateInfo(gPos_, vk::ImageAspectFlagBits::eColor), textureSampler);
-			auto gCol_ = std::make_shared<Image>(ImageCreateInfo(w, h, Format::rgba8Unorm, eColorAttachment | eInputAttachment),
-				vk::MemoryPropertyFlagBits::eDeviceLocal);
-			gCol = std::make_shared<ImageView>(ImageViewCreateInfo(gCol_, vk::ImageAspectFlagBits::eColor), textureSampler);
-			fb = std::make_shared<Framebuffer>(FramebufferCreateInfo(w, h, **renderPass, { gPos, gCol, fbColor, depthImage }));
-
-			descriptorSetLayoutPP = std::make_shared<Vulkan::DescriptorSetLayout>(DescriptorSetLayoutCreateInfo()
+			using namespace Vulkan;
+			descriptorSetLayoutPP = std::make_shared<Vulkan::DescriptorSetLayout>(Vulkan::DescriptorSetLayoutCreateInfo()
 				.Binding(0, vk::DescriptorType::eInputAttachment, vk::ShaderStageFlagBits::eFragment)
 				.Binding(1, vk::DescriptorType::eInputAttachment, vk::ShaderStageFlagBits::eFragment)
 				.Binding(2, vk::DescriptorType::eInputAttachment, vk::ShaderStageFlagBits::eFragment));
 
 			descriptorPool = std::make_shared<Vulkan::DescriptorPool>(
-				DescriptorPoolCreateInfo(DescriptorCounts({ descriptorSetLayoutPP }), 1));
+				DescriptorPoolCreateInfo({ descriptorSetLayoutPP }, 1 ));
 
 			descriptorSetPP = std::make_shared<DescriptorSet>(DescriptorSetAllocateInfo(descriptorPool, descriptorSetLayoutPP));
 			createGraphicsPipeline(state);
 
+			auto textureSampler = std::make_shared<Sampler>();
 			descriptorSetPP->Writer()
-				.Image(0, *gPos, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)
-				.Image(1, *gCol, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)
-				.Image(2, *fbColor, VK_IMAGE_LAYOUT_GENERAL, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)
+				.Image(0, *gPos->view, vk::ImageLayout::eShaderReadOnlyOptimal, *textureSampler, vk::DescriptorType::eInputAttachment)
+				.Image(1, *gCol->view, vk::ImageLayout::eShaderReadOnlyOptimal, *textureSampler, vk::DescriptorType::eInputAttachment)
+				.Image(2, *fbColor->view, vk::ImageLayout::eGeneral, *textureSampler, vk::DescriptorType::eInputAttachment)
 				.Write();
 		}
 		void createGraphicsPipeline(State& state)
@@ -587,7 +502,7 @@ namespace Nork::Renderer {
 				.setDstStageMask(vk::PipelineStageFlagBits::eFragmentShader)
 				.setDstAccessMask(vk::AccessFlagBits::eShaderRead)
 				});
-			renderPass = std::make_shared<RenderPass>(createInfo);
+			renderPass = std::make_shared<Vulkan::RenderPass>(createInfo);
 		}
 		void recordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imageIndex, uint32_t currentFrame, State& state) override
 		{
@@ -603,8 +518,8 @@ namespace Nork::Renderer {
 				{ **state.descriptorSet, **descriptorSetPP },
 				{ currentFrame * state.uboStride * DRAW_COUNT });
 
-			cmd.bindVertexBuffers(0, **state.vertexBuffer->Underlying(), {0});
-			cmd.bindIndexBuffer(**state.indexBuffer->buffer->Underlying(), 0, vk::IndexType::eUint16);
+			cmd.bindVertexBuffers(0, **state.vertexBuffer->Underlying(), { 0 });
+			cmd.bindIndexBuffer(**state.indexBuffer->Underlying(), 0, vk::IndexType::eUint16);
 			cmd.drawIndexedIndirect(**state.drawCommandsBuffer->Underlying(), sizeof(VkDrawIndexedIndirectCommand) * currentFrame * DRAW_BATCH_COUNT,
 				DRAW_BATCH_COUNT, sizeof(vk::DrawIndexedIndirectCommand));
 
@@ -617,28 +532,15 @@ namespace Nork::Renderer {
 			cmd.DrawQuad();
 
 			cmd.endRenderPass();
-
-			// auto barrierLPass = vk::ImageMemoryBarrier2()
-			// 	.setImage(**fbColor->Image())
-			// 	.setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1))
-			// 
-			// 	.setOldLayout(vk::ImageLayout::eGeneral)
-			// 	.setSrcStageMask(vk::PipelineStageFlagBits2::eColorAttachmentOutput)
-			// 	.setSrcAccessMask(vk::AccessFlagBits2::eColorAttachmentWrite)
-			// 
-			// 	.setNewLayout(vk::ImageLayout::eColorAttachmentOptimal)
-			// 	.setDstStageMask(vk::PipelineStageFlagBits2::eVertexInput)
-			// 	.setDstAccessMask(vk::AccessFlagBits2::eShaderSampledRead);
-			// cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barrierLPass));
 		}
 	public:
 
 		std::shared_ptr<Vulkan::RenderPass> renderPass;
 
-		std::shared_ptr<Vulkan::ImageView> depthImage;
-		std::shared_ptr<Vulkan::ImageView> gPos;
-		std::shared_ptr<Vulkan::ImageView> gCol;
-		std::shared_ptr<Vulkan::ImageView> fbColor;
+		std::shared_ptr<Image> depthImage;
+		std::shared_ptr<Image> gPos;
+		std::shared_ptr<Image> gCol;
+		std::shared_ptr<Image> fbColor;
 		std::shared_ptr<Vulkan::Framebuffer> fb;
 
 		std::shared_ptr<Vulkan::DescriptorPool> descriptorPool;
@@ -655,15 +557,13 @@ namespace Nork::Renderer {
 	public:
 		EditorPass()
 		{
-			using namespace Vulkan;
 			createRenderPassUI();
-			auto w = SwapChain::Instance().Width();
-			auto h = SwapChain::Instance().Height();
-			auto uiImg = std::make_shared<Vulkan::Image>(ImageCreateInfo(w, h, Format::rgba8Unorm,
-				vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc),
-				vk::MemoryPropertyFlagBits::eDeviceLocal);
-			auto uiImgView = std::make_shared<ImageView>(ImageViewCreateInfo(uiImg, vk::ImageAspectFlagBits::eColor), nullptr);
-			fbUI = std::make_shared<Framebuffer>(FramebufferCreateInfo(w, h, **renderPassUI, { uiImgView }));
+			auto w = Vulkan::SwapChain::Instance().Width();
+			auto h = Vulkan::SwapChain::Instance().Height();
+			imgUI = std::make_shared<Image>(w, h, Vulkan::Format::rgba8Unorm,
+				vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc,
+				vk::ImageAspectFlagBits::eColor);
+			fbUI = std::make_shared<Vulkan::Framebuffer>(Vulkan::FramebufferCreateInfo(w, h, **renderPassUI, { imgUI->view }));
 			InitImguiForVulkan();
 		}
 		~EditorPass()
@@ -695,7 +595,7 @@ namespace Nork::Renderer {
 				.setDstStageMask(vk::PipelineStageFlagBits::eTransfer)
 				.setDstAccessMask(vk::AccessFlagBits::eTransferRead),
 				});
-			renderPassUI = std::make_shared<RenderPass>(createInfo);
+			renderPassUI = std::make_shared<Vulkan::RenderPass>(createInfo);
 		}
 		void InitImguiForVulkan()
 		{
@@ -783,6 +683,7 @@ namespace Nork::Renderer {
 				.setDstAccessMask(vk::AccessFlagBits2::eNone);
 			cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barrierSc));
 		}
+		std::shared_ptr<Image> imgUI;
 		std::shared_ptr<Vulkan::Framebuffer> fbUI;
 		std::shared_ptr<Vulkan::DescriptorPool> imguiPool;
 		std::shared_ptr<Vulkan::RenderPass> renderPassUI;
@@ -795,7 +696,7 @@ namespace Nork::Renderer {
 			: allocator(Vulkan::PhysicalDevice::Instance())
 		{
 			using namespace Vulkan;
-			Commands::Instance().Begin(0); // begin initialize phase
+			Commands::Instance().Begin(0);
 
 			state = std::make_unique<State>();
 			createSyncObjects();
@@ -803,7 +704,7 @@ namespace Nork::Renderer {
 			renderPasses.push_back(std::make_shared<EditorPass>());
 
 			Commands::Instance().End();
-			Commands::Instance().Submit(); // end initialize phase
+			Commands::Instance().Submit();
 		}
 		~RenderLoop()
 		{
@@ -818,6 +719,7 @@ namespace Nork::Renderer {
 			using namespace Vulkan;
 
 			Commands::Instance().Begin(currentFrame);
+			state->storageBuffer->OnNewFrame();
 			state->updateUniformBuffer(currentFrame);
 			state->UpdateSSBO(currentFrame);
 
@@ -839,8 +741,6 @@ namespace Nork::Renderer {
 			using namespace Vulkan;
 
 			Commands::Instance().Submit(true, { imageAvailableSemaphores[currentFrame] });
-			// vkQueueSubmit(*Device::Instance().graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) == VkSuccess();
-			// Device::Instance().graphicsQueue.submit(submitInfo, inFlightFences[currentFrame]);
 			
 			auto res = Device::Instance().graphicsQueue.presentKHR(
 				vk::PresentInfoKHR()
@@ -861,18 +761,14 @@ namespace Nork::Renderer {
 		}
 		void DrawFrame()
 		{
-			using namespace Vulkan;
-			// Commands::Instance().WaitAll();
 			auto imgIdx = BeginFrame();
 			if (imgIdx == INVALID_FRAME_IDX)
 				return;
-			// commandBuffers[currentFrame].begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
 			for (auto& pass : renderPasses)
 			{
 				pass->recordCommandBuffer(*Commands::Instance().cmds[currentFrame], imgIdx, currentFrame, *state);
 			}
 			Commands::Instance().End();
-			// commandBuffers[currentFrame].end();
 			EndFrame(imgIdx);
 		}
 		void createSyncObjects()
@@ -900,12 +796,5 @@ namespace Nork::Renderer {
 		std::vector<VkSemaphore> imageAvailableSemaphores;
 		uint32_t currentFrame = 0;
 		bool framebufferResized = false;
-	};
-
-	class Frame
-	{
-	public:
-
-	public:
 	};
 }

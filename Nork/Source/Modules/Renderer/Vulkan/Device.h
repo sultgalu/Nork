@@ -26,6 +26,7 @@ namespace Nork::Renderer::Vulkan {
 
             deviceFeatures.samplerAnisotropy = VK_TRUE;
             deviceFeatures.multiDrawIndirect = VK_TRUE;
+            deviceFeatures.drawIndirectFirstInstance = VK_TRUE;
             // non-uniform indexing
             deviceFeatures2.shaderSampledImageArrayNonUniformIndexing = true;
             deviceFeatures2.runtimeDescriptorArray = true;

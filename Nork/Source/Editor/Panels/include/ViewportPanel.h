@@ -18,6 +18,5 @@ namespace Nork::Editor {
 		ViewportView viewportView;
 	protected:
 		std::string name = "Viewport";
-		std::shared_ptr<Components::Camera> camera;
 	};
 }

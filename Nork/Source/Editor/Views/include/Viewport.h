@@ -30,6 +30,7 @@ namespace Nork::Editor {
 		VkDescriptorSet viewportImgDs = VK_NULL_HANDLE;
 		MouseState mouseState;
 		// std::shared_ptr<SceneView> sceneView;
+		std::shared_ptr<Components::Camera> camera;
 		std::shared_ptr<CameraController> camController = std::make_shared<FpsCameraController>();
 	};
 }
