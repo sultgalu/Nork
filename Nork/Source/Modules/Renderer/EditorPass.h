@@ -10,7 +10,7 @@ class EditorPass : public RenderPass
 public:
 	EditorPass()
 	{
-		createRenderPassUI();
+		CreateRenderPassUI();
 		auto w = Vulkan::SwapChain::Instance().Width();
 		auto h = Vulkan::SwapChain::Instance().Height();
 		imgUI = std::make_shared<Image>(w, h, Vulkan::Format::rgba8Unorm,
@@ -23,7 +23,7 @@ public:
 	{
 		ImGui_ImplVulkan_Shutdown();
 	}
-	void createRenderPassUI()
+	void CreateRenderPassUI()
 	{
 		using namespace Vulkan;
 		RenderPassCreateInfo createInfo;
@@ -94,7 +94,7 @@ public:
 			ImGui_ImplVulkan_DestroyFontUploadObjects();
 		});
 	}
-	void recordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imageIndex, uint32_t currentFrame) override
+	void RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imageIndex, uint32_t currentFrame) override
 	{
 		using namespace Vulkan;
 		BeginRenderPass(**renderPassUI, *fbUI, cmd);

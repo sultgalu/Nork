@@ -1,11 +1,14 @@
 #include "DeferredPass.h"
 
+#include "Vulkan/SwapChain.h"
+#include "Data/Vertex.h"
+
 namespace Nork::Renderer {
 
 namespace Formats {
 static constexpr vk::Format depth = Vulkan::Format::depth32;
 static constexpr vk::Format pos = Vulkan::Format::rgba32f;
-static constexpr vk::Format norm = Vulkan::Format::rgba32f;
+static constexpr vk::Format norm = Vulkan::Format::rgba16Snorm;
 
 static constexpr vk::Format baseCol = Vulkan::Format::rgba32f;
 static constexpr vk::Format final = Vulkan::Format::rgba32f;
@@ -15,7 +18,7 @@ static constexpr vk::Format metRough = Vulkan::Format::rgba16f;
 
 DeferredPass::DeferredPass()
 {
-	createRenderPass();
+	CreateRenderPass();
 
 	auto w = Vulkan::SwapChain::Instance().Width();
 	auto h = Vulkan::SwapChain::Instance().Height();
@@ -42,7 +45,7 @@ DeferredPass::DeferredPass()
 		DescriptorPoolCreateInfo({ descriptorSetLayoutPP }, 1));
 
 	descriptorSetPP = std::make_shared<DescriptorSet>(DescriptorSetAllocateInfo(descriptorPool, descriptorSetLayoutPP));
-	createGraphicsPipeline();
+	CreateGraphicsPipeline();
 
 	auto textureSampler = std::make_shared<Sampler>();
 	descriptorSetPP->Writer()
@@ -53,7 +56,7 @@ DeferredPass::DeferredPass()
 		.Image(4, *fbColor->view, vk::ImageLayout::eGeneral, *textureSampler, vk::DescriptorType::eInputAttachment)
 		.Write();
 }
-void DeferredPass::createGraphicsPipeline()
+void DeferredPass::CreateGraphicsPipeline()
 {
 	using namespace Vulkan;
 	ShaderModule vertShaderModule(LoadShader("Source/Shaders/gPass.vert"), vk::ShaderStageFlagBits::eVertex);
@@ -80,7 +83,7 @@ void DeferredPass::createGraphicsPipeline()
 		.RenderPass(**renderPass, 0)
 		.DepthStencil(true, true, vk::CompareOp::eLess));
 
-	ShaderModule vertShaderModule3(LoadShader("Source/Shaders/pp.vert"), vk::ShaderStageFlagBits::eVertex);
+	ShaderModule vertShaderModule3(LoadShader("Source/Shaders/quad.vert"), vk::ShaderStageFlagBits::eVertex);
 	ShaderModule fragShaderModule3(LoadShader("Source/Shaders/lightPass.frag"), vk::ShaderStageFlagBits::eFragment);
 	pipelineLPass = std::make_shared<Pipeline>(PipelineCreateInfo()
 		.Layout(**pipelineLayout)
@@ -94,7 +97,7 @@ void DeferredPass::createGraphicsPipeline()
 		.RenderPass(**renderPass, 1)
 		.DepthStencil(false));
 
-	ShaderModule vertShaderModule2(LoadShader("Source/Shaders/pp.vert"), vk::ShaderStageFlagBits::eVertex);
+	ShaderModule vertShaderModule2(LoadShader("Source/Shaders/quad.vert"), vk::ShaderStageFlagBits::eVertex);
 	ShaderModule fragShaderModule2(LoadShader("Source/Shaders/pp.frag"), vk::ShaderStageFlagBits::eFragment);
 	pipelinePP = std::make_shared<Pipeline>(PipelineCreateInfo()
 		.Layout(**pipelineLayout)
@@ -108,7 +111,7 @@ void DeferredPass::createGraphicsPipeline()
 		.RenderPass(**renderPass, 2)
 		.DepthStencil(false));
 }
-void DeferredPass::createRenderPass()
+void DeferredPass::CreateRenderPass()
 {
 	using namespace Vulkan;
 	Vulkan::RenderPassCreateInfo createInfo;
@@ -181,7 +184,7 @@ void DeferredPass::createRenderPass()
 		});
 	renderPass = std::make_shared<Vulkan::RenderPass>(createInfo);
 }
-void DeferredPass::recordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imageIndex, uint32_t currentFrame)
+void DeferredPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imageIndex, uint32_t currentFrame)
 {
 	using namespace Vulkan;
 	BeginRenderPass(**renderPass, *fb, cmd);

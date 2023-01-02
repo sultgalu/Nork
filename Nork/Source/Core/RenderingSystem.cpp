@@ -83,12 +83,12 @@ Renderer::Renderer* Renderer::Renderer::instance = nullptr;
 	}
 	void RenderingSystem::OnDShadAdded(entt::registry& reg, entt::entity id)
 	{
-		// auto& light = reg.get<Components::DirLight>(id);
+		auto& light = reg.get<Components::DirLight>(id);
 		// auto shadow = world.AddDirShadow();
-		// Renderer::DirShadowMap map(light.light, shadow);
-		// map.SetFramebuffer(4000, 4000, Renderer::TextureFormat::Depth16);
-		// reg.get<Components::DirShadowMap>(id).map = map;
-		// shouldUpdateDirLightAndShadows = true;
+		auto& shadow = reg.get<Components::DirShadowMap>(id);
+		shadow.shadowMap = Renderer::Resources::Instance().CreateShadowMap2D(1000, 1000);
+		shadow.shadowMap->vp = light->VP;
+		shouldUpdateDirLightAndShadows = true;
 	}
 	void RenderingSystem::OnPShadAdded(entt::registry& reg, entt::entity id)
 	{
@@ -199,8 +199,15 @@ Renderer::Renderer* Renderer::Renderer::instance = nullptr;
 			dlCount = 0; dsCount = 0; plCount = 0; psCount = 0;
 			auto& system = RenderingSystem::Instance();
 			auto& registry = system.registry;
-			
-			for (auto [ent, light] : registry.view<Components::DirLight>().each())
+
+			for (auto [ent, light, shad] : registry.view<Components::DirLight, Components::DirShadowMap>().each())
+			{
+				dIdxs[dlCount * 2] = light.rendererLight->deviceData->offset;
+				dIdxs[dlCount * 2 + 1] = shad.shadowMap->shadow->deviceData->offset;
+				dlCount++;
+				dsCount++;
+			}
+			for (auto [ent, light] : registry.view<Components::DirLight>(entt::exclude<Components::DirShadowMap>).each())
 			{
 				dIdxs[dlCount * 2] = light.rendererLight->deviceData->offset;
 				dlCount++;
@@ -267,14 +274,15 @@ Renderer::Renderer* Renderer::Renderer::instance = nullptr;
 				dl->color.a = std::clamp(height + 0.2f, 0.0f, 0.3f) * 2.0f;
 				// shaders.skyShader->Use().SetVec3("lightPos", -dl.light->direction);
 			}
-			// if (ds)
-			// {
-			// 	for (auto& map : shadowMapProvider.dShadMaps)
-			// 	{ // change shadow FBs in provider
-			// 		if (map.light == dl.light && map.fb != ds->map.fb)
-			// 			map.fb = ds->map.fb;
-			// 	}
-			// }
+			if (ds)
+			{
+				ds->shadowMap->vp = dl->VP;
+				// for (auto& map : shadowMapProvider.dShadMaps)
+				// { // change shadow FBs in provider
+				// 	if (map.light == dl.light && map.fb != ds->map.fb)
+				// 		map.fb = ds->map.fb;
+				// }
+			}
 		}
 		dirLightObserver.clear();
 		for (const auto ent : pointLightObserver)

@@ -1,4 +1,5 @@
 #include "Resources.h"
+#include "ShadowMapPass.h"
 
 namespace Nork::Renderer {
 static constexpr auto vb_count = MemoryAllocator::poolSize / sizeof(Data::Vertex);
@@ -110,6 +111,25 @@ Resources::Resources()
 		.Write();
 
 	textureDescriptors = std::make_unique<TextureDesriptors>(descriptorSet);
+}
+// TODO: should be handled same way as textures
+std::shared_ptr<ShadowMap> Resources::CreateShadowMap2D(uint32_t width, uint32_t height)
+{
+	auto idx = shadowMaps.size();
+	auto shadowMap = ShadowMapPass::Instance().CreateShadowMap2D(width, height);
+	shadowMap->shadow = std::make_shared<DeviceDataProxy<Data::DirShadow>>(dirShadows->New());
+	shadowMap->SetIndex(idx);
+	shadowMaps.push_back(shadowMap);
+
+	if (!shadowMap->image->sampler)
+		shadowMap->image->sampler = Textures().defaultSampler;
+
+	descriptorSetLights->Writer()
+		.Image(6, *shadowMap->image->view, vk::ImageLayout::eShaderReadOnlyOptimal,
+			*shadowMap->image->sampler, vk::DescriptorType::eCombinedImageSampler, idx)
+		.Write();
+
+	return shadowMap;
 }
 
 // ----------------- TEXTURES ----------------

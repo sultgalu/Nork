@@ -48,21 +48,23 @@ namespace Nork::Editor {
 				node->GetEntity().AddComponent<Components::DirShadowMap>();
 			}
 		}
-		/*else if (ImGui::TreeNode("Shadow"))
+		else if (ImGui::TreeNode("Shadow"))
 		{
-			auto& shadowMap = node->GetEntity().GetComponent<Components::DirShadowMap>().map;
-			ImGui::DragFloat("Bias", (float*)&(shadowMap.shadow->bias), 0.001f);
-			ImGui::DragFloat("min Bias", (float*)&(shadowMap.shadow->biasMin), 0.001f);
+			auto& shadowMap = node->GetEntity().GetComponent<Components::DirShadowMap>().shadowMap;
+			auto shadow = shadowMap->shadow->Data();
+			ImGui::DragFloat("Bias", (float*)&(shadow->bias), 0.001f);
+			ImGui::DragFloat("min Bias", (float*)&(shadow->biasMin), 0.001f);
 
-			auto tex = shadowMap.fb->Depth();
+			static EditorImage img;
+			auto& tex = shadowMap->image;
+			img = tex;
 			static auto imgSize = 100;
-			ImGui::Image((ImTextureID)tex->GetHandle(), ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
-				ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
+			ImGui::Image(img.descritptorSet, ImVec2(imgSize, imgSize));
 			ImGui::DragInt("Image Size", &imgSize, 1, 50, 500);
-			ImGui::Text("Width: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->GetWidth()).c_str());
-			ImGui::Text("Height: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->GetHeight()).c_str());
-			ImGui::Text("Format: "); ImGui::SameLine(); ImGui::Text(Renderer::TextureFormatToString(tex->GetAttributes().format));
-			static bool fix = false;
+			ImGui::Text("Width: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->img->Width()).c_str());
+			ImGui::Text("Height: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->img->Height()).c_str());
+			ImGui::Text("Format: "); ImGui::SameLine(); ImGui::Text(vk::to_string(tex->img->Format()).c_str());
+			/*static bool fix = false;
 			static glm::ivec2 newSize;
 			// static Renderer::TextureFormat newFormat;
 			if (ImGui::Button("Change Resolution##DirLi"))
@@ -102,7 +104,7 @@ namespace Nork::Editor {
 					}
 				}
 				ImGui::EndPopup();
-			}
+			}*/
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 			if (ImGui::Button("Remove Shadow Map##Dir"))
 			{
@@ -111,7 +113,7 @@ namespace Nork::Editor {
 			ImGui::PopStyleColor();
 
 			ImGui::TreePop();
-		}*/
+		}
 	}
 	template<> void SceneNodeView::ShowComponent(Components::PointLight& pointLight, bool& changed)
 	{
@@ -291,8 +293,7 @@ namespace Nork::Editor {
 
 						auto tex = model->meshes[meshIdx].material->GetTextureMap(type);
 						img = tex->image;
-						ImGui::Image(img.descritptorSet, ImVec2(imgSize, imgSize), ImVec2(0, 1), ImVec2(1, 0),
-							ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 1));
+						ImGui::Image(img.descritptorSet, ImVec2(imgSize, imgSize));
 						ImGui::Text("Width: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->image->img->Width()).c_str());
 						ImGui::Text("Height: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->image->img->Width()).c_str());
 						ImGui::Text("Format: "); ImGui::SameLine(); ImGui::Text(vk::to_string(tex->image->img->Format()).c_str());

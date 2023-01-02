@@ -1,9 +1,7 @@
 #pragma once
 
 #include "RenderPass.h"
-#include "Vulkan/SwapChain.h"
 #include "Image.h"
-#include "Data/Vertex.h"
 #include "Resources.h"
 
 namespace Nork::Renderer {
@@ -12,9 +10,9 @@ class DeferredPass : public RenderPass
 {
 public:
 	DeferredPass();
-	void createGraphicsPipeline();
-	void createRenderPass();
-	void recordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imageIndex, uint32_t currentFrame) override;
+	void CreateGraphicsPipeline();
+	void CreateRenderPass();
+	void RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imageIndex, uint32_t currentFrame) override;
 public:
 
 	std::shared_ptr<Vulkan::RenderPass> renderPass;

@@ -7,11 +7,13 @@ namespace Nork::Renderer::Vulkan {
     struct Format
     {
         constexpr static auto rgba8Unorm = vk::Format::eR8G8B8A8Unorm;
+        constexpr static auto rgba8Snorm = vk::Format::eR8G8B8A8Snorm;
         constexpr static auto rgba8Ui = vk::Format::eR8G8B8A8Uint;
         constexpr static auto rgba8Srgb = vk::Format::eR8G8B8A8Srgb;
         constexpr static auto rgba16f = vk::Format::eR16G16B16A16Sfloat;
         constexpr static auto rgba32f = vk::Format::eR32G32B32A32Sfloat;
         constexpr static auto rgba16Unorm = vk::Format::eR16G16B16A16Unorm;
+        constexpr static auto rgba16Snorm = vk::Format::eR16G16B16A16Snorm;
         constexpr static auto depth32 = vk::Format::eD32Sfloat;
         constexpr static auto depth16 = vk::Format::eD16Unorm;
     };

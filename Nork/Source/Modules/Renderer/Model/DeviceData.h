@@ -40,6 +40,10 @@ struct DeviceDataProxy
 	{
 		return &hostData;
 	}
+	Writer operator->()
+	{
+		return Data();
+	}
 	Writer Data()
 	{
 		return Writer(hostData, deviceData);

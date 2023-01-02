@@ -6,6 +6,7 @@
 #include "Data/Material.h"
 #include "Data/Vertex.h"
 #include "Data/Lights.h"
+#include "Model/ShadowMap.h"
 
 namespace Nork::Renderer {
 
@@ -66,6 +67,7 @@ public:
 	{
 		return *textureDescriptors;
 	}
+	std::shared_ptr<ShadowMap> CreateShadowMap2D(uint32_t width, uint32_t height);
 public:
 	// make type Descriptor, in it store params passed to desclayout, store these in descSet, 
 	// write them through descSet, then flush writes just like in Buffer
@@ -83,6 +85,7 @@ public:
 	std::shared_ptr<DeviceElements<Data::PointShadow>> pointShadows;
 	std::shared_ptr<HostWritableBuffer> dirLightParams;
 	std::shared_ptr<HostWritableBuffer> pointLightParams;
+	std::vector<std::shared_ptr<ShadowMap>> shadowMaps;
 	// eg. double-buffer only when light data is written
 	// only d-buffing when written should be applied to drawParams/drawCommands, 
 	// then it is not required to refill the buffers every frame 

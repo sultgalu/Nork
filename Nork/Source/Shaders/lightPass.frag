@@ -247,7 +247,7 @@ float dShadow(DirLight light, DirShadow shadow, vec3 normal, vec3 worldPos)
 	vec3 fragPos = lightView.xyz / lightView.w; // clipping
 	float bias = max(shadow.bias * (1.0f - dot(normal, normalize(-light.direction))), shadow.biasMin); // for huge angle, use biasmin (perpendicular)
 
-	fragPos = (fragPos + 1.0f) / 2.0f; // [-1;1] -> [0;1]
+	fragPos.xy = (fragPos.xy + 1.0f) / 2.0f; // [-1;1] -> [0;1]
 	fragPos.z -= bias;
 	return clip(fragPos, light.outOfProj) * texture(textureMaps[shadow.shadMap], fragPos.xyz);
 }

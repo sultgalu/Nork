@@ -39,4 +39,21 @@ namespace Nork::Components {
 		auto multiplier = glm::sqrt(pixelCount / count);
 		// map.SetFramebuffer(light.rectangle.x * multiplier, light.rectangle.y * multiplier, Renderer::TextureFormat::Depth16);
 	}
+	glm::mat4 DirLight::GetView() const
+	{
+		return glm::lookAt(glm::vec3(0) - Data()->direction, glm::vec3(0), glm::vec3(0.0f, 1.0f, 0.0f));
+		//return glm::lookAt(position, position + Data()->direction, glm::vec3(0.0f, 1.0f, 0.0f));
+	}
+	void DirLight::RecalcVP()
+	{
+		auto right = position.x + rectangle.x / 2;
+		auto left = position.x - rectangle.x / 2;
+		auto top = position.y + rectangle.y / 2;
+		auto bottom = position.y - rectangle.y / 2;
+		auto near = position.z;
+		auto far = position.z + rectangle.z;
+		auto projection = glm::ortho(left, right, bottom, top, near, far);
+		projection[1][1] *= -1; // flip for VULKAN Screen Space
+		Data()->VP = projection * GetView();
+	}
 }

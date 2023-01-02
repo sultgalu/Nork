@@ -44,7 +44,7 @@ public:
 		data.resize(data.size() - 2);
 		return data;
 	}
-	virtual void recordCommandBuffer(Vulkan::CommandBuffer& commandBuffer, uint32_t imageIndex, uint32_t currentFrame) = 0;
+	virtual void RecordCommandBuffer(Vulkan::CommandBuffer& commandBuffer, uint32_t imageIndex, uint32_t currentFrame) = 0;
 	void BeginRenderPass(vk::RenderPass renderPass, Vulkan::Framebuffer& fb, Vulkan::CommandBuffer& cmd)
 	{
 		using namespace Vulkan;

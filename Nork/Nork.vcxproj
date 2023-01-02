@@ -204,6 +204,7 @@
     <ClCompile Include="Source\Modules\Renderer\DeferredPass.cpp" />
     <ClCompile Include="Source\Modules\Renderer\MemoryAllocator.cpp" />
     <ClCompile Include="Source\Modules\Renderer\MemoryTransfer.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Renderer.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Resources.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Vulkan\Shaderc.cpp" />
     <ClCompile Include="Source\Modules\Physics\Pipeline\Collision.cpp" />
@@ -245,9 +246,11 @@
     <ClInclude Include="Source\Modules\Renderer\MemoryTransfer.h" />
     <ClInclude Include="Source\Modules\Renderer\Model\DeviceData.h" />
     <ClInclude Include="Source\Modules\Renderer\Model\Lights.h" />
+    <ClInclude Include="Source\Modules\Renderer\Model\ShadowMap.h" />
     <ClInclude Include="Source\Modules\Renderer\Renderer.h" />
     <ClInclude Include="Source\Modules\Renderer\RenderPass.h" />
     <ClInclude Include="Source\Modules\Renderer\Resources.h" />
+    <ClInclude Include="Source\Modules\Renderer\ShadowMapPass.h" />
     <ClInclude Include="Source\Modules\Renderer\Vulkan\Buffer.h" />
     <ClInclude Include="Source\Modules\Renderer\Vulkan\CommandBuffer.h" />
     <ClInclude Include="Source\Modules\Renderer\Vulkan\DescriptorSet.h" />
@@ -312,6 +315,7 @@
     <ClInclude Include="Source\Scene\Entity.h" />
     <ClInclude Include="Source\Scene\SceneNode.h" />
     <ClCompile Include="Source\Modules\Renderer\Vulkan\VulkanWindow.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\ShadowMapPass.cpp" />
     <ClCompile Include="Source\Utils\FileUtils.cpp" />
     <ClCompile Include="Source\Utils\Json.cpp" />
     <ClCompile Include="Source\Scene\SceneNode.cpp" />
