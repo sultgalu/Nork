@@ -123,25 +123,27 @@ namespace Nork::Editor {
 		if (changed |= ImGui::DragInt("Intensity", &(pow), 1, 0, 10000))
 			pointLight.SetIntensity(pow);
 
-		/*if (!node->GetEntity().HasComponent<Components::PointShadowMap>())
+		if (!node->GetEntity().HasComponent<Components::PointShadowMap>())
 		{
 			if (ImGui::Button("Add shadow"))
 			{
 				node->GetEntity().AddComponent<Components::PointShadowMap>();
 			}
 		}
-		else if (ImGui::TreeNodeEx("Shadow", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_NoTreePushOnOpen))
+		else if (ImGui::TreeNode("Shadow"))
 		{
-			auto& shadowMap = node->GetEntity().GetComponent<Components::PointShadowMap>().map;
-			ImGui::DragFloat("Bias", (float*)&(shadowMap.shadow->bias), 0.0001f, 0, FLT_MAX, "%.4f");
-			ImGui::DragFloat("min Bias", (float*)&(shadowMap.shadow->biasMin), 0.0001f, 0, FLT_MAX, "%.4f");
-			ImGui::SliderFloat("Near", (float*)&(shadowMap.shadow->near), 0, 1);
-			ImGui::SliderFloat("Far", (float*)&(shadowMap.shadow->far), 0, 1000, "%.1f", ImGuiSliderFlags_Logarithmic);
+			auto& shadowMap = node->GetEntity().GetComponent<Components::PointShadowMap>().shadowMap;
+			auto& shadow = shadowMap->Shadow();
+			ImGui::DragFloat("Bias", (float*)&(shadow->bias), 0.0001f, 0, FLT_MAX, "%.4f");
+			ImGui::DragFloat("min Bias", (float*)&(shadow->biasMin), 0.0001f, 0, FLT_MAX, "%.4f");
+			ImGui::SliderFloat("Near", (float*)&(shadow->near), 0, 1);
+			ImGui::SliderFloat("Far", (float*)&(shadow->far), 0, 1000, "%.1f", ImGuiSliderFlags_Logarithmic);
 
-			auto tex = shadowMap.fb->Depth();
-			ImGui::Text("Size: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->GetWidth()).c_str());
-			ImGui::Text("Format: "); ImGui::SameLine(); ImGui::Text(Renderer::TextureFormatToString(tex->GetAttributes().format));
-			static int newSize;
+			auto& tex = shadowMap->image;
+			ImGui::Text("Width: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->img->Width()).c_str());
+			ImGui::Text("Height: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->img->Height()).c_str());
+			ImGui::Text("Format: "); ImGui::SameLine(); ImGui::Text(vk::to_string(tex->img->Format()).c_str());
+			/*static int newSize;
 			static Renderer::TextureFormat newFormat;
 			if (ImGui::Button("Change Resolution"))
 			{
@@ -173,8 +175,9 @@ namespace Nork::Editor {
 			{
 				node->GetEntity().RemoveComponent<Components::PointShadowMap>();
 			}
-			ImGui::PopStyleColor();
-		}*/
+			ImGui::PopStyleColor();*/
+			ImGui::TreePop();
+		}
 	}
 	template<> void SceneNodeView::ShowComponent(Components::Transform& tr, bool& changed)
 	{

@@ -84,7 +84,6 @@ Renderer::Renderer* Renderer::Renderer::instance = nullptr;
 	void RenderingSystem::OnDShadAdded(entt::registry& reg, entt::entity id)
 	{
 		auto& light = reg.get<Components::DirLight>(id);
-		// auto shadow = world.AddDirShadow();
 		auto& shadow = reg.get<Components::DirShadowMap>(id);
 		shadow.shadowMap = Renderer::Resources::Instance().CreateShadowMap2D(1000, 1000);
 		shadow.shadowMap->vp = light->VP;
@@ -92,12 +91,11 @@ Renderer::Renderer* Renderer::Renderer::instance = nullptr;
 	}
 	void RenderingSystem::OnPShadAdded(entt::registry& reg, entt::entity id)
 	{
-		// auto& light = reg.get<Components::PointLight>(id);
-		// auto shadow = world.AddPointShadow();
-		// Renderer::PointShadowMap map(light.light, shadow);
-		// map.SetFramebuffer(100, Renderer::TextureFormat::Depth16);
-		// reg.get<Components::PointShadowMap>(id).map = map;
-		// shouldUpdatePointLightAndShadows = true;
+		auto& light = reg.get<Components::PointLight>(id);
+		auto& shadow = reg.get<Components::PointShadowMap>(id);
+		shadow.shadowMap = Renderer::Resources::Instance().CreateShadowMapCube(100);
+		shadow.shadowMap->position = light->position;
+		shouldUpdatePointLightAndShadows = true;
 	}
 
 	void RenderingSystem::OnDShadRemoved(entt::registry& reg, entt::entity id)
@@ -212,7 +210,14 @@ Renderer::Renderer* Renderer::Renderer::instance = nullptr;
 				dIdxs[dlCount * 2] = light.rendererLight->deviceData->offset;
 				dlCount++;
 			}
-			for (auto [ent, light] : registry.view<Components::PointLight>().each())
+			for (auto [ent, light, shad] : registry.view<Components::PointLight, Components::PointShadowMap>().each())
+			{
+				pIdxs[plCount * 2] = light.rendererLight->deviceData->offset;
+				pIdxs[plCount * 2 + 1] = shad.shadowMap->shadow->deviceData->offset;
+				plCount++;
+				psCount++;
+			}
+			for (auto [ent, light] : registry.view<Components::PointLight>(entt::exclude<Components::PointShadowMap>).each())
 			{
 				pIdxs[plCount * 2] = light.rendererLight->deviceData->offset;
 				plCount++;
@@ -290,14 +295,15 @@ Renderer::Renderer* Renderer::Renderer::instance = nullptr;
 			auto& pl = registry.get<Components::PointLight>(ent);
 			auto ps = registry.try_get<Components::PointShadowMap>(ent);
 			pl->position = registry.get<Components::Transform>(ent).Position();
-			// if (ps)
-			// {
-			// 	for (auto& map : shadowMapProvider.pShadMaps)
-			// 	{ // change shadow FBs in provider
-			// 		if (map.light == pl.light && map.fb != ps->map.fb)
-			// 			map.fb = ps->map.fb;
-			// 	}
-			// }
+			if (ps)
+			{
+				ps->shadowMap->position = pl->position;
+				// for (auto& map : shadowMapProvider.pShadMaps)
+				// { // change shadow FBs in provider
+				// 	if (map.light == pl.light && map.fb != ps->map.fb)
+				// 		map.fb = ps->map.fb;
+				// }
+			}
 		}
 		pointLightObserver.clear();
 	}

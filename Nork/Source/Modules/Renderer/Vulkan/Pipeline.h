@@ -91,14 +91,14 @@ namespace Nork::Renderer::Vulkan {
             data->inputAssembly.primitiveRestartEnable = false;
             return *this;
         }
-        Self& Rasterization(bool cullFace)
+        Self& Rasterization(bool cullFace, vk::FrontFace frontFace = vk::FrontFace::eCounterClockwise)
         {
             data->rasterization.depthClampEnable = false; // clamp frags outside of near/far plane, eg. for shadowmaps 
             data->rasterization.rasterizerDiscardEnable = false; // disables output to fragment shader
             data->rasterization.polygonMode = vk::PolygonMode::eFill;
             data->rasterization.lineWidth = 1.0f;
             data->rasterization.cullMode = cullFace ? vk::CullModeFlagBits::eBack : vk::CullModeFlagBits::eNone;
-            data->rasterization.frontFace = vk::FrontFace::eCounterClockwise;
+            data->rasterization.frontFace = frontFace;
             data->rasterization.depthBiasEnable = false;
             data->rasterization.depthBiasConstantFactor = 0.0f; // Optional
             data->rasterization.depthBiasClamp = 0.0f; // Optional

@@ -17,7 +17,7 @@ namespace Nork::Editor::Helpers {
 		bool changed = false;
 		if (ImGui::BeginPopup(("pupup##" + text).c_str()))
 		{
-			if (ImGui::InputText("", buf, sizeof(buf), ImGuiInputTextFlags_EnterReturnsTrue))
+			if (ImGui::InputText("##", buf, sizeof(buf), ImGuiInputTextFlags_EnterReturnsTrue))
 			{
 				text = std::string(buf);
 				changed = true;

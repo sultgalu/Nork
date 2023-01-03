@@ -78,7 +78,8 @@ struct Materials
 	float metallic;
 	vec3 albedo;
 };
-layout(set = 2, binding = 6) uniform sampler2DShadow[] textureMaps;
+layout(set = 2, binding = 6) uniform sampler2DShadow[] shadowMaps;
+layout(set = 2, binding = 7) uniform samplerCubeShadow[] shadowMapsCube;
 
 layout(push_constant) uniform constants
 {
@@ -249,13 +250,13 @@ float dShadow(DirLight light, DirShadow shadow, vec3 normal, vec3 worldPos)
 
 	fragPos.xy = (fragPos.xy + 1.0f) / 2.0f; // [-1;1] -> [0;1]
 	fragPos.z -= bias;
-	return clip(fragPos, light.outOfProj) * texture(textureMaps[shadow.shadMap], fragPos.xyz);
+	return clip(fragPos, light.outOfProj) * texture(shadowMaps[shadow.shadMap], fragPos.xyz);
 }
 float pShadow(PointShadow shadow, vec3 normal, vec3 lightDir, vec3 distance)
 {
 	float distanceLen = length(distance);
 	float bias = max(shadow.bias * distanceLen * (1.0f - dot(normal, -lightDir)), shadow.biasMin); // for huge angle, bias = 0.05f (perpendicular)
-	return texture(textureMaps[shadow.shadMap], vec3(distance.xyz), distanceLen / shadow.far - bias);
+	return texture(shadowMapsCube[shadow.shadMap], vec4(distance.xyz, distanceLen / shadow.far - bias));
 }
 // can be used instead of inverse-square for better manual control
 float CalcLuminosity(vec3 fromPos, vec3 toPos, float linear, float quadratic)

@@ -40,7 +40,10 @@ int main()
 	}*/
 
 	auto pl = engine.scene.CreateNode()->GetEntity();
-	pl.AddComponent<Components::Transform>([&](auto& tr) {}); //{ tr.localPosition = { -8.0, -8.6, -4.7 }; tr.localScale = glm::vec3(0.1f); });
+	pl.AddComponent<Components::Transform>([&](auto& tr)
+	{
+		tr.position.y = 5;
+	}); //{ tr.localPosition = { -8.0, -8.6, -4.7 }; tr.localScale = glm::vec3(0.1f); });
 	pl.AddComponent<Components::Drawable>();
 	pl.AddComponent<Components::PointLight>([&](Components::PointLight& l)
 	{
@@ -157,7 +160,10 @@ int main()
 		l.rectangle = { 200, 200, 200 };
 		l.sun = true;
 	});
-	auto sun2 = engine.scene.CreateNode()->GetEntity();
+	sun.AddComponent<Components::DirShadowMap>();
+	sun.AddComponent<Components::Tag>().tag = "SUN";
+
+	//auto sun2 = engine.scene.CreateNode()->GetEntity();
 	// sun2.AddComponent<Components::DirLight>([](Components::DirLight& l)
 	// 	{
 	// 		l.light->direction = { 0.05f, -0.08f, 0.05f };
@@ -167,9 +173,6 @@ int main()
 	// 	});
 	//l.light->color = glm::vec4(0.5f, 0.4f, 0.25f, 1);
 	//l.SetColor(glm::vec4(0.0f));
-
-	sun.AddComponent<Components::DirShadowMap>();
-	sun.AddComponent<Components::Tag>().tag = "SUN";
 
 	int offsX = 10;
 	int dimP = 0;

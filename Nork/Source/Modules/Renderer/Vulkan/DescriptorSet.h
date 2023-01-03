@@ -29,7 +29,7 @@ namespace Nork::Renderer::Vulkan {
 		std::vector<vk::DescriptorBindingFlagsEXT> bindingFlags;
 		vk::DescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsCreateInfo;
 		static constexpr vk::DescriptorBindingFlagsEXT bindlessFlagBits =
-			vk::DescriptorBindingFlagBits::eVariableDescriptorCount |
+			//vk::DescriptorBindingFlagBits::eVariableDescriptorCount |
 			vk::DescriptorBindingFlagBits::ePartiallyBound;
 			// vk::DescriptorBindingFlagBits::eUpdateAfterBind |
 			// vk::DescriptorBindingFlagBits::eUpdateUnusedWhilePending;

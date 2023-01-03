@@ -9,10 +9,10 @@ static constexpr auto mat_count = MemoryAllocator::poolSize / sizeof(Data::Mater
 static constexpr auto dl_count = 10; // !account for the number of frames too!
 static constexpr auto ds_count = 10;
 static constexpr auto pl_count = 100;
-static constexpr auto ps_count = 100;
-static constexpr auto sm_count = ds_count + ps_count;
-static constexpr auto dlp_size = MemoryAllocator::poolSize / 4; // TODO: should be less...
-static constexpr auto plp_size = MemoryAllocator::poolSize / 4;
+static constexpr auto ps_count = 10;
+static constexpr auto pShadVp_size = ps_count * sizeof(glm::mat4) * 6;
+static constexpr auto dlp_size = MemoryAllocator::poolSize / 8; // TODO: should be less...
+static constexpr auto plp_size = MemoryAllocator::poolSize / 8;
 static constexpr auto dps_size = MemoryAllocator::poolSize / 4;
 static constexpr auto dcs_size = MemoryAllocator::poolSize / 4;
 Texture::~Texture()
@@ -61,10 +61,13 @@ Resources::Resources()
 
 	using enum vk::MemoryPropertyFlagBits;
 	dirLightParams = Buffer::CreateHostWritable(
-		vk::BufferUsageFlagBits::eUniformBuffer, dcs_size,
+		vk::BufferUsageFlagBits::eUniformBuffer, dlp_size,
 		{ .required = eHostVisible | eHostCoherent | eDeviceLocal });
 	pointLightParams = Buffer::CreateHostWritable(
-		vk::BufferUsageFlagBits::eUniformBuffer, dps_size,
+		vk::BufferUsageFlagBits::eUniformBuffer, plp_size,
+		{ .required = eHostVisible | eHostCoherent | eDeviceLocal });
+	pShadowVps = Buffer::CreateHostWritable(
+		vk::BufferUsageFlagBits::eUniformBuffer, pShadVp_size * framesInFlight,
 		{ .required = eHostVisible | eHostCoherent | eDeviceLocal });
 
 	drawParams = Buffer::CreateHostWritable(
@@ -86,14 +89,15 @@ Resources::Resources()
 		.Binding(3, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment)
 		.Binding(4, vk::DescriptorType::eUniformBufferDynamic, vk::ShaderStageFlagBits::eFragment)
 		.Binding(5, vk::DescriptorType::eUniformBufferDynamic, vk::ShaderStageFlagBits::eFragment)
-		.Binding(6, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, sm_count, true)
+		.Binding(6, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, ds_count, true)
+		.Binding(7, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, ps_count, true)
 	);
 	descriptorPool = std::make_shared<Vulkan::DescriptorPool>(
 		Vulkan::DescriptorPoolCreateInfo({ descriptorSetLayout, descriptorSetLayoutLights }, 2));
 	descriptorSet = std::make_shared<Vulkan::DescriptorSet>( // could be less than img_arr_size, create bigger descriptor set on-demand from layout
-		Vulkan::DescriptorSetAllocateInfo(descriptorPool, descriptorSetLayout, { img_arr_size }));
+		Vulkan::DescriptorSetAllocateInfo(descriptorPool, descriptorSetLayout));
 	descriptorSetLights = std::make_shared<Vulkan::DescriptorSet>(
-		Vulkan::DescriptorSetAllocateInfo(descriptorPool, descriptorSetLayoutLights, { sm_count }));
+		Vulkan::DescriptorSetAllocateInfo(descriptorPool, descriptorSetLayoutLights));
 
 	descriptorSet->Writer()
 		.Buffer(0, *drawParams->Underlying(), 0, DynamicSize(*drawParams), vk::DescriptorType::eUniformBufferDynamic)
@@ -113,19 +117,50 @@ Resources::Resources()
 	textureDescriptors = std::make_unique<TextureDesriptors>(descriptorSet);
 }
 // TODO: should be handled same way as textures
-std::shared_ptr<ShadowMap> Resources::CreateShadowMap2D(uint32_t width, uint32_t height)
+std::shared_ptr<DirShadowMap> Resources::CreateShadowMap2D(uint32_t width, uint32_t height)
 {
 	auto idx = shadowMaps.size();
-	auto shadowMap = ShadowMapPass::Instance().CreateShadowMap2D(width, height);
+
+	auto shadowMap = std::make_shared<DirShadowMap>();
+	shadowMap->image = std::make_shared<Image>(width, height, ShadowMapPass::Instance().Format(),
+		vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled,
+		vk::ImageAspectFlagBits::eDepth);
+	shadowMap->image->sampler = ShadowMapPass::Instance().sampler;
+	shadowMap->fb = std::make_shared<Vulkan::Framebuffer>(Vulkan::FramebufferCreateInfo(
+		width, height, **ShadowMapPass::Instance().renderPass, { shadowMap->image->view }));
+
 	shadowMap->shadow = std::make_shared<DeviceDataProxy<Data::DirShadow>>(dirShadows->New());
 	shadowMap->SetIndex(idx);
 	shadowMaps.push_back(shadowMap);
 
-	if (!shadowMap->image->sampler)
-		shadowMap->image->sampler = Textures().defaultSampler;
-
 	descriptorSetLights->Writer()
 		.Image(6, *shadowMap->image->view, vk::ImageLayout::eShaderReadOnlyOptimal,
+			*shadowMap->image->sampler, vk::DescriptorType::eCombinedImageSampler, idx)
+		.Write();
+
+	return shadowMap;
+}
+std::shared_ptr<PointShadowMap> Resources::CreateShadowMapCube(uint32_t size)
+{
+	auto idx = shadowMapsCube.size();
+
+	auto shadowMap = std::make_shared<PointShadowMap>();
+
+	Vulkan::ImageCreateInfo createInfo(size, size, ShadowMapPass::Instance().Format(),
+		vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled);
+	createInfo.setFlags(vk::ImageCreateFlagBits::eCubeCompatible)
+		.setArrayLayers(6);
+	shadowMap->image = std::make_shared<Image>(createInfo, vk::ImageAspectFlagBits::eDepth, true);
+	shadowMap->image->sampler = ShadowMapPass::Instance().samplerCube;
+	shadowMap->fb = std::make_shared<Vulkan::Framebuffer>(Vulkan::FramebufferCreateInfo(
+		size, size, **ShadowMapPass::Instance().renderPass, { shadowMap->image->view }));
+
+	shadowMap->shadow = std::make_shared<DeviceDataProxy<Data::PointShadow>>(pointShadows->New());
+	shadowMap->SetIndex(idx);
+	shadowMapsCube.push_back(shadowMap);
+
+	descriptorSetLights->Writer()
+		.Image(7, *shadowMap->image->view, vk::ImageLayout::eShaderReadOnlyOptimal,
 			*shadowMap->image->sampler, vk::DescriptorType::eCombinedImageSampler, idx)
 		.Write();
 

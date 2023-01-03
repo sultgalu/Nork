@@ -87,22 +87,22 @@ namespace Nork::Renderer::Vulkan {
     struct ImageViewCreateInfo : vk::ImageViewCreateInfo
     {
         ImageViewCreateInfo() = delete;
-        ImageViewCreateInfo(std::shared_ptr<Image> img_, vk::ImageAspectFlagBits aspect, vk::ImageViewType type = vk::ImageViewType::e2D)
-            : ImageViewCreateInfo(**img_, img_->Format(), aspect, type)
+        ImageViewCreateInfo(std::shared_ptr<Image> img_, vk::ImageAspectFlagBits aspect, bool cube = false)
+            : ImageViewCreateInfo(**img_, img_->Format(), aspect, cube)
         {
             img = img_;
         }
-        ImageViewCreateInfo(vk::Image img, vk::Format format_, vk::ImageAspectFlagBits aspect, vk::ImageViewType type = vk::ImageViewType::e2D)
+        ImageViewCreateInfo(vk::Image img, vk::Format format_, vk::ImageAspectFlagBits aspect, bool cube = false)
         {
             // this->components = 
             this->image = img;
-            this->viewType = type;
+            this->viewType = cube ? vk::ImageViewType::eCube : vk::ImageViewType::e2D;
             this->format = format_;
             this->subresourceRange.aspectMask = aspect;
             this->subresourceRange.baseMipLevel = 0;
             this->subresourceRange.levelCount = 1;
             this->subresourceRange.baseArrayLayer = 0;
-            this->subresourceRange.layerCount = 1;
+            this->subresourceRange.layerCount = cube ? 6 : 1;
         }
         std::shared_ptr<Image> img = nullptr;
     };

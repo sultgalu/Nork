@@ -7,6 +7,7 @@ namespace Nork::Renderer {
 template<class T>
 struct DeviceDataProxy
 {
+	DeviceDataProxy(const DeviceDataProxy&) = delete;
 	struct Writer
 	{
 		Writer(T& hostData, std::shared_ptr<BufferElement<T>> deviceData)

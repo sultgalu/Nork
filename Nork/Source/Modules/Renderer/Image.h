@@ -11,10 +11,14 @@ public:
 	Image(uint32_t width, uint32_t height, vk::Format format, vk::ImageUsageFlagBits usage, vk::ImageAspectFlagBits aspect,
 		vk::PipelineStageFlags2 syncStages = {}, vk::AccessFlags2 syncAccess = {},
 		const MemoryFlags& memFlags = { .required = MemoryFlags::eDeviceLocal })
+		: Image(Vulkan::ImageCreateInfo(width, height, format, usage), aspect, false, syncStages, syncAccess, memFlags)
+	{}
+	Image(const Vulkan::ImageCreateInfo& createInfo, vk::ImageAspectFlagBits aspect, bool cube = false,
+		vk::PipelineStageFlags2 syncStages = {}, vk::AccessFlags2 syncAccess = {},
+		const MemoryFlags& memFlags = { .required = MemoryFlags::eDeviceLocal })
 		: syncStages(syncStages), syncAccess(syncAccess)
 	{
-		img = std::make_shared<Vulkan::Image>(
-			Vulkan::ImageCreateInfo(width, height, format, usage));
+		img = std::make_shared<Vulkan::Image>(createInfo);
 		layout = vk::ImageLayout::eUndefined;
 
 		auto memreq = img->getMemoryRequirements();
@@ -22,7 +26,7 @@ public:
 			MemoryAllocator::Instance().Allocate(memreq, memFlags));
 		img->BindMemory(memory.Underlying(), memory.PoolOffset());
 
-		view = std::make_shared<Vulkan::ImageView>(Vulkan::ImageViewCreateInfo(img, aspect));
+		view = std::make_shared<Vulkan::ImageView>(Vulkan::ImageViewCreateInfo(img, aspect, cube));
 	}
 	void Write(const void* data, vk::DeviceSize size)
 	{

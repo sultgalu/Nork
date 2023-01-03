@@ -22,7 +22,7 @@ namespace Nork::Components
 	};
 	struct PointShadowMap
 	{
-		char dummy;
+		std::shared_ptr<Renderer::PointShadowMap> shadowMap;
 	};
 
 	//Renderer::PointShadow(Renderer::PointShadow{ .bias = 0.0057, .biasMin = 0.0004 , .blur = 1, .radius = 0.024, .far = 50, .near = 1, .idx = 0 })
@@ -47,7 +47,7 @@ namespace Nork::Components
 	};
 	struct DirShadowMap // should only exist if the same component has a dirLight as well
 	{
-		std::shared_ptr<Renderer::ShadowMap> shadowMap;
+		std::shared_ptr<Renderer::DirShadowMap> shadowMap;
 		void FixTextureRatio(const DirLight&, uint32_t pixelCount);
 	};
 }

@@ -67,7 +67,8 @@ public:
 	{
 		return *textureDescriptors;
 	}
-	std::shared_ptr<ShadowMap> CreateShadowMap2D(uint32_t width, uint32_t height);
+	std::shared_ptr<DirShadowMap> CreateShadowMap2D(uint32_t width, uint32_t height);
+	std::shared_ptr<PointShadowMap> CreateShadowMapCube(uint32_t size);
 public:
 	// make type Descriptor, in it store params passed to desclayout, store these in descSet, 
 	// write them through descSet, then flush writes just like in Buffer
@@ -85,7 +86,9 @@ public:
 	std::shared_ptr<DeviceElements<Data::PointShadow>> pointShadows;
 	std::shared_ptr<HostWritableBuffer> dirLightParams;
 	std::shared_ptr<HostWritableBuffer> pointLightParams;
-	std::vector<std::shared_ptr<ShadowMap>> shadowMaps;
+	std::shared_ptr<HostWritableBuffer> pShadowVps;
+	std::vector<std::shared_ptr<DirShadowMap>> shadowMaps;
+	std::vector<std::shared_ptr<PointShadowMap>> shadowMapsCube;
 	// eg. double-buffer only when light data is written
 	// only d-buffing when written should be applied to drawParams/drawCommands, 
 	// then it is not required to refill the buffers every frame 
@@ -99,7 +102,7 @@ public:
 	std::shared_ptr<Vulkan::DescriptorSet> descriptorSetLights;
 
 	glm::mat4 vp; // should be put somewhere else
-	glm::vec3 viewPos; // should be put somewhere else
+	glm::vec3 viewPos; // same
 	uint32_t drawCommandCount;
 
 	uint32_t currentFrame = 0;

@@ -24,6 +24,7 @@ namespace Nork::Renderer::Vulkan {
                 queueCreateInfos.push_back(queueCreateInfo);
             }
 
+            deviceFeatures.geometryShader = VK_TRUE;
             deviceFeatures.samplerAnisotropy = VK_TRUE;
             deviceFeatures.multiDrawIndirect = VK_TRUE;
             deviceFeatures.drawIndirectFirstInstance = VK_TRUE;

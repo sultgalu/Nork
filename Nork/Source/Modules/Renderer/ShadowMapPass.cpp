@@ -9,17 +9,32 @@ ShadowMapPass::ShadowMapPass()
 {
 	CreateRenderPass();
 	CreateGraphicsPipeline();
+
+	descriptorSetLayout = std::make_shared<Vulkan::DescriptorSetLayout>(Vulkan::DescriptorSetLayoutCreateInfo()
+		.Binding(0, vk::DescriptorType::eUniformBufferDynamic, vk::ShaderStageFlagBits::eGeometry));
+	descriptorPool = std::make_shared<Vulkan::DescriptorPool>(
+		Vulkan::DescriptorPoolCreateInfo({ descriptorSetLayout }, 1));
+	descriptorSet = std::make_shared<Vulkan::DescriptorSet>(Vulkan::DescriptorSetAllocateInfo(descriptorPool, descriptorSetLayout));
+	descriptorSet->Writer()
+		.Buffer(0, *Resources::Instance().pShadowVps->Underlying(), 0, 
+			Resources::Instance().DynamicSize(*Resources::Instance().pShadowVps), vk::DescriptorType::eUniformBufferDynamic)
+		.Write();
+	CreateGraphicsPipelineCube();
+
 	auto createInfo = Vulkan::SamplerCreateInfo();
-	
 	createInfo.setCompareOp(vk::CompareOp::eLess);
+	createInfo.setAddressModeU(vk::SamplerAddressMode::eClampToEdge);
+	createInfo.setAddressModeV(vk::SamplerAddressMode::eClampToEdge);
+	createInfo.setAddressModeW(vk::SamplerAddressMode::eClampToEdge);
 	sampler = std::make_shared<Vulkan::Sampler>(createInfo);
+	samplerCube = std::make_shared<Vulkan::Sampler>(createInfo); // TODO: USE CUBE SPECIFIC SAMPLING
 	instance = this;
 }
 void ShadowMapPass::CreateGraphicsPipeline()
 {
 	using namespace Vulkan;
 	ShaderModule vertShaderModule(LoadShader("Source/Shaders/dirShadMap.vert"), vk::ShaderStageFlagBits::eVertex);
-	vk::PushConstantRange vpPush; // gpass
+	vk::PushConstantRange vpPush;
 	vpPush.size = sizeof(glm::mat4);
 	vpPush.stageFlags = vk::ShaderStageFlagBits::eVertex;
 	pipelineLayout = std::make_shared<PipelineLayout>(
@@ -29,7 +44,31 @@ void ShadowMapPass::CreateGraphicsPipeline()
 		.AddShader(vertShaderModule)
 		.VertexInput<Data::Vertex>() // could only indlude vertex.pos
 		.InputAssembly(vk::PrimitiveTopology::eTriangleList)
-		.Rasterization(true) // TRUE
+		.Rasterization(true) 
+		.Multisampling()
+		.ColorBlend(0)
+		.RenderPass(**renderPass, 0)
+		.DepthStencil(true, true, vk::CompareOp::eLess));
+}
+void ShadowMapPass::CreateGraphicsPipelineCube()
+{
+	Vulkan::ShaderModule vertShader(LoadShader("Source/Shaders/point_shadow_shader.vert"), vk::ShaderStageFlagBits::eVertex);
+	Vulkan::ShaderModule fragShader(LoadShader("Source/Shaders/point_shadow_shader.frag"), vk::ShaderStageFlagBits::eFragment);
+	Vulkan::ShaderModule geomShader(LoadShader("Source/Shaders/point_shadow_shader.geom"), vk::ShaderStageFlagBits::eGeometry);
+	auto idxPush = vk::PushConstantRange(vk::ShaderStageFlagBits::eGeometry, 0, sizeof(uint32_t));
+	auto fragPush = vk::PushConstantRange(vk::ShaderStageFlagBits::eFragment, idxPush.size, sizeof(float) * 3 + sizeof(glm::vec3));
+
+	pipelineLayoutCube = std::make_shared<Vulkan::PipelineLayout>(
+		Vulkan::PipelineLayoutCreateInfo({ **Resources::Instance().descriptorSetLayout, **descriptorSetLayout }, 
+			{ idxPush, fragPush }));
+	pipelineCube = std::make_shared<Vulkan::Pipeline>(Vulkan::PipelineCreateInfo()
+		.Layout(**pipelineLayoutCube)
+		.AddShader(vertShader)
+		.AddShader(fragShader)
+		.AddShader(geomShader)
+		.VertexInput<Data::Vertex>() // could include only vertex.pos
+		.InputAssembly(vk::PrimitiveTopology::eTriangleList)
+		.Rasterization(true, vk::FrontFace::eClockwise)
 		.Multisampling()
 		.ColorBlend(0)
 		.RenderPass(**renderPass, 0)
@@ -73,16 +112,21 @@ void ShadowMapPass::CreateRenderPass()
 }
 void ShadowMapPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imageIndex, uint32_t currentFrame)
 {
-	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, **pipeline); // move stuff outside of renderpass
-	// resource dset binding should happen outside
+	cmd.bindVertexBuffers(0, **Resources::Instance().vertexBuffer->buffer->Underlying(), { 0 });
+	cmd.bindIndexBuffer(**Resources::Instance().indexBuffer->buffer->Underlying(), 0, vk::IndexType::eUint32);
+
+	RecordCmdDirectional(cmd, imageIndex, currentFrame);
+	RecordCmdPoint(cmd, imageIndex, currentFrame);
+}
+void ShadowMapPass::RecordCmdDirectional(Vulkan::CommandBuffer& cmd, uint32_t imageIndex, uint32_t currentFrame)
+{
+	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, **pipeline);
 	cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, **pipelineLayout, 0,
-		{ **Resources::Instance().descriptorSet },
+		{ **Resources::Instance().descriptorSet }, // resource dset binding should happen outside
 			{
 				Resources::Instance().DynamicOffset(*Resources::Instance().drawParams)
 			}
 			);
-	cmd.bindVertexBuffers(0, **Resources::Instance().vertexBuffer->buffer->Underlying(), { 0 });
-	cmd.bindIndexBuffer(**Resources::Instance().indexBuffer->buffer->Underlying(), 0, vk::IndexType::eUint32);
 
 	for (auto& shadowMap : Resources::Instance().shadowMaps)
 	{
@@ -99,20 +143,36 @@ void ShadowMapPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t ima
 		cmd.endRenderPass();
 	}
 }
-std::shared_ptr<ShadowMap> ShadowMapPass::CreateShadowMap2D(uint32_t width, uint32_t height)
+void ShadowMapPass::RecordCmdPoint(Vulkan::CommandBuffer& cmd, uint32_t imageIndex, uint32_t currentFrame)
 {
-	if (format != vk::Format::eD16Unorm && format != vk::Format::eD16UnormS8Uint && format != vk::Format::eD24UnormS8Uint &&
-		format != vk::Format::eD32Sfloat && format != vk::Format::eD32SfloatS8Uint)
-		std::unreachable(); // shadow map image should be in depth format
+	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, **pipelineCube);
+	cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, **pipelineLayoutCube, 0,
+		{ **Resources::Instance().descriptorSet, **descriptorSet }, 
+		{ Resources::Instance().DynamicOffset(*Resources::Instance().drawParams),
+		Resources::Instance().DynamicOffset(*Resources::Instance().pShadowVps) });
 
-	auto shadowMap = std::make_shared<ShadowMap>();
-	shadowMap->image = std::make_shared<Image>(width, height, format, 
-		vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled,
-		vk::ImageAspectFlagBits::eDepth);
-	shadowMap->image->sampler = sampler;
-	shadowMap->fb = std::make_shared<Vulkan::Framebuffer>(Vulkan::FramebufferCreateInfo(
-		width, height, **renderPass, { shadowMap->image->view }));
-	return shadowMap;
+	uint32_t geomPush = 0;
+	for (auto& shadowMap : Resources::Instance().shadowMapsCube)
+	{
+		BeginRenderPass(**renderPass, *shadowMap->fb, cmd);
+
+		cmd.setViewport(0, ViewportFull(*shadowMap->fb));
+		cmd.setScissor(0, ScissorFull(*shadowMap->fb));
+
+		cmd.pushConstants<uint32_t>(**pipelineLayoutCube, vk::ShaderStageFlagBits::eGeometry, 0, geomPush);
+		cmd.pushConstants<float>(**pipelineLayoutCube, vk::ShaderStageFlagBits::eFragment, 4, shadowMap->Shadow()->far);
+		cmd.pushConstants<glm::vec3>(**pipelineLayoutCube, vk::ShaderStageFlagBits::eFragment, 16, shadowMap->position);
+		cmd.drawIndexedIndirect(**Resources::Instance().drawCommands->Underlying(),
+			Resources::Instance().DynamicOffset(*Resources::Instance().drawCommands),
+			Resources::Instance().drawCommandCount, sizeof(vk::DrawIndexedIndirectCommand));
+
+		cmd.endRenderPass();
+		geomPush++;
+	}
+}
+vk::Format ShadowMapPass::Format()
+{
+	return format;
 }
 ShadowMapPass* ShadowMapPass::instance = nullptr;
 }

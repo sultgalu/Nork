@@ -32,6 +32,8 @@ public:
 			type = ShaderType::Vertex;
 		else if (srcFile.extension() == ".frag")
 			type = ShaderType::Fragment;
+		else if (srcFile.extension() == ".geom")
+			type = ShaderType::Geometry;
 		else
 			std::unreachable();
 
