@@ -17,7 +17,7 @@ static constexpr auto dps_size = MemoryAllocator::poolSize / 4;
 static constexpr auto dcs_size = MemoryAllocator::poolSize / 4;
 Texture::~Texture()
 {
-	Resources::Instance().textureDescriptors->RemoveTexture(descriptorIdx);
+	Resources::Instance().textureDescriptors->RemoveImage(descriptorIdx);
 }
 Resources::Resources()
 {
@@ -115,70 +115,67 @@ Resources::Resources()
 		.Write();
 
 	textureDescriptors = std::make_unique<TextureDesriptors>(descriptorSet);
+	dirShadowDescriptors = std::make_unique<ShadowMapDesriptors>(descriptorSetLights, 6);
+	pointShadowDescriptors = std::make_unique<ShadowMapDesriptors>(descriptorSetLights, 7);
 }
 // TODO: should be handled same way as textures
 std::shared_ptr<DirShadowMap> Resources::CreateShadowMap2D(uint32_t width, uint32_t height)
 {
-	auto idx = shadowMaps.size();
-
 	auto shadowMap = std::make_shared<DirShadowMap>();
-	shadowMap->image = std::make_shared<Image>(width, height, ShadowMapPass::Instance().Format(),
-		vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled,
-		vk::ImageAspectFlagBits::eDepth);
-	shadowMap->image->sampler = ShadowMapPass::Instance().sampler;
-	shadowMap->fb = std::make_shared<Vulkan::Framebuffer>(Vulkan::FramebufferCreateInfo(
-		width, height, **ShadowMapPass::Instance().renderPass, { shadowMap->image->view }));
-
 	shadowMap->shadow = std::make_shared<DeviceDataProxy<Data::DirShadow>>(dirShadows->New());
-	shadowMap->SetIndex(idx);
-	shadowMaps.push_back(shadowMap);
+	shadowMap->CreateTexture(width, height);
 
-	descriptorSetLights->Writer()
-		.Image(6, *shadowMap->image->view, vk::ImageLayout::eShaderReadOnlyOptimal,
-			*shadowMap->image->sampler, vk::DescriptorType::eCombinedImageSampler, idx)
-		.Write();
+	shadowMaps.push_back(shadowMap);
 
 	return shadowMap;
 }
 std::shared_ptr<PointShadowMap> Resources::CreateShadowMapCube(uint32_t size)
 {
-	auto idx = shadowMapsCube.size();
-
 	auto shadowMap = std::make_shared<PointShadowMap>();
-
-	Vulkan::ImageCreateInfo createInfo(size, size, ShadowMapPass::Instance().Format(),
-		vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled);
-	createInfo.setFlags(vk::ImageCreateFlagBits::eCubeCompatible)
-		.setArrayLayers(6);
-	shadowMap->image = std::make_shared<Image>(createInfo, vk::ImageAspectFlagBits::eDepth, true);
-	shadowMap->image->sampler = ShadowMapPass::Instance().samplerCube;
-	shadowMap->fb = std::make_shared<Vulkan::Framebuffer>(Vulkan::FramebufferCreateInfo(
-		size, size, **ShadowMapPass::Instance().renderPass, { shadowMap->image->view }));
-
 	shadowMap->shadow = std::make_shared<DeviceDataProxy<Data::PointShadow>>(pointShadows->New());
-	shadowMap->SetIndex(idx);
-	shadowMapsCube.push_back(shadowMap);
+	shadowMap->CreateTexture(size);
 
-	descriptorSetLights->Writer()
-		.Image(7, *shadowMap->image->view, vk::ImageLayout::eShaderReadOnlyOptimal,
-			*shadowMap->image->sampler, vk::DescriptorType::eCombinedImageSampler, idx)
-		.Write();
+	shadowMapsCube.push_back(shadowMap);
 
 	return shadowMap;
 }
 
 // ----------------- TEXTURES ----------------
 
-Resources::TextureDesriptors::TextureDesriptors(std::shared_ptr<Vulkan::DescriptorSet>& descriptorSet)
-	: descriptorSet(descriptorSet)
+Resources::ImageDescriptorArray::ImageDescriptorArray(
+	std::shared_ptr<Vulkan::DescriptorSet>& descriptorSet, uint32_t descriptorIdx)
+	: descriptorSet(descriptorSet), descriptorIdx(descriptorIdx)
 {
-	defaultSampler = std::make_shared<Vulkan::Sampler>();
 	for (size_t i = 0; i < img_arr_size; i++)
 	{
-		freeTextureIdxs.insert(i);
+		freeImageIdxs.insert(i);
 	}
-	textures.resize(img_arr_size);
+	images.resize(img_arr_size);
+}
+uint32_t Resources::ImageDescriptorArray::AddImage(std::shared_ptr<Image>& img)
+{
+	uint32_t idx = *freeImageIdxs.begin();
+	freeImageIdxs.erase(freeImageIdxs.begin());
 
+	descriptorSet->Writer()
+		.Image(descriptorIdx, *img->view, vk::ImageLayout::eShaderReadOnlyOptimal,
+			*img->sampler, vk::DescriptorType::eCombinedImageSampler, idx)
+		.Write();
+	images[idx] = img;
+	return idx;
+}
+void Resources::ImageDescriptorArray::RemoveImage(uint32_t idx)
+{
+	auto image = images[idx];
+	Commands::Instance().OnRenderFinished([image]() {});
+	images[idx] = nullptr;
+	freeImageIdxs.insert(idx);
+}
+
+Resources::TextureDesriptors::TextureDesriptors(std::shared_ptr<Vulkan::DescriptorSet>& descriptorSet)
+	: ImageDescriptorArray(descriptorSet, 3)
+{
+	defaultSampler = std::make_shared<Vulkan::Sampler>();
 	auto createTexture = [&](vk::Format format, const std::vector<float>& data)
 	{
 		auto texImg = std::make_shared<Image>(1, 1, format,
@@ -194,21 +191,8 @@ Resources::TextureDesriptors::TextureDesriptors(std::shared_ptr<Vulkan::Descript
 }
 std::shared_ptr<Texture> Resources::TextureDesriptors::AddTexture(std::shared_ptr<Image>& img)
 {
-	uint32_t idx = *freeTextureIdxs.begin();
-	freeTextureIdxs.erase(freeTextureIdxs.begin());
 	if (!img->sampler)
 		img->sampler = defaultSampler;
-
-	descriptorSet->Writer()
-		.Image(3, *img->view, vk::ImageLayout::eShaderReadOnlyOptimal,
-			*img->sampler, vk::DescriptorType::eCombinedImageSampler, idx)
-		.Write();
-	textures[idx] = img;
-	return std::make_shared<Texture>(img, idx);
-}
-void Resources::TextureDesriptors::RemoveTexture(uint32_t idx)
-{
-	textures[idx] = nullptr;
-	freeTextureIdxs.insert(idx);
+	return std::make_shared<Texture>(img, AddImage(img));
 }
 }

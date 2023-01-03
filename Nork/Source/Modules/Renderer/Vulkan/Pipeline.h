@@ -171,7 +171,7 @@ namespace Nork::Renderer::Vulkan {
 
             vk::PipelineVertexInputStateCreateInfo vertexInput;
             std::vector<vk::VertexInputAttributeDescription> vertexAttributes;
-            vk::VertexInputBindingDescription vertexBindings;
+            std::vector<vk::VertexInputBindingDescription> vertexBindings;
 
             std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
             vk::PipelineInputAssemblyStateCreateInfo inputAssembly;

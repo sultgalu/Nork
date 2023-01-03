@@ -75,24 +75,25 @@ namespace Nork {
 	}
 	template<> JsonObject JsonComponentSerializer<DirShadowMap>::Serialize(const DirShadowMap& component)
 	{
-		return JsonObject();
-		/*
-			.Property("bias", component.map.shadow->bias)
-			.Property("bibiasMinas", component.map.shadow->biasMin)
-			.Property("fbWidth", component.map.fb->Width())
-			.Property("fbHeight", component.map.fb->Height())
-			.Property("fbDepth", (int)component.map.fb->Depth()->GetAttributes().format);
-			*/
+		auto& shadMap = component.shadowMap;
+		auto& shadow = component.shadowMap->Shadow();
+		return JsonObject()
+			.Property("bias", shadow->bias)
+			.Property("biasMin", shadow->biasMin)
+			.Property("fbWidth", shadMap->fb->Width())
+			.Property("fbHeight", shadMap->fb->Height());
 	}
 	template<> DirShadowMap& JsonComponentDeserializer<DirShadowMap>::Deserialize(const JsonObject& json)
 	{
-		return entity.AddComponent<DirShadowMap>(/*[&](DirShadowMap& comp)
+		return entity.AddComponent<DirShadowMap>([&](DirShadowMap& comp)
 			{
-				json.Get("bias", comp.map.shadow->bias)
-					.Get("biasMin", comp.map.shadow->biasMin);
-				comp.map.SetFramebuffer(json.Get<uint32_t>("fbWidth"), json.Get<uint32_t>("fbHeight"),
-					(Renderer::TextureFormat)json.Get<int>("fbDepth")); 
-			}*/);
+				auto& shadMap = comp.shadowMap;
+				auto& shadow = comp.shadowMap->Shadow();
+				json.Get("bias", shadow->bias)
+					.Get("biasMin", shadow->biasMin);
+				// TODO: createTexture gets called upon component creation as well
+				shadMap->CreateTexture(json.Get<uint32_t>("fbWidth"), json.Get<uint32_t>("fbHeight"));
+			});
 	}
 
 	template<> JsonObject JsonComponentSerializer<PointLight>::Serialize(const PointLight& component)
@@ -119,25 +120,27 @@ namespace Nork {
 	}
 	template<> JsonObject JsonComponentSerializer<PointShadowMap>::Serialize(const PointShadowMap& component)
 	{
-		return JsonObject()/*
-			.Property("bias", component.map.shadow->bias)
-			.Property("biasMin", component.map.shadow->biasMin)
-			.Property("far", component.map.shadow->far)
-			.Property("near", component.map.shadow->near)
-			.Property("fbSize", component.map.fb->Width())
-			.Property("fbDepth", (int)component.map.fb->Depth()->GetAttributes().format)*/;
+		auto& shadMap = component.shadowMap;
+		auto& shadow = component.shadowMap->Shadow();
+		return JsonObject()
+			.Property("bias", shadow->bias)
+			.Property("biasMin", shadow->biasMin)
+			.Property("far", shadow->far)
+			.Property("near", shadow->near)
+			.Property("fbSize", shadMap->fb->Width());
 	}
 	template<> PointShadowMap& JsonComponentDeserializer<PointShadowMap>::Deserialize(const JsonObject& json)
 	{
-		return entity.AddComponent<PointShadowMap>(/*[&](PointShadowMap& comp)
+		return entity.AddComponent<PointShadowMap>([&](PointShadowMap& comp)
 			{
-				json.Get("bias", comp.map.shadow->bias)
-					.Get("biasMin", comp.map.shadow->biasMin)
-					.Get("far", comp.map.shadow->far)
-					.Get("near", comp.map.shadow->near);
-				comp.map.SetFramebuffer(json.Get<uint32_t>("fbSize"), 
-					(Renderer::TextureFormat)json.Get<int>("fbDepth"));
-			}*/);
+				auto& shadMap = comp.shadowMap;
+				auto& shadow = comp.shadowMap->Shadow();
+				json.Get("bias", shadow->bias)
+					.Get("biasMin", shadow->biasMin)
+					.Get("far", shadow->far)
+					.Get("near", shadow->near);
+				shadMap->CreateTexture(json.Get<uint32_t>("fbSize"));
+			});
 	}
 	template<> JsonObject JsonComponentSerializer<Components::Physics>::Serialize(const Components::Physics& component)
 	{
@@ -359,6 +362,8 @@ namespace Nork {
 		ser.TrySerializeComponent<Drawable>();
 		ser.TrySerializeComponent<DirLight>();
 		ser.TrySerializeComponent<PointLight>();
+		ser.TrySerializeComponent<DirShadowMap>();
+		ser.TrySerializeComponent<PointShadowMap>();
 		ser.TrySerializeComponent<Components::Physics>();
 		ser.TrySerializeComponent<Camera>();
 
@@ -402,6 +407,8 @@ namespace Nork {
 				Transform,
 				DirLight,
 				PointLight,
+				DirShadowMap,
+				PointShadowMap,
 				Components::Physics,
 				Tag,
 				Drawable,

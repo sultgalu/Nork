@@ -14,6 +14,7 @@ struct Client
 		std::span<vk::DrawIndexedIndirectCommand> commands) = 0;
 	virtual void FillLightBuffers(std::span<uint32_t> dIdxs, std::span<uint32_t> pIdxs,
 		uint32_t& dlCount, uint32_t& dsCount, uint32_t& plCount, uint32_t& psCount) = 0;
+	virtual void ProvideShadowMapsForUpdate(std::vector<std::shared_ptr<DirShadowMap>>&, std::vector<std::shared_ptr<PointShadowMap>>&) = 0;
 	// do stuff that requires a commandBuffer
 	virtual void OnCommands() = 0;
 };

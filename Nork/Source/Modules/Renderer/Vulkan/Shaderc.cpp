@@ -94,6 +94,8 @@ namespace Nork::Renderer::Vulkan {
             return shaderc_glsl_geometry_shader;
         case Compute:
             return shaderc_glsl_compute_shader;
+        case Mesh:
+            return shaderc_glsl_mesh_shader;
         case None:
         default:
             abort();

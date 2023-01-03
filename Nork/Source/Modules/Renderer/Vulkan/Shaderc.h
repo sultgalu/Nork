@@ -3,7 +3,7 @@
 namespace Nork::Renderer::Vulkan {
 	enum class ShaderType
 	{
-		None, Vertex, Fragment, Geometry, Compute
+		None, Vertex, Fragment, Geometry, Compute, Mesh
 	};
 	class Shaderc
 	{

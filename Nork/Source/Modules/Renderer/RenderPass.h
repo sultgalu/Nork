@@ -34,6 +34,8 @@ public:
 			type = ShaderType::Fragment;
 		else if (srcFile.extension() == ".geom")
 			type = ShaderType::Geometry;
+		else if (srcFile.extension() == ".glsl")
+			type = ShaderType::Mesh;
 		else
 			std::unreachable();
 

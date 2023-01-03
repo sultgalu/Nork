@@ -21,22 +21,46 @@ struct Texture
 	const uint32_t descriptorIdx;
 	~Texture();
 };
+// TODO: make an abstraction around multiple buffers for the same type of resource(eg. Materials).
+// when materials reach the maximum size of a buffer (DeviceMemory pool size), new buffers need to be created.
+// store these buffers in a descriptor array (PartiallyBound feature), then the indexes that point to the materials
+// should include the desc. array index too. 
+// you have a 32 bit uint, use the upper 5 bits for the desc. idx, that leaves 27 bits for indexing into the buffer
+// that gives you 134 mil. unique indexes, which is 512MB of indexable space if you use a single float for a resource,
+// which is the smallest type you can use in a shader, and this is for a single buffer, so this should be enough
+// it leaves you with a maximum number of 32 buffers in a descriptor array, should also be enough
 class Resources
 {
 public:
 	Resources();
-	class TextureDesriptors
+	class ImageDescriptorArray
+	{
+	public:
+		ImageDescriptorArray(std::shared_ptr<Vulkan::DescriptorSet>& descriptorSet, uint32_t descriptorIdx);
+		uint32_t AddImage(std::shared_ptr<Image>& img);
+		void RemoveImage(uint32_t idx);
+	public:
+		std::vector<std::shared_ptr<Image>> images;
+		std::set<uint32_t> freeImageIdxs;
+		std::shared_ptr<Vulkan::DescriptorSet> descriptorSet;
+		uint32_t descriptorIdx;
+	};
+	class TextureDesriptors: public ImageDescriptorArray
 	{
 	public:
 		TextureDesriptors(std::shared_ptr<Vulkan::DescriptorSet>& descriptorSet);
 		std::shared_ptr<Texture> AddTexture(std::shared_ptr<Image>& img);
-		void RemoveTexture(uint32_t idx);
+	private:
+		using ImageDescriptorArray::AddImage;
 	public:
 		std::shared_ptr<Vulkan::Sampler> defaultSampler;
-		std::vector<std::shared_ptr<Image>> textures;
-		std::set<uint32_t> freeTextureIdxs;
-		std::shared_ptr<Vulkan::DescriptorSet> descriptorSet;
 		std::shared_ptr<Texture> diffuse, normal, metallicRoughness; // default textures
+	};
+	class ShadowMapDesriptors : public ImageDescriptorArray
+	{
+	public:
+		using ImageDescriptorArray::ImageDescriptorArray;
+	public:
 	};
 	uint32_t DynamicOffset(const Buffer& buffer)
 	{
@@ -87,13 +111,15 @@ public:
 	std::shared_ptr<HostWritableBuffer> dirLightParams;
 	std::shared_ptr<HostWritableBuffer> pointLightParams;
 	std::shared_ptr<HostWritableBuffer> pShadowVps;
-	std::vector<std::shared_ptr<DirShadowMap>> shadowMaps;
-	std::vector<std::shared_ptr<PointShadowMap>> shadowMapsCube;
 	// eg. double-buffer only when light data is written
 	// only d-buffing when written should be applied to drawParams/drawCommands, 
 	// then it is not required to refill the buffers every frame 
 
 	std::unique_ptr<TextureDesriptors> textureDescriptors;
+	std::unique_ptr<ShadowMapDesriptors> dirShadowDescriptors;
+	std::unique_ptr<ShadowMapDesriptors> pointShadowDescriptors;
+	std::vector<std::shared_ptr<DirShadowMap>> shadowMaps; // should be elsewhere, it gets filled by r.system every frame
+	std::vector<std::shared_ptr<PointShadowMap>> shadowMapsCube; // same
 
 	std::shared_ptr<Vulkan::DescriptorPool> descriptorPool;
 	std::shared_ptr<Vulkan::DescriptorSetLayout> descriptorSetLayout;

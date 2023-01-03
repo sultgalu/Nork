@@ -50,8 +50,10 @@ namespace Nork::Editor {
 		}
 		else if (ImGui::TreeNode("Shadow"))
 		{
-			auto& shadowMap = node->GetEntity().GetComponent<Components::DirShadowMap>().shadowMap;
+			auto& shad = node->GetEntity().GetComponent<Components::DirShadowMap>();
+			auto& shadowMap = shad.shadowMap; 
 			auto shadow = shadowMap->shadow->Data();
+			ImGui::Checkbox("Update##DirShadow", &shad.update);
 			ImGui::DragFloat("Bias", (float*)&(shadow->bias), 0.001f);
 			ImGui::DragFloat("min Bias", (float*)&(shadow->biasMin), 0.001f);
 
@@ -64,47 +66,24 @@ namespace Nork::Editor {
 			ImGui::Text("Width: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->img->Width()).c_str());
 			ImGui::Text("Height: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->img->Height()).c_str());
 			ImGui::Text("Format: "); ImGui::SameLine(); ImGui::Text(vk::to_string(tex->img->Format()).c_str());
-			/*static bool fix = false;
+			static bool fix = false;
 			static glm::ivec2 newSize;
-			// static Renderer::TextureFormat newFormat;
 			if (ImGui::Button("Change Resolution##DirLi"))
 			{
 				ImGui::OpenPopup("chgrespshad##dir");
-				newSize = { tex->GetWidth() , tex->GetHeight() };
-				// newFormat = tex->GetAttributes().format;
+				newSize = { tex->img->Width() , tex->img->Height() };
 			}
 			if (ImGui::BeginPopup("chgrespshad##dir"))
 			{
-				// auto formatSelector = [&](Renderer::TextureFormat format)
-				// {
-				// 	ImGui::RadioButton(Renderer::TextureFormatToString(format), (int*)&newFormat, (int)format);
-				// };
-				// formatSelector(Renderer::TextureFormat::Depth16); ImGui::SameLine();
-				// formatSelector(Renderer::TextureFormat::Depth24);
-				// formatSelector(Renderer::TextureFormat::Depth32); ImGui::SameLine();
-				// formatSelector(Renderer::TextureFormat::Depth32F);
-				ImGui::Checkbox("Fix to VP ratio", &fix);
-				if (fix)
+				ImGui::InputInt("New Width", &newSize.x);
+				ImGui::InputInt("New Height", &newSize.y);
+				if (changed |= ImGui::Button("OK"))
 				{
-					ImGui::InputInt("New Size (1 Dimension)", &newSize.x);
-					if (changed |= ImGui::Button("OK"))
-					{
-						node->GetEntity().GetComponent<Components::DirShadowMap>().FixTextureRatio(dirLight, glm::pow(newSize.x, 2));
-						ImGui::CloseCurrentPopup();
-					}
-				}
-				else
-				{
-					ImGui::InputInt("New Width", &newSize.x);
-					ImGui::InputInt("New Height", &newSize.y);
-					if (changed |= ImGui::Button("OK"))
-					{
-						shadowMap.SetFramebuffer(newSize.x, newSize.y, newFormat);
-						ImGui::CloseCurrentPopup();
-					}
+					shadowMap->CreateTexture(newSize.x, newSize.y);
+					ImGui::CloseCurrentPopup();
 				}
 				ImGui::EndPopup();
-			}*/
+			}
 			ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
 			if (ImGui::Button("Remove Shadow Map##Dir"))
 			{
@@ -132,8 +111,10 @@ namespace Nork::Editor {
 		}
 		else if (ImGui::TreeNode("Shadow"))
 		{
-			auto& shadowMap = node->GetEntity().GetComponent<Components::PointShadowMap>().shadowMap;
+			auto& shad = node->GetEntity().GetComponent<Components::PointShadowMap>();
+			auto& shadowMap = shad.shadowMap;
 			auto& shadow = shadowMap->Shadow();
+			ImGui::Checkbox("Update##PShadow", &shad.update);
 			ImGui::DragFloat("Bias", (float*)&(shadow->bias), 0.0001f, 0, FLT_MAX, "%.4f");
 			ImGui::DragFloat("min Bias", (float*)&(shadow->biasMin), 0.0001f, 0, FLT_MAX, "%.4f");
 			ImGui::SliderFloat("Near", (float*)&(shadow->near), 0, 1);
@@ -143,28 +124,18 @@ namespace Nork::Editor {
 			ImGui::Text("Width: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->img->Width()).c_str());
 			ImGui::Text("Height: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->img->Height()).c_str());
 			ImGui::Text("Format: "); ImGui::SameLine(); ImGui::Text(vk::to_string(tex->img->Format()).c_str());
-			/*static int newSize;
-			static Renderer::TextureFormat newFormat;
+			static int newSize;
 			if (ImGui::Button("Change Resolution"))
 			{
 				ImGui::OpenPopup("chgrespshad");
-				newSize = tex->GetWidth();
-				newFormat = tex->GetAttributes().format;
+				newSize = tex->img->Width();
 			}
 			if (ImGui::BeginPopup("chgrespshad"))
 			{
 				ImGui::InputInt("New Size", &newSize);
-				auto formatSelector = [&](Renderer::TextureFormat format)
-				{
-					ImGui::RadioButton(Renderer::TextureFormatToString(format), (int*)&newFormat, (int)format);
-				};
-				formatSelector(Renderer::TextureFormat::Depth16); ImGui::SameLine();
-				formatSelector(Renderer::TextureFormat::Depth24);
-				formatSelector(Renderer::TextureFormat::Depth32); ImGui::SameLine();
-				formatSelector(Renderer::TextureFormat::Depth32F);
 				if (changed |= ImGui::Button("OK"))
 				{
-					shadowMap.SetFramebuffer(newSize, newFormat);
+					shadowMap->CreateTexture(newSize);
 					ImGui::CloseCurrentPopup();
 				}
 				ImGui::EndPopup();
@@ -175,7 +146,7 @@ namespace Nork::Editor {
 			{
 				node->GetEntity().RemoveComponent<Components::PointShadowMap>();
 			}
-			ImGui::PopStyleColor();*/
+			ImGui::PopStyleColor();
 			ImGui::TreePop();
 		}
 	}

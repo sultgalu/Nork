@@ -32,13 +32,6 @@ namespace Nork::Components {
 		}
 		intensity = val;
 	}
-	void DirShadowMap::FixTextureRatio(const DirLight& light, uint32_t pixelCount)
-	{
-		std::unreachable();
-		float count = light.rectangle.x * light.rectangle.y;
-		auto multiplier = glm::sqrt(pixelCount / count);
-		// map.SetFramebuffer(light.rectangle.x * multiplier, light.rectangle.y * multiplier, Renderer::TextureFormat::Depth16);
-	}
 	glm::mat4 DirLight::GetView() const
 	{
 		return glm::lookAt(glm::vec3(0) - Data()->direction, glm::vec3(0), glm::vec3(0.0f, 1.0f, 0.0f));

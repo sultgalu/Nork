@@ -199,13 +199,16 @@
   <ItemGroup>
     <ClCompile Include="Source\Components\Impl\Drawable.cpp" />
     <ClCompile Include="Source\Editor\Utils\EditorImage.cpp" />
-    <ClCompile Include="Source\Main\Entry2.cpp" />
+    <ClCompile Include="Source\Main\Entry.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Buffer.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Data\Vertex.cpp" />
     <ClCompile Include="Source\Modules\Renderer\DeferredPass.cpp" />
     <ClCompile Include="Source\Modules\Renderer\MemoryAllocator.cpp" />
     <ClCompile Include="Source\Modules\Renderer\MemoryTransfer.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Model\ShadowMap.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Renderer.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Resources.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Vulkan\Device.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Vulkan\Shaderc.cpp" />
     <ClCompile Include="Source\Modules\Physics\Pipeline\Collision.cpp" />
     <ClCompile Include="Source\Modules\Physics\Algorithms\Clip.cpp" />
@@ -240,7 +243,6 @@
     <ClInclude Include="Source\Modules\Renderer\DeferredPass.h" />
     <ClInclude Include="Source\Modules\Renderer\DeviceResource.h" />
     <ClInclude Include="Source\Modules\Renderer\EditorPass.h" />
-    <ClInclude Include="Source\Modules\Renderer\Frame.h" />
     <ClInclude Include="Source\Modules\Renderer\Image.h" />
     <ClInclude Include="Source\Modules\Renderer\MemoryAllocator.h" />
     <ClInclude Include="Source\Modules\Renderer\MemoryTransfer.h" />
@@ -354,7 +356,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Source\Main\Entry.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Modules\Physics\World.h" />

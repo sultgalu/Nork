@@ -223,6 +223,22 @@ Renderer::Renderer* Renderer::Renderer::instance = nullptr;
 				plCount++;
 			}
 		}
+		void ProvideShadowMapsForUpdate(std::vector<std::shared_ptr<Renderer::DirShadowMap>>& dShadMaps,
+			std::vector<std::shared_ptr<Renderer::PointShadowMap>>& pShadMaps) override
+		{
+			auto& system = RenderingSystem::Instance();
+			auto& registry = system.registry;
+			for (auto [ent, shadMap] : registry.view<Components::DirShadowMap>().each())
+			{
+				if (shadMap.update)
+					dShadMaps.push_back(shadMap.shadowMap);
+			}
+			for (auto [ent, shadMap] : registry.view<Components::PointShadowMap>().each())
+			{
+				if (shadMap.update)
+					pShadMaps.push_back(shadMap.shadowMap);
+			}
+		}
 	};
 	static Client rendererClient;
 	static RenderingSystem* instance;

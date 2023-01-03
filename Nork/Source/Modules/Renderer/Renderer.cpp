@@ -30,8 +30,7 @@ static uint32_t invalid_frame_idx = UINT32_MAX;
 static void GenerateCubeViewProjections(glm::mat4* vps, float near, float far, const glm::vec3& pos)
 {
 	glm::mat4 projection = glm::perspective(glm::radians(90.f), 1.0f, near, far);
-	// projection[1][1] *= -1; // flip for VULKAN Screen Space
-
+	
 	int k = 0;
 	vps[k++] = glm::lookAt(pos, pos + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
 	vps[k++] = glm::lookAt(pos, pos + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
@@ -39,22 +38,9 @@ static void GenerateCubeViewProjections(glm::mat4* vps, float near, float far, c
 	vps[k++] = glm::lookAt(pos, pos + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f));
 	vps[k++] = glm::lookAt(pos, pos + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
 	vps[k++] = glm::lookAt(pos, pos + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
-	
-	// glm::mat4 viewMatrix = glm::mat4(1.0f);
-	// vps[k] = glm::rotate(viewMatrix, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	// vps[k++] = glm::rotate(vps[k], glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	// 
-	// vps[k] = glm::rotate(viewMatrix, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	// vps[k++] = glm::rotate(vps[k], glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	// 
-	// vps[k++] = glm::rotate(viewMatrix, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	// vps[k++] = glm::rotate(viewMatrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	// vps[k++] = glm::rotate(viewMatrix, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	// vps[k++] = glm::rotate(viewMatrix, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	for (int i = 0; i < 6; i++)
 	{
 		vps[i] = projection * vps[i];
-		// vps[i] = glm::scale(vps[i], glm::vec3(1, -1, 1));
 	}
 }
 uint32_t Renderer::BeginFrame()
@@ -79,6 +65,9 @@ uint32_t Renderer::BeginFrame()
 		auto dIdxs = std::span(&dPtr[4], resources->DynamicSize(*resources->dirLightParams) / sizeof(uint32_t) - 4);
 		auto pIdxs = std::span(&pPtr[4], resources->DynamicSize(*resources->pointLightParams) / sizeof(uint32_t) - 4);
 		client->FillLightBuffers(dIdxs, pIdxs, dPtr[0], dPtr[1], pPtr[0], pPtr[1]);
+
+		resources->shadowMaps.clear(); resources->shadowMapsCube.clear();
+		client->ProvideShadowMapsForUpdate(resources->shadowMaps, resources->shadowMapsCube);
 		auto pShadVps = (glm::mat4*)getPtr(*resources->pShadowVps);
 		for (auto& shadowMap : resources->shadowMapsCube)
 		{

@@ -2,6 +2,7 @@
 #include "../Image.h"
 #include "../Vulkan/Framebuffer.h"
 #include "DeviceData.h"
+#include "../Data/Lights.h"
 
 namespace Nork::Renderer
 {
@@ -10,19 +11,21 @@ struct ShadowMap
 {
 	std::shared_ptr<Image> image;
 	std::shared_ptr<Vulkan::Framebuffer> fb;
-	void SetIndex(uint32_t idx)
-	{
-		Shadow()->shadMap = idx;
-	}
 	DeviceDataProxy<ShadowT>& Shadow() { return *shadow; }
 	std::shared_ptr<DeviceDataProxy<ShadowT>> shadow;
 };
 struct DirShadowMap: ShadowMap<Data::DirShadow>
 {
+	DirShadowMap();
+	~DirShadowMap();
+	void CreateTexture(uint32_t width, uint32_t height);
 	glm::mat4 vp;
 };
 struct PointShadowMap : ShadowMap<Data::PointShadow>
 {
+	PointShadowMap();
+	~PointShadowMap();
+	void CreateTexture(uint32_t size);
 	glm::vec3 position;
 };
 }

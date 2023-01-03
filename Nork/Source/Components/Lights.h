@@ -22,6 +22,7 @@ namespace Nork::Components
 	};
 	struct PointShadowMap
 	{
+		bool update = true;
 		std::shared_ptr<Renderer::PointShadowMap> shadowMap;
 	};
 
@@ -47,7 +48,7 @@ namespace Nork::Components
 	};
 	struct DirShadowMap // should only exist if the same component has a dirLight as well
 	{
+		bool update = true; 
 		std::shared_ptr<Renderer::DirShadowMap> shadowMap;
-		void FixTextureRatio(const DirLight&, uint32_t pixelCount);
 	};
 }
