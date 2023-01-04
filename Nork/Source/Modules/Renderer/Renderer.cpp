@@ -1,7 +1,9 @@
 #include "Renderer.h"
+#include "Vulkan/Window.h"
 
 namespace Nork::Renderer {
 
+static std::weak_ptr<EditorPass> editorPass;
 Renderer::Renderer()
 	: allocator(Vulkan::PhysicalDevice::Instance())
 {
@@ -14,6 +16,12 @@ Renderer::Renderer()
 	renderPasses.push_back(std::make_shared<ShadowMapPass>());
 	renderPasses.push_back(std::make_shared<DeferredPass>());
 	renderPasses.push_back(std::make_shared<EditorPass>());
+
+	editorPass = std::reinterpret_pointer_cast<EditorPass>(renderPasses.back());
+	Vulkan::Window::Instance().onFbResize = [&](int w, int h)
+	{
+		framebufferResized = true;
+	};
 
 	Commands::Instance().EndTransferCommandBuffer();
 	Commands::Instance().SubmitTransferCommands(); // end initialize phase
@@ -45,6 +53,17 @@ static void GenerateCubeViewProjections(glm::mat4* vps, float near, float far, c
 }
 uint32_t Renderer::BeginFrame()
 {
+	if (framebufferResized)
+	{
+		auto ep = editorPass.lock();
+		if (ep)
+		{
+			auto inFlightFb = ep->fbUI;
+			Commands::Instance().OnRenderFinished([inFlightFb]() {});
+			ep->CreateFramebuffer();
+		}
+		framebufferResized = false;
+	}
 	using namespace Vulkan;
 
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
@@ -89,7 +108,6 @@ uint32_t Renderer::BeginFrame()
 
 	if (result.first == vk::Result::eErrorOutOfDateKHR)
 	{
-		//swapChain->recreateSwapChain();
 		return invalid_frame_idx;
 	}
 	else if (result.first != vk::Result::eSuccess && result.first != vk::Result::eSuboptimalKHR)
@@ -111,10 +129,9 @@ void Renderer::EndFrame(uint32_t imgIdx)
 		.setSwapchains(*SwapChain::Instance())
 		.setImageIndices(imgIdx)
 	);
-	if (res == vk::Result::eErrorOutOfDateKHR || res == vk::Result::eSuboptimalKHR || framebufferResized)
+	if (res == vk::Result::eErrorOutOfDateKHR || res == vk::Result::eSuboptimalKHR)
 	{
-		framebufferResized = false;
-		//swapChain->recreateSwapChain();
+		std::unreachable();
 	}
 	else if (res != vk::Result::eSuccess)
 	{

@@ -31,11 +31,11 @@ namespace Nork::Renderer::Vulkan {
             auto& win = Window::Instance();
             win.width = width;
             win.height = height;
+            win.recreateSwapChain();
             if (win.onFbResize)
             {
                 win.onFbResize(width, height);
             }
-            win.recreateSwapChain();
         }
         void recreateSwapChain()
         {

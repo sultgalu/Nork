@@ -11,13 +11,17 @@ public:
 	EditorPass()
 	{
 		CreateRenderPassUI();
+		CreateFramebuffer();
+		InitImguiForVulkan();
+	}
+	void CreateFramebuffer()
+	{
 		auto w = Vulkan::SwapChain::Instance().Width();
 		auto h = Vulkan::SwapChain::Instance().Height();
 		imgUI = std::make_shared<Image>(w, h, Vulkan::Format::rgba8Unorm,
 			vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc,
 			vk::ImageAspectFlagBits::eColor);
 		fbUI = std::make_shared<Vulkan::Framebuffer>(Vulkan::FramebufferCreateInfo(w, h, **renderPassUI, { imgUI->view }));
-		InitImguiForVulkan();
 	}
 	~EditorPass()
 	{
