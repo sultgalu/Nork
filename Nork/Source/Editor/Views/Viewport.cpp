@@ -1,7 +1,7 @@
 #include "include/Viewport.h"
 
 namespace Nork::Editor {
-	static glm::vec2 GetDisplaySize(glm::vec2 texSize)
+	static ImVec2 GetDisplaySize(glm::vec2 texSize)
 	{
 		glm::vec2 displaySize = texSize;
 
@@ -14,7 +14,7 @@ namespace Nork::Editor {
 		else scale = panelSize.x / (displaySize.x);
 		displaySize *= scale;
 
-		return displaySize;
+		return ImVec2(displaySize.x, displaySize.y);
 	}
 
 	void ViewportView::Content()
@@ -22,7 +22,7 @@ namespace Nork::Editor {
 		if (image)
 		{
 			glm::vec2 texSize(image.Img().img->Width(), image.Img().img->Height());
-			ImVec2 displaySize = ImGui::GetContentRegionAvail(); //GetDisplaySize(texSize);
+			ImVec2 displaySize = GetDisplaySize(texSize); // ImGui::GetContentRegionAvail();
 
 			constexpr auto uv_min = glm::vec2(0, 1);
 			constexpr auto uv_max = glm::vec2(1, 0);
