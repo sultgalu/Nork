@@ -114,10 +114,14 @@ namespace Nork::Renderer {
         {
             return Map<T>(offset, allocation->size);
         }
-        void* Ptr()
-        {
+        void* Ptr() {
             if (!IsMapped()) 
                 Map();
+            return ptr;
+        }
+        void* Ptr() const {
+            if (!IsMapped())
+                std::unreachable(); // cannot auto-map because this is a const func
             return ptr;
         }
         template<class T = void>
@@ -126,7 +130,7 @@ namespace Nork::Renderer {
             if (!IsMapped()) std::unreachable();
             return reinterpret_cast<T*>(ptr);
         }
-        bool IsMapped()
+        bool IsMapped() const
         {
             return ptr != nullptr;
         }

@@ -5,45 +5,6 @@
 namespace Nork::Renderer {
 
 template<class T>
-struct BufferPointer
-{
-	Buffer* buffer;
-	uint32_t offset;
-	BufferPointer() = default;
-	BufferPointer(const BufferPointer&) = delete;
-};
-template<class T>
-struct BufferElement : BufferPointer<T>
-{
-	using BufferPointer<T>::BufferPointer;
-	void operator=(const T& val)
-	{
-		Write(val);
-	}
-	virtual void Write(const T& val)
-	{
-		this->buffer->Write(&val, sizeof(T), this->offset * sizeof(T));
-	}
-};
-template<class T>
-struct BufferView : BufferPointer<T>
-{
-	const uint32_t count;
-	BufferView(uint32_t count)
-		: count(count)
-	{}
-	void Write(const T* data, uint32_t count, uint32_t offsetCount = 0)
-	{
-		if (count > this->count)
-			std::unreachable();
-		this->buffer->Write(data, count * sizeof(T), (this->offset + offsetCount) * sizeof(T));
-	}
-	// BufferElement<T> operator[](const size_t& idx)
-	// {
-	// 	return BufferElement<T>(this->buffer, (this->offset + idx) * sizeof(T));
-	// }
-};
-template<class T>
 class DeviceArrays
 {
 public:

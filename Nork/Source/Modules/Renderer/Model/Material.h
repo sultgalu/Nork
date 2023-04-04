@@ -17,7 +17,7 @@ namespace Nork::Renderer {
 			return textureMaps[std::to_underlying(type)];
 		}
 		bool HasDefault(TextureMap type) const;
-		void SetTextureMap(std::shared_ptr<Texture>& tex, TextureMap type)
+		void SetTextureMap(const std::shared_ptr<Texture>& tex, TextureMap type)
 		{
 			textureMaps[std::to_underlying(type)] = tex;
 			using enum Nork::Renderer::TextureMap;

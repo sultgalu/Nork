@@ -6,93 +6,100 @@
 namespace Nork {
 	namespace fs = std::filesystem;
 
-	struct ResourcesException : std::exception
+	/*static ModelResources::ResourceType& GetCube()
 	{
-		ResourcesException(std::string_view type, std::string_view reason)
-			: std::exception(std::string(type).append(": ").append(reason).c_str()) {}
-	};
-	struct GeneralResourceException : ResourcesException
-	{
-		GeneralResourceException(std::string_view reason)
-			: ResourcesException("GeneralResourceException", reason)
-		{}
-	};
-	struct ResourceNotFoundException : ResourcesException
-	{
-		ResourceNotFoundException(const fs::path& path)
-			: ResourcesException("ResourceNotFoundException", std::string("Couldn't find resource at path: ").append(path.string())) {}
-	};
-	struct ResourceNotLoadedException : ResourcesException
-	{
-		ResourceNotLoadedException(const char* reason)
-			: ResourcesException("ResourceNotLoadedException", reason)
-		{}
-	};
-	struct IdNotFoundException : ResourcesException
-	{
-		IdNotFoundException()
-			: ResourcesException("IdNotFoundException", std::string("Couldn't find Resource ID for value"))
-		{}
-	};
-	struct FileAlreadyExistsException : ResourcesException
-	{
-		FileAlreadyExistsException(const fs::path& path)
-			: ResourcesException("FileAlreadyExistsException", path.string())
-		{}
-	};
-	struct ExternalLocationException : ResourcesException
-	{
-		ExternalLocationException(const fs::path& path)
-			: ResourcesException("ExternalLocationException", path.string().append(" is not a project location"))
-		{}
-	};
+		static bool initialized = false;
+		static fs::path gltfUri = "templates/cube_template/cube_template.gltf";
+		if (!initialized)
+		{
+			fs::path bufUri = fs::path(gltfUri).replace_extension("");
+			if (!ModelResources::Instance().Exists(gltfUri))
+			{
+				ModelResources::Instance().SaveAs(std::make_shared<Components::Model>(
+					Components::Model{
+						.meshes = { Components::Mesh {
+							.mesh = { RenderingSystem::Instance().NewMesh(Renderer::MeshFactory::CubeVertices(), Renderer::MeshFactory::CubeIndices()) },
+							.material = RenderingSystem::Instance().NewMaterial()
+						}}
+					}), gltfUri);
+				initialized = true;
+			}
+		}
+		return ModelResources::Instance().Get(gltfUri);
+	}*/
 
-	template<class T>
-	class Resources
-	{
+	class AssetLoaderProxy;
+	class AssetLoader {
 	public:
-		using ResourceType = T;
-
-		T& Get(const fs::path&);
-		void Add(const T&, const fs::path&);
-		void SaveAs(const T&, const fs::path&);
-		void Save(const T&) const;
-		void Reload(T&&);
-
-		fs::path AbsolutePath(const T&) const;
-		fs::path Uri(const T&) const;
-		bool Exists(const fs::path&);
-
-		static Resources& Instance();
-		const std::unordered_map<fs::path, T>& Cache() { return cache; }
-		void Clear();
+		struct Exception : std::exception {
+			enum class Code {
+				PathDoesNotExist, UriAlreadyExists, AssetNotFoundInCache, EmptyModel, NoImporterForAsset
+			};
+			Code code;
+			Exception(Code code, std::source_location src = std::source_location::current())
+				: code(code), std::exception(CodeToString(code).append(" at ")
+					.append(src.file_name()).append("::").append(src.function_name()).append(" (line ").append(std::to_string(src.line()))
+					.append(")").c_str()) {}
+		private:
+			static std::string CodeToString(Code code) {
+				switch (code)
+				{ 
+					using enum Code;
+					case PathDoesNotExist:
+						return "PathDoesNotExist";
+					case UriAlreadyExists:
+						return "UriAlreadyExists";
+					case AssetNotFoundInCache:
+						return "AssetNotFoundInCache";
+					case EmptyModel:
+						return "EmptyModel";
+					case NoImporterForAsset:
+						return "NoImporterForAsset";
+					default:
+						std::unreachable();
+				}
+			}
+		};
+	public:
+		AssetLoader();
+		std::shared_ptr<Renderer::Texture> LoadTexture(const fs::path& uri);
+		std::shared_ptr<Components::Model> LoadModel(const fs::path& uri);
+		std::shared_ptr<Components::Model> ImportModel(const fs::path& from, const fs::path& uri);
+		void SaveModel(const std::shared_ptr<Components::Model>& model, const fs::path& uri);
+		std::vector<fs::path> ListTemplates();
+		static AssetLoaderProxy& Instance();
+		fs::path UriToAbsolutePath(const fs::path& uri);
+		fs::path AbsolutePathToUri(const fs::path& abs);
+		fs::path ModelsPath();
+		fs::path TemplatesPath();
+		fs::path CubeUri();
 	private:
-		T Load(const fs::path&) const;
-		void Set(T&, const T&) const;
-		void Save(const T&, const fs::path&) const;
-
-		fs::path ImportFile(const fs::path&) const;
-		bool IsExternal(const fs::path&) const;
-		fs::path Relative(const fs::path&) const;
-		fs::path Absolute(const fs::path&) const;
-		void ParentPath(const fs::path& path) { parentPath = path; }
-		Resources();
-	private:
-		std::unordered_map<fs::path, T> cache;
-		fs::path parentPath;
+		fs::path projectAssetsRoot;
 	};
 
-	using ModelResources = Resources<std::shared_ptr<Components::Model>>;
-	using MeshResources = Resources<std::shared_ptr<Renderer::Mesh>>;
-	using TextureResources = Resources<std::shared_ptr<Renderer::Texture>>;
-
-	enum class ModelTemplate { Cube, Sphere };
-	class ResourceUtils
-	{
+	class AssetLoaderProxy: AssetLoader {
 	public:
-		static ModelResources::ResourceType& ImportModel(const fs::path&);
-		static ModelResources::ResourceType& GetTemplate(ModelTemplate);
-		static void ExportModel(const ModelResources::ResourceType&, const fs::path&);
-		static std::string GetFileName(fs::path);
+		AssetLoaderProxy();
+		std::shared_ptr<Renderer::Texture> LoadTexture(const fs::path& uri);
+		std::shared_ptr<Components::Model> LoadModel(const fs::path& uri);
+		std::shared_ptr<Components::Model> ImportModel(const fs::path& from, std::string name = "");
+		void SaveModel(const std::shared_ptr<Components::Model>& model);
+		void ReloadModel(const std::shared_ptr<Components::Model>& model);
+		fs::path Uri(const std::shared_ptr<Components::Model>& of);
+		fs::path Uri(const std::shared_ptr<Renderer::Texture>& of);
+		std::vector<fs::path> ListLoadedModels();
+		void ClearCache();
+		using AssetLoader::AbsolutePathToUri;
+		using AssetLoader::CubeUri;
+	private:
+		template<class T> fs::path Uri(const std::unordered_map<fs::path, T>& cache, const T& target) {
+			for (auto& [uri, val] : cache)
+				if (val == target)
+					return uri;
+			throw Exception(Exception::Code::AssetNotFoundInCache);
+		}
+	private:
+		std::unordered_map<fs::path, std::shared_ptr<Components::Model>> models;
+		std::unordered_map<fs::path, std::shared_ptr<Renderer::Texture>> textures;
 	};
 }

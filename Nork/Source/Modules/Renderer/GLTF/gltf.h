@@ -167,6 +167,9 @@ namespace Nork::Renderer::GLTF {
 		int byteStride = 0;
 		int target = -1; // optional
 
+		static constexpr int ARRAY_BUFFER = 34962;
+		static constexpr int ELEMENT_ARRAY_BUFFER = 34963;
+
 		JsonObject ToJson() const override
 		{
 			auto json = JsonObject()

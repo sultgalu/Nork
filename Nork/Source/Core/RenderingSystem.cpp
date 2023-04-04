@@ -22,7 +22,7 @@ Renderer::Renderer* Renderer::Renderer::instance = nullptr;
 		if (tr)
 			*dr.sharedTransform = tr->RecalcModelMatrix();
 		if (dr.GetModel() == nullptr || dr.GetModel()->meshes.empty())
-			dr.SetModel(ResourceUtils::GetTemplate(ModelTemplate::Cube));
+			dr.SetModel(AssetLoader::Instance().LoadModel(AssetLoader::Instance().CubeUri()));
 		shouldUpdateDrawCommands = true;
 	}
 	void RenderingSystem::UpdateDirLightShadows()
@@ -245,9 +245,7 @@ Renderer::Renderer* Renderer::Renderer::instance = nullptr;
 	RenderingSystem::~RenderingSystem()
 	{
 		// clear every reference to renderer objects before deleting it
-		ModelResources::Instance().Clear();
-		MeshResources::Instance().Clear();
-		TextureResources::Instance().Clear();
+		AssetLoader::Instance().ClearCache();
 		registry.clear<Components::Drawable, Components::DirLight, Components::PointLight>();
 		renderer = nullptr;
 	}

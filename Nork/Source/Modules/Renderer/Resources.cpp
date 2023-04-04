@@ -60,20 +60,20 @@ Resources::Resources()
 		lightStage, vk::AccessFlagBits2::eUniformRead);
 
 	using enum vk::MemoryPropertyFlagBits;
-	dirLightParams = Buffer::CreateHostWritable(
+	dirLightParams = Buffer::CreateHostVisible(
 		vk::BufferUsageFlagBits::eUniformBuffer, dlp_size,
 		{ .required = eHostVisible | eHostCoherent | eDeviceLocal });
-	pointLightParams = Buffer::CreateHostWritable(
+	pointLightParams = Buffer::CreateHostVisible(
 		vk::BufferUsageFlagBits::eUniformBuffer, plp_size,
 		{ .required = eHostVisible | eHostCoherent | eDeviceLocal });
-	pShadowVps = Buffer::CreateHostWritable(
+	pShadowVps = Buffer::CreateHostVisible(
 		vk::BufferUsageFlagBits::eUniformBuffer, pShadVp_size * framesInFlight,
 		{ .required = eHostVisible | eHostCoherent | eDeviceLocal });
 
-	drawParams = Buffer::CreateHostWritable(
+	drawParams = Buffer::CreateHostVisible(
 		vk::BufferUsageFlagBits::eUniformBuffer, dps_size,
 		{ .required = eHostVisible | eHostCoherent | eDeviceLocal });
-	drawCommands = Buffer::CreateHostWritable(
+	drawCommands = Buffer::CreateHostVisible(
 		vk::BufferUsageFlagBits::eIndirectBuffer, dcs_size,
 		{ .required = eHostVisible | eHostCoherent | eDeviceLocal });
 

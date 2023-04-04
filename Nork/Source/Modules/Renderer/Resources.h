@@ -102,15 +102,15 @@ public:
 
 	std::shared_ptr<DeviceElements<glm::mat4>> modelMatrices;
 	std::shared_ptr<DeviceElements<Data::Material>> materials;
-	std::shared_ptr<HostWritableBuffer> drawParams;
-	std::shared_ptr<HostWritableBuffer> drawCommands;
+	std::shared_ptr<HostVisibleBuffer> drawParams;
+	std::shared_ptr<HostVisibleBuffer> drawCommands;
 	std::shared_ptr<DeviceElements<Data::DirLight>> dirLights;
 	std::shared_ptr<DeviceElements<Data::DirShadow>> dirShadows;
 	std::shared_ptr<DeviceElements<Data::PointLight>> pointLights;
 	std::shared_ptr<DeviceElements<Data::PointShadow>> pointShadows;
-	std::shared_ptr<HostWritableBuffer> dirLightParams;
-	std::shared_ptr<HostWritableBuffer> pointLightParams;
-	std::shared_ptr<HostWritableBuffer> pShadowVps;
+	std::shared_ptr<HostVisibleBuffer> dirLightParams;
+	std::shared_ptr<HostVisibleBuffer> pointLightParams;
+	std::shared_ptr<HostVisibleBuffer> pShadowVps;
 	// eg. double-buffer only when light data is written
 	// only d-buffing when written should be applied to drawParams/drawCommands, 
 	// then it is not required to refill the buffers every frame 

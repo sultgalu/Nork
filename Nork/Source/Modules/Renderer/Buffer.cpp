@@ -13,17 +13,21 @@ namespace Nork::Renderer {
 
 		buffer->BindMemory(memory.Underlying(), memory.PoolOffset());
 		if (memory.IsHostVisible() && memory.IsHostCoherent())
-			return std::make_shared<HostWritableBuffer>(buffer, memory);
+			return std::make_shared<HostVisibleBuffer>(buffer, memory);
 		else
 			return std::make_shared<Buffer>(buffer, memory);
 	}
-	std::shared_ptr<HostWritableBuffer> Buffer::CreateHostWritable(vk::BufferUsageFlags usage,
+	std::shared_ptr<HostVisibleBuffer> Buffer::CreateHostVisible(vk::BufferUsageFlags usage,
 		vk::DeviceSize size, const MemoryFlags& memFlags)
 	{
 		auto buffer = Create(usage, size, memFlags);
 		if (buffer->memory.IsHostVisible() && buffer->memory.IsHostCoherent())
-			return std::reinterpret_pointer_cast<HostWritableBuffer>(buffer);
+			return std::reinterpret_pointer_cast<HostVisibleBuffer>(buffer);
 		std::unreachable();
+	}
+	void Buffer::DownloadWithStagingBuffer(vk::DeviceSize offset, vk::DeviceSize size, const std::function<void(std::span<std::byte>)>& cb) const
+	{
+		MemoryTransfer::Instance().DownloadFromBuffer(*this, offset, size, cb);
 	}
 	void Buffer::OverWrite(const void* data, vk::DeviceSize size, uint32_t pos)
 	{
@@ -58,7 +62,7 @@ namespace Nork::Renderer {
 	{
 		MemoryTransfer::Instance().UploadToBuffer(*this, writes, syncStages, syncAccess);
 	}
-	void HostWritableBuffer::UploadWithMemcpy()
+	void HostVisibleBuffer::UploadWithMemcpy()
 	{
 		for (auto& write : writes)
 		{

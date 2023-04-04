@@ -299,14 +299,14 @@ namespace Nork {
 	template<> JsonObject JsonComponentSerializer<Drawable>::Serialize(const Drawable& component)
 	{
 		return JsonObject()
-			.Property("uri", ModelResources::Instance().Uri(component.GetModel()).string());
+			.Property("uri", AssetLoader::Instance().Uri(component.GetModel()).string());
 	}
 	template<> Drawable& JsonComponentDeserializer<Drawable>::Deserialize(const JsonObject& json)
 	{
 		auto& comp = entity.AddComponent<Drawable>([&](Drawable& comp)
 			{
-				auto id = json.Get<std::string>("uri");
-				comp.SetModel(ModelResources::Instance().Get(id));
+				auto uri = json.Get<std::string>("uri");
+				comp.SetModel(AssetLoader::Instance().LoadModel(uri));
 			});
 		return comp;
 	}

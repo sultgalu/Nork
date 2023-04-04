@@ -15,7 +15,7 @@ namespace Nork::Renderer::Vulkan {
 			ptr = mapMemory(0, allocInfo.allocationSize);
 			return ptr;
 		}
-		bool IsMapped()
+		bool IsMapped() const
 		{
 			return ptr != nullptr;
 		}

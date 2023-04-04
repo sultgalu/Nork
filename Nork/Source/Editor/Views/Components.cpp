@@ -77,8 +77,9 @@ namespace Nork::Editor {
 			{
 				ImGui::InputInt("New Width", &newSize.x);
 				ImGui::InputInt("New Height", &newSize.y);
-				if (changed |= ImGui::Button("OK"))
+				if (ImGui::Button("OK"))
 				{
+					changed = true;
 					shadowMap->CreateTexture(newSize.x, newSize.y);
 					ImGui::CloseCurrentPopup();
 				}
@@ -99,8 +100,10 @@ namespace Nork::Editor {
 		changed |= ImGui::ColorEdit4("Color##Plight", (float*)&(pointLight.Data()->color.r));
 
 		int pow = pointLight.GetIntensity();
-		if (changed |= ImGui::DragInt("Intensity", &(pow), 1, 0, 10000))
+		if (ImGui::DragInt("Intensity", &(pow), 1, 0, 10000)) {
+			changed = true;
 			pointLight.SetIntensity(pow);
+		}
 
 		if (!node->GetEntity().HasComponent<Components::PointShadowMap>())
 		{
@@ -133,8 +136,9 @@ namespace Nork::Editor {
 			if (ImGui::BeginPopup("chgrespshad"))
 			{
 				ImGui::InputInt("New Size", &newSize);
-				if (changed |= ImGui::Button("OK"))
+				if (ImGui::Button("OK"))
 				{
+					changed = true;
 					shadowMap->CreateTexture(newSize);
 					ImGui::CloseCurrentPopup();
 				}
@@ -235,18 +239,20 @@ namespace Nork::Editor {
 					changed |= trChanged;
 					if (trChanged)
 						mesh.localTransform = glm::scale(glm::translate(glm::identity<glm::mat4>(), pos) * glm::mat4_cast(quat), scale);
-					if (changed |= ImGui::Button("Remove Local Transform&localtransform"))
+					if (ImGui::Button("Remove Local Transform&localtransform")) {
+						changed = true;
 						mesh.localTransform.reset();
+					}
 				}
-				else if (changed |= ImGui::Button("Add Local Transform&localtransform"));
-				{
+				else if (ImGui::Button("Add Local Transform&localtransform")) {
+					changed = true;
 					mesh.localTransform.emplace(glm::identity<glm::mat4>());
 				}
 
-				auto meshPath = MeshResources::Instance().Uri(model->meshes[meshIdx].mesh).string();
+				//auto meshPath = MeshResources::Instance().Uri(model->meshes[meshIdx].mesh).string();
 				// auto matPath = MaterialResources::Instance().Path(dr.model->meshes[meshIdx].material);
-				ImGui::Text("Mesh ID:"); ImGui::SameLine();
-				ImGui::Text(meshPath.c_str());
+				//ImGui::Text("Mesh ID:"); ImGui::SameLine();
+				//ImGui::Text(meshPath.c_str());
 				// ImGui::Text("Material ID:"); ImGui::SameLine();
 				// ImGui::Text(matPath.string().c_str());
 
@@ -282,7 +288,8 @@ namespace Nork::Editor {
 							std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::Image, L"Load Texture", L"Load");
 							if (!p.empty())
 							{
-								auto newTex = TextureResources::Instance().Get(p);
+								auto uri = AssetLoader::Instance().AbsolutePathToUri(p);
+								auto newTex = AssetLoader::Instance().LoadTexture(uri);
 								if (newTex != nullptr)
 								{
 									model->meshes[meshIdx].material->SetTextureMap(newTex, type);
@@ -307,9 +314,9 @@ namespace Nork::Editor {
 
 				ImGui::DragInt("Image Size", &imgSize, 1, 50, 500);
 
-				auto meshUri = MeshResources::Instance().Uri(model->meshes[meshIdx].mesh).filename().string();
-				ImGui::Text("Mesh: "); ImGui::SameLine();
-				ImGui::Text(meshUri.c_str());
+				//auto meshUri = MeshResources::Instance().Uri(model->meshes[meshIdx].mesh).filename().string();
+				//ImGui::Text("Mesh: "); ImGui::SameLine();
+				//ImGui::Text(meshUri.c_str());
 
 				// auto matSrc = MaterialResources::Instance().Id(dr.model->meshes[meshIdx].material);
 				// ImGui::Text("Material: "); ImGui::SameLine();
@@ -325,24 +332,25 @@ namespace Nork::Editor {
 				ImGui::TreePop();
 			}
 		}
-		auto src = ModelResources::Instance().Uri(model).filename().string();
+		auto src = AssetLoader::Instance().Uri(model).filename().string();
 		ImGui::Text(src.c_str());
 		static char modelNamebuf[100] = { 0 };
 		if (ImGui::Button("Save Model"))
 		{
-			ModelResources::Instance().Save(model);
+			AssetLoader::Instance().SaveModel(model);
 		}
 		if (ImGui::Button("Load Model"))
 		{
 			std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::glTF, L"Load model", L"Load");
-			if (changed |= !p.empty())
-			{
-				dr.SetModel(ModelResources::Instance().Get(p));
+			if (!p.empty()) {
+				auto uri = AssetLoader::Instance().AbsolutePathToUri(p);
+				dr.SetModel(AssetLoader::Instance().LoadModel(uri));
+				changed = true;
 			}
 		}
-		if (changed |= ImGui::Button("Reload Model"))
-		{
-			ModelResources::Instance().Reload(dr.GetModel());
+		if (ImGui::Button("Reload Model")) {
+			changed = true;
+			AssetLoader::Instance().ReloadModel(dr.GetModel());
 		}
 		static fs::path selected;
 		if (ImGui::Button("Switch"))
@@ -352,14 +360,14 @@ namespace Nork::Editor {
 		}
 		if (ImGui::BeginPopup("SwitchPopup"))
 		{
-			for (auto& [path, model] : ModelResources::Instance().Cache())
+			for (auto& uri : AssetLoader::Instance().ListLoadedModels())
 			{
-				if (ImGui::Selectable(path.string().c_str(), selected == path, ImGuiSelectableFlags_::ImGuiSelectableFlags_DontClosePopups))
-					selected = path;
+				if (ImGui::Selectable(uri.string().c_str(), selected == uri, ImGuiSelectableFlags_::ImGuiSelectableFlags_DontClosePopups))
+					selected = uri;
 			}
-			if (changed |= ImGui::Button("Switch##Accept"))
-			{
-				dr.SetModel(ModelResources::Instance().Get(selected));
+			if (ImGui::Button("Switch##Accept")) {
+				changed = true;
+				dr.SetModel(AssetLoader::Instance().LoadModel(selected));
 				ImGui::CloseCurrentPopup();
 			}
 			ImGui::EndPopup();
@@ -367,17 +375,10 @@ namespace Nork::Editor {
 		if (ImGui::Button("Import Model"))
 		{
 			std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::_3D, L"Import model", L"Import");
-			if (changed |= !p.empty())
-			{
-				dr.SetModel(ResourceUtils::ImportModel(p));
-			}
-		}
-		if (ImGui::Button("Export Model"))
-		{
-			std::string p = FileDialog::SaveFile(FileDialog::EngineFileTypes::glTF, L"Export model", L"Export");
 			if (!p.empty())
 			{
-				ResourceUtils::ExportModel(model, p);
+				changed = true;
+				dr.SetModel(AssetLoader::Instance().ImportModel(p));
 			}
 		}
 	}
@@ -394,13 +395,15 @@ namespace Nork::Editor {
 		auto axis = glm::normalize(kin.w);
 		auto angle = glm::length(kin.w);
 		changed |= ImGui::DragFloat3("Angular Velocity Axis", &kin.w.x);
-		// if (changed |= ImGui::DragFloat3("Angular Velocity Axis", &axis.x))
+		// if (ImGui::DragFloat3("Angular Velocity Axis", &axis.x))
 		// {
+		//	changed = true;
 		// 	kin.w = axis * angle;
 		// }
 		// 
-		// if (changed |= ImGui::DragFloat("Angular Velocity Speed", &angle, 0.001f))
+		// if (ImGui::DragFloat("Angular Velocity Speed", &angle, 0.001f))
 		// {
+		//	changed = true;
 		// 	kin.w = axis * angle;
 		// }
 	}

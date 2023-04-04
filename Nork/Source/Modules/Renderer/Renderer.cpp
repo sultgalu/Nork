@@ -67,6 +67,7 @@ uint32_t Renderer::BeginFrame()
 	using namespace Vulkan;
 
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+	Commands::Instance().ProcessFinishedCommandBufferCallbacks();
 	Commands::Instance().NextFrame(currentFrame);
 	Commands::Instance().BeginRenderCommandBuffer();
 	Commands::Instance().BeginTransferCommandBuffer();
@@ -74,9 +75,9 @@ uint32_t Renderer::BeginFrame()
 	resources->OnNewFrame(currentFrame);
 	if (client)
 	{
-		auto getPtr = [&](HostWritableBuffer& buf)
+		auto getPtr = [&](HostVisibleBuffer& buf)
 		{
-			return ((uint8_t*)buf.Ptr() + resources->DynamicOffset(buf));
+			return ((uint8_t*)buf.memory.Ptr() + resources->DynamicOffset(buf));
 		};
 		client->OnCommands();
 		auto dPtr = (uint32_t*)getPtr(*resources->dirLightParams);
@@ -120,8 +121,7 @@ void Renderer::EndFrame(uint32_t imgIdx)
 {
 	using namespace Vulkan;
 
-	Commands::Instance().SubmitTransferCommands();
-	Commands::Instance().SubmitRenderCommands(true, { imageAvailableSemaphores[currentFrame] });
+	Commands::Instance().SubmitRenderAndTransferCommands(true, { imageAvailableSemaphores[currentFrame] });
 
 	auto res = Device::Instance().graphicsQueue.presentKHR(
 		vk::PresentInfoKHR()
@@ -145,7 +145,7 @@ void Renderer::DrawFrame()
 		return;
 	for (auto& pass : renderPasses)
 	{
-		pass->RecordCommandBuffer(*Commands::Instance().renderCmds[currentFrame], imgIdx, currentFrame);
+		pass->RecordCommandBuffer(*Commands::Instance().GetCurrentRenderCmd(), imgIdx, currentFrame);
 	}
 	Commands::Instance().EndRenderCommandBuffer();
 	Commands::Instance().EndTransferCommandBuffer();

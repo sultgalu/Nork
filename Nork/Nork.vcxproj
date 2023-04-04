@@ -198,6 +198,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Components\Impl\Drawable.cpp" />
+    <ClCompile Include="Source\Core\GLTFReader.cpp" />
     <ClCompile Include="Source\Editor\Utils\EditorImage.cpp" />
     <ClCompile Include="Source\Main\Entry.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Buffer.cpp" />

@@ -34,6 +34,5 @@ namespace Nork::Renderer
 		//static void WriteTexture(const Renderer::Texture2D& tex, const std::string& path, Renderer::ImageFormat format);
 		static std::array<ImageData, 6> LoadCubemapImages(std::string dirPath, std::string extension);
 		static std::string LoadShader(std::string_view path);
-		static std::vector<MeshData> LoadModel(const std::string& path);
 	};
 }
