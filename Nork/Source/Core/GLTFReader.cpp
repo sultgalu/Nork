@@ -23,40 +23,42 @@ std::shared_ptr<Components::Model> GLTFReader::Read()
 		for (size_t j = 0; j < gltf.meshes[i].primitives.size(); j++)
 		{
 			auto mesh = CreateRendererMesh(j, i);
-			// MeshResources::Instance().Add(mesh, (dstFolder / std::to_string(i) / std::to_string(j)).replace_extension(".bin"));
 			meshes.back().push_back(mesh);
 		}
 	}
 	for (auto nodeIdx : gltf.scenes.back().nodes)
-		AddMeshRecursive(nodeIdx);
+		AddNodeRecursive(nodeIdx);
 
 	return model;
 }
-void GLTFReader::AddMeshRecursive(int nodeIdx, const glm::mat4& parentTransform)
+void GLTFReader::AddNodeRecursive(int nodeIdx, const glm::mat4& parentTransform)
 {
-	const Renderer::GLTF::Node& node = gltf.nodes[nodeIdx];
-	std::optional<glm::mat4> transform;
-	if (node.HasTransform())
-		transform = parentTransform * node.Transform();
+	const Renderer::GLTF::Node& glNode = gltf.nodes[nodeIdx];
+	glm::mat4 transform = parentTransform;
+	if (glNode.HasTransform()) // "The global transformation matrix of a node is the product of the global transformation matrix of its parent node and its own local transformation matrix"
+		transform = parentTransform * glNode.Transform();
 
-	for (auto i : node.children)
-		AddMeshRecursive(i, transform ? *transform : parentTransform);
+	for (auto i : glNode.children)
+		AddNodeRecursive(i, transform);
 
-	if (node.mesh != -1)
+	if (glNode.mesh != -1)
 	{
-		auto& meshGltf = gltf.meshes[node.mesh];
-		for (size_t i = 0; i < meshGltf.primitives.size(); i++)
+		auto& glMesh = gltf.meshes[glNode.mesh];
+		model->nodes.push_back(Components::Model::MeshNode{ .mesh = std::make_shared<Components::Model::Mesh>() });
+		for (size_t i = 0; i < glMesh.primitives.size(); i++)
 		{
-			auto& mesh = meshes[node.mesh][i];
+			auto& mesh = meshes[glNode.mesh][i];
 			if (mesh)
 			{
-				auto matIdx = meshGltf.primitives[i].material;
-				model->meshes.push_back(Components::Mesh{
+				auto matIdx = glMesh.primitives[i].material;
+				model->nodes.back().mesh->subMeshes.push_back(Components::Model::SubMesh{
 					.mesh = mesh,
-					.material = matIdx == -1 ? defaultMaterial : materials[matIdx],
-					.localTransform = transform
+					.material = matIdx == -1 ? defaultMaterial : materials[matIdx]
 					});
 			}
+		}
+		if (transform != glm::identity<glm::mat4>()) {
+			model->nodes.back().localTransform = transform;
 		}
 	}
 }

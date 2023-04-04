@@ -10,7 +10,7 @@ namespace Nork{
 		std::shared_ptr<Components::Model> Read();
 		// gltf files that contain 1 exported model usually have 1 node (mesh). But if it has more, this function recursively processes them and loads everything as 1 model
 		// eg. if gltf contains a complex scene, the while scene will be loaded as a singular model
-		void AddMeshRecursive(int nodeIdx, const glm::mat4& parentTransform = glm::identity<glm::mat4>());
+		void AddNodeRecursive(int nodeIdx, const glm::mat4& parentTransform = glm::identity<glm::mat4>());
 		std::shared_ptr<Renderer::Material> CreateMaterial(const Renderer::GLTF::Material& mat);
 		std::shared_ptr<Renderer::Mesh> CreateRendererMesh(int idx, int meshIdx);
 		template<class T> std::vector<uint32_t> GetIndices(const Renderer::GLTF::Primitive& prim);

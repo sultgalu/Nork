@@ -21,7 +21,7 @@ Renderer::Renderer* Renderer::Renderer::instance = nullptr;
 		dr.sharedTransform = NewModelMatrix();
 		if (tr)
 			*dr.sharedTransform = tr->RecalcModelMatrix();
-		if (dr.GetModel() == nullptr || dr.GetModel()->meshes.empty())
+		if (dr.GetModel() == nullptr || dr.GetModel()->nodes.empty())
 			dr.SetModel(AssetLoader::Instance().LoadModel(AssetLoader::Instance().CubeUri()));
 		shouldUpdateDrawCommands = true;
 	}
@@ -135,10 +135,12 @@ Renderer::Renderer* Renderer::Renderer::instance = nullptr;
 
 			auto add = [&](const Components::Drawable& dr, std::vector<Renderer::Object>& to)
 			{
-				for (size_t i = 0; i < dr.GetModel()->meshes.size(); i++)
+				for (size_t i = 0; i < dr.GetModel()->nodes.size(); i++)
 				{
-					auto& mesh = dr.GetModel()->meshes[i];
-					to.push_back(Renderer::Object{ .mesh = mesh.mesh, .material = mesh.material, .modelMatrix = dr.transforms[i] });
+					auto& node = dr.GetModel()->nodes[i];
+					for (auto& subMesh : node.mesh->subMeshes) {
+						to.push_back(Renderer::Object{ .mesh = subMesh.mesh, .material = subMesh.material, .modelMatrix = dr.transforms[i] });
+					}
 				}
 			};
 			for (auto [id, dr, tr] : group.each())
@@ -329,11 +331,11 @@ Renderer::Renderer* Renderer::Renderer::instance = nullptr;
 			auto& dr = registry.get<Components::Drawable>(ent);
 			const auto& modelMatrix = registry.get<Components::Transform>(ent).modelMatrix;
 			*dr.sharedTransform = modelMatrix;
-			for (size_t i = 0; i < dr.GetModel()->meshes.size(); i++)
+			for (size_t i = 0; i < dr.GetModel()->nodes.size(); i++)
 			{
-				auto& mesh = dr.GetModel()->meshes[i];
-				if (mesh.localTransform.has_value())
-					*dr.transforms[i] = modelMatrix * *mesh.localTransform;
+				auto& node = dr.GetModel()->nodes[i];
+				if (node.localTransform.has_value())
+					*dr.transforms[i] = modelMatrix * *node.localTransform;
 			}
 		}
 		transformObserver.clear();

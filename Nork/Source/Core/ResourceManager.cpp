@@ -62,22 +62,46 @@ std::shared_ptr<Components::Model> AssetLoader::LoadModel(const fs::path& uri) {
 		throw Exception(Exception::Code::EmptyModel);
 	}
 
-	auto model = std::make_shared<Components::Model>();
-	auto& mesh = gltf.meshes.front(); // gltf::Mesh = Components::Model
-	for (auto& prim : mesh.primitives)
-	{ // gltf::Primitive = Components::Mesh
-		const auto& indsBuf = gltf.buffers[gltf.bufferViews[gltf.accessors[prim.indices].bufferView].buffer];
-		const auto& vertsBufs = gltf.buffers[gltf.bufferViews[gltf.accessors[prim.attributes.back().accessor].bufferView].buffer]; // all of this primitive's attributes should point to the same buffer (vertices) 
-		// Logger::Info("Loading mesh ", path);
+	// TODO: renderer::meshes (primitives) could also be shared, but it is not possible with gltf
+	std::vector<std::shared_ptr<Components::Model::Mesh>> meshes; 
+	std::vector<std::shared_ptr<Renderer::Material>> materials;
 
-		Components::Mesh mesh{ .mesh = RenderingSystem::Instance().NewMesh(
-			FileUtils::ReadBinary<Renderer::Data::Vertex>((path.parent_path() / vertsBufs.uri).string()),
-			FileUtils::ReadBinary<uint32_t>((path.parent_path() / indsBuf.uri).string())) };
-		mesh.material = RenderingSystem::Instance().NewMaterial();
-		if (prim.material != -1)
-			ParseMaterial(*mesh.material, gltf.materials[prim.material], gltf, path.parent_path());
-		model->meshes.push_back(mesh);
+	for (auto& glMat : gltf.materials) {
+		auto material = RenderingSystem::Instance().NewMaterial();
+		materials.push_back(material);
+		ParseMaterial(*material, glMat, gltf, path.parent_path());
 	}
+
+	for (auto& glMesh : gltf.meshes) {
+		auto mesh = std::make_shared<Components::Model::Mesh>();
+		meshes.push_back(mesh);
+		for (auto& prim : glMesh.primitives)
+		{
+			const auto& indsBuf = gltf.buffers[gltf.bufferViews[gltf.accessors[prim.indices].bufferView].buffer];
+			const auto& vertsBufs = gltf.buffers[gltf.bufferViews[gltf.accessors[prim.attributes.back().accessor].bufferView].buffer]; // all of this primitive's attributes should point to the same buffer (vertices) 
+			Components::Model::SubMesh subMesh{ .mesh = RenderingSystem::Instance().NewMesh(
+				FileUtils::ReadBinary<Renderer::Data::Vertex>((path.parent_path() / vertsBufs.uri).string()),
+				FileUtils::ReadBinary<uint32_t>((path.parent_path() / indsBuf.uri).string())) };
+
+			subMesh.material = prim.material != -1 ? materials[prim.material] : RenderingSystem::Instance().NewMaterial();
+			mesh->subMeshes.push_back(subMesh);
+		}
+	}
+
+	auto model = std::make_shared<Components::Model>();
+	for (auto& glNode : gltf.nodes) {
+		if (glNode.mesh == -1) {
+			std::unreachable(); // this could happen in the future, but not now
+		}
+		Components::Model::MeshNode meshNode;
+		meshNode.mesh = meshes[glNode.mesh];
+		if (glNode.HasTransform()) {
+			meshNode.localTransform = glNode.Transform();
+		}
+		model->nodes.push_back(meshNode);
+	}
+	auto& mesh = gltf.meshes.front(); // gltf::Mesh = Components::Model
+	
 
 	return model;
 }
@@ -120,25 +144,38 @@ void AssetLoader::SaveModel(const std::shared_ptr<Components::Model>& model, con
 
 	auto builder = Renderer::GLTFBuilder();
 	std::vector<std::pair<Renderer::TextureMap, std::string>> imageUris;
-	int matIdx = 0;
-	builder.NewScene(true).NewNode(path.stem().string());
-	for (auto& mesh : model->meshes)
+	int matIdx = 0, meshIdx = 0;
+	std::unordered_map<std::shared_ptr<Components::Model::Mesh>, int> meshes;
+	std::unordered_map<std::shared_ptr<Renderer::Material>, int> materials;
+	builder.AddScene(true); //AddNode(path.stem().string());
+	for (auto& node : model->nodes)
 	{
-		// MeshResources::Instance().Save(mesh.mesh);
-		auto tryAddTex = [&](Renderer::TextureMap type)
-		{
-			if (!mesh.material->HasDefault(type)) { // don't need to add if it equals the (gltf) default one 
-				// save just the filename, not the whole uri, so it conforms to the standard
-				imageUris.push_back({ type, AssetLoader::Instance().Uri(mesh.material->GetTextureMap(type)).filename().string()});
+		if (!meshes.contains(node.mesh)) { // check if we already added this mesh
+			meshes[node.mesh] = meshIdx++;
+			builder.AddMesh();
+
+			for (auto& primitive : node.mesh->subMeshes) {
+				if (!materials.contains(primitive.material)) { // check if we already added this material
+					materials[primitive.material] = matIdx++;
+					auto tryAddTex = [&](Renderer::TextureMap type) {
+						if (!primitive.material->HasDefault(type)) { // don't need to add if it equals the (gltf) default one 
+							// save just the filename, not the whole uri, so it conforms to the standard
+							imageUris.push_back({ type, AssetLoader::Instance().Uri(primitive.material->GetTextureMap(type)).filename().string() });
+						}
+					};
+					using enum Renderer::TextureMap;
+					tryAddTex(BaseColor);
+					tryAddTex(MetallicRoughness);
+					tryAddTex(Normal);
+					builder.AddMaterial(*primitive.material, imageUris);
+				}
+				builder.AddPrimitive(*primitive.mesh, path.parent_path().string(), materials[primitive.material]);
 			}
-		};
-		using enum Renderer::TextureMap;
-		tryAddTex(BaseColor);
-		tryAddTex(MetallicRoughness);
-		tryAddTex(Normal);
-		builder
-			.AddMesh(*mesh.mesh, path.parent_path().string(), matIdx++)
-			.AddMaterial(*mesh.material, imageUris);
+		}
+		builder.AddNode(meshes[node.mesh]);
+		if (node.localTransform) {
+			builder.AddTransform(*node.localTransform);
+		}
 	}
 
 	SaveGLTF(builder.Get(), path);

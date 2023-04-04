@@ -2,7 +2,7 @@
 
 namespace Nork::Renderer {
 
-GLTFBuilder& GLTFBuilder::NewScene(bool setDefault)
+GLTFBuilder& GLTFBuilder::AddScene(bool setDefault)
 {
 	if (setDefault)
 		gltf.scene = gltf.scenes.size();
@@ -10,12 +10,33 @@ GLTFBuilder& GLTFBuilder::NewScene(bool setDefault)
 
 	return *this;
 }
-GLTFBuilder& GLTFBuilder::NewNode(std::string name)
+GLTFBuilder& GLTFBuilder::AddNode(int meshIdx)
 {
 	gltf.scenes.back().nodes.push_back(gltf.nodes.size());
 	gltf.nodes.push_back(GLTF::Node());
-	gltf.nodes.back().mesh = gltf.meshes.size();
+	gltf.nodes.back().mesh = meshIdx;
+	return *this;
+}
+GLTFBuilder& GLTFBuilder::AddTransform(const glm::mat4& tr) {
+	/*glm::vec3 scale, translation, skew; glm::vec4 persp;
+	glm::quat quat;
+	glm::decompose(tr, scale, quat, translation, skew, persp);
+	quat = glm::conjugate(quat);
+	if (quat != glm::identity<glm::quat>()) {
+		gltf.nodes.back().rotation = quat;
+	}
+	if (scale != glm::vec3(1)) {
+		gltf.nodes.back().scale = scale;
+	}
+	if (translation != glm::vec3(0)) {
+		gltf.nodes.back().translation = translation;
+	}*/
+	gltf.nodes.back().matrix = tr; // the other way
+	return *this;
+}
 
+GLTFBuilder& GLTFBuilder::AddMesh(const std::string& name)
+{
 	GLTF::Mesh gltfMesh;
 	if (!name.empty()) {
 		gltfMesh.name = name;
@@ -23,8 +44,7 @@ GLTFBuilder& GLTFBuilder::NewNode(std::string name)
 	gltf.meshes.push_back(gltfMesh);
 	return *this;
 }
-
-GLTFBuilder& GLTFBuilder::AddMesh(const Mesh& mesh, const std::filesystem::path& buffersPath, int matIdx)
+GLTFBuilder& GLTFBuilder::AddPrimitive(const Mesh& mesh, const std::filesystem::path& buffersPath, int matIdx)
 { // adds a node too
 	if (buffersPath.empty()) {
 		std::unreachable();
@@ -138,7 +158,10 @@ GLTFBuilder& GLTFBuilder::AddMaterial(const Material& material, std::vector<std:
 	mat.name = name;
 	mat.pbrMetallicRoughness.baseColorFactor = glm::vec4(material->baseColorFactor, 1.0f);
 	mat.pbrMetallicRoughness.roughnessFactor = material->roughnessFactor;
-	// mat.pbrMetallicRoughness.extras = JsonObject().Property("specularExponent", material->specularExponent);
+	if (material->alphaCutoff != -1) {
+		mat.alphaMode = mat.MASK;
+		mat.alphaCutoff = material->alphaCutoff;
+	}
 
 	for (auto [mapType, uri] : imageUris)
 	{ // adds new image+texture even if uri already exists. Should search for uri and use that index if found.

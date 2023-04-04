@@ -6,8 +6,8 @@ namespace Nork::Components {
 	{
 		model = model_;
 		transforms.clear();
-		transforms.reserve(model->meshes.size());
-		for (auto& mesh : model->meshes)
-			transforms.push_back(mesh.localTransform.has_value() ? RenderingSystem::Instance().NewModelMatrix() : sharedTransform);
+		transforms.reserve(model->nodes.size());
+		for (auto& node : model->nodes)
+			transforms.push_back(node.localTransform.has_value() ? RenderingSystem::Instance().NewModelMatrix() : sharedTransform);
 	}
 }

@@ -214,120 +214,124 @@ namespace Nork::Editor {
 	{
 		static int imgSize = 100;
 		const auto model = dr.GetModel();
-		if (!model->meshes.empty())
+		if (!model->nodes.empty())
 		{
-			if (ImGui::TreeNode("Material Textures"))
-			{
-				ImGui::Unindent();
+			if (ImGui::TreeNode("Meshes##1234")) {
 				static int meshIdx = 0;
-				auto meshCount = model->meshes.size();
+				auto meshCount = model->nodes.size();
 				if (meshIdx >= meshCount)
 					meshIdx = meshCount - 1;
 				ImGui::SliderInt("Mesh of model", &meshIdx, 0, meshCount - 1);
-				auto& mesh = model->meshes[meshIdx];
-				if (mesh.localTransform.has_value())
+				auto& node = model->nodes[meshIdx];
+
+				ImGui::Unindent();
+				if (node.localTransform.has_value())
 				{
 					glm::vec3 pos, scale, skew;
 					glm::quat quat;
 					glm::vec4 persp;
-					glm::decompose(*mesh.localTransform, scale, quat, pos, skew, persp);
+					glm::decompose(*node.localTransform, scale, quat, pos, skew, persp);
+					// quat = glm::conjugate(quat);
 					bool trChanged = false;
 
-					trChanged |= ImGui::DragFloat3("Position", &pos.x);
-					trChanged |= ImGui::DragFloat3("Rotation", &quat.x);
-					trChanged |= ImGui::DragFloat3("Scale", &scale.x);
+					trChanged |= ImGui::DragFloat3("Position", &pos.x, 0.001f);
+					trChanged |= ImGui::DragFloat4("Rotation", &quat.x, 0.001f);
+					trChanged |= ImGui::DragFloat3("Scale", &scale.x, 0.001f);
 					changed |= trChanged;
 					if (trChanged)
-						mesh.localTransform = glm::scale(glm::translate(glm::identity<glm::mat4>(), pos) * glm::mat4_cast(quat), scale);
-					if (ImGui::Button("Remove Local Transform&localtransform")) {
+						node.localTransform = glm::scale(glm::translate(glm::identity<glm::mat4>(), pos) * glm::mat4_cast(glm::normalize(quat)), scale);
+					if (ImGui::Button("Remove Local Transform")) {
 						changed = true;
-						mesh.localTransform.reset();
+						node.localTransform.reset();
 					}
 				}
-				else if (ImGui::Button("Add Local Transform&localtransform")) {
+				else if (ImGui::Button("Add Local Transform")) {
 					changed = true;
-					mesh.localTransform.emplace(glm::identity<glm::mat4>());
+					node.localTransform.emplace(glm::identity<glm::mat4>());
 				}
 
-				//auto meshPath = MeshResources::Instance().Uri(model->meshes[meshIdx].mesh).string();
-				// auto matPath = MaterialResources::Instance().Path(dr.model->meshes[meshIdx].material);
-				//ImGui::Text("Mesh ID:"); ImGui::SameLine();
-				//ImGui::Text(meshPath.c_str());
-				// ImGui::Text("Material ID:"); ImGui::SameLine();
-				// ImGui::Text(matPath.string().c_str());
-
-				auto material = model->meshes[meshIdx].material->Data();
-				ImGui::ColorEdit3("Base Color Factor", &material->baseColorFactor.r, ImGuiColorEditFlags_DefaultOptions_ | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
-				ImGui::SliderFloat("Roughness Factor", &material->roughnessFactor, 0, 1);
-				ImGui::SliderFloat("Metallic Factor", &material->metallicFactor, 0, 1);
-				
-				// if (ImGui::Button("Save Material"))
-				// {
-				// 	MaterialResources::Instance().Save(dr.model->meshes[meshIdx].material);
-				// }
-				if (ImGui::BeginTabBar("MaterialTexturesTab"))
+				if (ImGui::TreeNode("Materials##1234"))
 				{
-					auto displayTex = [&](Renderer::TextureMap type)
+					ImGui::Unindent();
+					static int subMeshIdx = 0;
+					auto subMeshCount = node.mesh->subMeshes.size();
+					if (subMeshIdx >= subMeshCount)
+						subMeshIdx = subMeshCount - 1;
+					ImGui::SliderInt("Mesh of model", &subMeshIdx, 0, subMeshCount - 1);
+					auto& subMesh = node.mesh->subMeshes[subMeshIdx];
+
+					auto material = subMesh.material->Data();
+					ImGui::ColorEdit3("Base Color Factor", &material->baseColorFactor.r, ImGuiColorEditFlags_DefaultOptions_ | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
+					ImGui::SliderFloat("Roughness Factor", &material->roughnessFactor, 0, 1);
+					ImGui::SliderFloat("Metallic Factor", &material->metallicFactor, 0, 1);
+
+					if (ImGui::BeginTabBar("MaterialTexturesTab"))
 					{
-						static EditorImage img;
-
-						auto tex = model->meshes[meshIdx].material->GetTextureMap(type);
-						img = tex->image;
-						ImGui::Image(img.descritptorSet, ImVec2(imgSize, imgSize));
-						ImGui::Text("Width: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->image->img->Width()).c_str());
-						ImGui::Text("Height: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->image->img->Width()).c_str());
-						ImGui::Text("Format: "); ImGui::SameLine(); ImGui::Text(vk::to_string(tex->image->img->Format()).c_str());
-
-						ImGui::EndTabItem();
-						if (ImGui::Button("Default"))
+						auto displayTex = [&](Renderer::TextureMap type)
 						{
-							model->meshes[meshIdx].material->SetDefaultTexture(type);
-						}
-						if (ImGui::Button("Load texture"))
-						{
-							std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::Image, L"Load Texture", L"Load");
-							if (!p.empty())
+							static EditorImage img;
+
+							auto tex = subMesh.material->GetTextureMap(type);
+							img = tex->image;
+							ImGui::Image(img.descritptorSet, ImVec2(imgSize, imgSize));
+							ImGui::Text("Width: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->image->img->Width()).c_str());
+							ImGui::Text("Height: "); ImGui::SameLine(); ImGui::Text(std::to_string(tex->image->img->Width()).c_str());
+							ImGui::Text("Format: "); ImGui::SameLine(); ImGui::Text(vk::to_string(tex->image->img->Format()).c_str());
+
+							ImGui::EndTabItem();
+							if (ImGui::Button("Default"))
 							{
-								auto uri = AssetLoader::Instance().AbsolutePathToUri(p);
-								auto newTex = AssetLoader::Instance().LoadTexture(uri);
-								if (newTex != nullptr)
+								subMesh.material->SetDefaultTexture(type);
+							}
+							if (ImGui::Button("Load texture"))
+							{
+								std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::Image, L"Load Texture", L"Load");
+								if (!p.empty())
 								{
-									model->meshes[meshIdx].material->SetTextureMap(newTex, type);
+									auto uri = AssetLoader::Instance().AbsolutePathToUri(p);
+									auto newTex = AssetLoader::Instance().LoadTexture(uri);
+									if (newTex != nullptr)
+									{
+										subMesh.material->SetTextureMap(newTex, type);
+									}
 								}
 							}
+						};
+						if (ImGui::BeginTabItem("Base Color"))
+						{
+							displayTex(Renderer::TextureMap::BaseColor);
 						}
-					};
-					if (ImGui::BeginTabItem("Base Color"))
-					{
-						displayTex(Renderer::TextureMap::BaseColor);
+						if (ImGui::BeginTabItem("Normal"))
+						{
+							displayTex(Renderer::TextureMap::Normal);
+						}
+						if (ImGui::BeginTabItem("Metallic Roughness"))
+						{
+							displayTex(Renderer::TextureMap::MetallicRoughness);
+						}
+						ImGui::EndTabBar();
 					}
-					if (ImGui::BeginTabItem("Normal"))
-					{
-						displayTex(Renderer::TextureMap::Normal);
-					}
-					if (ImGui::BeginTabItem("Metallic Roughness"))
-					{
-						displayTex(Renderer::TextureMap::MetallicRoughness);
-					}
-					ImGui::EndTabBar();
+
+					ImGui::DragInt("Image Size", &imgSize, 1, 50, 500);
+
+					//auto meshUri = MeshResources::Instance().Uri(model->meshes[meshIdx].mesh).filename().string();
+					//ImGui::Text("Mesh: "); ImGui::SameLine();
+					//ImGui::Text(meshUri.c_str());
+
+					// auto matSrc = MaterialResources::Instance().Id(dr.model->meshes[meshIdx].material);
+					// ImGui::Text("Material: "); ImGui::SameLine();
+					// ImGui::Text(matSrc.c_str());
+
+					// if (ImGui::Button("Load Material"))
+					// {
+					// 	std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::glTF, L"Load Material", L"Load");
+					// 	if (!p.empty())
+					// 		dr.model->meshes[meshIdx].material = MaterialResources::Instance().GetByPath(p);
+					// }
+					ImGui::Indent();
+					ImGui::TreePop();
 				}
 
-				ImGui::DragInt("Image Size", &imgSize, 1, 50, 500);
-
-				//auto meshUri = MeshResources::Instance().Uri(model->meshes[meshIdx].mesh).filename().string();
-				//ImGui::Text("Mesh: "); ImGui::SameLine();
-				//ImGui::Text(meshUri.c_str());
-
-				// auto matSrc = MaterialResources::Instance().Id(dr.model->meshes[meshIdx].material);
-				// ImGui::Text("Material: "); ImGui::SameLine();
-				// ImGui::Text(matSrc.c_str());
-
-				// if (ImGui::Button("Load Material"))
-				// {
-				// 	std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::glTF, L"Load Material", L"Load");
-				// 	if (!p.empty())
-				// 		dr.model->meshes[meshIdx].material = MaterialResources::Instance().GetByPath(p);
-				// }
 				ImGui::Indent();
 				ImGui::TreePop();
 			}
