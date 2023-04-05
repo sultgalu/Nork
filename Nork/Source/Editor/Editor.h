@@ -18,19 +18,16 @@ namespace Nork::Editor {
 		void Render();
 		void Update();
 		void UpdateImguiInputs();
-		void AddViewportPanel();
 		void AddPanel(std::shared_ptr<Panel>);
-		
-		void InitImguiForVulkanAndGlfw();
-	private:
+	public:
 		void DrawPanelManager();
 		template<std::derived_from<Panel> T> std::shared_ptr<T> GetPanel()
 		{
 			for (auto& panel : panels)
 			{
-				if (dynamic_cast<T*>(panel.get()))
+				if (auto casted = std::dynamic_pointer_cast<T>(panel))
 				{
-					return panel;
+					return casted;
 				}
 			}
 			return nullptr;
@@ -39,7 +36,6 @@ namespace Nork::Editor {
 		std::vector<std::shared_ptr<Panel>> panels;
 		std::vector<std::shared_ptr<Menu>> menus;
 		CommonData data;
-		int viewportPanelCount = 0;
 	public:
 	};
 }

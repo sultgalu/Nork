@@ -25,7 +25,7 @@ namespace Nork::Components
 		void Update();
 	public:
 		float FOV, ratio, nearClip, farClip;
-		float pitch = 0.0f, yaw = -90.0f, moveSpeed = 0.01f, zoomSpeed = 0.1f, rotationSpeed = 0.1f;
+		float pitch = 0.0f, yaw = -90.0f;
 		glm::vec3 position, front, up, right;
 		glm::mat4 view, projection, viewProjection;
 	private:

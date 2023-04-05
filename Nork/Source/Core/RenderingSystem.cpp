@@ -272,8 +272,10 @@ Renderer::Renderer* Renderer::Renderer::instance = nullptr;
 		dirLightObserver.connect(registry, entt::collector.update<Components::DirLight>());
 		pointLightObserver.connect(registry, entt::collector.update<Components::Transform>()
 			.where<Components::PointLight>().update<Components::PointLight>());
-		transformObserver.connect(registry, entt::collector.update<Components::Transform>().update<Components::Drawable>()
-			.where<Components::Drawable>().group<Components::Drawable, Components::Transform>());
+		transformObserver.connect(registry, entt::collector
+			.update<Components::Transform>().where<Components::Drawable>()
+			.update<Components::Drawable>()
+			.group<Components::Drawable, Components::Transform>());
 
 		renderer = std::make_shared<Renderer::Renderer>();
 		renderer->client = &rendererClient;

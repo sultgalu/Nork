@@ -11,9 +11,9 @@ namespace Nork::Editor {
 		~ViewportPanel();
 		virtual void Content() override;
 		const char* GetName() override { return name.c_str(); };
-		void SetIndex(int idx) { name = "Viewport  " + std::to_string(idx); }
 		void OnContentSkipped() override;
 		bool DeleteOnClose() const override { return true; }
+		void InitializeWithRenderer();
 	public:
 		ViewportView viewportView;
 	protected:

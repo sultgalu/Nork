@@ -3,13 +3,14 @@
 namespace Nork::Editor {
 	ViewportPanel::ViewportPanel()
 	{
-		GetCommonData().editorCameras.push_back(viewportView.camera);
-		RenderingSystem::Instance().camera = viewportView.camera;
-
 		panelState.windowFlags = ImGuiWindowFlags_::ImGuiWindowFlags_NoScrollWithMouse |
 			ImGuiWindowFlags_MenuBar |
 			ImGuiWindowFlags_NoScrollbar;
 			//| ImGuiWindowFlags_NoSavedSettings;
+	}
+	void ViewportPanel::InitializeWithRenderer()
+	{
+		RenderingSystem::Instance().camera = viewportView.camera;
 		if (Renderer::Renderer::Instance().instance)
 		{
 			auto& renderPasses = Renderer::Renderer::Instance().renderPasses;
@@ -24,18 +25,30 @@ namespace Nork::Editor {
 			std::unreachable(); // could not find displayable img
 		}
 	}
+	struct ViewportInit {
+		ViewportInit(ViewportPanel& vp) {
+			vp.InitializeWithRenderer();
+		}
+	};
 	ViewportPanel::~ViewportPanel()
 	{
-		for (size_t i = 0; i < GetCommonData().editorCameras.size(); i++)
-		{
-			if (GetCommonData().editorCameras[i] == viewportView.camera)
-			{
-				GetCommonData().editorCameras.erase(GetCommonData().editorCameras.begin() + i);
-			}
-		}
 	}
 	void ViewportPanel::Content()
 	{
+		static ViewportInit vpInit(*this); // needed because of bad Editor/Engine init order https://github.com/sultgalu/Nork/issues/7
+
+		if (Input::Instance().IsJustPressed(Key::F)) {
+			if (auto editorController = std::dynamic_pointer_cast<EditorCameraController>(viewportView.camController))
+			if (GetCommonData().selectedNode) {
+				if (auto tr = GetCommonData().selectedNode->GetEntity().TryGetComponent<Components::Transform>()) {
+					viewportView.camera->position = tr->position + glm::vec3(10);
+					editorController->center = tr->position;
+					editorController->UpdateByMouseInput(*viewportView.camera);
+					viewportView.camera->Update();
+				}
+			}
+		}
+
 		if (ImGui::BeginMenuBar())
 		{
 			if (ImGui::BeginMenu("Camera"))
@@ -43,21 +56,30 @@ namespace Nork::Editor {
 				auto camera = viewportView.camera;
 				if (ImGui::BeginMenu("Behaviour"))
 				{
-					if (ImGui::MenuItem("FPS", 0, std::dynamic_pointer_cast<FpsCameraController>(viewportView.camController) != nullptr))
-						viewportView.camController = std::make_shared<FpsCameraController>();
+					auto fpsController = std::dynamic_pointer_cast<FpsCameraController>(viewportView.camController);
+					if (ImGui::MenuItem("FPS", 0, fpsController != nullptr)) {
+						fpsController = std::make_shared<FpsCameraController>();
+						viewportView.camController = fpsController;
+					}
 					auto editorController = std::dynamic_pointer_cast<EditorCameraController>(viewportView.camController);
-					if (ImGui::MenuItem("Editor", 0, editorController != nullptr))
-						viewportView.camController = std::make_shared<EditorCameraController>(glm::vec3(0, 0, 0));
-					if (editorController != nullptr)
-						if (ImGui::DragFloat3("Center##editorController", &editorController->center.x, 0.1f))
-						{
+					if (ImGui::MenuItem("Editor", 0, editorController != nullptr)) {
+						editorController = std::make_shared<EditorCameraController>(glm::vec3(0, 0, 0));
+						viewportView.camController = editorController;
+					}
+					if (editorController) {
+						if (ImGui::DragFloat3("Center##editorController", &editorController->center.x, 0.1f)){
 							editorController->UpdateByMouseInput(*camera);
 						}
+						ImGui::DragFloat("Zoom Speed", &editorController->zoomSpeed, 0.01f, 0.001f);
+						ImGui::DragFloat("Rotation Speed", &editorController->rotationSpeed, 0.01f, 0.001f);
+					}
+					else if (fpsController) {
+						ImGui::DragFloat("Movement Speed", &fpsController->moveSpeed, 0.01f, 0.001f);
+						ImGui::DragFloat("Zoom Speed", &fpsController->zoomSpeed, 0.01f, 0.001f);
+						ImGui::DragFloat("Rotation Speed", &fpsController->rotationSpeed, 0.01f, 0.001f);
+					}
 					ImGui::EndMenu();
 				}
-				ImGui::DragFloat("Movement Speed", &camera->moveSpeed, 0.01f, 0.001f);
-				ImGui::DragFloat("Zoom Speed", &camera->zoomSpeed, 0.01f, 0.001f);
-				ImGui::DragFloat("Rotation Speed", &camera->rotationSpeed, 0.01f, 0.001f);
 				auto fov = glm::degrees(camera->FOV);
 				if (ImGui::DragFloat("FOV", &fov, 0.01f, 0.00f, 180.0f))
 				{
@@ -81,13 +103,6 @@ namespace Nork::Editor {
 					choice(4, 3);
 					choice(1, 1);
 					ImGui::EndMenu();
-				}
-				for (size_t i = 0; i < GetCommonData().editorCameras.size(); i++)
-				{
-					if (ImGui::Selectable(std::to_string(i).c_str()))
-					{
-						camera = GetCommonData().editorCameras[i];
-					}
 				}
 				ImGui::EndMenu();
 			}
@@ -146,7 +161,6 @@ namespace Nork::Editor {
 				}
 				ImGui::EndMenu();
 			}*/
-			ImGui::DragFloat("Cam Base Speed", &viewportView.camera->moveSpeed, 0.001f);
 			ImGui::EndMenuBar();
 		}
 

@@ -88,6 +88,7 @@ namespace Nork {
 		fs::path Uri(const std::shared_ptr<Components::Model>& of);
 		fs::path Uri(const std::shared_ptr<Renderer::Texture>& of);
 		std::vector<fs::path> ListLoadedModels();
+		void DeleteFromCache(const std::shared_ptr<Components::Model>&);
 		void ClearCache();
 		using AssetLoader::AbsolutePathToUri;
 		using AssetLoader::CubeUri;

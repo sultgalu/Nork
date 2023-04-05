@@ -207,7 +207,6 @@ namespace Nork::Editor {
 		changed |= ImGui::DragFloat3("yaw", &cam.yaw);
 		changed |= ImGui::DragFloat("FOV", &cam.FOV);
 		changed |= ImGui::DragFloat("ratio", &cam.ratio);
-		changed |= ImGui::DragFloat("moveSpeed", &cam.moveSpeed);
 		changed |= ImGui::DragFloat3("position#camera", &cam.position.x);
 	}
 	template<> void SceneNodeView::ShowComponent(Components::Drawable& dr, bool& changed)
@@ -339,11 +338,11 @@ namespace Nork::Editor {
 		auto src = AssetLoader::Instance().Uri(model).filename().string();
 		ImGui::Text(src.c_str());
 		static char modelNamebuf[100] = { 0 };
-		if (ImGui::Button("Save Model"))
+		if (ImGui::Button("Save##Model"))
 		{
 			AssetLoader::Instance().SaveModel(model);
 		}
-		if (ImGui::Button("Load Model"))
+		if (ImGui::Button("Load##Model"))
 		{
 			std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::glTF, L"Load model", L"Load");
 			if (!p.empty()) {
@@ -352,7 +351,10 @@ namespace Nork::Editor {
 				changed = true;
 			}
 		}
-		if (ImGui::Button("Reload Model")) {
+		if (ImGui::Button("Delete From Cache##Model")) {
+			AssetLoader::Instance().DeleteFromCache(dr.GetModel());
+		}
+		if (ImGui::Button("Reload##Model")) {
 			changed = true;
 			AssetLoader::Instance().ReloadModel(dr.GetModel());
 		}
@@ -376,7 +378,7 @@ namespace Nork::Editor {
 			}
 			ImGui::EndPopup();
 		}
-		if (ImGui::Button("Import Model"))
+		if (ImGui::Button("Import##Model"))
 		{
 			std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::_3D, L"Import model", L"Import");
 			if (!p.empty())

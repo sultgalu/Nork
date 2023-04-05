@@ -6,7 +6,6 @@ namespace Nork::Editor {
 	struct CommonData
 	{
 		std::shared_ptr<SceneNode> selectedNode = nullptr;
-		std::vector<std::shared_ptr<Components::Camera>> editorCameras;
 		bool gameMode = false;
 	};
 	extern CommonData& _GetCommonData();

@@ -60,49 +60,44 @@ namespace Nork::Editor
 		
 		auto& data = _GetCommonData();
 		auto& editor = _GetEditor();
-		auto arr = root.Get<JsonArray>("cameras");
-		for (auto& json : arr.Get<JsonObject>())
-		{
-			editor.AddViewportPanel();
-			auto& comp = *data.editorCameras.back();
-			json.Get<JsonArray>("position").Get(&comp.position.x, 3);
-			json.Get<JsonArray>("up").Get(&comp.up.x, 3);
-			json.Get("nearClip", comp.nearClip);
-			json.Get("farClip", comp.farClip);
-			json.Get("yaw", comp.yaw);
-			json.Get("pitch", comp.pitch);
-			json.Get("FOV", comp.FOV);
-			json.Get("ratio", comp.ratio);
-			json.Get("zoomSpeed", comp.zoomSpeed);
-			json.Get("moveSpeed", comp.moveSpeed);
-			json.Get("rotationSpeed", comp.rotationSpeed);
-			
-			comp.Update();
+
+		if (root.Contains("camera")) {
+			auto json = root.Get<JsonObject>("camera");
+			auto& cam = *editor.GetPanel<ViewportPanel>()->viewportView.camera;
+			json.Get<JsonArray>("position").Get(&cam.position.x, 3);
+			json.Get<JsonArray>("up").Get(&cam.up.x, 3);
+			json.Get("nearClip", cam.nearClip);
+			json.Get("farClip", cam.farClip);
+			json.Get("yaw", cam.yaw);
+			json.Get("pitch", cam.pitch);
+			json.Get("ratio", cam.ratio);
+			// json.Get("zoomSpeed", comp.zoomSpeed);
+			// json.Get("moveSpeed", comp.moveSpeed);
+			// json.Get("rotationSpeed", comp.rotationSpeed);
+			json.Get("FOV", cam.FOV);
+			cam.Update();
 		}
 	}
 	static void WriteImGuiIniFile(ImGuiContext* ctx, ImGuiSettingsHandler* handler, ImGuiTextBuffer* out_buf)
 	{
 		auto& data = _GetCommonData();
-		JsonArray cameras;
-		for (auto& cam : data.editorCameras)
-		{
-			auto& component = *cam;
-			auto jsonCam = JsonObject()
-				.Property("position", JsonArray().Elements(&component.position.x, 3))
-				.Property("up", JsonArray().Elements(&component.up.x, 3))
-				.Property("farClip", component.farClip)
-				.Property("FOV", component.FOV)
-				.Property("moveSpeed", component.moveSpeed)
-				.Property("nearClip", component.nearClip)
-				.Property("pitch", component.pitch)
-				.Property("ratio", component.ratio)
-				.Property("rotationSpeed", component.rotationSpeed)
-				.Property("yaw", component.yaw)
-				.Property("zoomSpeed", component.zoomSpeed);
-			cameras.Element(jsonCam);
-		}
+
+		auto& component = *Editor::Get().GetPanel<ViewportPanel>()->viewportView.camera;
+		auto jsonCam = JsonObject()
+			.Property("position", JsonArray().Elements(&component.position.x, 3))
+			.Property("up", JsonArray().Elements(&component.up.x, 3))
+			.Property("farClip", component.farClip)
+			.Property("nearClip", component.nearClip)
+			.Property("pitch", component.pitch)
+			.Property("ratio", component.ratio)
+			.Property("yaw", component.yaw)
+			// .Property("moveSpeed", component.moveSpeed)
+			// .Property("rotationSpeed", component.rotationSpeed)
+			// .Property("zoomSpeed", component.zoomSpeed);
+			.Property("FOV", component.FOV);
+
 		out_buf->appendf("[Cameras][stuff]\n");
-		out_buf->append(JsonObject().Property("cameras", cameras).ToString().c_str());
+		out_buf->append(JsonObject().Property("camera", jsonCam).ToString().c_str());
 	}
 	static void* OpenImGuiIniFile(ImGuiContext* ctx, ImGuiSettingsHandler* handler, const char* name)
 	{
@@ -161,7 +156,7 @@ namespace Nork::Editor
 		panels.push_back(std::make_shared<PhysicsSettingsPanel>());
 		panels.push_back(std::make_shared<GraphicsSettingsPanel>());
 		panels.push_back(std::make_shared<BloomPanel>());
-		// AddViewportPanel();
+		panels.push_back(std::make_shared<ViewportPanel>());
 		menus.push_back(std::make_unique<FileMenu>());
 		ImGui::SetColorEditOptions(ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB | ImGuiColorEditFlags_PickerHueBar | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
 	}
@@ -282,18 +277,8 @@ namespace Nork::Editor
 					}
 				}
 			}
-			if (ImGui::MenuItem("New Viewport"))
-			{
-				AddViewportPanel();
-			}
 			ImGui::EndMenu();
 		}
-	}
-	void Editor::AddViewportPanel()
-	{
-		auto panel = std::make_shared<ViewportPanel>();
-		panel->SetIndex(viewportPanelCount++);
-		panels.push_back(std::move(panel));
 	}
 	void Editor::AddPanel(std::shared_ptr<Panel> panel)
 	{

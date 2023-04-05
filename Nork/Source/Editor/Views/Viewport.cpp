@@ -49,5 +49,7 @@ namespace Nork::Editor {
 	ViewportView::ViewportView()
 	{
 		camera = std::make_shared<Components::Camera>();
+		camera->position = glm::vec3(20);
+		camController = std::make_shared<EditorCameraController>(glm::vec3(0));
 	}
 }

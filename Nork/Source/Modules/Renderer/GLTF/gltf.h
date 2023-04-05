@@ -451,11 +451,11 @@ namespace Nork::Renderer::GLTF {
 				return *matrix;
 			auto tr = glm::identity<glm::mat4>();
 			if (scale)
-				tr *= glm::scale(glm::identity<glm::mat4>(), *scale);
+				tr = glm::scale(tr, *scale);
 			if (rotation)
-				tr *= glm::mat4_cast(*rotation);
+				tr = glm::mat4_cast(*rotation) * tr;
 			if (translation)
-				tr *= glm::translate(glm::identity<glm::mat4>(), *translation);
+				tr = glm::translate(glm::identity<glm::mat4>(), *translation) * tr;
 			return tr;
 		}
 		JsonObject ToJson() const override

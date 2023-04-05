@@ -15,20 +15,19 @@ namespace Nork
 	class FpsCameraController : public CameraController
 	{
 	public:
-		FpsCameraController()
-		{}
+		FpsCameraController();
 		void UpdateByKeyInput(Components::Camera&, float delta) override;
 		void UpdateByMouseInput(Components::Camera&) override;
+		float moveSpeed, zoomSpeed, rotationSpeed;
 	};
 	class EditorCameraController : public CameraController
 	{
 	public:
-		EditorCameraController(const glm::vec3& center)
-			: center(center)
-		{}
+		EditorCameraController(const glm::vec3& center);
 		void UpdateByKeyInput(Components::Camera&, float delta) override;
 		void UpdateByMouseInput(Components::Camera&) override;
 	public:
 		glm::vec3 center;
+		float zoomSpeed, rotationSpeed;
 	};
 }

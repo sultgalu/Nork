@@ -255,13 +255,10 @@ namespace Nork {
 			.Property("up", JsonArray().Elements(&component.up.x, 3))
 			.Property("farClip", component.farClip)
 			.Property("FOV", component.FOV)
-			.Property("moveSpeed", component.moveSpeed)
 			.Property("nearClip", component.nearClip)
 			.Property("pitch", component.pitch)
 			.Property("ratio", component.ratio)
-			.Property("rotationSpeed", component.rotationSpeed)
-			.Property("yaw", component.yaw)
-			.Property("zoomSpeed", component.zoomSpeed);
+			.Property("yaw", component.yaw);
 	}
 	template<> Camera& JsonComponentDeserializer<Camera>::Deserialize(const JsonObject& json)
 	{
@@ -271,13 +268,10 @@ namespace Nork {
 				json.Get<JsonArray>("up").Get(&comp.up.x, 3);
 				json.Get("farClip", comp.farClip);
 				json.Get("FOV", comp.FOV);
-				json.Get("moveSpeed", comp.moveSpeed);
 				json.Get("nearClip", comp.nearClip);
 				json.Get("pitch", comp.pitch);
 				json.Get("ratio", comp.ratio);
-				json.Get("rotationSpeed", comp.rotationSpeed);
 				json.Get("yaw", comp.yaw);
-				json.Get("zoomSpeed", comp.zoomSpeed);
 				comp.Update();
 			});
 		return comp;

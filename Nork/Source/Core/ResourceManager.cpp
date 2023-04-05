@@ -278,6 +278,10 @@ std::vector<fs::path> AssetLoaderProxy::ListLoadedModels() {
 	}
 	return loaded;
 }
+void AssetLoaderProxy::DeleteFromCache(const std::shared_ptr<Components::Model>& model)
+{
+	models.erase(Uri(model));
+}
 void AssetLoaderProxy::ClearCache() {
 	models.clear();
 	textures.clear();

@@ -30,22 +30,22 @@ void Camera::Move(Direction direction, float delta)
 	switch (direction)
 	{
 		case Up:
-			this->position += glm::normalize(this->up) * this->moveSpeed * delta;
+			this->position += glm::normalize(this->up) * delta;
 			break;
 		case Down:
-			this->position -= glm::normalize(this->up) * this->moveSpeed * delta;
+			this->position -= glm::normalize(this->up) * delta;
 			break;
 		case Left:
-			this->position -= right * this->moveSpeed * delta;
+			this->position -= right * delta;
 			break;
 		case Rigth:
-			this->position += right * this->moveSpeed * delta;
+			this->position += right * delta;
 			break;
 		case Forward:
-			this->position += this->front * this->moveSpeed * delta;
+			this->position += this->front * delta;
 			break;
 		case Backward:
-			this->position -= this->front * this->moveSpeed * delta;
+			this->position -= this->front * delta;
 			break;
 		case None: [[unlikely]]
 			break;
@@ -57,7 +57,7 @@ void Camera::Move(Direction direction, float delta)
 
 void Camera::Zoom(float delta)
 {
-	float diff = delta * this->zoomSpeed;
+	float diff = delta;
 
 	static const float maxFOV = glm::radians(120.0f);
 	static const float minFOV = glm::radians(1.0f);
@@ -66,9 +66,6 @@ void Camera::Zoom(float delta)
 	if (this->FOV - diff > maxFOV)
 		diff = this->FOV - maxFOV;
 
-	this->zoomSpeed -= diff / this->FOV * zoomSpeed;
-	this->moveSpeed -= diff / this->FOV * moveSpeed;
-	this->rotationSpeed -= diff / this->FOV * rotationSpeed;
 	this->FOV -= diff;
 
 	this->UpdateProjection();
@@ -114,7 +111,7 @@ void Camera::Rotate(float deltaPitch, float deltaYaw)
 {
 	if (deltaPitch == 0 && deltaYaw == 0)
 		return;
-	this->pitch += (deltaPitch * rotationSpeed);
+	this->pitch += deltaPitch;
 	if (this->pitch > 89)
 	{
 		this->pitch = 89;
@@ -123,7 +120,7 @@ void Camera::Rotate(float deltaPitch, float deltaYaw)
 	{
 		this->pitch = -89;
 	}
-	this->yaw += (deltaYaw * rotationSpeed);
+	this->yaw += deltaYaw;
 
 	this->UpdateFrontRight();
 	this->UpdateView();

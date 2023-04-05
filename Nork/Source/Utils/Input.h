@@ -30,6 +30,7 @@ namespace Nork
 		E = GLFW_KEY_E,
 		R = GLFW_KEY_R,
 		T = GLFW_KEY_T,
+		F = GLFW_KEY_F,
 		M = GLFW_KEY_M,
 		O = GLFW_KEY_O,
 
