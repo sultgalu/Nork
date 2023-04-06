@@ -367,3 +367,4 @@ Assets/
 /vcpkg_repo
 *.jpg
 /Nork/imgui.ini
+/Nork/Source/Shaders/*.*_bin
