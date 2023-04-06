@@ -1,11 +1,9 @@
 #include "include/Components.h"
 #include "../Views/include/Helpers.h"
 #include "Platform/FileDialog.h"
-#include "Editor/Editor.h"
 #include "Modules/Renderer/Data/Vertex.h"
 #include "Core/PolygonBuilder.h"
 #include "Editor/Utils/EditorImage.h"
-
 
 namespace Nork::Editor {
 

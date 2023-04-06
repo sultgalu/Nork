@@ -87,7 +87,7 @@ namespace Nork
 		// renderingSystem.BeginFrame();
 		renderingSystem.Update(); // draw full updated data
 		// renderingSystem.EndFrame(); 
-		Profiler::Clear();
+		// Profiler::Clear();
 		// window.Refresh();
 	}
 	void Engine::StartPhysics(bool startScript)

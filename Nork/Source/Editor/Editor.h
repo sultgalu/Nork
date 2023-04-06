@@ -1,9 +1,6 @@
 #pragma once
-
-#include "Core/Engine.h"
 #include "Panels/include/Panel.h"
 #include "Menus/include/Menu.h"
-#include "Modules/Renderer/Vulkan/CommandBuffer.h"
 
 namespace Nork::Editor {
 	class Panel;

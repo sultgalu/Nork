@@ -366,3 +366,4 @@ FodyWeavers.xsd
 Assets/
 /vcpkg_repo
 *.jpg
+/Nork/imgui.ini
