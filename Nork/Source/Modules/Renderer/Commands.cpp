@@ -60,7 +60,7 @@ void Commands::SubmitRenderAndTransferCommands(bool signalBinary, const std::vec
 {
     GetRenderSubmitInfo(signalBinary, waitSems, [&](auto renderSubmitInfo) {
         GetTransferSubmitInfo([&](auto transferSubmitInfo) {
-            Vulkan::Device::Instance().graphicsQueue.submit({ renderSubmitInfo, transferSubmitInfo });
+            Vulkan::Device::Instance().graphicsQueue.submit({ transferSubmitInfo, renderSubmitInfo });
         });
     });
 }
