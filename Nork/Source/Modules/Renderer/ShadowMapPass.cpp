@@ -92,19 +92,17 @@ void ShadowMapPass::CreateRenderPass()
 	subPasses[subPass]
 		.DepthAttachment(attIdx);
 	createInfo.Subpasses(subPasses);
-	auto depthStage = vk::PipelineStageFlagBits::eEarlyFragmentTests | vk::PipelineStageFlagBits::eLateFragmentTests;
-	auto depthAccess = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
 	createInfo.Dependencies({
-		// wait for previous frame to complete writes
+		// wait for previous subpass reads
 		vk::SubpassDependency(VK_SUBPASS_EXTERNAL, subPass)
-		.setSrcStageMask(depthStage)
-		.setSrcAccessMask(depthAccess)
-		.setDstStageMask(depthStage)
-		.setDstAccessMask(depthAccess),
-		// wait for shadow generation in light pass
+		.setSrcStageMask(vk::PipelineStageFlagBits::eFragmentShader)
+		.setSrcAccessMask(vk::AccessFlagBits::eShaderRead)
+		.setDstStageMask(vk::PipelineStageFlagBits::eEarlyFragmentTests)
+		.setDstAccessMask(vk::AccessFlagBits::eDepthStencilAttachmentWrite),
+		// make next subpasses wait for writes
 		vk::SubpassDependency(subPass, VK_SUBPASS_EXTERNAL)
-		.setSrcStageMask(depthStage)
-		.setSrcAccessMask(depthAccess)
+		.setSrcStageMask(vk::PipelineStageFlagBits::eLateFragmentTests)
+		.setSrcAccessMask(vk::AccessFlagBits::eDepthStencilAttachmentWrite)
 		.setDstStageMask(vk::PipelineStageFlagBits::eFragmentShader)
 		.setDstAccessMask(vk::AccessFlagBits::eShaderRead)
 		});
@@ -125,8 +123,7 @@ void ShadowMapPass::RecordCmdDirectional(Vulkan::CommandBuffer& cmd, uint32_t im
 		{ **Resources::Instance().descriptorSet }, // resource dset binding should happen outside
 			{
 				Resources::Instance().DynamicOffset(*Resources::Instance().drawParams)
-			}
-			);
+			});
 
 	for (auto& shadowMap : Resources::Instance().shadowMaps)
 	{

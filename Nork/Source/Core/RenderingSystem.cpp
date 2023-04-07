@@ -341,26 +341,6 @@ Renderer::Renderer* Renderer::Renderer::instance = nullptr;
 			}
 		}
 		transformObserver.clear();
-		// if (shouldUpdateDrawCommands)
-		// {
-		// 	UpdateDrawCommands();
-		// 	shouldUpdateDrawCommands = false;
-		// }
-		// if (shouldUpdateDirLightAndShadows)
-		// {
-		// 	UpdateDirLightShadows();
-		// 	shouldUpdateDirLightAndShadows = false;
-		// }
-		// if (shouldUpdatePointLightAndShadows)
-		// {
-		// 	UpdatePointLightShadows();
-		// 	shouldUpdatePointLightAndShadows = false;
-		// }
-		// if (globalShaderUniform.IsChanged())
-		// {
-		// 	UpdateGlobalUniform();
-		// 	Logger::Info("Updating");
-		// }
 		if (camera)
 		{
 			renderer->resources->vp = camera->viewProjection;
