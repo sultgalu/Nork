@@ -26,6 +26,8 @@ namespace Nork
 		EditorCameraController(const glm::vec3& center);
 		void UpdateByKeyInput(Components::Camera&, float delta) override;
 		void UpdateByMouseInput(Components::Camera&) override;
+		void SetCenter(Components::Camera&, const glm::vec3& center);
+		void SetDistance(Components::Camera&, float distance);
 	public:
 		glm::vec3 center;
 		float zoomSpeed, rotationSpeed;

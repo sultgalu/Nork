@@ -33,7 +33,9 @@ public:
 	Commands commands = Commands(MAX_FRAMES_IN_FLIGHT);
 	MemoryTransfer transfer;
 	std::unique_ptr<Resources> resources;
+	std::vector<std::shared_ptr<DeviceData>> deviceDatas;
 	std::vector<std::shared_ptr<RenderPass>> renderPasses;
+	std::shared_ptr<Image> mainImage;
 	std::vector<VkSemaphore> imageAvailableSemaphores;
 	uint32_t currentFrame = 0;
 	bool framebufferResized = false;

@@ -1,5 +1,5 @@
-#include "pch.h"
 #include "include/PhysicsSettingsPanel.h"
+#include "Core/ColliderPass.h"
 
 namespace Nork::Editor {
 	PhysicsSettingsPanel::PhysicsSettingsPanel()
@@ -7,6 +7,7 @@ namespace Nork::Editor {
 
 	void PhysicsSettingsPanel::Content()
 	{
+		ImGui::Checkbox("Show colliders", &ColliderPass::Instance().enabled);
 		auto& p = GetEngine().physicsSystem.pipeline;
 		ImGui::DragFloat("Coefficient##2", &p.coefficient);
 

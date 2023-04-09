@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Data/Vertex.h"
-#include "../DeviceResource.h"
+#include "../DeviceData.h"
 
 namespace Nork::Renderer {
 	class Mesh

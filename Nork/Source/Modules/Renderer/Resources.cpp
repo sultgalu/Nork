@@ -2,6 +2,7 @@
 #include "ShadowMapPass.h"
 
 namespace Nork::Renderer {
+// these are maximum values.
 static constexpr auto vb_count = MemoryAllocator::poolSize / sizeof(Data::Vertex);
 static constexpr auto ib_count = MemoryAllocator::poolSize / sizeof(uint32_t);
 static constexpr auto mm_count = MemoryAllocator::poolSize / sizeof(glm::mat4);
@@ -15,6 +16,7 @@ static constexpr auto dlp_size = MemoryAllocator::poolSize / 8; // TODO: should 
 static constexpr auto plp_size = MemoryAllocator::poolSize / 8;
 static constexpr auto dps_size = MemoryAllocator::poolSize / 4;
 static constexpr auto dcs_size = MemoryAllocator::poolSize / 4;
+static constexpr auto textures_count = 100;
 Texture::~Texture()
 {
 	Resources::Instance().textureDescriptors->RemoveImage(descriptorIdx);
@@ -81,7 +83,7 @@ Resources::Resources()
 		.Binding(0, vk::DescriptorType::eUniformBufferDynamic, vk::ShaderStageFlagBits::eVertex)
 		.Binding(1, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eVertex)
 		.Binding(2, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eVertex)
-		.Binding(3, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, img_arr_size, true));
+		.Binding(3, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, textures_count, true));
 	descriptorSetLayoutLights = std::make_shared<Vulkan::DescriptorSetLayout>(Vulkan::DescriptorSetLayoutCreateInfo()
 		.Binding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment)
 		.Binding(1, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment)
@@ -94,7 +96,7 @@ Resources::Resources()
 	);
 	descriptorPool = std::make_shared<Vulkan::DescriptorPool>(
 		Vulkan::DescriptorPoolCreateInfo({ descriptorSetLayout, descriptorSetLayoutLights }, 2));
-	descriptorSet = std::make_shared<Vulkan::DescriptorSet>( // could be less than img_arr_size, create bigger descriptor set on-demand from layout
+	descriptorSet = std::make_shared<Vulkan::DescriptorSet>( // could be less than textures_count, create bigger descriptor set on-demand from layout
 		Vulkan::DescriptorSetAllocateInfo(descriptorPool, descriptorSetLayout));
 	descriptorSetLights = std::make_shared<Vulkan::DescriptorSet>(
 		Vulkan::DescriptorSetAllocateInfo(descriptorPool, descriptorSetLayoutLights));
@@ -114,9 +116,13 @@ Resources::Resources()
 		.Buffer(5, *pointLightParams->Underlying(), 0, DynamicSize(*pointLightParams), vk::DescriptorType::eUniformBufferDynamic)
 		.Write();
 
-	textureDescriptors = std::make_unique<TextureDesriptors>(descriptorSet);
-	dirShadowDescriptors = std::make_unique<ShadowMapDesriptors>(descriptorSetLights, 6);
-	pointShadowDescriptors = std::make_unique<ShadowMapDesriptors>(descriptorSetLights, 7);
+	textureDescriptors = std::make_unique<TextureDescriptors>(descriptorSet);
+	dirShadowDescriptors = std::make_unique<ImageDescriptorArray>(descriptorSetLights, 6, ds_count);
+	pointShadowDescriptors = std::make_unique<ImageDescriptorArray>(descriptorSetLights, 7, ps_count);
+}
+void Resources::OnNewFrame(uint32_t frameIdx)
+{
+	currentFrame = frameIdx;
 }
 // TODO: should be handled same way as textures
 std::shared_ptr<DirShadowMap> Resources::CreateShadowMap2D(uint32_t width, uint32_t height)
@@ -142,38 +148,8 @@ std::shared_ptr<PointShadowMap> Resources::CreateShadowMapCube(uint32_t size)
 
 // ----------------- TEXTURES ----------------
 
-Resources::ImageDescriptorArray::ImageDescriptorArray(
-	std::shared_ptr<Vulkan::DescriptorSet>& descriptorSet, uint32_t descriptorIdx)
-	: descriptorSet(descriptorSet), descriptorIdx(descriptorIdx)
-{
-	for (size_t i = 0; i < img_arr_size; i++)
-	{
-		freeImageIdxs.insert(i);
-	}
-	images.resize(img_arr_size);
-}
-uint32_t Resources::ImageDescriptorArray::AddImage(std::shared_ptr<Image>& img)
-{
-	uint32_t idx = *freeImageIdxs.begin();
-	freeImageIdxs.erase(freeImageIdxs.begin());
-
-	descriptorSet->Writer()
-		.Image(descriptorIdx, *img->view, vk::ImageLayout::eShaderReadOnlyOptimal,
-			*img->sampler, vk::DescriptorType::eCombinedImageSampler, idx)
-		.Write();
-	images[idx] = img;
-	return idx;
-}
-void Resources::ImageDescriptorArray::RemoveImage(uint32_t idx)
-{
-	auto image = images[idx];
-	Commands::Instance().OnRenderFinished([image]() {});
-	images[idx] = nullptr;
-	freeImageIdxs.insert(idx);
-}
-
-Resources::TextureDesriptors::TextureDesriptors(std::shared_ptr<Vulkan::DescriptorSet>& descriptorSet)
-	: ImageDescriptorArray(descriptorSet, 3)
+Resources::TextureDescriptors::TextureDescriptors(std::shared_ptr<Vulkan::DescriptorSet>& descriptorSet)
+	: ImageDescriptorArray(descriptorSet, 3, textures_count)
 {
 	defaultSampler = std::make_shared<Vulkan::Sampler>();
 	auto createTexture = [&](vk::Format format, const std::vector<float>& data)
@@ -189,7 +165,7 @@ Resources::TextureDesriptors::TextureDesriptors(std::shared_ptr<Vulkan::Descript
 	normal = createTexture(Vulkan::Format::rgba32f, { 0.5f, 0.5f, 1.0f, 0.0f }); // 'a' unused
 	metallicRoughness = createTexture(Vulkan::Format::rgba32f, { 0.0f, 1.0f, 1.0f, 0.0f }); // g=roughness, b=metallic
 }
-std::shared_ptr<Texture> Resources::TextureDesriptors::AddTexture(std::shared_ptr<Image>& img)
+std::shared_ptr<Texture> Resources::TextureDescriptors::AddTexture(std::shared_ptr<Image>& img)
 {
 	if (!img->sampler)
 		img->sampler = defaultSampler;

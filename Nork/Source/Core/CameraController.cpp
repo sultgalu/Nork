@@ -75,8 +75,9 @@ void EditorCameraController::UpdateByMouseInput(Components::Camera& camera)
 	if (diff < 0.999f)
 	{
 		auto pitch = glm::degrees(glm::asin(dir.y));
-		auto a = dir.x / glm::cos(glm::radians(camera.pitch));
-		auto yaw = glm::degrees(glm::acos(a));
+		auto yaw = glm::degrees(std::atan2(-dir.z, dir.x));
+		// auto a = dir.x / glm::cos(glm::radians(camera.pitch));
+		// auto yaw = glm::degrees(glm::acos(a));
 		camera.SetRotation(pitch, yaw);
 		camera.SetPosition(center + -camera.front * distance);
 	}
@@ -99,6 +100,15 @@ void EditorCameraController::UpdateByMouseInput(Components::Camera& camera)
 		camera.Rotate(yOffs, xOffs);
 		camera.SetPosition(center + -camera.front * distance);
 	}
+}
+void EditorCameraController::SetCenter(Components::Camera& camera, const glm::vec3& newCenter) {
+	auto vec = center - camera.position;
+	camera.SetPosition(newCenter - vec);
+	center = newCenter;
+}
+void EditorCameraController::SetDistance(Components::Camera& camera, float newDistance) {
+	auto direction = glm::normalize(center - camera.position);
+	camera.SetPosition(center - direction * newDistance);
 }
 }
 

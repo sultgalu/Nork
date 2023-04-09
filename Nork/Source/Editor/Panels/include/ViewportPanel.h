@@ -18,5 +18,6 @@ namespace Nork::Editor {
 		ViewportView viewportView;
 	protected:
 		std::string name = "Viewport";
+		std::weak_ptr<SceneNode> focusedNode;
 	};
 }

@@ -7,12 +7,12 @@ namespace Nork::Components
 	{
 		glm::mat4 modelMatrix = RecalcModelMatrix();
 
-		glm::mat4 TranslationMatrix();
-		glm::mat4 RotationMatrix();
-		glm::mat4 ScaleMatrix();
-		glm::mat4 TranslationRotationMatrix();
+		glm::mat4 TranslationMatrix() const;
+		glm::mat4 RotationMatrix() const;
+		glm::mat4 ScaleMatrix() const;
+		glm::mat4 TranslationRotationMatrix() const;
 		glm::mat4& RecalcModelMatrix();
-		glm::mat4 LocalModelMatrix();
+		glm::mat4 LocalModelMatrix() const;
 
 		void Rotate(const glm::vec3& axis, float angle) { localQuaternion = glm::rotate(localQuaternion, angle, axis); }
 		void SetRotation(const glm::vec3& axis, float angle) { localQuaternion = glm::angleAxis(angle, glm::normalize(axis)); }

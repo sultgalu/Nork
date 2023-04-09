@@ -162,6 +162,11 @@ namespace Nork::Renderer::Vulkan {
             this->layout = layout;
             return *this;
         }
+        Self& AdditionalDynamicStates(const std::vector<vk::DynamicState>& val) {
+            data->dynamicStates.insert(data->dynamicStates.end(), val.begin(), val.end());
+            data->dynamicState.setDynamicStates(data->dynamicStates);
+            return *this;
+        }
     public:
         struct Data
         {

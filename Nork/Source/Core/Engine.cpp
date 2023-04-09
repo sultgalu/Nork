@@ -84,11 +84,7 @@ namespace Nork
 		{
 			UpdateGlobalTransforms(); // Editor changes
 		}
-		// renderingSystem.BeginFrame();
 		renderingSystem.Update(); // draw full updated data
-		// renderingSystem.EndFrame(); 
-		// Profiler::Clear();
-		// window.Refresh();
 	}
 	void Engine::StartPhysics(bool startScript)
 	{
@@ -99,7 +95,6 @@ namespace Nork
 			scriptUpdate = true;
 			scriptSystem.Update();
 		}
-		// start physics thread
 		physicsSystem.Upload();
 		physicsUpdate = true;
 		if (MULTITHREAD_PHX)

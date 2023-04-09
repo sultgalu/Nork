@@ -11,19 +11,7 @@ namespace Nork::Editor {
 	void ViewportPanel::InitializeWithRenderer()
 	{
 		RenderingSystem::Instance().camera = viewportView.camera;
-		if (Renderer::Renderer::Instance().instance)
-		{
-			auto& renderPasses = Renderer::Renderer::Instance().renderPasses;
-			for (auto& pass : renderPasses)
-			{
-				if (auto dp = std::dynamic_pointer_cast<Renderer::DeferredPass>(pass))
-				{
-					viewportView.image = dp->fbColor;
-					return;
-				}
-			}
-			std::unreachable(); // could not find displayable img
-		}
+		viewportView.image = Renderer::Renderer::Instance().mainImage;
 	}
 	struct ViewportInit {
 		ViewportInit(ViewportPanel& vp) {
@@ -36,15 +24,24 @@ namespace Nork::Editor {
 	void ViewportPanel::Content()
 	{
 		static ViewportInit vpInit(*this); // needed because of bad Editor/Engine init order https://github.com/sultgalu/Nork/issues/7
-
-		if (Input::Instance().IsJustPressed(Key::F)) {
-			if (auto editorController = std::dynamic_pointer_cast<EditorCameraController>(viewportView.camController))
+		if (auto editorController = std::dynamic_pointer_cast<EditorCameraController>(viewportView.camController)) {
 			if (GetCommonData().selectedNode) {
-				if (auto tr = GetCommonData().selectedNode->GetEntity().TryGetComponent<Components::Transform>()) {
-					viewportView.camera->position = tr->position + glm::vec3(10);
-					editorController->center = tr->position;
-					editorController->UpdateByMouseInput(*viewportView.camera);
-					viewportView.camera->Update();
+				if (Input::Instance().IsJustPressed(Key::F)) {
+					if (focusedNode.lock()) { // if already focusing on smt, stop it
+						focusedNode.reset();
+					}
+					else if (auto tr = GetCommonData().selectedNode->GetEntity().TryGetComponent<Components::Transform>()) {
+						focusedNode = GetCommonData().selectedNode;
+					}
+				}
+			}
+			if (Input::Instance().IsJustPressed(Key::Z)) {
+				editorController->SetDistance(*viewportView.camera, 10);
+			}
+
+			if (auto node = focusedNode.lock()) { 
+				if (auto tr = node->GetEntity().TryGetComponent<Components::Transform>()) {
+					editorController->SetCenter(*viewportView.camera, tr->position);
 				}
 			}
 		}

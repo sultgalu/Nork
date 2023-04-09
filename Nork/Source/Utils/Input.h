@@ -26,13 +26,25 @@ namespace Nork
 		A = GLFW_KEY_A,
 		S = GLFW_KEY_S,
 		D = GLFW_KEY_D,
+
 		Q = GLFW_KEY_Q,
 		E = GLFW_KEY_E,
 		R = GLFW_KEY_R,
 		T = GLFW_KEY_T,
-		F = GLFW_KEY_F,
-		M = GLFW_KEY_M,
+		Z = GLFW_KEY_Z,
+		U = GLFW_KEY_U,
+		I = GLFW_KEY_I,
 		O = GLFW_KEY_O,
+
+		F = GLFW_KEY_F,
+		G = GLFW_KEY_G,
+		H = GLFW_KEY_H,
+		J = GLFW_KEY_J,
+		K = GLFW_KEY_K,
+		L = GLFW_KEY_L,
+
+		N = GLFW_KEY_N,
+		M = GLFW_KEY_M,
 
 		F1 = GLFW_KEY_F1,
 		F2 = GLFW_KEY_F2,

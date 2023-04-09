@@ -4,8 +4,14 @@
 
 namespace Nork::Renderer {
 
+class DeviceData {
+public:
+	virtual void FlushWrites() = 0;
+	virtual void OnNewFrame() = 0;
+};
+
 template<class T>
-class DeviceArrays
+class DeviceArrays: public DeviceData
 {
 public:
 	DeviceArrays(vk::BufferUsageFlags usage, const MemoryFlags& memFlags, uint32_t capacity,
@@ -15,9 +21,12 @@ public:
 	{
 		buffer = Buffer::Create(usage, CapacityBytes(), memFlags);
 	}
-	void FlushWrites()
+	void FlushWrites() override
 	{
 		buffer->FlushWrites(syncStages, syncAccess);
+	}
+	void OnNewFrame() override {
+
 	}
 	std::shared_ptr<BufferView<T>> New(uint32_t count)
 	{
@@ -47,7 +56,7 @@ public:
 };
 
 template<class T>
-class DeviceElements
+class DeviceElements: public DeviceData
 {
 public:
 	struct BufferElementProxy : BufferElement<T>
@@ -95,7 +104,7 @@ public:
 		// }
 		// size = newSize;
 	}
-	void FlushWrites()
+	void FlushWrites() override
 	{
 		buffer->FlushWrites(syncStages, syncAccess);
 		for (auto& [k, v] : allocatedIndexesInCurrentFrame)
@@ -160,7 +169,7 @@ public:
 		elements[element.offset].reset();
 		releasedElementsByFrame[0].push_back(element.offset);
 	}
-	void OnNewFrame()
+	void OnNewFrame() override
 	{ // if released element is the last one, this->size could be decreased instead
 		for (auto& idx : releasedElementsByFrame.back())
 			freeElements.insert(idx);

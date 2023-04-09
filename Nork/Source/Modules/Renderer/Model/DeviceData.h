@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../DeviceResource.h"
+#include "../DeviceData.h"
 
 namespace Nork::Renderer {
 

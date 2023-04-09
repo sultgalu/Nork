@@ -3,7 +3,7 @@
 
 namespace Nork::Renderer {
 
-static std::weak_ptr<EditorPass> editorPass;
+static std::shared_ptr<EditorPass> editorPass;
 Renderer::Renderer()
 	: allocator(Vulkan::PhysicalDevice::Instance())
 {
@@ -14,20 +14,30 @@ Renderer::Renderer()
 	resources = std::make_unique<Resources>();
 	createSyncObjects();
 	renderPasses.push_back(std::make_shared<ShadowMapPass>());
-	renderPasses.push_back(std::make_shared<DeferredPass>());
-	renderPasses.push_back(std::make_shared<EditorPass>());
+	auto deferredPass = std::make_shared<DeferredPass>();
+	mainImage = deferredPass->fbColor;
+	renderPasses.push_back(deferredPass);
 
-	editorPass = std::reinterpret_pointer_cast<EditorPass>(renderPasses.back());
-	Vulkan::Window::Instance().onFbResize = [&](int w, int h)
-	{
+	editorPass = std::make_shared<EditorPass>();
+	Vulkan::Window::Instance().onFbResize = [&](int w, int h) {
 		framebufferResized = true;
 	};
 
 	Commands::Instance().EndTransferCommandBuffer();
 	Commands::Instance().SubmitTransferCommands(); // end initialize phase
+
+	deviceDatas.push_back(resources->indexBuffer);
+	deviceDatas.push_back(resources->vertexBuffer);
+	deviceDatas.push_back(resources->modelMatrices);
+	deviceDatas.push_back(resources->materials);
+	deviceDatas.push_back(resources->dirLights);
+	deviceDatas.push_back(resources->dirShadows);
+	deviceDatas.push_back(resources->pointLights);
+	deviceDatas.push_back(resources->pointShadows);
 }
 Renderer::~Renderer()
 {
+	editorPass = nullptr;
 	using namespace Vulkan;
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
@@ -55,12 +65,11 @@ uint32_t Renderer::BeginFrame()
 {
 	if (framebufferResized)
 	{
-		auto ep = editorPass.lock();
-		if (ep)
+		if (editorPass)
 		{
-			auto inFlightFb = ep->fbUI;
+			auto inFlightFb = editorPass->fbUI;
 			Commands::Instance().OnRenderFinished([inFlightFb]() {});
-			ep->CreateFramebuffer();
+			editorPass->CreateFramebuffer();
 		}
 		framebufferResized = false;
 	}
@@ -71,7 +80,10 @@ uint32_t Renderer::BeginFrame()
 	Commands::Instance().NextFrame(currentFrame);
 	Commands::Instance().BeginRenderCommandBuffer();
 	Commands::Instance().BeginTransferCommandBuffer();
-	// start CPU expensive stuff that does not yet require the next image
+	// begin CPU expensive stuff that does not yet require the next image
+	for (auto& deviceData : deviceDatas) {
+		deviceData->OnNewFrame();
+	}
 	resources->OnNewFrame(currentFrame);
 	if (client)
 	{
@@ -103,7 +115,9 @@ uint32_t Renderer::BeginFrame()
 		auto commands = std::span(commandsPtr, resources->DynamicSize(*resources->drawCommands) / sizeof(vk::DrawIndexedIndirectCommand));
 		resources->drawCommandCount = client->FillDrawBuffers(params, commands);
 	}
-	resources->FlushWrites();
+	for (auto& deviceData : deviceDatas) {
+		deviceData->FlushWrites();
+	}
 	// end
 	auto result = SwapChain::Instance().acquireNextImage(UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE);
 
@@ -147,6 +161,7 @@ void Renderer::DrawFrame()
 	{
 		pass->RecordCommandBuffer(*Commands::Instance().GetCurrentRenderCmd(), imgIdx, currentFrame);
 	}
+	editorPass->RecordCommandBuffer(*Commands::Instance().GetCurrentRenderCmd(), imgIdx, currentFrame);
 	Commands::Instance().EndRenderCommandBuffer();
 	Commands::Instance().EndTransferCommandBuffer();
 	EndFrame(imgIdx);

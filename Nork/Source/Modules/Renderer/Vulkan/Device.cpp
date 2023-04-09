@@ -21,6 +21,7 @@ DeviceCreateInfo::DeviceCreateInfo(uint32_t graphicsFamily, uint32_t presentFami
     deviceFeatures.samplerAnisotropy = VK_TRUE;
     deviceFeatures.multiDrawIndirect = VK_TRUE;
     deviceFeatures.drawIndirectFirstInstance = VK_TRUE;
+    deviceFeatures.wideLines = VK_TRUE;
     // non-uniform indexing
     deviceFeatures2.shaderSampledImageArrayNonUniformIndexing = true;
     deviceFeatures2.runtimeDescriptorArray = true;

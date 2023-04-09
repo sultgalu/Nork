@@ -1,19 +1,19 @@
 #include "../Common.h"
 
 namespace Nork::Components {
-	glm::mat4 Transform::TranslationMatrix()
+	glm::mat4 Transform::TranslationMatrix() const
 	{
 		return glm::translate(glm::identity<glm::mat4>(), position);
 	}
-	glm::mat4 Transform::RotationMatrix()
+	glm::mat4 Transform::RotationMatrix() const
 	{
 		return glm::mat4_cast(quaternion);
 	}
-	glm::mat4 Transform::ScaleMatrix()
+	glm::mat4 Transform::ScaleMatrix() const
 	{
 		return glm::scale(glm::identity<glm::mat4>(), scale);
 	}
-	glm::mat4 Transform::TranslationRotationMatrix()
+	glm::mat4 Transform::TranslationRotationMatrix() const
 	{
 		return TranslationMatrix() * RotationMatrix();
 	}
@@ -21,7 +21,7 @@ namespace Nork::Components {
 	{
 		return modelMatrix = TranslationMatrix() * RotationMatrix() * ScaleMatrix();
 	}
-	glm::mat4 Transform::LocalModelMatrix()
+	glm::mat4 Transform::LocalModelMatrix() const
 	{
 		return glm::scale(glm::translate(glm::identity<glm::mat4>(), localPosition) * glm::mat4_cast(localQuaternion), localScale);
 	}
