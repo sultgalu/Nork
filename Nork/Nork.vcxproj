@@ -202,6 +202,7 @@
     <ClCompile Include="Source\Core\GLTFReader.cpp" />
     <ClCompile Include="Source\Editor\Utils\EditorImage.cpp" />
     <ClCompile Include="Source\Main\Entry.cpp" />
+    <ClCompile Include="Source\Modules\Physics\Data\Collider.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Buffer.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Commands.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Data\Vertex.cpp" />
