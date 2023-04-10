@@ -56,6 +56,12 @@ namespace Nork::Editor {
 		}
 		if (ImGui::BeginPopup("entRightClick"))
 		{
+			if (ImGui::Selectable("Duplicate"))
+			{
+				GetCommonData().selectedNode = GetScene().CreateNode(node->GetParent());
+				Duplicate(node, GetCommonData().selectedNode);
+				ImGui::CloseCurrentPopup();
+			}
 			if (ImGui::Selectable("Add Child"))
 			{
 				GetCommonData().selectedNode = GetScene().CreateNode(*GetCommonData().selectedNode);
@@ -84,9 +90,9 @@ namespace Nork::Editor {
 		}
 		if (open)
 		{
-			for (auto& child : node->GetChildren())
+			for (size_t i = 0; i < node->GetChildren().size(); i++)
 			{
-				RecursiveDraw(child);
+				RecursiveDraw(node->GetChildren()[i]);
 			}
 			ImGui::TreePop();
 		}
@@ -140,5 +146,32 @@ namespace Nork::Editor {
 			}
 			ImGui::EndPopup();
 		}
+	}
+	struct CompAdder {
+		Entity& from, &to;
+		template<class T>
+		void TryCopy() {
+			if (auto comp = from.TryGetComponent<T>()) {
+				to.AddComponent<T>() = *comp;
+			}
+		}
+		template<class T>
+		void TryCopy(std::function<void(const T&, T&)> f) {
+			if (auto comp = from.TryGetComponent<T>()) {
+				auto& addedComp = to.AddComponent<T>();
+				f(*comp, addedComp);
+			}
+		}
+	};
+	void HierarchyPanel::Duplicate(std::shared_ptr<SceneNode> from, std::shared_ptr<SceneNode> to)
+	{
+		CompAdder adder{ .from = from->GetEntity(), .to = to->GetEntity() };
+		adder.TryCopy<Components::Transform>();
+		adder.TryCopy<Components::Tag>([](const Components::Tag& from, Components::Tag& to) {
+			to.tag = from.tag + " Copy";
+		});
+		adder.TryCopy<Components::Physics>([](const Components::Physics& from, Components::Physics& to) {
+			to.Object() = from.Object();
+		});
 	}
 }

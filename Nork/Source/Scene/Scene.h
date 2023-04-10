@@ -13,13 +13,15 @@ namespace Nork
 		std::shared_ptr<SceneNode> CreateNode(SceneNode& parent);
 		void DeleteNode(SceneNode& node);
 		void Load(std::string path);
-		void Save(std::string path);
+		void SaveAs(std::string path);
+		void Save();
 		inline void Reset()
 		{
 			registry = entt::registry();
 		}
 	public:
 		entt::registry registry;
-		std::shared_ptr<SceneNode> root;	
+		std::shared_ptr<SceneNode> root;
+		fs::path sceneUri;
 	};
 }

@@ -25,7 +25,7 @@ namespace Nork::Components {
 	{
 		return glm::scale(glm::translate(glm::identity<glm::mat4>(), localPosition) * glm::mat4_cast(localQuaternion), localScale);
 	}
-	Transform::Tr Transform::GetDifferenceFromModelMatrix() const
+	/*Transform::Tr Transform::GetDifferenceFromModelMatrix() const
 	{
 		Transform::Tr diff;
 		glm::vec3 skew; glm::vec4 persp;
@@ -36,21 +36,12 @@ namespace Nork::Components {
 		diff.quaternion = locQuat * diff.quaternion;
 		diff.scale = localScale / diff.scale;
 		return diff;
-	}
-	void Transform::SetToDecomposed(const glm::mat4)
+	}*/
+	void Transform::SetToDecomposed(const glm::mat4& mat)
 	{
+		modelMatrix = mat;
 		static glm::vec3 skew; glm::vec4 persp;
 		glm::decompose(modelMatrix, scale, quaternion, position, skew, persp);
 		quaternion = glm::conjugate(quaternion);
-	}
-	void Transform::UpdateChild(Transform& child)
-	{
-		auto diff = GetDifferenceFromModelMatrix();
-		if (diff.position != glm::vec3(0))
-		{
-			Logger::Info("asd");
-		}
-		auto diffMat = glm::scale(glm::translate(glm::identity<glm::mat4>(), diff.position) * glm::mat4_cast(diff.quaternion), diff.scale);
-		child.Trans(diffMat);
 	}
 }

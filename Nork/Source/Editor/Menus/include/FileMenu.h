@@ -8,9 +8,11 @@ namespace Nork::Editor {
 	public:
 		using Menu::Menu;
 		void Content() override;
+		void Shortcuts() override;
 		const char* GetName() override { return "File"; }
 	private:
 		void LoadScene();
 		void SaveScene();
+		void SaveSceneAs();
 	};
 }

@@ -8,6 +8,7 @@ namespace Nork::Editor {
 	public:
 		void Draw()
 		{
+			Shortcuts();
 			if (ImGui::BeginMenu(GetName()))
 			{
 				Content();
@@ -15,6 +16,7 @@ namespace Nork::Editor {
 			}
 		}
 	protected:
+		virtual void Shortcuts() = 0;
 		virtual const char* GetName() = 0;
 	public:
 	};

@@ -24,20 +24,14 @@ namespace Nork::Components
 		const glm::vec3& Scale() const { return scale; }
 		const glm::quat& Quaternion() const { return quaternion; }
 
-		struct Tr
-		{
-			glm::vec3 position;
-			glm::quat quaternion;
-			glm::vec3 scale;
-		};
-		Tr GetDifferenceFromModelMatrix() const;
-		void SetToDecomposed(const glm::mat4);
-		void Trans(const glm::mat4& mat)
-		{
-			modelMatrix = mat * modelMatrix;
-			SetToDecomposed(modelMatrix);
-		}
-		void UpdateChild(Transform&);
+		// struct Tr
+		// {
+		// 	glm::vec3 position;
+		// 	glm::quat quaternion;
+		// 	glm::vec3 scale;
+		// };
+		// Tr GetDifferenceFromModelMatrix() const;
+		void SetToDecomposed(const glm::mat4&);
 		void UpdateGlobalWithoutParent()
 		{
 			position = localPosition;

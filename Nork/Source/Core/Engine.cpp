@@ -141,17 +141,12 @@ namespace Nork
 				auto* tr = node.GetEntity().TryGetComponent<Components::Transform>();
 				if (tr)
 				{
-					for (auto& child : node.GetChildren())
-					{
-						auto* childTr = child->GetEntity().TryGetComponent<Components::Transform>();
-						if (childTr)
-						{
-							tr->UpdateChild(*childTr);
-						}
+					auto* parentTr = node.GetParent().GetEntity().TryGetComponent<Components::Transform>();
+					if (parentTr) {
+						tr->UpdateGlobalWithoutParent();
+						tr->SetToDecomposed(parentTr->modelMatrix * tr->modelMatrix);
 					}
-					auto& parent = node.GetParent();
-					if (!parent.GetEntity().HasComponent<Components::Transform>())
-					{
+					else {
 						tr->UpdateGlobalWithoutParent();
 					}
 				}
