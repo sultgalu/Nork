@@ -48,7 +48,7 @@
     <ClCompile Include="Source\Modules\Physics\Algorithms\GJK.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Physics\Algorithms\AABB.cpp">
+    <ClCompile Include="Source\Modules\Physics\Data\AABB.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Modules\Physics\Pipeline\Pipeline.cpp">
@@ -275,7 +275,7 @@
     <ClInclude Include="Source\Modules\Physics\Algorithms\GJK.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Physics\Algorithms\AABB.h">
+    <ClInclude Include="Source\Modules\Physics\Data\AABB.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Modules\Physics\Pipeline\Pipeline.h">

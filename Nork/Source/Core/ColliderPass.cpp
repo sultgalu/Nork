@@ -127,14 +127,27 @@ void ColliderPass::UpdateBuffers(const entt::registry& registry) {
 	vertices.clear(); indices.clear();
 	uint32_t vertexOffset = 0;
 	for (auto [ent, tr, phx] : registry.view<Components::Transform, Components::Physics>().each()) {
-		vertexOffset = vertices.size();
-		for (auto& vert : phx.LocalCollider().verts) {
-			vertices.push_back(ColliderPass::Vertex{ .position = tr.TranslationRotationMatrix() * glm::vec4(vert, 1.0f) });
+		for (auto& collider : phx.Colliders()) {
+			vertexOffset = vertices.size();
+			if (useGlobalColliderVertices) {
+				for (auto& vert : collider.global.verts) {
+					vertices.push_back(ColliderPass::Vertex{ .position = vert });
+				}
+			}
+			else {
+				for (auto& vert : collider.local.verts) {
+					vertices.push_back(ColliderPass::Vertex{ .position = tr.modelMatrix * glm::vec4(vert + collider.offset, 1.0f) });
+				}
+			}
+			for (auto& edge : collider.local.edges) {
+				indices.push_back(vertexOffset + edge.first);
+			 	indices.push_back(vertexOffset + edge.second);
+			}
 		}
-		for (auto& edge : phx.LocalCollider().edges) {
-			indices.push_back(vertexOffset + edge.first);
-			indices.push_back(vertexOffset + edge.second);
-		}
+		// indices.push_back(vertices.size());
+		// indices.push_back(vertices.size() + 1);
+		// vertices.push_back({ phx.Object().aabb.min });
+		// vertices.push_back({ phx.Object().aabb.max });
 	}
 	drawIndexCount = indices.size();
 	this->vertices->Write(vertices.data(), vertices.size());

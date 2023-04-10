@@ -20,7 +20,7 @@ namespace Nork::Physics
 		float g = 10;
 		float coefficient = 0.1f;
 
-		std::vector<std::pair<index_t, index_t>> broadResults;
+		std::vector<std::pair<ColliderIndex, ColliderIndex>> broadResults;
 
 		void Update(float delta);
 

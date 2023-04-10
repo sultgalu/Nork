@@ -331,14 +331,14 @@
     <ClCompile Include="Source\Scene\Serialization\JsonSerializer.cpp" />
     <ClCompile Include="Source\Utils\Profiler.cpp" />
     <ClInclude Include="Source\Modules\Physics\Algorithms\MD.h" />
-    <ClInclude Include="Source\Modules\Physics\Algorithms\AABB.h" />
+    <ClInclude Include="Source\Modules\Physics\Data\AABB.h" />
     <ClInclude Include="Source\Modules\Physics\Algorithms\GJK.h" />
     <ClInclude Include="Source\Modules\Physics\Algorithms\SAP.h" />
     <ClInclude Include="Source\Modules\Physics\Algorithms\SAT.h" />
     <ClInclude Include="Source\Core\PolygonBuilder.h" />
     <ClCompile Include="Source\Core\PolygonBuilder.cpp" />
     <ClCompile Include="Source\Modules\Physics\Algorithms\MD.cpp" />
-    <ClCompile Include="Source\Modules\Physics\Algorithms\AABB.cpp" />
+    <ClCompile Include="Source\Modules\Physics\Data\AABB.cpp" />
     <ClCompile Include="Source\Modules\Physics\Algorithms\GJK.cpp" />
     <ClCompile Include="Source\Modules\Physics\Algorithms\SAP.cpp" />
     <ClCompile Include="Source\Modules\Physics\Algorithms\SAT.cpp" />

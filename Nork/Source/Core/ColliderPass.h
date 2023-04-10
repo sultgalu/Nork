@@ -64,6 +64,7 @@ public:
 	std::shared_ptr<Vulkan::Pipeline> pipeline;
 
 	bool enabled;
+	bool useGlobalColliderVertices = false; // by default calculate the vertex positions with local collider + Transform
 	glm::vec3 lineColor = { 0.2, 1.0, 0.3 };
 	static ColliderPass* instance;
 };

@@ -98,7 +98,7 @@ namespace Nork::Physics {
 
 		if (satRes.type == CollisionType::VertFace)
 		{
-			std::swap(obj1Idx, obj2Idx);
+			std::swap(idx1, idx2);
 			satRes.type = CollisionType::FaceVert;
 			satRes.dir *= -1;
 		}
@@ -157,8 +157,8 @@ namespace Nork::Physics {
 
 		glm::vec3 t = glm::vec3(0);
 		const glm::vec3& contactPoint = contactCenter;
-		glm::vec3 r1 = contactPoint - Collider1().center;
-		glm::vec3 r2 = contactPoint - Collider2().center;
+		glm::vec3 r1 = contactPoint - Obj1().centerOfMass;
+		glm::vec3 r2 = contactPoint - Obj2().centerOfMass;
 		auto vel1 = kinem1.velocity + glm::cross(kinem1.w, r1);
 		auto vel2 = kinem2.velocity + glm::cross(kinem2.w, r2);
 		auto velDiffLenSquared = glm::dot(vel1 - vel2, vel1 - vel2);
@@ -228,31 +228,31 @@ namespace Nork::Physics {
 
 	void Collision::_4ResolveVelocities()
 	{
-		GetWorld().objs[obj1Idx].kinem.velocity += this->deltaV1;
-		GetWorld().objs[obj2Idx].kinem.velocity += this->deltaV2;
+		GetWorld().objs[idx1.objIdx].kinem.velocity += this->deltaV1;
+		GetWorld().objs[idx2.objIdx].kinem.velocity += this->deltaV2;
 	}
 	void Collision::_4ResolveAngularVelocities()
 	{
-		GetWorld().objs[obj1Idx].kinem.w += this->deltaW1;
-		GetWorld().objs[obj2Idx].kinem.w += this->deltaW2;
+		GetWorld().objs[idx1.objIdx].kinem.w += this->deltaW1;
+		GetWorld().objs[idx2.objIdx].kinem.w += this->deltaW2;
 	}
 	void Collision::_4ResolvePositions()
 	{
-		GetWorld().objs[obj1Idx].kinem.position += this->deltaP1;
-		GetWorld().objs[obj2Idx].kinem.position += this->deltaP2;
+		GetWorld().objs[idx1.objIdx].kinem.position += this->deltaP1;
+		GetWorld().objs[idx2.objIdx].kinem.position += this->deltaP2;
 	}
 	void Collision::_4ResolveAll()
 	{
 		if (!isColliding)
 			return;
 
-		GetWorld().objs[obj1Idx].kinem.velocity += this->deltaV1;
-		GetWorld().objs[obj2Idx].kinem.velocity += this->deltaV2;
+		GetWorld().objs[idx1.objIdx].kinem.velocity += this->deltaV1;
+		GetWorld().objs[idx2.objIdx].kinem.velocity += this->deltaV2;
 
-		GetWorld().objs[obj1Idx].kinem.w += this->deltaW1;
-		GetWorld().objs[obj2Idx].kinem.w += this->deltaW2;
+		GetWorld().objs[idx1.objIdx].kinem.w += this->deltaW1;
+		GetWorld().objs[idx2.objIdx].kinem.w += this->deltaW2;
 
-		GetWorld().objs[obj1Idx].kinem.position += this->deltaP1;
-		GetWorld().objs[obj2Idx].kinem.position += this->deltaP2;
+		GetWorld().objs[idx1.objIdx].kinem.position += this->deltaP1;
+		GetWorld().objs[idx2.objIdx].kinem.position += this->deltaP2;
 	}
 }

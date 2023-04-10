@@ -54,7 +54,7 @@ namespace Nork {
 		{
 			auto& tr = reg.get<Components::Transform>(ent);
 			auto& phx = reg.get<Components::Physics>(ent);
-			phx.handle.Get().SetColliderSize(tr.Scale());
+			phx.handle.Get().size = tr.Scale();
 			phx.Kinem().position = tr.Position();
 			phx.Kinem().quaternion = tr.Quaternion();
 		}

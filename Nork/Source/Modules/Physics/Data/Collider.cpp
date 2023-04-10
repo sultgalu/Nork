@@ -141,7 +141,28 @@ void Collider::SortFaceVertices() {
 }
 void Collider::Update()
 {
+	CalculateVolume();
+}
+
+void Collider::CalculateVolume()
+{
 	CalculateCentroid();
+	int faceIdx = -1;
+	float volumeSum = 0;
+	for (auto& face : faceVerts) {
+		++faceIdx;
+		auto& a = verts[face[0]];
+		for (size_t i = 2; i < face.size(); i++) {
+			auto& b = verts[face[i - 1]];
+			auto& c = verts[face[i]]; // abc forms a triangle <- b and c are adjacent <- we sorted the face
+			auto ab = b - a;
+			auto ac = c - a;
+			auto area = glm::length(glm::cross(ab, ac)) / 2;
+			auto height = glm::dot(faces[faceIdx].norm, a - center);
+			volumeSum += area * height / 3;
+		}
+	}
+	volume = volumeSum;
 }
 
 Collider Collider::Cube()

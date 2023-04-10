@@ -8,8 +8,8 @@ namespace Nork::Physics
 	class Collision
 	{
 	public:
-		Collision(World& world, uint32_t obj1Idx, uint32_t obj2Idx)
-			: world(&world), obj1Idx(obj1Idx), obj2Idx(obj2Idx)
+		Collision(World& world, ColliderIndex idx1, ColliderIndex idx2)
+			: world(&world), idx1(idx1), idx2(idx2)
 		{}
 		Collision() = default;
 		Collision& operator=(const Collision&) = default;
@@ -21,14 +21,14 @@ namespace Nork::Physics
 		void _4ResolvePositions();
 		void _4ResolveAll();
 		World& GetWorld() const { return *world; }
-		const Collider& Collider1() const { return GetWorld().objs[obj1Idx].collider; }
-		const Collider& Collider2() const { return GetWorld().objs[obj2Idx].collider; }
-		const KinematicData& Kinem1() const { return GetWorld().objs[obj1Idx].kinem; }
-		const KinematicData& Kinem2() const { return GetWorld().objs[obj2Idx].kinem; }
-		const Object& Obj1() const { return GetWorld().objs[obj1Idx]; }
-		const Object& Obj2() const { return GetWorld().objs[obj2Idx]; }
+		const Collider& Collider1() const { return GetWorld().objs[idx1.objIdx].colliders[idx1.collIdx].global; }
+		const Collider& Collider2() const { return GetWorld().objs[idx2.objIdx].colliders[idx2.collIdx].global; }
+		const KinematicData& Kinem1() const { return GetWorld().objs[idx1.objIdx].kinem; }
+		const KinematicData& Kinem2() const { return GetWorld().objs[idx2.objIdx].kinem; }
+		const Object& Obj1() const { return GetWorld().objs[idx1.objIdx]; }
+		const Object& Obj2() const { return GetWorld().objs[idx2.objIdx]; }
 	public:
-		uint32_t obj1Idx, obj2Idx;
+		ColliderIndex idx1, idx2;
 		World* world;
 
 		CollisionResult satRes;

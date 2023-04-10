@@ -34,12 +34,14 @@ namespace Nork::Physics
 		std::vector<Face> faces = {};
 		std::vector<std::vector<index_t>> faceVerts = {};
 		glm::vec3 center = glm::vec3(0);
+		float volume = 0;
 		bool isActive = true;
 
 		static Collider Cube();
 
 		// calculates the centroid, sorts the face vertices (cw/ccw?)
 		void Update();
+		void CalculateVolume();
 
 		std::vector<uint32_t> SideFacesOfVert(uint32_t vertIdx) const;
 		std::vector<uint32_t> EdgesOnFace(uint32_t faceIdx) const;

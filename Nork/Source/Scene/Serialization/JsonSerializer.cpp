@@ -159,39 +159,45 @@ namespace Nork {
 			.Property("isStatic", kinem.isStatic)
 			.Property("applyGravity", kinem.applyGravity);
 
-		auto& coll = component.handle.Get().localColl;
-		JsonArray points;
-		JsonArray edges;
-		JsonArray faces;
-		JsonArray facesVerts;
-		for (auto& vert : coll.verts)
-		{
-			points.Element(JsonArray().Elements(vert));
+		JsonArray collsJson = JsonArray();
+		for (auto& collNode : component.handle.Get().colliders) {
+
+			auto& coll = collNode.local;
+			JsonArray points;
+			JsonArray edges;
+			JsonArray faces;
+			JsonArray facesVerts;
+			for (auto& vert : coll.verts)
+			{
+				points.Element(JsonArray().Elements(vert));
+			}
+			for (auto& edge : coll.edges)
+			{
+				edges.Element(JsonArray().Elements(&edge.first, 2));
+			}
+			for (auto& face : coll.faces)
+			{
+				JsonObject f;
+				f.Property("normal", JsonArray().Elements(face.norm));
+				f.Property("vertIdx", face.vertIdx);
+				faces.Element(f);
+			}
+			for (auto& face : coll.faceVerts)
+			{
+				facesVerts.Element(JsonArray().Elements(face));
+			}
+			JsonObject collJson = JsonObject()
+				.Property("verts", points)
+				.Property("edges", edges)
+				.Property("faces", faces)
+				.Property("faceVerts", facesVerts)
+				.Property("offset", JsonArray().Elements(collNode.offset));
+			collsJson.Element(collJson);
 		}
-		for (auto& edge : coll.edges)
-		{
-			edges.Element(JsonArray().Elements(&edge.first, 2));
-		}
-		for (auto& face : coll.faces)
-		{
-			JsonObject f;
-			f.Property("normal", JsonArray().Elements(face.norm));
-			f.Property("vertIdx", face.vertIdx);
-			faces.Element(f);
-		}
-		for (auto& face : coll.faceVerts)
-		{
-			facesVerts.Element(JsonArray().Elements(face));
-		}
-		JsonObject collJson = JsonObject()
-			.Property("verts", points)
-			.Property("edges", edges)
-			.Property("faces", faces)
-			.Property("faceVerts", facesVerts);
 
 		return JsonObject()
 			.Property("kinem", kinemJson)
-			.Property("coll", collJson)
+			.Property("coll", collsJson)
 			.Property("size", JsonArray().Elements(component.handle.Get().size));
 	}
 	template<> Components::Physics& JsonComponentDeserializer<Components::Physics>::Deserialize(const JsonObject& json)
@@ -213,38 +219,45 @@ namespace Nork {
 				kinemComp.Get("isStatic", kinem.isStatic);
 				kinemComp.Get("applyGravity", kinem.applyGravity);
 
-				auto collComp = json.Get<JsonObject>("coll");
-				auto coll = Nork::Physics::Collider();
-				auto verts = collComp.Get<JsonArray>("verts");
-				auto edges = collComp.Get<JsonArray>("edges");
-				auto faces = collComp.Get<JsonArray>("faces");
-				auto faceVerts = collComp.Get<JsonArray>("faceVerts");
-				coll.verts.resize(verts.Size());
-				for (size_t i = 0; i < verts.Size(); i++)
-				{
-					verts.Get<JsonArray>(i).Get(coll.verts[i]);
-				}
-				coll.edges.resize(edges.Size());
-				for (size_t i = 0; i < edges.Size(); i++)
-				{
-					edges.Get<JsonArray>(i).Get(&coll.edges[i].first, 2);
-				}
-				coll.faces.resize(faces.Size());
-				for (size_t i = 0; i < faces.Size(); i++)
-				{
-					JsonObject face = faces.Get<JsonObject>(i);
-					face.Get<JsonArray>("normal").Get(coll.faces[i].norm);
-					face.Get("vertIdx", coll.faces[i].vertIdx);
-				}
-				coll.faceVerts.resize(faceVerts.Size());
-				for (size_t i = 0; i < faceVerts.Size(); i++)
-				{
-					faceVerts.Get<JsonArray>(i).Get(coll.faceVerts[i]);
-				}
+				auto colls = json.Get<JsonArray>("coll");
+				comp.handle.Get().colliders.clear();
 
-				comp.handle.Get().localColl = coll;
-				json.Get<JsonArray>("size").Get(comp.handle.Get().size);
-				comp.handle.Get().UpdateCollider();
+				for (auto& collComp : colls.Get<JsonObject>()) {
+					auto& colliderNode = comp.handle.Get().colliders.emplace_back();
+					collComp.Get<JsonArray>("offset").Get(colliderNode.offset);
+					auto& coll = colliderNode.local;
+
+					auto verts = collComp.Get<JsonArray>("verts");
+					auto edges = collComp.Get<JsonArray>("edges");
+					auto faces = collComp.Get<JsonArray>("faces");
+					auto faceVerts = collComp.Get<JsonArray>("faceVerts");
+					coll.verts.resize(verts.Size());
+					for (size_t i = 0; i < verts.Size(); i++)
+					{
+						verts.Get<JsonArray>(i).Get(coll.verts[i]);
+					}
+					coll.edges.resize(edges.Size());
+					for (size_t i = 0; i < edges.Size(); i++)
+					{
+						edges.Get<JsonArray>(i).Get(&coll.edges[i].first, 2);
+					}
+					coll.faces.resize(faces.Size());
+					for (size_t i = 0; i < faces.Size(); i++)
+					{
+						JsonObject face = faces.Get<JsonObject>(i);
+						face.Get<JsonArray>("normal").Get(coll.faces[i].norm);
+						face.Get("vertIdx", coll.faces[i].vertIdx);
+					}
+					coll.faceVerts.resize(faceVerts.Size());
+					for (size_t i = 0; i < faceVerts.Size(); i++)
+					{
+						faceVerts.Get<JsonArray>(i).Get(coll.faceVerts[i]);
+					}
+
+					json.Get<JsonArray>("size").Get(comp.handle.Get().size);
+					comp.handle.Get().OnLocalColliderChanged();
+					comp.handle.Get().UpdateGlobalColliders();
+				}
 			});
 	}
 

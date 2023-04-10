@@ -8,6 +8,7 @@ namespace Nork::Editor {
 	void PhysicsSettingsPanel::Content()
 	{
 		ImGui::Checkbox("Show colliders", &ColliderPass::Instance().enabled);
+		ImGui::Checkbox("Use global colliders", &ColliderPass::Instance().useGlobalColliderVertices);
 		auto& p = GetEngine().physicsSystem.pipeline;
 		ImGui::DragFloat("Coefficient##2", &p.coefficient);
 

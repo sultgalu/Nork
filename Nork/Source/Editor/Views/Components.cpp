@@ -388,8 +388,18 @@ namespace Nork::Editor {
 	}
 	template<> void SceneNodeView::ShowComponent(Components::Physics& phx, bool& changed)
 	{
+		ImGui::Text(std::to_string(phx.Object().volume).append(" | Volume").c_str());
+		{
+			std::stringstream centerSs;
+			auto& center = phx.Object().centerOfMass;
+			centerSs << center.x << ";" << center.y << ";" << center.z << " | Center Of Mass";
+			ImGui::Text(centerSs.str().c_str());
+		}
 		auto& kin = phx.handle.Get().kinem;
 		changed |= ImGui::DragFloat("Mass (kg)", &kin.mass, 0.01f);
+		changed |= ImGui::Checkbox("Auto Calculate Mass", &phx.Object().autoMass);
+		if (phx.Object().autoMass)
+			changed |= ImGui::DragFloat("Mass Density", &phx.Object().massDensity, 0.01f);
 		changed |= ImGui::DragFloat("I", &kin.I, 0.01f);
 		changed |= ImGui::DragFloat("Elasticity", &kin.elasticity, 0.01f, 0, 2);
 		changed |= ImGui::DragFloat("Friction", &kin.friction, 0.01f, 0, 2);
@@ -398,7 +408,50 @@ namespace Nork::Editor {
 		changed |= ImGui::DragFloat3("Velocity", &kin.velocity.x, 0.001f);
 		auto axis = glm::normalize(kin.w);
 		auto angle = glm::length(kin.w);
-		changed |= ImGui::DragFloat3("Angular Velocity Axis", &kin.w.x);
+		changed |= ImGui::DragFloat3("Angular Velocity Axis", &kin.w.x, 0.001f);
+		if (ImGui::TreeNodeEx("Colliders", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen)) {
+			bool collChanged = false;
+			int idx = 0;
+			int idxToRemove = -1;
+			for (auto& collNode : phx.Colliders()) {
+				ImGui::Text(std::to_string(idx).c_str());
+				ImGui::Text(std::to_string(collNode.local.volume).append(" | Volume").c_str());
+				{
+					std::stringstream centerSs;
+					auto& center = collNode.local.center;
+					centerSs << center.x << ";" << center.y << ";" << center.z << " | center";
+					ImGui::Text(centerSs.str().c_str());
+				}
+				glm::vec3 scale = glm::vec3(1);
+				if (ImGui::DragFloat3(("scale##collider" + std::to_string(idx)).c_str(), &scale.x, 0.01f, 0.01f)) {
+					collChanged = true;
+					for (auto& vert : collNode.local.verts) {
+						vert *= scale;
+					}
+				}
+				collChanged |= ImGui::DragFloat3(("offset##collider" + std::to_string(idx)).c_str(), &collNode.offset.x, 0.01f);
+				ImGui::PushStyleColor(0, ImVec4(0.5f, 0, 0, 1));
+				if (ImGui::Button("Remove")) {
+					collChanged = true;
+					idxToRemove = idx;
+				}
+				ImGui::PopStyleColor();
+				ImGui::Separator();
+				idx++;
+			}
+			if (ImGui::Button("Add Collider")) {
+				collChanged = true;
+				phx.Colliders().push_back(Physics::ColliderNode{ .local = Physics::Collider::Cube() });
+			}
+			if (idxToRemove != -1) {
+				phx.Colliders().erase(phx.Colliders().begin() + idxToRemove);
+			}
+			if (collChanged) {
+				phx.Object().OnLocalColliderChanged();
+			}
+			changed |= collChanged;
+			ImGui::TreePop();
+		}
 		// if (ImGui::DragFloat3("Angular Velocity Axis", &axis.x))
 		// {
 		//	changed = true;

@@ -8,8 +8,7 @@ namespace Nork::Components {
 		Physics() = default;
 		Nork::Physics::Object& Object() const { return handle.Get(); }
 		Nork::Physics::KinematicData& Kinem() const { return handle.Get().kinem; }
-		Nork::Physics::Collider& Collider() const { return handle.Get().collider; }
-		Nork::Physics::Collider& LocalCollider() const { return handle.Get().localColl; }
+		std::vector<Nork::Physics::ColliderNode>& Colliders() const { return handle.Get().colliders; }
 		Nork::Physics::ObjectHandle handle;
 	};
 }

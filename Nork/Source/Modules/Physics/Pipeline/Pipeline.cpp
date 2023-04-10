@@ -13,10 +13,10 @@ namespace Nork::Physics
 	{
 		std::for_each(std::execution::par, world.objs.begin(), world.objs.end(), [&](auto& obj)
 			{
-				obj.UpdateInertia(); // only needed when mass or collider has changed
+				obj.OnMassChanged();
 				VelocityUpdate(obj, delta);
 				RotationUpdate(obj, delta);
-				obj.UpdateCollider(); // only needed when transform changed
+				obj.UpdateGlobalColliders(); // only needed when transform changed
 			});
 		broadResults = SAP(world.objs).Get();
 

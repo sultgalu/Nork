@@ -2,13 +2,20 @@
 
 #include "Kinematic.h"
 #include "Collider.h"
+#include "AABB.h"
 
 namespace Nork::Physics
 {
 struct ColliderNode {
-	glm::vec3 offset;
+	glm::vec3 offset = glm::vec3(0);
 	Collider local;
 	Collider global;
+	AABB aabb;
+};
+
+struct ColliderIndex {
+	index_t objIdx;
+	index_t collIdx;
 };
 
 class Object
@@ -17,18 +24,24 @@ public:
 	Object(const KinematicData& kinem = KinematicData())
 		: kinem(kinem)
 	{}
-
-	Object(const Collider& collider, const glm::vec3& size = glm::vec3(1), const KinematicData& kinem = KinematicData());
-	void SetColliderSize(const glm::vec3& scale);
-	void UpdateCollider();
-	void UpdateInertia() { this->kinem.I = CalcInertia(); }
+	Object(const std::vector<ColliderNode>& colliders, const glm::vec3& size = glm::vec3(1), const KinematicData& kinem = KinematicData());
+	void OnLocalColliderChanged();
+	void OnMassChanged();
+	void UpdateGlobalColliders();
+	void SetMass(float);
 private:
-	float CalcInertia();
+	void CalcInertia();
+	void CalcLocalCenterOfMass();
 public:
-	Collider localColl;
-	Collider collider;
+	std::vector<ColliderNode> colliders;
 	KinematicData kinem;
 	glm::vec3 size = glm::vec3(1);
+	glm::vec3 centerOfMass;
+	float volume;
+	bool autoMass = true;
+	float massDensity = 1.0f;
+private:
+	glm::vec3 centerOfMassLocal;
 };
 
 struct ObjectHandle
