@@ -9,12 +9,12 @@ DirShadowMap::DirShadowMap()
 DirShadowMap::~DirShadowMap()
 {
 	if (image)
-		Resources::Instance().pointShadowDescriptors->RemoveImage(Shadow()->shadMap);
+		Resources::Instance().dirShadowDescriptors->RemoveImage(Shadow()->shadMap);
 }
 void DirShadowMap::CreateTexture(uint32_t width, uint32_t height)
 {
 	if (image)
-		Resources::Instance().pointShadowDescriptors->RemoveImage(Shadow()->shadMap);
+		Resources::Instance().dirShadowDescriptors->RemoveImage(Shadow()->shadMap);
 
 	image = std::make_shared<Image>(width, height, ShadowMapPass::Instance().Format(),
 		vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled,

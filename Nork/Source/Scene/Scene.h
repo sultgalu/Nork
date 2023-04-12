@@ -15,6 +15,8 @@ namespace Nork
 		void Load(std::string path);
 		void SaveAs(std::string path);
 		void Save();
+		void Serialize(std::ostream& os);
+		void Deserialize(const std::istream& is);
 		inline void Reset()
 		{
 			registry = entt::registry();

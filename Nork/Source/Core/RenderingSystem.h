@@ -57,7 +57,6 @@ namespace Nork {
 		entt::registry& registry;
 		std::shared_ptr<Components::Camera> camera;
 	private:
-		bool shouldUpdateDrawCommands = false;
 		void OnDrawableAdded(entt::registry& reg, entt::entity id);
 		void OnDrawableRemoved(entt::registry& reg, entt::entity id);
 		void OnDrawableUpdated(entt::registry& reg, entt::entity id);

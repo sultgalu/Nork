@@ -9,11 +9,9 @@ Renderer::Renderer* Renderer::Renderer::instance = nullptr;
 std::shared_ptr<Renderer::Renderer> renderer;
 void RenderingSystem::OnDrawableUpdated(entt::registry& reg, entt::entity id)
 {
-	shouldUpdateDrawCommands = true;
 }
 void RenderingSystem::OnDrawableRemoved(entt::registry& reg, entt::entity id)
 {
-	shouldUpdateDrawCommands = true;
 }
 void RenderingSystem::OnDrawableAdded(entt::registry& reg, entt::entity id)
 {
@@ -24,7 +22,6 @@ void RenderingSystem::OnDrawableAdded(entt::registry& reg, entt::entity id)
 		*dr.sharedTransform = tr->RecalcModelMatrix();
 	if (dr.GetModel() == nullptr || dr.GetModel()->nodes.empty())
 		dr.SetModel(AssetLoader::Instance().LoadModel(AssetLoader::Instance().CubeUri()));
-	shouldUpdateDrawCommands = true;
 }
 void RenderingSystem::UpdateDirLightShadows()
 {

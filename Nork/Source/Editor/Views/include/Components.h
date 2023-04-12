@@ -16,7 +16,7 @@ namespace Nork::Editor {
 		template<class T>
 		bool EditComponent();
 		template<class T>
-		void ShowComponent(T&, bool&);
+		bool ShowComponent(T&);
 
 		template<class... T>
 		void ListComponentsForAddition();

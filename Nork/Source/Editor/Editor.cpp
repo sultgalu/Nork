@@ -135,7 +135,8 @@ namespace Nork::Editor
 			style.WindowRounding = 1.0f;
 			style.Colors[ImGuiCol_WindowBg].w = 1.0f;
 		}
-
+		io.Fonts->AddFontFromFileTTF("SchibstedGrotesk-Medium.ttf", 18);
+		ImGui::StyleColorsDark();
 		//ImGui_ImplOpenGL3_Init();
 		//ImGui_ImplGlfw_InitForOpenGL(Application::Get().engine.window.Underlying().GetContext().glfwWinPtr, false);
 	}
@@ -254,13 +255,19 @@ namespace Nork::Editor
 		// {
 		// 	imIO.AddInputCharacter(c);
 		// }
-
+		static std::stringstream ss;
 		if (input.IsJustPressed(Key::F2))
 		{
-			if (Engine::Get().physicsUpdate)
+			if (data.sceneRunning) {
 				Engine::Get().StopPhysics();
-			else
+				Engine::Get().scene.Deserialize(ss);
+				ss.clear();
+			}
+			else {
+				Engine::Get().scene.Serialize(ss);
 				Engine::Get().StartPhysics(false);
+			}
+			data.sceneRunning = !data.sceneRunning;
 		}
 	}
 	void Editor::DrawPanelManager()

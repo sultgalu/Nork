@@ -9,34 +9,39 @@ namespace Nork
 void Scene::Save() {
 	SaveAs(sceneUri.string());
 }
-void Scene::SaveAs(std::string path)
+void Scene::Serialize(std::ostream& os)
 {
-	std::ofstream stream(path, std::ios::out);
-
 	try
 	{
-		stream << JsonSerializer(registry).Serialize(*root);
+		os << JsonSerializer(registry).Serialize(*root);
 	} catch (std::exception e)
 	{
 		Logger::Error(e.what());
 	}
-	sceneUri = path;
 }
-void Scene::Load(std::string path)
+void Scene::Deserialize(const std::istream& is)
 {
 	//registry = entt::registry();
 	registry.clear();
-	std::ifstream ifs(path, std::ios::in);
 	try
 	{
 		std::stringstream ss;
-		ss << ifs.rdbuf();
-		ifs.close();
+		ss << is.rdbuf();
 		root = JsonSerializer(registry).Deserialize(ss.str());
 	} catch (std::exception e)
 	{
 		Logger::Error(e.what());
 	}
+}
+void Scene::SaveAs(std::string path)
+{
+	std::ofstream ofs(path, std::ios::out);
+	Serialize(ofs);
+	sceneUri = path;
+}
+void Scene::Load(std::string path)
+{
+	Deserialize(std::ifstream(path, std::ios::in));
 	sceneUri = path;
 }
 Scene::Scene()

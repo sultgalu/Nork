@@ -7,6 +7,7 @@ namespace Nork::Editor {
 	{
 		std::shared_ptr<SceneNode> selectedNode = nullptr;
 		bool gameMode = false;
+		bool sceneRunning = false;
 	};
 	extern CommonData& _GetCommonData();
 	extern Engine& _GetEngine();

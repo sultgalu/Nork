@@ -119,11 +119,14 @@ void ColliderPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imag
 }
 
 void ColliderPass::UpdateBuffers(const entt::registry& registry) {
-	if (!enabled)
-		return;
-
 	static std::vector<ColliderPass::Vertex> vertices;
 	static std::vector<uint32_t> indices;
+	if (!enabled) {
+		vertices.resize(0);
+		indices.resize(0);
+		return;
+	}
+
 	vertices.clear(); indices.clear();
 	uint32_t vertexOffset = 0;
 	for (auto [ent, tr, phx] : registry.view<Components::Transform, Components::Physics>().each()) {
