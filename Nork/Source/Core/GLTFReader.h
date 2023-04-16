@@ -1,6 +1,6 @@
 #pragma once
-#include "ResourceManager.h"
 #include "RenderingSystem.h"
+#include "Components/Drawable.h"
 
 namespace Nork{
 	class GLTFReader

@@ -14,5 +14,6 @@ namespace Nork::Editor {
 		void LoadScene();
 		void SaveScene();
 		void SaveSceneAs();
+		void OpenProject();
 	};
 }

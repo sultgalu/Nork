@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Scene/Scene.h"
-#include "Core/ResourceManager.h"
+#include "Core/AssetLoader.h"
 #include "Modules/Renderer/Renderer.h"
 #include "Modules/Renderer/Model/Mesh.h"
 #include "Modules/Renderer/Model/Material.h"

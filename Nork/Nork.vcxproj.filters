@@ -93,7 +93,7 @@
     <ClCompile Include="Source\Components\Impl\Lights.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\ResourceManager.cpp">
+    <ClCompile Include="Source\Core\AssetLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Modules\Renderer\Model\Material.cpp">
@@ -323,7 +323,7 @@
     <ClInclude Include="Source\Utils\Observed.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\ResourceManager.h">
+    <ClInclude Include="Source\Core\AssetLoader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Modules\Renderer\Model\Material.h">

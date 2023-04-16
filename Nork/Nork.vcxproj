@@ -235,7 +235,7 @@
     <ClCompile Include="Source\Components\Impl\Common.cpp" />
     <ClCompile Include="Source\Components\Impl\Lights.cpp" />
     <ClCompile Include="Source\Core\PhysicsSystem.cpp" />
-    <ClCompile Include="Source\Core\ResourceManager.cpp" />
+    <ClCompile Include="Source\Core\AssetLoader.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Model\Material.cpp" />
     <ClCompile Include="Source\Core\RenderingSystem.cpp" />
     <ClCompile Include="Source\Modules\Renderer\LoadUtils.cpp" />
@@ -311,7 +311,7 @@
     <ClInclude Include="Source\Modules\Renderer\Data\Material.h" />
     <ClInclude Include="Source\Modules\Renderer\Data\Vertex.h" />
     <ClInclude Include="Source\Core\PhysicsSystem.h" />
-    <ClInclude Include="Source\Core\ResourceManager.h" />
+    <ClInclude Include="Source\Core\AssetLoader.h" />
     <ClInclude Include="Source\Modules\Renderer\Model\Material.h" />
     <ClInclude Include="Source\Core\RenderingSystem.h" />
     <ClInclude Include="Source\Modules\Renderer\LoadUtils.h" />

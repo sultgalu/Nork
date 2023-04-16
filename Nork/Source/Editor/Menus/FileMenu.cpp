@@ -1,5 +1,6 @@
 #include "include/FileMenu.h"
 #include "Platform/FileDialog.h"
+#include "Editor/Editor.h"
 
 namespace Nork::Editor {
 void FileMenu::Shortcuts() {
@@ -13,10 +14,22 @@ void FileMenu::Shortcuts() {
 		{
 			SaveScene();
 		}
+		else if (GetInput().IsJustPressed(Key::I))
+		{
+			OpenProject();
+		}
 	}
 }
 void FileMenu::Content()
 {
+	if (ImGui::MenuItem("New Project.."))
+	{
+		Editor::Get().CreateProject();
+	}
+	if (ImGui::MenuItem("Open Project..", "Ctrl+I"))
+	{
+		OpenProject();
+	}
 	if (ImGui::MenuItem("Open Scene..", "Ctrl+O"))
 	{
 		LoadScene();
@@ -30,6 +43,15 @@ void FileMenu::Content()
 		SaveScene();
 	}
 	ImGui::MenuItem("Save All..", "Ctrl+Shift+S");
+}
+void FileMenu::OpenProject()
+{
+	using namespace FileDialog;
+	std::string fileName = FileDialog::OpenFile(EngineFileTypes::Project, L"Open Project", L"Open");
+	if (!fileName.empty())
+	{
+		Editor::Get().OpenProject(fileName);
+	}
 }
 void FileMenu::LoadScene()
 {

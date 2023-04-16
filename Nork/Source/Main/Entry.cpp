@@ -238,5 +238,6 @@ int main()
 	}
 	Renderer::Vulkan::Device::Instance().waitIdle();
 
+	editor.BeforeEngineShutdown();
 	return 0;
 }

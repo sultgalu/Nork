@@ -4,6 +4,7 @@
 #include "Panels/include/All.h"
 #include "Menus/include/All.h"
 #include "Modules/Renderer/Vulkan/Window.h"
+#include "Platform/FileDialog.h"
 
 namespace Nork::Editor
 {
@@ -41,46 +42,86 @@ namespace Nork::Editor
 
 	static void ReadImGuiIniFile(ImGuiContext* ctx, ImGuiSettingsHandler* handler, void* entry, const char* line)
 	{
-		if (handler->TypeName != std::string("Cameras"))
-		{
+		if (line == std::string(""))
 			return;
+		if ((const char*)entry == std::string("project")) {
+			auto projectPath = fs::path(line);
+			if (!projectPath.empty() || fs::exists(projectPath)) {
+				Editor::Get().OpenProject(projectPath);
+			}
 		}
-		JsonObject root;
-		try
+		else if ((const char*)entry == std::string("camera"))
 		{
-			root = JsonObject::Parse(line);
-		} catch (std::exception& e)
-		{
-			return;
-		}
-		if (!root.Contains("cameras"))
-		{
-			return;
-		}
-		
-		auto& data = _GetCommonData();
-		auto& editor = _GetEditor();
+			JsonObject root;
+			try
+			{
+				root = JsonObject::Parse(line);
+			} catch (std::exception& e)
+			{
+				return;
+			}
 
-		if (root.Contains("camera")) {
-			auto json = root.Get<JsonObject>("camera");
-			auto& cam = *editor.GetPanel<ViewportPanel>()->viewportView.camera;
-			json.Get<JsonArray>("position").Get(&cam.position.x, 3);
-			json.Get<JsonArray>("up").Get(&cam.up.x, 3);
-			json.Get("nearClip", cam.nearClip);
-			json.Get("farClip", cam.farClip);
-			json.Get("yaw", cam.yaw);
-			json.Get("pitch", cam.pitch);
-			json.Get("ratio", cam.ratio);
-			// json.Get("zoomSpeed", comp.zoomSpeed);
-			// json.Get("moveSpeed", comp.moveSpeed);
-			// json.Get("rotationSpeed", comp.rotationSpeed);
-			json.Get("FOV", cam.FOV);
-			cam.Update();
+			auto& data = _GetCommonData();
+			auto& editor = _GetEditor();
+
+			if (root.Contains("camera")) {
+				auto json = root.Get<JsonObject>("camera");
+				auto& cam = *editor.GetPanel<ViewportPanel>()->viewportView.camera;
+				json.Get<JsonArray>("position").Get(&cam.position.x, 3);
+				json.Get<JsonArray>("up").Get(&cam.up.x, 3);
+				json.Get("nearClip", cam.nearClip);
+				json.Get("farClip", cam.farClip);
+				json.Get("yaw", cam.yaw);
+				json.Get("pitch", cam.pitch);
+				json.Get("ratio", cam.ratio);
+				// json.Get("zoomSpeed", comp.zoomSpeed);
+				// json.Get("moveSpeed", comp.moveSpeed);
+				// json.Get("rotationSpeed", comp.rotationSpeed);
+				json.Get("FOV", cam.FOV);
+				cam.Update();
+
+				auto controller = json.Get<JsonObject>("controller");
+				if (controller.Contains("type")) {
+					if (controller.Get<std::string>("type") == "editor") {
+						glm::vec3 center;
+						size_t focused = entt::null;
+						controller.Get<JsonArray>("center").Get(center);
+						controller.GetIfContains("focused", focused);
+
+						auto cc = std::make_shared<EditorCameraController>(center);
+						editor.GetPanel<ViewportPanel>()->viewportView.camController = cc;
+						if (focused != entt::null) {
+							if (auto node = Engine::Get().scene.GetNodeById((entt::entity)focused)) {
+								editor.GetPanel<ViewportPanel>()->focusedNode = node;
+							}
+						}
+					}
+					else if (controller.Get<std::string>("type") == "fps") {
+						auto& cam = editor.GetPanel<ViewportPanel>()->viewportView.camController = std::make_shared<FpsCameraController>();
+					}
+				}
+			}
 		}
 	}
 	static void WriteImGuiIniFile(ImGuiContext* ctx, ImGuiSettingsHandler* handler, ImGuiTextBuffer* out_buf)
 	{
 		auto& data = _GetCommonData();
+
+		const auto& camController = Editor::Get().GetPanel<ViewportPanel>()->viewportView.camController;
+		auto jsonCC = JsonObject();
+		std::string ccType = "";
+		if (auto cc = std::dynamic_pointer_cast<EditorCameraController>(camController)) {
+			jsonCC
+				.Property("type", "editor")
+				.Property("center", JsonArray().Elements(cc->center));
+			if (auto focusedNode = Editor::Get().GetPanel<ViewportPanel>()->focusedNode.lock()) {
+				jsonCC.Property("focus", (size_t)focusedNode->GetEntity().Id());
+			}
+		}
+		else if (auto cc = std::dynamic_pointer_cast<FpsCameraController>(camController)) {
+			jsonCC
+				.Property("type", "fps");
+		}
 
 		auto& component = *Editor::Get().GetPanel<ViewportPanel>()->viewportView.camera;
 		auto jsonCam = JsonObject()
@@ -94,16 +135,19 @@ namespace Nork::Editor
 			// .Property("moveSpeed", component.moveSpeed)
 			// .Property("rotationSpeed", component.rotationSpeed)
 			// .Property("zoomSpeed", component.zoomSpeed);
-			.Property("FOV", component.FOV);
+			.Property("FOV", component.FOV)
+			.Property("controller", jsonCC);
 
-		out_buf->appendf("[Cameras][stuff]\n");
+		out_buf->append("[Editor][camera]\n");
 		out_buf->append(JsonObject().Property("camera", jsonCam).ToString().c_str());
+		out_buf->append("\n[Editor][project]\n");
+		if (!data.projectPath.empty()) {
+			out_buf->append((data.projectPath / "project.nork").string().c_str());
+		}
 	}
 	static void* OpenImGuiIniFile(ImGuiContext* ctx, ImGuiSettingsHandler* handler, const char* name)
 	{
-		static Components::Camera cam;
-		Logger::Info("OPENnnnnnnnNNNNNNNNNNNNNNed: ", name);
-		return &cam;
+		return (void*)name;
 	}
 	void InitImgui()
 	{
@@ -111,8 +155,8 @@ namespace Nork::Editor
 
 		auto g = ImGui::GetCurrentContext();
 		ImGuiSettingsHandler ini_handler;
-		ini_handler.TypeName = "Cameras";
-		ini_handler.TypeHash = ImHashStr("Cameras");
+		ini_handler.TypeName = "Editor";
+		ini_handler.TypeHash = ImHashStr("Editor");
 		ini_handler.ReadOpenFn = OpenImGuiIniFile;
 		ini_handler.ReadLineFn = ReadImGuiIniFile;
 		ini_handler.WriteAllFn = WriteImGuiIniFile;
@@ -143,6 +187,7 @@ namespace Nork::Editor
 	Editor::~Editor()
 	{
 		ImGui_ImplGlfw_Shutdown();
+		ImGui::Shutdown();
 	}
 	Editor::Editor()
 	{
@@ -164,6 +209,11 @@ namespace Nork::Editor
 	Editor& Editor::Get()
 	{
 		return *_editor;
+	}
+
+	void Editor::BeforeEngineShutdown()
+	{
+		Engine::Get().scene.Save();
 	}
 	
 	void Editor::Render()
@@ -290,5 +340,38 @@ namespace Nork::Editor
 	void Editor::AddPanel(std::shared_ptr<Panel> panel)
 	{
 		panels.push_back(panel);
+	}
+	void Editor::CreateProject()
+	{
+		using namespace FileDialog;
+		fs::path dir = FileDialog::OpenFile(EngineFileTypes::Folder, L"Select New Project Folder ", L"Select");
+		if (dir.empty()){
+			return;
+		}
+		AssetLoader::Instance().SetProjectRoot(dir);
+
+		std::ofstream projectFile(dir / "project.nork");
+		projectFile << JsonObject()
+			.Property("startScene", "start_scene.json")
+			.ToStringFormatted();
+
+		fs::create_directory(dir / "scenes");
+		Engine::Get().scene.Save();
+		Engine::Get().scene.Create(dir / "scenes" / "start_scene.json");
+
+		data.projectPath = dir;
+		data.selectedNode = nullptr;
+	}
+	void Editor::OpenProject(const fs::path& projectFilePath)
+	{
+		auto projectFile = FileUtils::ReadAsString(projectFilePath.string());
+		auto startScene = JsonObject::ParseFormatted(projectFile)
+			.Get<std::string>("startScene");
+
+		AssetLoader::Instance().SetProjectRoot(projectFilePath.parent_path()); // clears cache, put before scene load
+		Engine::Get().scene.Load(projectFilePath.parent_path() / "scenes" / startScene);
+
+		data.projectPath = projectFilePath.parent_path();
+		data.selectedNode = nullptr;
 	}
 }

@@ -1,4 +1,5 @@
 #include "GLTFReader.h"
+#include "Core/AssetLoader.h"
 
 namespace Nork {
 GLTFReader::GLTFReader(const fs::path& path)

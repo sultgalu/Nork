@@ -73,6 +73,7 @@ namespace Nork {
 		fs::path ModelsPath();
 		fs::path TemplatesPath();
 		fs::path CubeUri();
+		void SetProjectRoot(const fs::path&);
 	private:
 		fs::path projectAssetsRoot;
 	};
@@ -92,6 +93,7 @@ namespace Nork {
 		void ClearCache();
 		using AssetLoader::AbsolutePathToUri;
 		using AssetLoader::CubeUri;
+		void SetProjectRoot(const fs::path&);
 	private:
 		template<class T> fs::path Uri(const std::unordered_map<fs::path, T>& cache, const T& target) {
 			for (auto& [uri, val] : cache)

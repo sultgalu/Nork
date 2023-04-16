@@ -19,7 +19,7 @@ namespace Nork::Renderer::Data
 	};
 	struct DirLight
 	{
-		glm::vec3 direction;
+		glm::vec3 direction = glm::vec3(-1);
 		float outOfProjValue = 1;
 		glm::vec4 color = glm::vec4(1); // ambient
 		glm::vec4 color2 = glm::vec4(1);

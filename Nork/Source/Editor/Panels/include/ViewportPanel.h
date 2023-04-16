@@ -16,8 +16,8 @@ namespace Nork::Editor {
 		void InitializeWithRenderer();
 	public:
 		ViewportView viewportView;
+		std::weak_ptr<SceneNode> focusedNode;
 	protected:
 		std::string name = "Viewport";
-		std::weak_ptr<SceneNode> focusedNode;
 	};
 }

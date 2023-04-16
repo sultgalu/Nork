@@ -10,6 +10,8 @@ namespace Nork::FileDialog
 		Image = 1 << 2,
 		Json = 1 << 3,
 		glTF = 1 << 4,
+		Folder = 1 << 5,
+		Project = 1 << 6,
 	};
 
 	inline EngineFileTypes operator|(EngineFileTypes a, EngineFileTypes b)

@@ -12,10 +12,13 @@ namespace Nork::Editor {
 		Editor();
 		~Editor();
 		static Editor& Get();
+		void BeforeEngineShutdown();
 		void Render();
 		void Update();
 		void UpdateImguiInputs();
 		void AddPanel(std::shared_ptr<Panel>);
+		void OpenProject(const fs::path&);
+		void CreateProject();
 	public:
 		void DrawPanelManager();
 		template<std::derived_from<Panel> T> std::shared_ptr<T> GetPanel()

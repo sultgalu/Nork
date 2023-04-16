@@ -1,9 +1,10 @@
-#include "ResourceManager.h"
+#include "Core/AssetLoader.h"
 #include "Modules/Renderer/LoadUtils.h"
 #include "Modules/Renderer/GLTF/GLTFBuilder.h"
 #include "Modules/Renderer/MeshFactory.h"
 #include "RenderingSystem.h"
 #include "GLTFReader.h"
+#include "AssetLoader.h"
 
 namespace Nork {
 static Renderer::GLTF::GLTF LoadGLTF(const fs::path& path)
@@ -42,14 +43,9 @@ static void ParseMaterial(Renderer::Material& material, const Renderer::GLTF::Ma
 }
 
 AssetLoader::AssetLoader() {
-	projectAssetsRoot = fs::current_path().append("Assets");
-	fs::create_directories(projectAssetsRoot);
-	fs::create_directory(ModelsPath());
 }
 AssetLoaderProxy::AssetLoaderProxy() {
-	if (!fs::exists(UriToAbsolutePath(CubeUri()))) {
-		ImportModel(TemplatesPath() / "cube" / "cube.gltf", "cube");
-	}
+	SetProjectRoot(fs::current_path().append("Assets"));
 }
 std::shared_ptr<Components::Model> AssetLoader::LoadModel(const fs::path& uri) {
 	fs::path path = UriToAbsolutePath(uri);
@@ -224,6 +220,21 @@ fs::path AssetLoader::TemplatesPath() {
 }
 fs::path AssetLoader::CubeUri() {
 	return AbsolutePathToUri(ModelsPath() / "cube" / "cube.gltf");
+}
+
+void AssetLoader::SetProjectRoot(const fs::path& newRoot)
+{
+	projectAssetsRoot = newRoot;
+	fs::create_directory(ModelsPath());
+
+}
+void AssetLoaderProxy::SetProjectRoot(const fs::path& newRoot)
+{
+	AssetLoader::SetProjectRoot(newRoot);
+	ClearCache();
+	if (!fs::exists(UriToAbsolutePath(CubeUri()))) {
+		ImportModel(TemplatesPath() / "cube" / "cube.gltf", "cube");
+	}
 }
 
 AssetLoaderProxy& AssetLoader::Instance() {

@@ -69,6 +69,10 @@ namespace Nork::FileDialog
                 result.push_back(glTFExtension[i]);
             }
         }
+        if ((types & EngineFileTypes::Project) != EngineFileTypes::None)
+        {
+            result.push_back(COMDLG_FILTERSPEC{ L"Nork Project", L"*.nork" });
+        }
 
         return result;
     }
@@ -90,13 +94,22 @@ namespace Nork::FileDialog
                 if (!okButton.empty())
                     pFileOpen->SetOkButtonLabel(okButton.c_str());
 
-                std::vector<COMDLG_FILTERSPEC> filters = GetExtensions(fileType);
-                if (!filters.empty())
-                {
-                    pFileOpen->SetFileTypes(filters.size(), filters.data());
-                    pFileOpen->SetFileTypeIndex(0);
+                if (fileType == EngineFileTypes::Folder) {
+                    DWORD dwOptions;
+                    if (SUCCEEDED(pFileOpen->GetOptions(&dwOptions)))
+                    {
+                        pFileOpen->SetOptions(dwOptions | FOS_PICKFOLDERS);
+                    }
                 }
-                pFileOpen->SetDefaultExtension(L"*.txt");
+                else {
+                    std::vector<COMDLG_FILTERSPEC> filters = GetExtensions(fileType);
+                    if (!filters.empty())
+                    {
+                        pFileOpen->SetFileTypes(filters.size(), filters.data());
+                        pFileOpen->SetFileTypeIndex(0);
+                    }
+                    pFileOpen->SetDefaultExtension(L"*.txt");
+                }
 
                 if (SUCCEEDED(pFileOpen->Show(NULL)))
                 {
