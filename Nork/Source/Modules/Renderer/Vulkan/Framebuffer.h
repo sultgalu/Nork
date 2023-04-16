@@ -42,12 +42,12 @@ namespace Nork::Renderer::Vulkan {
         Framebuffer(const FramebufferCreateInfo& createInfo)
             : vk::raii::Framebuffer(Device::Instance(), createInfo), createInfo(createInfo)
         {
-            ;
         }
         uint32_t Width() const { return createInfo.width; }
         uint32_t Height() const { return createInfo.height; }
         const std::vector<std::shared_ptr<ImageView>>& Attachments() const { return createInfo.attachments; }
     public:
+        bool usedByCommandBuffer = false;
         FramebufferCreateInfo createInfo;
     };
 }

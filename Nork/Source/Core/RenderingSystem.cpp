@@ -1,7 +1,6 @@
 #include "RenderingSystem.h"
 #include "Modules/Renderer/LoadUtils.h"
 #include "Modules/Renderer/Model/Object.h"
-#include "Editor/Editor.h"
 #include "ColliderPass.h"
 
 namespace Nork {
@@ -118,7 +117,6 @@ struct Client : Renderer::Client
 {
 	void OnCommands() override
 	{
-		Editor::Editor::Get().Update();
 	}
 	uint32_t FillDrawBuffers(std::span<Renderer::DrawParams> params,
 		std::span<vk::DrawIndexedIndirectCommand> commands) override

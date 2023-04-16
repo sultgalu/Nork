@@ -1,9 +1,7 @@
 #pragma once
 
 #include "Resources.h"
-#include "EditorPass.h"
-#include "DeferredPass.h"
-#include "ShadowMapPass.h"
+#include "RenderPass.h"
 
 namespace Nork::Renderer {
 

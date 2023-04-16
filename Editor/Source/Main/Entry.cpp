@@ -26,10 +26,10 @@ int main()
 
 	auto window = Renderer::Vulkan::Window(1920 * 0.8f, 1080 * 0.8f);
 	std::unique_ptr<Nork::Input> input = std::make_unique<Nork::Input>(window.glfwWindow);
+	Editor::Editor editor;
 	Engine engine;
 
 	Renderer::Commands::Instance().BeginTransferCommandBuffer();
-	Editor::Editor editor; // needs to record to transfer command buffer
 	//editor.SetDisplayTexture(engine.renderingSystem.deferredPipeline.lightFb->Color());
 
 	/*int dim = 10;

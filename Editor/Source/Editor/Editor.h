@@ -13,7 +13,7 @@ namespace Nork::Editor {
 		~Editor();
 		static Editor& Get();
 		void BeforeEngineShutdown();
-		void BuildFrame();
+		void Render();
 		void Update();
 		void UpdateImguiInputs();
 		void AddPanel(std::shared_ptr<Panel>);

@@ -207,11 +207,13 @@
     <ClCompile Include="Source\Modules\Renderer\Commands.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Data\Vertex.cpp" />
     <ClCompile Include="Source\Modules\Renderer\DeferredPass.cpp" />
+    <ClCompile Include="Source\Editor\EditorRenderPass.cpp" />
     <ClCompile Include="Source\Modules\Renderer\ImageDescriptorArray.cpp" />
     <ClCompile Include="Source\Modules\Renderer\MemoryAllocator.cpp" />
     <ClCompile Include="Source\Modules\Renderer\MemoryTransfer.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Model\ShadowMap.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Renderer.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\RenderPass.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Resources.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Vulkan\Device.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Vulkan\Shaderc.cpp" />
@@ -248,7 +250,7 @@
     <ClInclude Include="Source\Modules\Renderer\Commands.h" />
     <ClInclude Include="Source\Modules\Renderer\DeferredPass.h" />
     <ClInclude Include="Source\Modules\Renderer\DeviceData.h" />
-    <ClInclude Include="Source\Modules\Renderer\EditorPass.h" />
+    <ClInclude Include="Source\Editor\EditorPass.h" />
     <ClInclude Include="Source\Modules\Renderer\Image.h" />
     <ClInclude Include="Source\Modules\Renderer\ImageDescriptorArray.h" />
     <ClInclude Include="Source\Modules\Renderer\MemoryAllocator.h" />

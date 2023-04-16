@@ -1,9 +1,10 @@
 #include "Renderer.h"
 #include "Vulkan/Window.h"
+#include "DeferredPass.h"
+#include "ShadowMapPass.h"
 
 namespace Nork::Renderer {
 
-static std::shared_ptr<EditorPass> editorPass;
 Renderer::Renderer()
 	: allocator(Vulkan::PhysicalDevice::Instance())
 {
@@ -18,7 +19,6 @@ Renderer::Renderer()
 	mainImage = deferredPass->fbColor;
 	renderPasses.push_back(deferredPass);
 
-	editorPass = std::make_shared<EditorPass>();
 	Vulkan::Window::Instance().onFbResize = [&](int w, int h) {
 		framebufferResized = true;
 	};
@@ -37,7 +37,6 @@ Renderer::Renderer()
 }
 Renderer::~Renderer()
 {
-	editorPass = nullptr;
 	using namespace Vulkan;
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
@@ -65,11 +64,8 @@ uint32_t Renderer::BeginFrame()
 {
 	if (framebufferResized)
 	{
-		if (editorPass)
-		{
-			auto inFlightFb = editorPass->fbUI;
-			Commands::Instance().OnRenderFinished([inFlightFb]() {});
-			editorPass->CreateFramebuffer();
+		for (auto& pass : renderPasses) {
+			pass->OnFramebufferResized();
 		}
 		framebufferResized = false;
 	}
@@ -78,7 +74,6 @@ uint32_t Renderer::BeginFrame()
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 	Commands::Instance().ProcessFinishedCommandBufferCallbacks();
 	Commands::Instance().NextFrame(currentFrame);
-	Commands::Instance().BeginRenderCommandBuffer();
 	Commands::Instance().BeginTransferCommandBuffer();
 	// begin CPU expensive stuff that does not yet require the next image
 	for (auto& deviceData : deviceDatas) {
@@ -115,9 +110,14 @@ uint32_t Renderer::BeginFrame()
 		auto commands = std::span(commandsPtr, resources->DynamicSize(*resources->drawCommands) / sizeof(vk::DrawIndexedIndirectCommand));
 		resources->drawCommandCount = client->FillDrawBuffers(params, commands);
 	}
+	for (auto& pass : renderPasses) {
+		pass->OnTransferCommands();
+	}
 	for (auto& deviceData : deviceDatas) {
 		deviceData->FlushWrites();
 	}
+	Commands::Instance().EndTransferCommandBuffer();
+
 	// end
 	auto result = SwapChain::Instance().acquireNextImage(UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE);
 
@@ -157,13 +157,12 @@ void Renderer::DrawFrame()
 	auto imgIdx = BeginFrame();
 	if (imgIdx == invalid_frame_idx)
 		return;
+	Commands::Instance().BeginRenderCommandBuffer();
 	for (auto& pass : renderPasses)
 	{
 		pass->RecordCommandBuffer(*Commands::Instance().GetCurrentRenderCmd(), imgIdx, currentFrame);
 	}
-	editorPass->RecordCommandBuffer(*Commands::Instance().GetCurrentRenderCmd(), imgIdx, currentFrame);
 	Commands::Instance().EndRenderCommandBuffer();
-	Commands::Instance().EndTransferCommandBuffer();
 	EndFrame(imgIdx);
 }
 void Renderer::createSyncObjects()

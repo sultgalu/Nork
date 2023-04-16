@@ -24,10 +24,12 @@ uint32_t ImageDescriptorArray::AddImage(std::shared_ptr<Image>& img)
 	images[idx] = img;
 	return idx;
 }
-void ImageDescriptorArray::RemoveImage(uint32_t idx)
+void ImageDescriptorArray::RemoveImage(uint32_t idx, bool inFlight)
 {
-	auto image = images[idx];
-	Commands::Instance().OnRenderFinished([image]() {});
+	if (inFlight) {
+		auto image = images[idx];
+		Commands::Instance().OnRenderFinished([image]() {});
+	}
 	images[idx] = nullptr;
 	freeImageIdxs.insert(idx);
 }
