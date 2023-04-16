@@ -6,30 +6,16 @@
 #include "App/Application.h"
 using namespace Nork;
 
-Renderer::Vulkan::Device* Renderer::Vulkan::Device::instance = nullptr;
-Renderer::Vulkan::PhysicalDevice* Renderer::Vulkan::PhysicalDevice::instance = nullptr;
-Renderer::Vulkan::SwapChain* Renderer::Vulkan::SwapChain::instance = nullptr;
-Renderer::Vulkan::Instance* Renderer::Vulkan::Instance::staticInstance = nullptr;
-Renderer::Vulkan::Window* Renderer::Vulkan::Window::staticInstance = nullptr;
-Renderer::MemoryAllocator* Renderer::MemoryAllocator::instance = nullptr;
-Renderer::Resources* Renderer::Resources::instance = nullptr;
-Renderer::Commands* Renderer::Commands::instance = nullptr;
-Renderer::MemoryTransfer* Renderer::MemoryTransfer::instance = nullptr;
-Renderer::Vulkan::DescriptorSet::Writer_ Renderer::Vulkan::DescriptorSet::Writer()
-{
-	return Writer_(*this);
-}
-
 int main()
 {
 	Logger::PushStream(std::cout);
 
 	auto window = Renderer::Vulkan::Window(1920 * 0.8f, 1080 * 0.8f);
 	std::unique_ptr<Nork::Input> input = std::make_unique<Nork::Input>(window.glfwWindow);
-	Editor::Editor editor;
 	Engine engine;
 
 	Renderer::Commands::Instance().BeginTransferCommandBuffer();
+	Editor::Editor editor; // needs to record to transfer command buffer
 	//editor.SetDisplayTexture(engine.renderingSystem.deferredPipeline.lightFb->Color());
 
 	/*int dim = 10;

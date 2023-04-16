@@ -57,18 +57,6 @@
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <VcpkgInstalledDir>..\vcpkg_repo</VcpkgInstalledDir>
@@ -111,11 +99,17 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>..\vcpkg_repo\x64-windows\include;../Nork/Source/PCH;Source;/Nork/Source</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\vcpkg_repo\x64-windows\include;..\Nork\Source\PCH;Source;..\Nork\Source</AdditionalIncludeDirectories>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <ForcedIncludeFiles>pch.h</ForcedIncludeFiles>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>vulkan-1.lib;glfw3dll.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;$(OutDir)\Nork.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\vcpkg_repo\x64-windows\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -127,29 +121,24 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>..\vcpkg_repo\x64-windows\include;../Nork/Source/PCH;Source;/Nork/Source</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\vcpkg_repo\x64-windows\include;..\Nork\Source\PCH;Source;..\Nork\Source</AdditionalIncludeDirectories>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <ForcedIncludeFiles>pch.h</ForcedIncludeFiles>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>vulkan-1.lib;glfw3dll.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;$(OutDir)\Nork.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\vcpkg_repo\x64-windows\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Editor\Editor.cpp" />
-    <ClCompile Include="Editor\Menus\FileMenu.cpp" />
-    <ClCompile Include="Editor\Panels\BloomPanel.cpp" />
-    <ClCompile Include="Editor\Panels\GraphicsSettingsPanel.cpp" />
-    <ClCompile Include="Editor\Panels\HierarchyPanel.cpp" />
-    <ClCompile Include="Editor\Panels\InspectorPanel.cpp" />
-    <ClCompile Include="Editor\Panels\PhysicsSettingsPanel.cpp" />
-    <ClCompile Include="Editor\Panels\ViewportPanel.cpp" />
-    <ClCompile Include="Editor\Utils\EditorImage.cpp" />
-    <ClCompile Include="Editor\Views\Components.cpp" />
-    <ClCompile Include="Editor\Views\Helpers.cpp" />
-    <ClCompile Include="Editor\Views\Viewport.cpp" />
     <ClCompile Include="Source\Editor\Editor.cpp" />
+    <ClCompile Include="Source\Editor\EditorRenderPass.cpp" />
     <ClCompile Include="Source\Editor\Menus\FileMenu.cpp" />
     <ClCompile Include="Source\Editor\Panels\BloomPanel.cpp" />
     <ClCompile Include="Source\Editor\Panels\GraphicsSettingsPanel.cpp" />
@@ -162,28 +151,14 @@
     <ClCompile Include="Source\Editor\Views\Helpers.cpp" />
     <ClCompile Include="Source\Editor\Views\Viewport.cpp" />
     <ClCompile Include="Source\Main\Entry.cpp" />
+    <ClCompile Include="Source\Pch\pch.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Editor\Editor.h" />
-    <ClInclude Include="Editor\Menus\include\All.h" />
-    <ClInclude Include="Editor\Menus\include\FileMenu.h" />
-    <ClInclude Include="Editor\Menus\include\Menu.h" />
-    <ClInclude Include="Editor\Panels\include\All.h" />
-    <ClInclude Include="Editor\Panels\include\BloomPanel.h" />
-    <ClInclude Include="Editor\Panels\include\GraphicsSettingsPanel.h" />
-    <ClInclude Include="Editor\Panels\include\HierarchyPanel.h" />
-    <ClInclude Include="Editor\Panels\include\InspectorPanel.h" />
-    <ClInclude Include="Editor\Panels\include\Panel.h" />
-    <ClInclude Include="Editor\Panels\include\PhysicsSettingsPanel.h" />
-    <ClInclude Include="Editor\Panels\include\ViewportPanel.h" />
-    <ClInclude Include="Editor\Utils\EditorImage.h" />
-    <ClInclude Include="Editor\Utils\Utils.h" />
-    <ClInclude Include="Editor\View.h" />
-    <ClInclude Include="Editor\Views\include\Components.h" />
-    <ClInclude Include="Editor\Views\include\Helpers.h" />
-    <ClInclude Include="Editor\Views\include\ShaderView.h" />
-    <ClInclude Include="Editor\Views\include\Viewport.h" />
     <ClInclude Include="Source\Editor\Editor.h" />
+    <ClInclude Include="Source\Editor\EditorPass.h" />
     <ClInclude Include="Source\Editor\Menus\include\All.h" />
     <ClInclude Include="Source\Editor\Menus\include\FileMenu.h" />
     <ClInclude Include="Source\Editor\Menus\include\Menu.h" />
@@ -203,6 +178,11 @@
     <ClInclude Include="Source\Editor\Views\include\ShaderView.h" />
     <ClInclude Include="Source\Editor\Views\include\Viewport.h" />
     <ClInclude Include="Source\Main\GameLoop.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Nork\Nork.vcxproj">
+      <Project>{f3bd8d82-a67d-4c72-9a00-d04012c88a1a}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

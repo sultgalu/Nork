@@ -13,7 +13,6 @@ namespace Nork::Editor {
 		const char* GetName() override { return name.c_str(); };
 		void OnContentSkipped() override;
 		bool DeleteOnClose() const override { return true; }
-		void InitializeWithRenderer();
 	public:
 		ViewportView viewportView;
 		std::weak_ptr<SceneNode> focusedNode;

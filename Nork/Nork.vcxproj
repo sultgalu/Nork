@@ -40,13 +40,13 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -78,17 +78,19 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)\Source\ThirdParty\include\assimp\include;$(ProjectDir)\Source\ThirdParty\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <SourcePath>$(VC_SourcePath);</SourcePath>
     <ReferencePath>$(VC_ReferencesPath_x64);</ReferencePath>
-    <LibraryPath>$(ProjectDir)\Source\ThirdParty\libs;$(ProjectDir)\Source\ThirdParty\glfw\src;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <CustomBuildBeforeTargets>ClCompile</CustomBuildBeforeTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)\Source\ThirdParty\include\assimp\include;$(ProjectDir)\Source\ThirdParty\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <SourcePath>$(VC_SourcePath);</SourcePath>
     <ReferencePath>$(VC_ReferencesPath_x64);</ReferencePath>
-    <LibraryPath>$(ProjectDir)\Source\ThirdParty\libs;$(ProjectDir)\Source\ThirdParty\glfw\src;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <CustomBuildBeforeTargets>ClCompile</CustomBuildBeforeTargets>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <VcpkgInstalledDir>..\vcpkg_repo</VcpkgInstalledDir>
@@ -155,6 +157,7 @@
       <ForcedIncludeFiles>pch.h</ForcedIncludeFiles>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>Level1</ExternalWarningLevel>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -182,6 +185,7 @@
       <ForcedIncludeFiles>pch.h</ForcedIncludeFiles>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>Level1</ExternalWarningLevel>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -200,14 +204,12 @@
     <ClCompile Include="Source\Core\ColliderPass.cpp" />
     <ClCompile Include="Source\Components\Impl\Drawable.cpp" />
     <ClCompile Include="Source\Core\GLTFReader.cpp" />
-    <ClCompile Include="Source\Editor\Utils\EditorImage.cpp" />
-    <ClCompile Include="Source\Main\Entry.cpp" />
+    <ClCompile Include="Source\Core\StaticInstances.cpp" />
     <ClCompile Include="Source\Modules\Physics\Data\Collider.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Buffer.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Commands.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Data\Vertex.cpp" />
     <ClCompile Include="Source\Modules\Renderer\DeferredPass.cpp" />
-    <ClCompile Include="Source\Editor\EditorRenderPass.cpp" />
     <ClCompile Include="Source\Modules\Renderer\ImageDescriptorArray.cpp" />
     <ClCompile Include="Source\Modules\Renderer\MemoryAllocator.cpp" />
     <ClCompile Include="Source\Modules\Renderer\MemoryTransfer.cpp" />
@@ -221,17 +223,6 @@
     <ClCompile Include="Source\Modules\Physics\Algorithms\Clip.cpp" />
     <ClCompile Include="Source\Core\InputState.cpp" />
     <ClCompile Include="Source\Core\ScriptSystem.cpp" />
-    <ClCompile Include="Source\Editor\Editor.cpp" />
-    <ClCompile Include="Source\Editor\Menus\FileMenu.cpp" />
-    <ClCompile Include="Source\Editor\Panels\HierarchyPanel.cpp" />
-    <ClCompile Include="Source\Editor\Panels\GraphicsSettingsPanel.cpp" />
-    <ClCompile Include="Source\Editor\Panels\BloomPanel.cpp" />
-    <ClCompile Include="Source\Editor\Panels\PhysicsSettingsPanel.cpp" />
-    <ClCompile Include="Source\Editor\Panels\InspectorPanel.cpp" />
-    <ClCompile Include="Source\Editor\Panels\ViewportPanel.cpp" />
-    <ClCompile Include="Source\Editor\Views\Components.cpp" />
-    <ClCompile Include="Source\Editor\Views\Helpers.cpp" />
-    <ClCompile Include="Source\Editor\Views\Viewport.cpp" />
     <ClCompile Include="Source\Modules\Renderer\gltf\GLTFBuilder.cpp" />
     <ClCompile Include="Source\Modules\Renderer\MeshFactory.cpp" />
     <ClCompile Include="Source\Components\Impl\Common.cpp" />
@@ -244,13 +235,11 @@
     <ClCompile Include="Source\App\Application.cpp" />
     <ClInclude Include="Source\Core\ColliderPass.h" />
     <ClInclude Include="Source\Core\GLTFReader.h" />
-    <ClInclude Include="Source\Editor\Utils\EditorImage.h" />
     <ClInclude Include="Source\Modules\Renderer\Buffer.h" />
     <ClInclude Include="Source\Modules\Renderer\BufferCopy.h" />
     <ClInclude Include="Source\Modules\Renderer\Commands.h" />
     <ClInclude Include="Source\Modules\Renderer\DeferredPass.h" />
     <ClInclude Include="Source\Modules\Renderer\DeviceData.h" />
-    <ClInclude Include="Source\Editor\EditorPass.h" />
     <ClInclude Include="Source\Modules\Renderer\Image.h" />
     <ClInclude Include="Source\Modules\Renderer\ImageDescriptorArray.h" />
     <ClInclude Include="Source\Modules\Renderer\MemoryAllocator.h" />
@@ -288,25 +277,6 @@
     <ClInclude Include="Source\Modules\Physics\Algorithms\Clip.h" />
     <ClInclude Include="Source\Components\Physics.h" />
     <ClInclude Include="Source\Core\ScriptSystem.h" />
-    <ClInclude Include="Source\Editor\Editor.h" />
-    <ClInclude Include="Source\Editor\Menus\include\All.h" />
-    <ClInclude Include="Source\Editor\Menus\include\FileMenu.h" />
-    <ClInclude Include="Source\Editor\Menus\include\Menu.h" />
-    <ClInclude Include="Source\Editor\Panels\include\All.h" />
-    <ClInclude Include="Source\Editor\Panels\include\BloomPanel.h" />
-    <ClInclude Include="Source\Editor\Panels\include\GraphicsSettingsPanel.h" />
-    <ClInclude Include="Source\Editor\Panels\include\HierarchyPanel.h" />
-    <ClInclude Include="Source\Editor\Panels\include\InspectorPanel.h" />
-    <ClInclude Include="Source\Editor\Panels\include\Panel.h" />
-    <ClInclude Include="Source\Editor\Panels\include\PhysicsSettingsPanel.h" />
-    <ClInclude Include="Source\Editor\Panels\include\ViewportPanel.h" />
-    <ClInclude Include="Source\Editor\Utils\Utils.h" />
-    <ClInclude Include="Source\Editor\Views\include\Components.h" />
-    <ClInclude Include="Source\Editor\Views\include\Helpers.h" />
-    <ClInclude Include="Source\Editor\Views\include\ShaderView.h" />
-    <ClInclude Include="Source\Editor\Views\include\Viewport.h" />
-    <ClInclude Include="Source\Editor\View.h" />
-    <ClInclude Include="Source\Main\GameLoop.h" />
     <ClInclude Include="Source\Modules\Renderer\GLTF\GLTFBuilder.h" />
     <ClInclude Include="Source\Modules\Renderer\MeshFactory.h" />
     <ClInclude Include="Source\Modules\Renderer\Model\Object.h" />
@@ -321,12 +291,19 @@
     <ClInclude Include="Source\Modules\Renderer\Model\Mesh.h" />
     <ClInclude Include="Source\App\Application.h" />
     <ClInclude Include="Source\Modules\Renderer\GLTF\GLTF.h" />
+    <ClInclude Include="Source\Pch\pch.h" />
     <ClInclude Include="Source\Utils\FileUtils.h" />
     <ClInclude Include="Source\Utils\Json.h" />
     <ClInclude Include="Source\Scene\Entity.h" />
     <ClInclude Include="Source\Scene\SceneNode.h" />
     <ClCompile Include="Source\Modules\Renderer\Vulkan\VulkanWindow.cpp" />
     <ClCompile Include="Source\Modules\Renderer\ShadowMapPass.cpp" />
+    <ClCompile Include="Source\Pch\pch.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+    </ClCompile>
     <ClCompile Include="Source\Utils\FileUtils.cpp" />
     <ClCompile Include="Source\Utils\Json.cpp" />
     <ClCompile Include="Source\Scene\SceneNode.cpp" />
@@ -360,11 +337,6 @@
       <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </ForcedIncludeFiles>
     </ClCompile>
-    <ClCompile Include="Source\PCH\pch.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Modules\Physics\World.h" />
@@ -388,7 +360,6 @@
     <ClInclude Include="Source\Utils\Profiler.h" />
     <ClInclude Include="Source\Utils\Template.h" />
     <ClInclude Include="Source\Utils\Timer.h" />
-    <ClInclude Include="Source\PCH\pch.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\OneDrive\Dokumentumok\GameEngine_0\GameEngineEditor\resources\shaders\lightPass.shader" />

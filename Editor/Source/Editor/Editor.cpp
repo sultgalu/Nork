@@ -5,6 +5,7 @@
 #include "Menus/include/All.h"
 #include "Modules/Renderer/Vulkan/Window.h"
 #include "Platform/FileDialog.h"
+#include "EditorPass.h"
 
 namespace Nork::Editor
 {
@@ -186,7 +187,7 @@ namespace Nork::Editor
 	}
 	Editor::~Editor()
 	{
-		ImGui_ImplGlfw_Shutdown();
+		Renderer::Renderer::Instance().renderPasses.pop_back(); // destroy editorPass before shutdown
 		ImGui::Shutdown();
 	}
 	Editor::Editor()
@@ -195,7 +196,7 @@ namespace Nork::Editor
 		_editor = this;
 		
 		InitImgui();
-		ImGui_ImplGlfw_InitForVulkan(Renderer::Vulkan::Window::Instance().glfwWindow, true);
+		Renderer::Renderer::Instance().renderPasses.push_back(std::make_shared<EditorPass>());
 		
 		panels.push_back(std::make_shared<HierarchyPanel>());
 		panels.push_back(std::make_shared<InspectorPanel>());
