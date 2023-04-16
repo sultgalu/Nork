@@ -7,23 +7,15 @@ namespace Nork::Editor {
 			ImGuiWindowFlags_MenuBar |
 			ImGuiWindowFlags_NoScrollbar;
 			//| ImGuiWindowFlags_NoSavedSettings;
-	}
-	void ViewportPanel::InitializeWithRenderer()
-	{
+
 		RenderingSystem::Instance().camera = viewportView.camera;
 		viewportView.image = Renderer::Renderer::Instance().mainImage;
 	}
-	struct ViewportInit {
-		ViewportInit(ViewportPanel& vp) {
-			vp.InitializeWithRenderer();
-		}
-	};
 	ViewportPanel::~ViewportPanel()
 	{
 	}
 	void ViewportPanel::Content()
 	{
-		static ViewportInit vpInit(*this); // needed because of bad Editor/Engine init order https://github.com/sultgalu/Nork/issues/7
 		if (auto editorController = std::dynamic_pointer_cast<EditorCameraController>(viewportView.camController)) {
 			if (GetCommonData().selectedNode) {
 				if (Input::Instance().IsJustPressed(Key::F)) {
