@@ -1,9 +1,21 @@
 #include "pch.h"
+#include "Scene/Scene.h"
 #include "ScriptSystem.h"
 #include "App/Application.h"
 #include "Modules/Renderer/Vulkan/Window.h"
 
 namespace Nork {
+
+class ScriptSystem
+{
+public:
+	ScriptSystem(Scene& scene)
+		:scene(scene)
+	{}
+	void Update();
+	Scene& scene;
+};
+
 	void ScriptSystem::Update()
 	{
 		auto& engine = Application::Get().engine;

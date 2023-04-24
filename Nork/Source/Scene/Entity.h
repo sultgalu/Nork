@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Components/All.h"
-
 namespace Nork {
 	class Entity
 	{

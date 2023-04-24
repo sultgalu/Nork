@@ -1,5 +1,6 @@
 #include "JsonSerializer.h"
 #include "App/Application.h"
+#include "Components/All.h"
 
 namespace Nork {
 	// --------------COMPONENT SERIALIZATION--------------

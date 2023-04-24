@@ -2,6 +2,7 @@
 #include "Modules/Renderer/LoadUtils.h"
 #include "Modules/Renderer/Model/Object.h"
 #include "ColliderPass.h"
+#include "Components/All.h"
 
 namespace Nork {
 Renderer::Renderer* Renderer::Renderer::instance = nullptr;

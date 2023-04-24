@@ -1,9 +1,9 @@
 #include "Engine.h"
-
 #include "Modules/Renderer/LoadUtils.h"
 #include "Core/InputState.h"
 #include "App/Application.h"
 #include "PolygonBuilder.h"
+#include "Components/All.h"
 
 namespace Nork
 {
@@ -18,12 +18,12 @@ namespace Nork
 		return Engine::Get().physicsSystem;
 	}
 	Engine::Engine()
-		: uploadSem(1), updateSem(1),
-		scriptSystem(scene), physicsSystem(scene.registry)
+		: uploadSem(1), updateSem(1), physicsSystem(scene.registry)
 	{
 		_engine = this;
 		scene.registry.on_construct<Components::Physics>().connect<&Engine::OnPhysicsAdded>(this);
 		scene.registry.on_destroy<Components::Physics>().connect<&Engine::OnPhysicsRemoved>(this);
+		scriptSystem.LoadDLL("Scripts.dll");
 	}
 	void Engine::OnPhysicsAdded(entt::registry& reg, entt::entity id)
 	{

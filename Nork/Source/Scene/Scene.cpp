@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Scene.h"
 #include "Serialization/JsonSerializer.h"
+#include "Components/All.h"
 
 namespace fs = std::filesystem;
 

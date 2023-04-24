@@ -201,6 +201,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Scripting\ScriptSystem.cpp" />
     <ClCompile Include="Source\Core\ColliderPass.cpp" />
     <ClCompile Include="Source\Components\Impl\Drawable.cpp" />
     <ClCompile Include="Source\Core\GLTFReader.cpp" />
@@ -222,7 +223,6 @@
     <ClCompile Include="Source\Modules\Physics\Pipeline\Collision.cpp" />
     <ClCompile Include="Source\Modules\Physics\Algorithms\Clip.cpp" />
     <ClCompile Include="Source\Core\InputState.cpp" />
-    <ClCompile Include="Source\Core\ScriptSystem.cpp" />
     <ClCompile Include="Source\Modules\Renderer\gltf\GLTFBuilder.cpp" />
     <ClCompile Include="Source\Modules\Renderer\MeshFactory.cpp" />
     <ClCompile Include="Source\Components\Impl\Common.cpp" />
@@ -233,6 +233,8 @@
     <ClCompile Include="Source\Core\RenderingSystem.cpp" />
     <ClCompile Include="Source\Modules\Renderer\LoadUtils.cpp" />
     <ClCompile Include="Source\App\Application.cpp" />
+    <ClInclude Include="Source\Scripting\Nork.h" />
+    <ClInclude Include="Source\Scripting\ScriptSystem.h" />
     <ClInclude Include="Source\Core\ColliderPass.h" />
     <ClInclude Include="Source\Core\GLTFReader.h" />
     <ClInclude Include="Source\Modules\Renderer\Buffer.h" />
@@ -276,7 +278,6 @@
     <ClInclude Include="Source\Modules\Physics\Pipeline\Collision.h" />
     <ClInclude Include="Source\Modules\Physics\Algorithms\Clip.h" />
     <ClInclude Include="Source\Components\Physics.h" />
-    <ClInclude Include="Source\Core\ScriptSystem.h" />
     <ClInclude Include="Source\Modules\Renderer\GLTF\GLTFBuilder.h" />
     <ClInclude Include="Source\Modules\Renderer\MeshFactory.h" />
     <ClInclude Include="Source\Modules\Renderer\Model\Object.h" />
@@ -292,6 +293,7 @@
     <ClInclude Include="Source\App\Application.h" />
     <ClInclude Include="Source\Modules\Renderer\GLTF\GLTF.h" />
     <ClInclude Include="Source\Pch\pch.h" />
+    <ClInclude Include="Source\Scripting\TemplateScriptFactory.h" />
     <ClInclude Include="Source\Utils\FileUtils.h" />
     <ClInclude Include="Source\Utils\Json.h" />
     <ClInclude Include="Source\Scene\Entity.h" />
@@ -362,7 +364,6 @@
     <ClInclude Include="Source\Utils\Timer.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\..\OneDrive\Dokumentumok\GameEngine_0\GameEngineEditor\resources\shaders\lightPass.shader" />
     <None Include="Source\Shaders\bloom.shader" />
     <None Include="Source\Shaders\bloom2.shader" />
     <None Include="Source\Shaders\bloom3.shader" />

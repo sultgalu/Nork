@@ -1,4 +1,5 @@
 #include "include/HierarchyPanel.h"
+#include "Components/All.h"
 
 namespace Nork::Editor {
 	static bool del = false;

@@ -1,9 +1,10 @@
 #include "Core/CameraController.h"
 #include "Utils/Logger.h"
-#include "Components/Common.h"
 #include "Editor/Editor.h"
 #include "Core/Engine.h"
 #include "App/Application.h"
+#include "Components/All.h"
+
 using namespace Nork;
 
 int main()

@@ -315,7 +315,7 @@ namespace Nork::Editor
 			}
 			else {
 				Engine::Get().scene.Serialize(ss);
-				Engine::Get().StartPhysics(false);
+				Engine::Get().StartPhysics(true);
 			}
 			data.sceneRunning = !data.sceneRunning;
 		}

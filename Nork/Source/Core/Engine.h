@@ -3,7 +3,7 @@
 #include "Scene/Scene.h"
 #include "RenderingSystem.h"
 #include "PhysicsSystem.h"
-#include "ScriptSystem.h"
+#include "../Scripting/ScriptSystem.h"
 #include "Modules/Renderer/Vulkan/Window.h"
 
 namespace Nork

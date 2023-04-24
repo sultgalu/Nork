@@ -4,6 +4,7 @@
 #include "Modules/Renderer/Data/Vertex.h"
 #include "Core/PolygonBuilder.h"
 #include "Editor/Utils/EditorImage.h"
+#include "Scripting/ScriptSystem.h"
 
 namespace Nork::Editor {
 
@@ -24,7 +25,7 @@ SceneNodeView::SceneNodeView(std::shared_ptr<SceneNode> node)
 void SceneNodeView::Content()
 {
 	using namespace Components;
-	Content<Transform, Drawable, DirLight, PointLight, Components::Physics, Camera, Tag>();
+	Content<Transform, Drawable, DirLight, PointLight, Components::Physics, Camera, Tag, ScriptComponent>();
 }
 template<class... T>
 void SceneNodeView::Content()
@@ -478,6 +479,29 @@ template<> bool SceneNodeView::ShowComponent(Components::Tag& tag)
 {
 	return Helpers::TextEditable(tag.tag);
 }
+template<> bool SceneNodeView::ShowComponent(ScriptComponent& comp)
+{
+	ChangeObserver observer;
+	static std::string selected;
+	if (ImGui::Button("Select"))
+	{
+		if (ScriptSystem::Instance().scriptFactory) {
+			selected = comp.script ? comp.script->Id() : "";
+			ImGui::OpenPopup("SelectScriptPopup");
+		}
+	}
+	if (ImGui::BeginPopup("SelectScriptPopup"))
+	{
+		for (auto& id : ScriptSystem::Instance().scriptFactory->Ids())
+		{
+			if (observer(ImGui::Selectable(id.c_str(), selected == id))) {
+				comp.script = ScriptSystem::Instance().scriptFactory->Create(node, id);
+			}
+		}
+		ImGui::EndPopup();
+	}
+	return observer.changed;
+}
 
 template<class T>
 bool _EditComponent(const T& comp, Entity& ent,
@@ -578,6 +602,7 @@ void SceneNodeView::ListComponentsForAddition()
 	}
 }
 
+template<> std::string componentName<ScriptComponent> = "Script";
 template<> std::string componentName<Components::DirLight> = "Directional Light";
 template<> std::string componentName<Components::PointLight> = "Point Light";
 template<> std::string componentName<Components::Transform> = "Transform";

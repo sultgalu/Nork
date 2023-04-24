@@ -6,6 +6,7 @@
 #include "Modules/Renderer/Model/Mesh.h"
 #include "Modules/Renderer/Model/Material.h"
 #include "Modules/Renderer/Model/Lights.h"
+#include "Components/Camera.h"
 
 namespace Nork {
 	class RenderingSystem
