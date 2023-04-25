@@ -314,7 +314,11 @@ namespace Nork {
 		auto& comp = entity.AddComponent<Drawable>([&](Drawable& comp)
 			{
 				auto uri = json.Get<std::string>("uri");
-				comp.SetModel(AssetLoader::Instance().LoadModel(uri));
+				try {
+					comp.SetModel(AssetLoader::Instance().LoadModel(uri));
+				} catch (std::exception& e) {
+					Logger::Error("Failed to set drawable model to uri ", uri, "\n\t", e.what());
+				}
 			});
 		return comp;
 	}

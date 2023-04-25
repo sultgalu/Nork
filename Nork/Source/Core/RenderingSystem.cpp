@@ -356,9 +356,12 @@ std::shared_ptr<Renderer::Image> RenderingSystem::LoadImage(const std::string& p
 	auto data = Renderer::LoadUtils::LoadImage(path, true);
 
 	// format: is it linear or sRGB? usually the latter but should be checked
+	uint32_t mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(data.width, data.height)))) + 1;
+
 	auto texImg = std::make_shared<Renderer::Image>(data.width, data.height, Renderer::Vulkan::Format::rgba8Unorm,
-		vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::ImageAspectFlagBits::eColor,
-		vk::PipelineStageFlagBits2::eFragmentShader, vk::AccessFlagBits2::eShaderSampledRead);
+		vk::ImageUsageFlagBits::eTransferSrc // blit (mipmap)
+		| vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::ImageAspectFlagBits::eColor,
+		vk::PipelineStageFlagBits2::eFragmentShader, vk::AccessFlagBits2::eShaderSampledRead, mipLevels);
 
 	texImg->Write(data.data.data(), data.data.size(), vk::ImageLayout::eShaderReadOnlyOptimal);
 	return texImg;

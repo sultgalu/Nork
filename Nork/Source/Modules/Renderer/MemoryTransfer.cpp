@@ -59,18 +59,19 @@ void MemoryTransfer::UploadToBuffer(Buffer& dst, const std::vector<BufferCopy>& 
     });
 }
 void MemoryTransfer::UploadToImage(vk::Image img, vk::Extent2D extent, vk::Offset2D offset,
-    const void* data, vk::DeviceSize size,
+    const void* data, vk::DeviceSize size, uint32_t mipLevels,
     vk::PipelineStageFlags2 dstStage, vk::AccessFlags2 dstAccess,
     vk::ImageLayout finalLayout, vk::ImageLayout initialLayout)
 {
     auto transfer = AllocateTransfer(size);
     memcpy(transfer->HostPtr(), data, size);
+    bool genMipmaps = mipLevels > 1;
 
     Commands::Instance().TransferCommand([&](Vulkan::CommandBuffer& cmd)
     {
         auto barrier = vk::ImageMemoryBarrier2()
             .setImage(img)
-            .setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1))
+            .setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, mipLevels, 0, 1))
             .setOldLayout(initialLayout)
             .setNewLayout(vk::ImageLayout::eTransferDstOptimal)
             .setSrcStageMask(vk::PipelineStageFlagBits2::eTopOfPipe)
@@ -80,12 +81,41 @@ void MemoryTransfer::UploadToImage(vk::Image img, vk::Extent2D extent, vk::Offse
     });
 
     CopyBufferToImage(transfer, img, extent, offset);
+    if (genMipmaps) { // Create mipmap images
+        Commands::Instance().TransferCommand([&](Vulkan::CommandBuffer& cmd)
+        { // Set level 0 to transfer read mode
+            auto barrier = vk::ImageMemoryBarrier2()
+                .setImage(img)
+                .setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1))
+                .setOldLayout(vk::ImageLayout::eTransferDstOptimal)
+                .setNewLayout(vk::ImageLayout::eTransferSrcOptimal)
+                .setSrcStageMask(vk::PipelineStageFlagBits2::eTransfer)
+                .setDstStageMask(vk::PipelineStageFlagBits2::eTransfer)
+                .setSrcAccessMask(vk::AccessFlagBits2::eTransferWrite)
+                .setDstAccessMask(vk::AccessFlagBits2::eTransferRead);
+            cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barrier));
+        });
+        CreateMipmaps(img, extent, mipLevels);
+        Commands::Instance().TransferCommand([&](Vulkan::CommandBuffer& cmd)
+        { // Set level 0 to final layout
+            auto barrier = vk::ImageMemoryBarrier2()
+                .setImage(img)
+                .setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1))
+                .setOldLayout(vk::ImageLayout::eTransferSrcOptimal)
+                .setSrcStageMask(vk::PipelineStageFlagBits2::eTransfer)
+                .setSrcAccessMask(vk::AccessFlagBits2::eTransferRead)
+                .setNewLayout(finalLayout)
+                .setDstStageMask(dstStage)
+                .setDstAccessMask(dstAccess);
+            cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barrier));
+        });
+    }
 
     Commands::Instance().TransferCommand([&](Vulkan::CommandBuffer& cmd)
-    {
+    { // When genMipmap, the 0. mipLevel was transitioned already
         auto barrier = vk::ImageMemoryBarrier2()
             .setImage(img)
-            .setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1))
+            .setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, genMipmaps ? 1 : 0, genMipmaps ? mipLevels - 1 : 1, 0, 1))
             .setOldLayout(vk::ImageLayout::eTransferDstOptimal)
             .setSrcStageMask(vk::PipelineStageFlagBits2::eTransfer)
             .setSrcAccessMask(vk::AccessFlagBits2::eTransferWrite)
@@ -116,6 +146,35 @@ void MemoryTransfer::CopyBufferToImage(std::shared_ptr<Transfer>& transfer, vk::
     });
     Commands::Instance().OnTransfersFinished([transfer]()
     {
+    });
+}
+void MemoryTransfer::CreateMipmaps(vk::Image img, vk::Extent2D extent, uint32_t mipLevels) {
+    int32_t mipWidth = extent.width;
+    int32_t mipHeight = extent.height;
+
+    std::vector<vk::ImageBlit> blits;
+    for (uint32_t i = 1; i < mipLevels; i++) {
+        if (mipWidth > 1) mipWidth /= 2;
+        if (mipHeight > 1) mipHeight /= 2;
+        vk::ImageBlit blit;
+        blit.srcOffsets[0] = vk::Offset3D(0);
+        blit.srcOffsets[1] = vk::Offset3D(extent.width, extent.height, 1);
+        blit.dstOffsets[0] = vk::Offset3D(0);
+        blit.dstOffsets[1] = vk::Offset3D(mipWidth, mipHeight, 1); // vk::Offset3D(mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1); // std::max(mipWidth / 2, 1), std::max(mipHeight / 2, 1), 1
+        blit.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+        blit.srcSubresource.mipLevel = 0;
+        blit.srcSubresource.baseArrayLayer = 0;
+        blit.srcSubresource.layerCount = 1;
+        blit.dstSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+        blit.dstSubresource.mipLevel = i;
+        blit.dstSubresource.baseArrayLayer = 0;
+        blit.dstSubresource.layerCount = 1;
+        blits.push_back(blit);
+    }
+
+    Commands::Instance().TransferCommand([&](Vulkan::CommandBuffer& cmd)
+    {
+        cmd.blitImage(img, vk::ImageLayout::eTransferSrcOptimal, img, vk::ImageLayout::eTransferDstOptimal, blits, vk::Filter::eLinear);
     });
 }
 std::shared_ptr<MemoryTransfer::Transfer> MemoryTransfer::AllocateTransfer(const std::vector<BufferCopy>& copies)

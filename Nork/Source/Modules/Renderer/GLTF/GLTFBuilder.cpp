@@ -90,9 +90,10 @@ GLTFBuilder& GLTFBuilder::AddPrimitive(const Mesh& mesh, const std::filesystem::
 	if (matIdx >= 0)
 		prim.material = matIdx;
 
-	size_t idx = gltf.meshes.back().primitives.size();
-	verticesBuffer.uri = "vertices_" + std::to_string(idx) + ".bin";
-	indicesBuffer.uri = "indices_" + std::to_string(idx) + ".bin";
+	size_t meshIdx = gltf.meshes.size() - 1;
+	size_t primIdx = gltf.meshes.back().primitives.size();
+	verticesBuffer.uri = "vertices_" + std::to_string(meshIdx) + "_" + std::to_string(primIdx) + ".bin";
+	indicesBuffer.uri = "indices_" + std::to_string(meshIdx) + "_" + std::to_string(primIdx) + ".bin";
 	gltf.meshes.back().primitives.push_back(prim);
 
 	verticesBuffer.byteLength = mesh.vertices->SizeBytes();

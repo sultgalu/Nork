@@ -21,11 +21,12 @@ namespace Nork::Renderer {
         void UploadToBuffer(Buffer& dst, const std::vector<BufferCopy>& copies,
             vk::PipelineStageFlags2 syncStages, vk::AccessFlags2 syncAccess);
         void UploadToImage(vk::Image img, vk::Extent2D extent, vk::Offset2D offset,
-            const void* data, vk::DeviceSize size,
+            const void* data, vk::DeviceSize size, uint32_t mipLevels,
             vk::PipelineStageFlags2 dstStage, vk::AccessFlags2 dstAccess,
             vk::ImageLayout finalLayout, vk::ImageLayout initialLayout);
     private:
         void CopyBufferToImage(std::shared_ptr<Transfer>& transfer, vk::Image image, vk::Extent2D extent, vk::Offset2D offset);
+        void CreateMipmaps(vk::Image img, vk::Extent2D extent, uint32_t mipLevels);
         std::shared_ptr<Transfer> AllocateTransfer(const std::vector<BufferCopy>& copies);
         std::shared_ptr<Transfer> AllocateTransfer(vk::DeviceSize size);
     private:

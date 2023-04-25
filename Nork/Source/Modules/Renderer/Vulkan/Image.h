@@ -49,13 +49,13 @@ namespace Nork::Renderer::Vulkan {
     struct ImageCreateInfo : vk::ImageCreateInfo
     {
         ImageCreateInfo() = delete;
-        ImageCreateInfo(uint32_t width, uint32_t height, vk::Format format_, vk::ImageUsageFlags usage_)
+        ImageCreateInfo(uint32_t width, uint32_t height, vk::Format format_, vk::ImageUsageFlags usage_, uint32_t mipLevels_ = 1)
         {
             imageType = vk::ImageType::e2D;
             extent.width = width;
             extent.height = height;
             extent.depth = 1;
-            mipLevels = 1;
+            mipLevels = mipLevels_;
             arrayLayers = 1;
             format = format_;
             tiling = vk::ImageTiling::eOptimal;
@@ -88,11 +88,11 @@ namespace Nork::Renderer::Vulkan {
     {
         ImageViewCreateInfo() = delete;
         ImageViewCreateInfo(std::shared_ptr<Image> img_, vk::ImageAspectFlagBits aspect, bool cube = false)
-            : ImageViewCreateInfo(**img_, img_->Format(), aspect, cube)
+            : ImageViewCreateInfo(**img_, img_->Format(), aspect, img_->createInfo.mipLevels, cube)
         {
             img = img_;
         }
-        ImageViewCreateInfo(vk::Image img, vk::Format format_, vk::ImageAspectFlagBits aspect, bool cube = false)
+        ImageViewCreateInfo(vk::Image img, vk::Format format_, vk::ImageAspectFlagBits aspect, uint32_t mipLevelCount, bool cube = false)
         {
             // this->components = 
             this->image = img;
@@ -100,7 +100,7 @@ namespace Nork::Renderer::Vulkan {
             this->format = format_;
             this->subresourceRange.aspectMask = aspect;
             this->subresourceRange.baseMipLevel = 0;
-            this->subresourceRange.levelCount = 1;
+            this->subresourceRange.levelCount = mipLevelCount;
             this->subresourceRange.baseArrayLayer = 0;
             this->subresourceRange.layerCount = cube ? 6 : 1;
         }

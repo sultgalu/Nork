@@ -151,7 +151,12 @@ std::shared_ptr<PointShadowMap> Resources::CreateShadowMapCube(uint32_t size)
 Resources::TextureDescriptors::TextureDescriptors(std::shared_ptr<Vulkan::DescriptorSet>& descriptorSet)
 	: ImageDescriptorArray(descriptorSet, 3, textures_count)
 {
-	defaultSampler = std::make_shared<Vulkan::Sampler>();
+	Vulkan::SamplerCreateInfo samplerCreateInfo;
+	samplerCreateInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
+	samplerCreateInfo.minLod = 0.0f;
+	samplerCreateInfo.maxLod = 100; //0.25f;
+	samplerCreateInfo.mipLodBias = 0.0f;
+	defaultSampler = std::make_shared<Vulkan::Sampler>(samplerCreateInfo);
 	auto createTexture = [&](vk::Format format, const std::vector<float>& data)
 	{
 		auto texImg = std::make_shared<Image>(1, 1, format,
