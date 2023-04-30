@@ -25,7 +25,8 @@ public:
 	uint32_t BeginFrame();
 	void EndFrame(uint32_t imgIdx);
 	void DrawFrame();
-	void createSyncObjects();
+	void RefreshShaders();
+	void CreateSyncObjects();
 public:
 	MemoryAllocator allocator;
 	Commands commands = Commands(MAX_FRAMES_IN_FLIGHT);

@@ -1,5 +1,6 @@
 #include "include/GraphicsSettingsPanel.h"
 #include "Modules/Renderer/MemoryAllocator.h"
+#include "Modules/Renderer/RendererSettings.h"
 
 namespace Nork::Editor {
 	GraphicsSettingsPanel::GraphicsSettingsPanel()
@@ -8,7 +9,41 @@ namespace Nork::Editor {
 
 	void GraphicsSettingsPanel::Content()
 	{
-		ImGui::ShowStyleEditor();
+		Renderer::Settings& settings = Renderer::Settings::Instance();
+		if (ImGui::TreeNodeEx("Renderer", ImGuiTreeNodeFlags_DefaultOpen)) {
+			auto bloom = settings.bloom.get();
+			if (ImGui::SliderScalar("Mip Levels", ImGuiDataType_::ImGuiDataType_U32, &bloom.mipLevels, &bloom.minMipLevels, &bloom.maxMipLevels())) {
+				settings.bloom = bloom;
+			}
+			if (ImGui::Checkbox("Use Blitting for downsampling instead of Compute Shader", &bloom.useBlitFromDownsampling)) {
+				settings.bloom = bloom;
+			}
+			if (bloom.useBlitFromDownsampling) {
+				ImGui::SameLine();
+				if (ImGui::Checkbox("Linear Filtering", &bloom.blitLinear)) {
+					settings.bloom = bloom;
+				}
+			}
+			int kernelRange = bloom.gaussianKernelSize / 2;
+			if (ImGui::SliderInt("Kernel Range (Size-1)/2", &kernelRange, bloom.minKernelSize / 2, bloom.maxKernelSize / 2)) {
+				bloom.gaussianKernelSize = kernelRange * 2 + 1; // always odd
+				settings.bloom = bloom;
+			}
+			if (ImGui::DragFloat("Kernel Distribution", &bloom.sigma, 0.01f, 0.000001f, 100, "%.6f", ImGuiSliderFlags_::ImGuiSliderFlags_Logarithmic)) {
+				settings.bloom = bloom;
+			}
+			if (!bloom.inlineKernelData && ImGui::Checkbox("Build Kernel Size into Shader", &bloom.inlineKernelSize)) {
+				settings.bloom = bloom;
+			}
+			if (ImGui::Checkbox("Build Kernel Into Shader", &bloom.inlineKernelData)) {
+				bloom.inlineKernelSize = true;
+				settings.bloom = bloom;
+			}
+			if (ImGui::Button("Refresh Shaders")) {
+				Renderer::Renderer::Instance().RefreshShaders();
+			}
+			ImGui::TreePop();
+		}
 		if (ImGui::TreeNodeEx("Memory", ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			using namespace Renderer;
@@ -83,5 +118,6 @@ namespace Nork::Editor {
 			}
 			ImGui::TreePop();
 		}
+		ImGui::ShowStyleEditor();
 	}
 }

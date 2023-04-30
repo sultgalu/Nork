@@ -1,6 +1,7 @@
 #include "Renderer.h"
 #include "Vulkan/Window.h"
 #include "DeferredPass.h"
+#include "BloomPass.h"
 #include "ShadowMapPass.h"
 
 namespace Nork::Renderer {
@@ -13,11 +14,12 @@ Renderer::Renderer()
 	Commands::Instance().BeginTransferCommandBuffer(); // begin initialize phase
 
 	resources = std::make_unique<Resources>();
-	createSyncObjects();
+	CreateSyncObjects();
 	renderPasses.push_back(std::make_shared<ShadowMapPass>());
 	auto deferredPass = std::make_shared<DeferredPass>();
 	mainImage = deferredPass->fbColor;
 	renderPasses.push_back(deferredPass);
+	renderPasses.push_back(std::make_shared<BloomPass>(mainImage));
 
 	Vulkan::Window::Instance().onFbResize = [&](int w, int h) {
 		framebufferResized = true;
@@ -165,7 +167,13 @@ void Renderer::DrawFrame()
 	Commands::Instance().EndRenderCommandBuffer();
 	EndFrame(imgIdx);
 }
-void Renderer::createSyncObjects()
+void Renderer::RefreshShaders()
+{
+	for (auto& pass : renderPasses) {
+		pass->RefreshShaders();
+	}
+}
+void Renderer::CreateSyncObjects()
 {
 	using namespace Vulkan;
 	imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);

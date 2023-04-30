@@ -9,12 +9,12 @@ class Image
 {
 public:
 	Image(uint32_t width, uint32_t height, vk::Format format, vk::ImageUsageFlagBits usage, vk::ImageAspectFlagBits aspect,
-		vk::PipelineStageFlags2 syncStages = {}, vk::AccessFlags2 syncAccess = {}, uint32_t mipLevels = 1,
+		vk::PipelineStageFlags2 syncStages = {}, vk::AccessFlags2 syncAccess = {}, uint32_t mipLevels = 1, bool createView = true,
 		const MemoryFlags& memFlags = { .required = MemoryFlags::eDeviceLocal })
-		: Image(Vulkan::ImageCreateInfo(width, height, format, usage, mipLevels), aspect, false, syncStages, syncAccess, memFlags)
+		: Image(Vulkan::ImageCreateInfo(width, height, format, usage, mipLevels), aspect, false, syncStages, syncAccess, createView, memFlags)
 	{}
 	Image(const Vulkan::ImageCreateInfo& createInfo, vk::ImageAspectFlagBits aspect, bool cube = false,
-		vk::PipelineStageFlags2 syncStages = {}, vk::AccessFlags2 syncAccess = {},
+		vk::PipelineStageFlags2 syncStages = {}, vk::AccessFlags2 syncAccess = {}, bool createView = true,
 		const MemoryFlags& memFlags = { .required = MemoryFlags::eDeviceLocal })
 		: syncStages(syncStages), syncAccess(syncAccess)
 	{
@@ -26,7 +26,9 @@ public:
 			MemoryAllocator::Instance().Allocate(memreq, memFlags));
 		img->BindMemory(memory.Underlying(), memory.PoolOffset());
 
-		view = std::make_shared<Vulkan::ImageView>(Vulkan::ImageViewCreateInfo(img, aspect, cube));
+		if (createView) {
+			view = std::make_shared<Vulkan::ImageView>(Vulkan::ImageViewCreateInfo(img, aspect, cube));
+		}
 	}
 	void Write(const void* data, vk::DeviceSize size)
 	{

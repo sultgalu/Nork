@@ -1,43 +1,74 @@
 #include "RenderPass.h"
 namespace Nork::Renderer {
 
-std::vector<uint32_t> RenderPass::LoadShader(const fs::path& srcFile, std::vector<std::array<std::string, 2>> macros)
+struct LoadShaderResult {
+	std::string sourceCode;
+	size_t hash;
+	bool hashMatched = false;
+};
+
+static fs::path BinaryShaderPath(const fs::path& sourceCodePath) {
+	return fs::path(sourceCodePath).replace_extension(sourceCodePath.extension().string() + "_bin");
+}
+
+static LoadShaderResult LoadShader_(const fs::path& srcPath, std::vector<std::array<std::string, 2>> macros) {
+	LoadShaderResult result;
+
+	result.sourceCode = FileUtils::ReadAsString(srcPath.string());
+
+	std::stringstream dataToBeHashed;
+	for (auto& [n, v] : macros) {
+		dataToBeHashed << n << v;
+	}
+	dataToBeHashed << result.sourceCode;
+	result.hash = std::hash<std::string>()(dataToBeHashed.str());
+
+	fs::path binPath = BinaryShaderPath(srcPath);
+	if (fs::exists(binPath) && fs::file_size(binPath) >= sizeof(size_t)) {
+		auto savedHash = FileUtils::ReadBinary<size_t>(binPath, sizeof(size_t)).front();
+		if (result.hash == savedHash) {
+			result.hashMatched = true;
+		}
+	}
+
+	return result;
+}
+
+bool RenderPass::IsShaderSourceChanged(const fs::path& srcPath, std::vector<std::array<std::string, 2>> macros)
+{
+	return !LoadShader_(srcPath, macros).hashMatched;
+}
+std::vector<uint32_t> RenderPass::LoadShader(const fs::path& srcPath, std::vector<std::array<std::string, 2>> macros)
 {
 	using namespace Vulkan;
-	fs::path binFile = fs::path(srcFile).replace_extension(srcFile.extension().string() + "_bin");
-	auto src = FileUtils::ReadAsString(srcFile.string());
-	size_t srcHash = std::hash<std::string>()(src);
-	if (fs::exists(binFile))
-	{ // check if hash is still the same, if so return saved binary
-		auto data = FileUtils::ReadBinary<uint32_t>(binFile.string());
-		size_t hash = *((size_t*)&data.data()[data.size() - 2]);
-		if (srcHash == hash)
-		{
-			data.resize(data.size() - 2);
-			return data;
-		}
+	LoadShaderResult loadShaderResult = LoadShader_(srcPath, macros);
+
+	if (loadShaderResult.hashMatched) {
+		auto binPath = BinaryShaderPath(srcPath);
+		return FileUtils::ReadBinary<uint32_t>(binPath, fs::file_size(binPath) - sizeof(size_t), sizeof(size_t));
 	}
 
 	using namespace Renderer;
 	ShaderType type = ShaderType::None;
-	if (srcFile.extension() == ".vert")
+	if (srcPath.extension() == ".vert")
 		type = ShaderType::Vertex;
-	else if (srcFile.extension() == ".frag")
+	else if (srcPath.extension() == ".frag")
 		type = ShaderType::Fragment;
-	else if (srcFile.extension() == ".geom")
+	else if (srcPath.extension() == ".geom")
 		type = ShaderType::Geometry;
-	else if (srcFile.extension() == ".glsl")
+	else if (srcPath.extension() == ".comp")
+		type = ShaderType::Compute;
+	else if (srcPath.extension() == ".glsl")
 		type = ShaderType::Mesh;
 	else
 		std::unreachable();
 
-	auto data = Shaderc::Compile(src, type, macros);
-	// save with hash
-	data.resize(data.size() + 2);
-	*((size_t*)&data.data()[data.size() - 2]) = srcHash;
-	FileUtils::WriteBinary(data, binFile.string());
-	// remove hash
-	data.resize(data.size() - 2);
+	auto data = Shaderc::Compile(loadShaderResult.sourceCode, type, macros);
+	std::vector<std::byte> fileData(sizeof(size_t) + data.size() * sizeof(uint32_t));
+	std::memcpy(&fileData[0], &loadShaderResult.hash, sizeof(size_t));
+	std::memcpy(&fileData[sizeof(size_t)], data.data(), data.size() * sizeof(uint32_t));
+	FileUtils::WriteBinary(fileData, BinaryShaderPath(srcPath));
+
 	return data;
 }
 void RenderPass::BeginRenderPass(vk::RenderPass renderPass, Vulkan::Framebuffer& fb, Vulkan::CommandBuffer& cmd)
@@ -63,7 +94,7 @@ void RenderPass::BeginRenderPass(vk::RenderPass renderPass, Vulkan::Framebuffer&
 		// else
 		// 	std::unreachable();
 		else
-			clearValue.color = vk::ClearColorValue(std::array<float, 4> {0.0f, 0.0f, 0.0f, 1.0f});
+			clearValue.color = vk::ClearColorValue(std::array<float, 4> {0.0f, 0.0f, 0.0f, 0.0f});
 		clearValues.push_back(clearValue);
 	}
 

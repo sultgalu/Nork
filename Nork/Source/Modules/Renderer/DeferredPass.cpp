@@ -2,6 +2,7 @@
 
 #include "Vulkan/SwapChain.h"
 #include "Data/Vertex.h"
+#include "RendererSettings.h"
 
 namespace Nork::Renderer {
 
@@ -20,11 +21,11 @@ DeferredPass::DeferredPass()
 {
 	CreateRenderPass();
 
-	auto w = Vulkan::SwapChain::Instance().Width();
-	auto h = Vulkan::SwapChain::Instance().Height();
+	auto w = Settings::Instance().resolution->x;
+	auto h = Settings::Instance().resolution->y;
 	using enum vk::ImageUsageFlagBits;
 	depthImage = std::make_shared<Image>(w, h, Formats::depth, eDepthStencilAttachment, vk::ImageAspectFlagBits::eDepth);
-	fbColor = std::make_shared<Image>(w, h, Formats::final, eColorAttachment | eInputAttachment | eTransferSrc | eSampled,
+	fbColor = std::make_shared<Image>(w, h, Formats::final, eColorAttachment | eInputAttachment | eTransferSrc | eSampled | eStorage,
 		vk::ImageAspectFlagBits::eColor);
 	gPos = std::make_shared<Image>(w, h, Formats::pos, eColorAttachment | eInputAttachment, vk::ImageAspectFlagBits::eColor);
 	gCol = std::make_shared<Image>(w, h, Formats::baseCol, eColorAttachment | eInputAttachment, vk::ImageAspectFlagBits::eColor);

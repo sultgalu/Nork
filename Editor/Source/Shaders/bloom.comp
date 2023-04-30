@@ -1,0 +1,121 @@
+#version 450
+
+// USE writeonly / readonly where you can !!!
+// if read only you can also use sampler2D and texelFetch();
+layout (binding = 0, rgba8) uniform image2D targetImage;
+layout (binding = 1, rgba8) uniform image2D srcImage[4];
+layout (binding = 2, rgba8) uniform image2D pongImage;
+
+layout (local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
+
+layout(push_constant) uniform constants
+{
+	layout(offset = 0) uint stage;
+	layout(offset = 4) uint scrImgIdx;
+	layout(offset = 8) uint KERNEL_SIZE_DYNAMIC;
+	layout(offset = 12) float KERNEL_DYNAMIC[MAX_KERNEL_SIZE];
+};
+
+const float KERNEL_STATIC[] = float[](KERNEL_ARRAY);
+
+#define srcImg() srcImage[scrImgIdx]
+#define srcImgUp() srcImage[scrImgIdx - 1]
+
+bool isPixelOutOfBounds(ivec2 pixelPos){
+  return pixelPos.x >= RESOLUTION.x || pixelPos.y >= RESOLUTION.y;
+}
+bool isPixelOutOfBounds2(ivec2 pixelPos, int correction){
+  float divider = pow(2, scrImgIdx + correction);
+  return pixelPos.x >= RESOLUTION.x / divider || pixelPos.y >= RESOLUTION.y / divider;
+}
+
+void main() 
+{
+  ivec2 pixel_pos = ivec2(gl_GlobalInvocationID.xy);
+
+  if (isPixelOutOfBounds(pixel_pos)) {
+    return;
+  }
+
+  vec3 avg;
+  int range = int(KERNEL_SIZE);
+  int from = -range/2;
+  int to = range/2;
+
+  if (stage == GAUSSIAN_HORIZONTAL){
+    avg = vec3(0);
+    for(int i = from; i <= to; i++){
+      int xPos = clamp(pixel_pos.x + i, 0, int(RESOLUTION.x / pow(2, scrImgIdx)) - 1); // no effect?
+      vec3 pixelColor = imageLoad(srcImg(), ivec2(xPos, pixel_pos.y)).xyz;
+      avg += pixelColor * KERNEL[i + -from];
+    }
+    imageStore(pongImage, pixel_pos, vec4(avg, 1));
+    //memoryBarrierImage();
+  } 
+  else if (stage == GAUSSIAN_VERTICAL){
+    avg = vec3(0);
+    for(int i = from; i <= to; i++){
+      int yPos = clamp(pixel_pos.y + i, 0, int(RESOLUTION.y / pow(2, scrImgIdx)) - 1); // no effect?
+      vec3 pixelColor = imageLoad(pongImage, ivec2(pixel_pos.x, yPos)).xyz;
+      avg += pixelColor * KERNEL[i + -from];
+    }
+    imageStore(srcImg(), pixel_pos, vec4(avg, 1));
+  }
+  else if (stage == FILTER){
+    vec4 pixelColor = imageLoad(targetImage, pixel_pos);
+    float luminance = dot(pixelColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+    imageStore(srcImg(), pixel_pos, luminance > 0.5 ? pixelColor : vec4(0));
+  }
+  else if (stage == DOWNSAMPLE){
+    if (isPixelOutOfBounds2(pixel_pos, 1)) {
+      return;
+    }
+    ivec2 pixel_pos_dst = pixel_pos;
+    pixel_pos *= 2;
+    int maxX = min(pixel_pos.x + 1, int(RESOLUTION.x / pow(2, scrImgIdx)));
+    int maxY = min(pixel_pos.y + 1, int(RESOLUTION.y / pow(2, scrImgIdx)));
+    vec4 pixelColor00 = imageLoad(srcImg(), pixel_pos);
+    vec4 pixelColor01 = imageLoad(srcImg(), ivec2(maxX, pixel_pos.y));
+    vec4 pixelColor10 = imageLoad(srcImg(), ivec2(pixel_pos.x, maxY));
+    vec4 pixelColor11 = imageLoad(srcImg(), ivec2(maxX, maxY));
+    vec4 avg = pixelColor00 + pixelColor01 + pixelColor10 + pixelColor11;
+    avg /= 4.0;
+    imageStore(srcImage[scrImgIdx + 1], pixel_pos_dst, avg);
+  }
+  else if (stage == WRITEBACK){
+    vec4 pixelColor = imageLoad(srcImg(), pixel_pos);
+    vec4 originalColor = imageLoad(targetImage, pixel_pos);
+    imageStore(targetImage, pixel_pos, pixelColor + originalColor);
+  }
+  else if (stage == UPSAMPLE){ // TODO there is a bias for upper pixels
+    if (isPixelOutOfBounds2(pixel_pos, -1)) {
+      return;
+    }
+     // Calculate the pixel position in the input image
+    vec2 inputPixelPos = vec2(gl_GlobalInvocationID.xy) / 2;
+    inputPixelPos -= vec2(0.25);
+
+    // Calculate the four nearest pixel positions
+    ivec2 tl = ivec2(floor(inputPixelPos));
+    ivec2 br = ivec2(ceil(inputPixelPos));
+    ivec2 tr = ivec2(br.x, tl.y);
+    ivec2 bl = ivec2(tl.x, br.y);
+
+    // Calculate the fractional part of the input pixel position
+    vec2 frac = fract(inputPixelPos);
+
+    // Sample the four nearest pixels and interpolate them bilinearly
+    vec4 c00 = imageLoad(srcImg(), tl);
+    vec4 c10 = imageLoad(srcImg(), tr);
+    vec4 c01 = imageLoad(srcImg(), bl);
+    vec4 c11 = imageLoad(srcImg(), br);
+    vec4 c0 = mix(c00, c10, frac.x);
+    vec4 c1 = mix(c01, c11, frac.x);
+    vec4 color = mix(c0, c1, frac.y);
+
+    // Write the result to the output image
+    vec4 originalColor = imageLoad(srcImgUp(), ivec2(gl_GlobalInvocationID.xy));
+    imageStore(srcImgUp(), ivec2(gl_GlobalInvocationID.xy), originalColor + vec4(color.rgb, 0)); // Additive blend
+    //imageStore(srcImgUp(), ivec2(gl_GlobalInvocationID.xy), (originalColor + color) / 2); // Average blend
+  }
+}

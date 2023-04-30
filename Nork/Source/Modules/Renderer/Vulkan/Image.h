@@ -88,18 +88,18 @@ namespace Nork::Renderer::Vulkan {
     {
         ImageViewCreateInfo() = delete;
         ImageViewCreateInfo(std::shared_ptr<Image> img_, vk::ImageAspectFlagBits aspect, bool cube = false)
-            : ImageViewCreateInfo(**img_, img_->Format(), aspect, img_->createInfo.mipLevels, cube)
+            : ImageViewCreateInfo(**img_, img_->Format(), aspect, img_->createInfo.mipLevels, 0, cube)
         {
             img = img_;
         }
-        ImageViewCreateInfo(vk::Image img, vk::Format format_, vk::ImageAspectFlagBits aspect, uint32_t mipLevelCount, bool cube = false)
+        ImageViewCreateInfo(vk::Image img, vk::Format format_, vk::ImageAspectFlagBits aspect, uint32_t mipLevelCount, uint32_t baseMipLevel = 0, bool cube = false)
         {
             // this->components = 
             this->image = img;
             this->viewType = cube ? vk::ImageViewType::eCube : vk::ImageViewType::e2D;
             this->format = format_;
             this->subresourceRange.aspectMask = aspect;
-            this->subresourceRange.baseMipLevel = 0;
+            this->subresourceRange.baseMipLevel = baseMipLevel;
             this->subresourceRange.levelCount = mipLevelCount;
             this->subresourceRange.baseArrayLayer = 0;
             this->subresourceRange.layerCount = cube ? 6 : 1;

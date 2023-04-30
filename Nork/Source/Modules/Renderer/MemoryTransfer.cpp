@@ -125,6 +125,56 @@ void MemoryTransfer::UploadToImage(vk::Image img, vk::Extent2D extent, vk::Offse
         cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barrier));
     });
 }
+void MemoryTransfer::CopyImage(vk::Image src, vk::Image dst, ImageBarrierInfo srcBarrierInfo, ImageBarrierInfo dstBarrierInfo,
+    vk::Extent3D extent, vk::Offset3D scrOffs, vk::Offset3D dstOffs, vk::ImageSubresourceLayers layers)
+{
+    vk::ImageSubresourceRange subresourceRange;
+    subresourceRange.aspectMask = layers.aspectMask;
+    subresourceRange.baseMipLevel = layers.mipLevel;
+    subresourceRange.levelCount = 1; // only 1 mip level can be copied at once, but if needed could support with multiple vk::ImageCopy
+    subresourceRange.baseArrayLayer = layers.baseArrayLayer;
+    subresourceRange.layerCount = layers.layerCount;
+    subresourceRange.aspectMask = layers.aspectMask;
+
+    Commands::Instance().TransferCommand([&](Vulkan::CommandBuffer& cmd)
+    {
+        auto makeBarrier = [](vk::Image img, const ImageBarrierInfo& info, bool src, vk::ImageSubresourceRange subresourceRange) {
+            return vk::ImageMemoryBarrier2()
+                .setImage(img)
+                .setSubresourceRange(subresourceRange)
+                .setOldLayout(info.initialLayout)
+                .setNewLayout(src ? vk::ImageLayout::eTransferSrcOptimal : vk::ImageLayout::eTransferDstOptimal)
+                .setSrcStageMask(info.srcStage)
+                .setDstStageMask(vk::PipelineStageFlagBits2::eTransfer)
+                .setSrcAccessMask(info.srcAccess)
+                .setDstAccessMask(src ? vk::AccessFlagBits2::eTransferRead : vk::AccessFlagBits2::eTransferWrite);
+        };
+        vk::ImageMemoryBarrier2 barriers[] = { makeBarrier(src, srcBarrierInfo, true, subresourceRange), makeBarrier(dst, srcBarrierInfo, false, subresourceRange) };
+        cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barriers));
+    });
+
+    auto copy = vk::ImageCopy(layers, scrOffs, layers, dstOffs, extent);
+    Commands::Instance().TransferCommand([&](Vulkan::CommandBuffer& cmd)
+    {
+        cmd.copyImage(src, vk::ImageLayout::eTransferSrcOptimal, dst, vk::ImageLayout::eTransferDstOptimal, copy);
+    });
+    Commands::Instance().TransferCommand([&](Vulkan::CommandBuffer& cmd)
+    {
+        auto makeBarrier = [](vk::Image img, const ImageBarrierInfo& info, bool src, vk::ImageSubresourceRange subresourceRange) {
+            return vk::ImageMemoryBarrier2()
+                .setImage(img)
+                .setSubresourceRange(subresourceRange)
+                .setOldLayout(src ? vk::ImageLayout::eTransferSrcOptimal : vk::ImageLayout::eTransferDstOptimal)
+                .setNewLayout(info.finalLayout)
+                .setSrcStageMask(vk::PipelineStageFlagBits2::eTransfer)
+                .setDstStageMask(info.dstStage)
+                .setSrcAccessMask(src ? vk::AccessFlagBits2::eTransferRead : vk::AccessFlagBits2::eTransferWrite)
+                .setDstAccessMask(info.dstAccess);
+        };
+        vk::ImageMemoryBarrier2 barriers[] = { makeBarrier(src, srcBarrierInfo, true, subresourceRange), makeBarrier(dst, srcBarrierInfo, false, subresourceRange) };
+        cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barriers));
+    });
+}
 void MemoryTransfer::CopyBufferToImage(std::shared_ptr<Transfer>& transfer, vk::Image image, vk::Extent2D extent, vk::Offset2D offset)
 {
     vk::BufferImageCopy region;

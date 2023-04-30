@@ -213,6 +213,17 @@ namespace Nork::Renderer::Vulkan {
         PipelineCreateInfo createInfo;
     };
 
+    class ComputePipeline : public  vk::raii::Pipeline
+    {
+    public:
+        ComputePipeline(vk::ComputePipelineCreateInfo& createInfo)
+            : vk::raii::Pipeline(Device::Instance(), nullptr, createInfo),
+            createInfo(std::move(createInfo))
+        {}
+    public:
+        vk::ComputePipelineCreateInfo createInfo;
+    };
+
     class Shader
     {
     public:
