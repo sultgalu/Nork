@@ -9,7 +9,7 @@ namespace Nork {
 	{
 	public:
 		static PhysicsSystem& Instance();
-		PhysicsSystem(entt::registry& reg);
+		PhysicsSystem();
 		void Download();
 		void Upload();
 		void Update();
@@ -18,7 +18,6 @@ namespace Nork {
 
 		Physics::Pipeline pipeline;
 		Physics::World& pWorld = pipeline.world;
-		entt::registry& reg;
 		entt::observer transformObserver;
 	};
 }

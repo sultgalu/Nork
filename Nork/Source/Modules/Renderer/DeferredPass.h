@@ -32,6 +32,5 @@ public:
 	std::shared_ptr<Vulkan::PipelineLayout> pipelineLayout;
 	std::shared_ptr<Vulkan::Pipeline> pipelineGPass;
 	std::shared_ptr<Vulkan::Pipeline> pipelineLPass;
-	std::shared_ptr<Vulkan::Pipeline> pipelinePP;
 };
 }

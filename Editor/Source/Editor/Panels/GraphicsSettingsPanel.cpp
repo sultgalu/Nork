@@ -11,7 +11,21 @@ namespace Nork::Editor {
 	{
 		Renderer::Settings& settings = Renderer::Settings::Instance();
 		if (ImGui::TreeNodeEx("Renderer", ImGuiTreeNodeFlags_DefaultOpen)) {
+			bool shadows = *settings.shadows;
+			if (ImGui::Checkbox("Shadows", &shadows)) {
+				settings.shadows = shadows;
+			}
+			auto pp = settings.postProcess.get();
 			auto bloom = settings.bloom.get();
+			if (ImGui::DragFloat("Exposure", &pp.exposure, 0.01f, 0.01f, 100, "%.2f")) {
+				settings.postProcess = pp;
+			}
+			if (ImGui::Checkbox("Inline Exposure", &pp.inlineExposure)) {
+				settings.postProcess = pp;
+			}
+			if (ImGui::Checkbox("Bloom Effect", &pp.bloom)) {
+				settings.postProcess = pp;
+			}
 			if (ImGui::SliderScalar("Mip Levels", ImGuiDataType_::ImGuiDataType_U32, &bloom.mipLevels, &bloom.minMipLevels, &bloom.maxMipLevels())) {
 				settings.bloom = bloom;
 			}
@@ -32,11 +46,34 @@ namespace Nork::Editor {
 			if (ImGui::DragFloat("Kernel Distribution", &bloom.sigma, 0.01f, 0.000001f, 100, "%.6f", ImGuiSliderFlags_::ImGuiSliderFlags_Logarithmic)) {
 				settings.bloom = bloom;
 			}
-			if (!bloom.inlineKernelData && ImGui::Checkbox("Build Kernel Size into Shader", &bloom.inlineKernelSize)) {
+			if (!bloom.inlineKernelData) {
+				if (ImGui::Checkbox("Inline Kernel Size", &bloom.inlineKernelSize)) {
+					settings.bloom = bloom;
+				}
+				ImGui::SameLine();
+			}
+			if (ImGui::Checkbox("Inline Kernel", &bloom.inlineKernelData)) {
+				bloom.inlineKernelSize = true;
 				settings.bloom = bloom;
 			}
-			if (ImGui::Checkbox("Build Kernel Into Shader", &bloom.inlineKernelData)) {
-				bloom.inlineKernelSize = true;
+			ImGui::SameLine();
+			if (ImGui::Checkbox("Inline Threshold", &bloom.inlineThreshold)) {
+				settings.bloom = bloom;
+			}
+			// if (ImGui::ColorEdit4("Threshold", &bloom.threshold.r, ImGuiColorEditFlags_::ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_::ImGuiColorEditFlags_HDR)) {
+			// 	settings.bloom = bloom;
+			// }
+			if (ImGui::ColorEdit3("Threshold", &bloom.threshold.r)) {
+				settings.bloom = bloom;
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Reset")) {
+				float alpha = bloom.threshold.a; // don't reset the alpha value
+				bloom.threshold = bloom.thresholdDefault;
+				bloom.threshold.a = alpha;
+				settings.bloom = bloom;
+			}
+			if (ImGui::DragFloat("Threshold multiplier", &bloom.threshold.a, 0.001f)) {
 				settings.bloom = bloom;
 			}
 			if (ImGui::Button("Refresh Shaders")) {

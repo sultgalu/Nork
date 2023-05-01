@@ -13,7 +13,7 @@ namespace Nork {
 	{
 	public:
 		static RenderingSystem& Instance();
-		RenderingSystem(entt::registry& registry);
+		RenderingSystem();
 		~RenderingSystem();
 	public:
 		std::shared_ptr<Renderer::Mesh> NewMesh(uint32_t vertexCount, uint32_t indexCount)
@@ -55,7 +55,6 @@ namespace Nork {
 		entt::observer pointLightObserver;
 		entt::observer transformObserver;
 	public:
-		entt::registry& registry;
 		std::shared_ptr<Components::Camera> camera;
 	private:
 		void OnDrawableAdded(entt::registry& reg, entt::entity id);

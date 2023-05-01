@@ -11,6 +11,31 @@ struct NodeReferenceComponent { // only runtime
 	std::weak_ptr<SceneNode> node;
 };
 
+static Scene* current;
+Scene::Scene()
+	: registry(), root(CreateRoot(registry))
+{
+	root->GetEntity().AddComponent<Components::Tag>().tag = "root";
+	current = this;
+}
+Scene::~Scene()
+{
+	if (current == this) {
+		current = nullptr;
+	}
+}
+Scene& Scene::Current()
+{
+	if (!current) {
+		std::unreachable();
+	}
+	return *current;
+}
+void Scene::Reset()
+{
+	registry.clear();
+	// registry = entt::registry(); destroys all callbacks too
+}
 void Scene::Save() {
 	if (sceneUri.empty()) {
 		Logger::Warning("Cannot save scene, no sceneUri");
@@ -30,7 +55,7 @@ void Scene::Serialize(std::ostream& os)
 }
 void Scene::Create(const fs::path& path)
 {
-	registry.clear();
+	Reset();
 	root = CreateRoot(registry);
 	root->GetEntity().AddComponent<Components::Tag>().tag = "root";
 	auto defaultCube = CreateNode()->GetEntity();
@@ -44,8 +69,7 @@ void Scene::Create(const fs::path& path)
 }
 void Scene::Deserialize(const std::istream& is)
 {
-	//registry = entt::registry();
-	registry.clear();
+	Reset();
 	try
 	{
 		std::stringstream ss;
@@ -90,11 +114,6 @@ void Scene::DeleteNode(SceneNode& node)
 std::shared_ptr<SceneNode> Scene::GetNodeById(entt::entity id)
 {
 	return registry.get<NodeReferenceComponent>(id).node.lock();
-}
-Scene::Scene()
-	: registry(), root(CreateRoot(registry))
-{
-	root->GetEntity().AddComponent<Components::Tag>().tag = "root";
 }
 std::shared_ptr<SceneNode> Scene::CreateRoot(entt::registry& registry)
 {

@@ -1,7 +1,7 @@
 #include "Renderer.h"
 #include "Vulkan/Window.h"
 #include "DeferredPass.h"
-#include "BloomPass.h"
+#include "PostProcessPass.h"
 #include "ShadowMapPass.h"
 
 namespace Nork::Renderer {
@@ -19,7 +19,7 @@ Renderer::Renderer()
 	auto deferredPass = std::make_shared<DeferredPass>();
 	mainImage = deferredPass->fbColor;
 	renderPasses.push_back(deferredPass);
-	renderPasses.push_back(std::make_shared<BloomPass>(mainImage));
+	renderPasses.push_back(std::make_shared<PostProcessPass>(mainImage));
 
 	Vulkan::Window::Instance().onFbResize = [&](int w, int h) {
 		framebufferResized = true;
@@ -77,6 +77,8 @@ uint32_t Renderer::BeginFrame()
 	Commands::Instance().ProcessFinishedCommandBufferCallbacks();
 	Commands::Instance().NextFrame(currentFrame);
 	Commands::Instance().BeginTransferCommandBuffer();
+	Commands::Instance().BeginRenderCommandBuffer(); // force wait for rendering to finish before writing to buffers in-use
+	 
 	// begin CPU expensive stuff that does not yet require the next image
 	for (auto& deviceData : deviceDatas) {
 		deviceData->OnNewFrame();
@@ -159,7 +161,6 @@ void Renderer::DrawFrame()
 	auto imgIdx = BeginFrame();
 	if (imgIdx == invalid_frame_idx)
 		return;
-	Commands::Instance().BeginRenderCommandBuffer();
 	for (auto& pass : renderPasses)
 	{
 		pass->RecordCommandBuffer(*Commands::Instance().GetCurrentRenderCmd(), imgIdx, currentFrame);

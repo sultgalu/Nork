@@ -9,6 +9,7 @@ namespace Nork
 	{
 	public:
 		Scene();
+		~Scene();
 		std::shared_ptr<SceneNode> CreateNode();
 		std::shared_ptr<SceneNode> CreateNode(SceneNode& parent);
 		void DeleteNode(SceneNode& node);
@@ -21,10 +22,8 @@ namespace Nork
 
 		void Serialize(std::ostream& os);
 		void Deserialize(const std::istream& is);
-		inline void Reset()
-		{
-			registry = entt::registry();
-		}
+		void Reset();
+		static Scene& Current();
 	private:
 		static std::shared_ptr<SceneNode> CreateRoot(entt::registry&);
 	public:

@@ -1,5 +1,6 @@
 #include "ShadowMapPass.h"
 #include "Vulkan/SwapChain.h"
+#include "RendererSettings.h"
 
 namespace Nork::Renderer {
 
@@ -110,6 +111,9 @@ void ShadowMapPass::CreateRenderPass()
 }
 void ShadowMapPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imageIndex, uint32_t currentFrame)
 {
+	if (!*Settings::Instance().shadows) {
+		return;
+	}
 	cmd.bindVertexBuffers(0, **Resources::Instance().vertexBuffer->buffer->Underlying(), { 0 });
 	cmd.bindIndexBuffer(**Resources::Instance().indexBuffer->buffer->Underlying(), 0, vk::IndexType::eUint32);
 

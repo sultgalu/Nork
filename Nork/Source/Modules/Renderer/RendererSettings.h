@@ -21,8 +21,19 @@ public:
 
 		bool useBlitFromDownsampling;
 		bool blitLinear;
+
+		glm::vec4 threshold;
+		static glm::vec4 thresholdDefault;
+		bool inlineThreshold;
+	};
+	struct PostProcess {
+		bool bloom;
+		float exposure;
+		bool inlineExposure;
 	};
 	LiveData<Bloom> bloom;
+	LiveData<PostProcess> postProcess;
+	LiveData<bool> shadows;
 
 	static Settings& Instance();
 };

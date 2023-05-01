@@ -7,6 +7,10 @@
 namespace Nork {
 Renderer::Renderer* Renderer::Renderer::instance = nullptr;
 std::shared_ptr<Renderer::Renderer> renderer;
+static entt::registry& Registry() {
+	return Scene::Current().registry;
+}
+
 void RenderingSystem::OnDrawableUpdated(entt::registry& reg, entt::entity id)
 {
 }
@@ -122,7 +126,7 @@ struct Client : Renderer::Client
 	uint32_t FillDrawBuffers(std::span<Renderer::DrawParams> params,
 		std::span<vk::DrawIndexedIndirectCommand> commands) override
 	{
-		auto group = RenderingSystem::Instance().registry.group<Components::Drawable>(entt::get<Components::Transform>);
+		auto group = Registry().group<Components::Drawable>(entt::get<Components::Transform>);
 		if (group.size() == 0)
 			return 0;
 		if (group.size() > params.size())
@@ -194,29 +198,27 @@ struct Client : Renderer::Client
 		uint32_t& dlCount, uint32_t& dsCount, uint32_t& plCount, uint32_t& psCount) override
 	{
 		dlCount = 0; dsCount = 0; plCount = 0; psCount = 0;
-		auto& system = RenderingSystem::Instance();
-		auto& registry = system.registry;
 
-		for (auto [ent, light, shad] : registry.view<Components::DirLight, Components::DirShadowMap>().each())
+		for (auto [ent, light, shad] : Registry().view<Components::DirLight, Components::DirShadowMap>().each())
 		{
 			dIdxs[dlCount * 2] = light.rendererLight->deviceData->offset;
 			dIdxs[dlCount * 2 + 1] = shad.shadowMap->shadow->deviceData->offset;
 			dlCount++;
 			dsCount++;
 		}
-		for (auto [ent, light] : registry.view<Components::DirLight>(entt::exclude<Components::DirShadowMap>).each())
+		for (auto [ent, light] : Registry().view<Components::DirLight>(entt::exclude<Components::DirShadowMap>).each())
 		{
 			dIdxs[dlCount * 2] = light.rendererLight->deviceData->offset;
 			dlCount++;
 		}
-		for (auto [ent, light, shad] : registry.view<Components::PointLight, Components::PointShadowMap>().each())
+		for (auto [ent, light, shad] : Registry().view<Components::PointLight, Components::PointShadowMap>().each())
 		{
 			pIdxs[plCount * 2] = light.rendererLight->deviceData->offset;
 			pIdxs[plCount * 2 + 1] = shad.shadowMap->shadow->deviceData->offset;
 			plCount++;
 			psCount++;
 		}
-		for (auto [ent, light] : registry.view<Components::PointLight>(entt::exclude<Components::PointShadowMap>).each())
+		for (auto [ent, light] : Registry().view<Components::PointLight>(entt::exclude<Components::PointShadowMap>).each())
 		{
 			pIdxs[plCount * 2] = light.rendererLight->deviceData->offset;
 			plCount++;
@@ -225,14 +227,12 @@ struct Client : Renderer::Client
 	void ProvideShadowMapsForUpdate(std::vector<std::shared_ptr<Renderer::DirShadowMap>>& dShadMaps,
 		std::vector<std::shared_ptr<Renderer::PointShadowMap>>& pShadMaps) override
 	{
-		auto& system = RenderingSystem::Instance();
-		auto& registry = system.registry;
-		for (auto [ent, shadMap] : registry.view<Components::DirShadowMap>().each())
+		for (auto [ent, shadMap] : Registry().view<Components::DirShadowMap>().each())
 		{
 			if (shadMap.update)
 				dShadMaps.push_back(shadMap.shadowMap);
 		}
-		for (auto [ent, shadMap] : registry.view<Components::PointShadowMap>().each())
+		for (auto [ent, shadMap] : Registry().view<Components::PointShadowMap>().each())
 		{
 			if (shadMap.update)
 				pShadMaps.push_back(shadMap.shadowMap);
@@ -245,12 +245,13 @@ RenderingSystem::~RenderingSystem()
 {
 	// clear every reference to renderer objects before deleting it
 	AssetLoader::Instance().ClearCache();
-	registry.clear<Components::Drawable, Components::DirLight, Components::PointLight>();
+	
+	Registry().clear<Components::Drawable, Components::DirLight, Components::PointLight>();
 	renderer = nullptr;
 }
-RenderingSystem::RenderingSystem(entt::registry& registry)
-	: registry(registry)
+RenderingSystem::RenderingSystem()
 {
+	auto& registry = Registry();
 	instance = this;
 	registry.on_update<Components::Drawable>().connect<&RenderingSystem::OnDrawableUpdated>(this);
 	registry.on_destroy<Components::Drawable>().connect<&RenderingSystem::OnDrawableRemoved>(this);
@@ -282,6 +283,7 @@ RenderingSystem::RenderingSystem(entt::registry& registry)
 }
 void RenderingSystem::UpdateLights()
 {
+	auto& registry = Scene::Current().registry;
 	for (const auto ent : dirLightObserver)
 	{
 		auto& dl = registry.get<Components::DirLight>(ent);
@@ -330,8 +332,8 @@ void RenderingSystem::Update()
 	UpdateLights();
 	for (auto& ent : transformObserver)
 	{
-		auto& dr = registry.get<Components::Drawable>(ent);
-		const auto& modelMatrix = registry.get<Components::Transform>(ent).modelMatrix;
+		auto& dr = Registry().get<Components::Drawable>(ent);
+		const auto& modelMatrix = Registry().get<Components::Transform>(ent).modelMatrix;
 		*dr.sharedTransform = modelMatrix;
 		for (size_t i = 0; i < dr.GetModel()->nodes.size(); i++)
 		{
@@ -347,7 +349,7 @@ void RenderingSystem::Update()
 		renderer->resources->viewPos = camera->position;
 	}
 
-	ColliderPass::Instance().UpdateBuffers(registry);
+	ColliderPass::Instance().UpdateBuffers(Registry());
 
 	renderer->DrawFrame();
 }

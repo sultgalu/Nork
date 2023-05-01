@@ -4,6 +4,7 @@
 #include "Vulkan/Framebuffer.h"
 #include "Vulkan/CommandBuffer.h"
 #include "Vulkan/Shaderc.h"
+#include "Utils/LifeCycle.h"
 
 namespace Nork::Renderer {
 class RenderPass
@@ -25,5 +26,7 @@ public:
 	virtual void OnFramebufferResized() {}
 	virtual void RecordCommandBuffer(Vulkan::CommandBuffer& commandBuffer, uint32_t imageIndex, uint32_t currentFrame) = 0;
 public:
+protected:
+	LifeCycle lifeCycle;
 };
 }

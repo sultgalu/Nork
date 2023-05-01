@@ -17,8 +17,7 @@ namespace Nork
 	{
 		return Engine::Get().physicsSystem;
 	}
-	Engine::Engine()
-		: uploadSem(1), updateSem(1), physicsSystem(scene.registry)
+	Engine::Engine() : uploadSem(1), updateSem(1)
 	{
 		_engine = this;
 		scene.registry.on_construct<Components::Physics>().connect<&Engine::OnPhysicsAdded>(this);

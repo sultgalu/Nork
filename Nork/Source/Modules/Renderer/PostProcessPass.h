@@ -6,10 +6,10 @@
 
 namespace Nork::Renderer {
 
-class BloomPass : public RenderPass
+class PostProcessPass : public RenderPass
 {
 public:
-	BloomPass(const std::shared_ptr<Image>& target);
+	PostProcessPass(const std::shared_ptr<Image>& target);
 	void CreateTextures();
 	void CreatePipelineLayout();
 	void CreatePipeline();

@@ -1,4 +1,4 @@
-#include "BloomPass.h"
+#include "PostProcessPass.h"
 
 #include "Vulkan/SwapChain.h"
 #include "Data/Vertex.h"
@@ -7,14 +7,12 @@
 namespace Nork::Renderer {
 
 enum class Stage : uint32_t {
-	GaussianHorizontal = 0, GaussianVertical, Filter, Downsample, Upsample, Writeback
+	GaussianHorizontal = 0, GaussianVertical, Filter, Downsample, Upsample, Writeback, Tonemap
 };
 struct _PushConstant {
 	Stage stage;
 	uint32_t srcImgIdx;
 };
-
-static LifeCycle lifeCycle;
 
 static glm::uvec2 Resolution() {
 	return *Settings::Instance().resolution;
@@ -46,6 +44,12 @@ static bool UseBlit() {
 static bool BlitLinear() {
 	return Settings::Instance().bloom->blitLinear;
 }
+static glm::vec4 Threshold() {
+	return Settings::Instance().bloom->threshold;
+}
+static bool InlineThreshold() {
+	return Settings::Instance().bloom->inlineThreshold;
+}
 std::vector<float> CreateKernel() {
 	if (KernelSize() % 2 == 0) {
 		std::unreachable(); // should be dstributed equally around a pixel
@@ -76,6 +80,10 @@ std::vector<std::array<std::string, 2>> GetMacros() {
 	{
 		kernelSS << ", " << kernel[i];
 	}
+	std::stringstream thresholdSS;
+	auto thr = Threshold();
+	thr *= thr.a;
+	thresholdSS << "vec3(" << thr.r << "," << thr.g << "," << thr.b << ")";
 
 	return std::vector<std::array<std::string, 2>> {
 		{ "GAUSSIAN_HORIZONTAL", std::to_string(std::to_underlying(Stage::GaussianHorizontal)) },
@@ -84,6 +92,7 @@ std::vector<std::array<std::string, 2>> GetMacros() {
 		{ "DOWNSAMPLE", std::to_string(std::to_underlying(Stage::Downsample)) },
 		{ "UPSAMPLE", std::to_string(std::to_underlying(Stage::Upsample)) },
 		{ "WRITEBACK", std::to_string(std::to_underlying(Stage::Writeback)) },
+		{ "TONEMAP", std::to_string(std::to_underlying(Stage::Tonemap)) },
 		{ "RESOLUTION_X", std::to_string(Resolution().x) },
 		{ "RESOLUTION_Y", std::to_string(Resolution().y) },
 		{ "RESOLUTION", "vec2(RESOLUTION_X, RESOLUTION_Y)" },
@@ -91,17 +100,30 @@ std::vector<std::array<std::string, 2>> GetMacros() {
 		{ "KERNEL", InlineKernelData() ? "KERNEL_STATIC" : "KERNEL_DYNAMIC" },
 		{ "MAX_KERNEL_SIZE", std::to_string(MaxKernelSize()) },
 		{ "KERNEL_SIZE", InlineKernelSize() ? std::to_string(KernelSize()) : "KERNEL_SIZE_DYNAMIC" },
+		{ "THRESHOLD", InlineThreshold() ? thresholdSS.str() : "THRESHOLD_DYNAMIC" },
+		{ "EXPOSURE", Settings::Instance().postProcess->inlineExposure ? std::to_string(Settings::Instance().postProcess->exposure) : "EXPOSURE_DYNAMIC" },
 	};
 }
 
-BloomPass::BloomPass(const std::shared_ptr<Image>& target)
+PostProcessPass::PostProcessPass(const std::shared_ptr<Image>& target)
 	: target(target)
 {
+	Settings::Instance().postProcess.subscribe([&](const Settings::PostProcess& old, const Settings::PostProcess& val) {
+		bool rebuildShader =
+			old.inlineExposure != val.inlineExposure ||
+			val.inlineExposure && (old.exposure != val.exposure)
+			;
+		if (rebuildShader) {
+			RefreshShaders();
+		}
+	}, lifeCycle);
 	Settings::Instance().bloom.subscribe([&](const Settings::Bloom& old, const Settings::Bloom& val) {
 		bool rebuildShader =
-			old.inlineKernelSize != val.inlineKernelSize || old.inlineKernelData != val.inlineKernelData ||
+			old.inlineKernelSize != val.inlineKernelSize || old.inlineKernelData != val.inlineKernelData || old.inlineThreshold != val.inlineThreshold ||
 			val.inlineKernelSize && (old.gaussianKernelSize != val.gaussianKernelSize) ||
-			val.inlineKernelData && (old.sigma != val.sigma);
+			val.inlineKernelData && (old.sigma != val.sigma) ||
+			val.inlineThreshold && (old.threshold != val.threshold)
+			;
 		if (rebuildShader) {
 			RefreshShaders();
 		}
@@ -111,9 +133,9 @@ BloomPass::BloomPass(const std::shared_ptr<Image>& target)
 	CreatePipeline();
 	WriteDescriptorSets();
 }
-void BloomPass::CreateTextures()
+void PostProcessPass::CreateTextures()
 {
-	Vulkan::ImageCreateInfo imageCreateInfo(Resolution().x, Resolution().y, Vulkan::Format::rgba32f, 
+	Vulkan::ImageCreateInfo imageCreateInfo(Resolution().x, Resolution().y, Vulkan::Format::rgba32f,
 		vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst, MaxMipLevels());
 
 	srcImage = std::make_shared<Image>(imageCreateInfo, vk::ImageAspectFlagBits::eColor, false, vk::PipelineStageFlags2{}, vk::AccessFlags2{}, false);
@@ -144,7 +166,7 @@ void BloomPass::CreateTextures()
 
 	using namespace Vulkan;
 }
-void BloomPass::CreatePipelineLayout()
+void PostProcessPass::CreatePipelineLayout()
 {
 	descriptorSetLayout = std::make_shared<Vulkan::DescriptorSetLayout>(Vulkan::DescriptorSetLayoutCreateInfo()
 		.Binding(0, vk::DescriptorType::eStorageImage, vk::ShaderStageFlagBits::eCompute) // target
@@ -155,22 +177,22 @@ void BloomPass::CreatePipelineLayout()
 	descriptorSet = std::make_shared<Vulkan::DescriptorSet>(Vulkan::DescriptorSetAllocateInfo(descriptorPool, descriptorSetLayout));
 
 	vk::PushConstantRange push;
-	push.size = sizeof(_PushConstant) + sizeof(uint32_t) + MaxKernelSize() * sizeof(float);
+	push.size = sizeof(glm::vec4) * 2 + sizeof(uint32_t) + MaxKernelSize() * sizeof(float);
 	push.stageFlags = vk::ShaderStageFlagBits::eCompute;
 	vk::PushConstantRange pushKernel;
 	pipelineLayout = std::make_shared<Vulkan::PipelineLayout>(
 		Vulkan::PipelineLayoutCreateInfo({ **descriptorSetLayout }, { push }));
 }
-void BloomPass::CreatePipeline()
+void PostProcessPass::CreatePipeline()
 {
-	Vulkan::ShaderModule shaderModule(LoadShader("Source/Shaders/bloom.comp", GetMacros()), vk::ShaderStageFlagBits::eCompute);
+	Vulkan::ShaderModule shaderModule(LoadShader("Source/Shaders/postProcess.comp", GetMacros()), vk::ShaderStageFlagBits::eCompute);
 	auto createInfo = vk::ComputePipelineCreateInfo()
 		.setLayout(**pipelineLayout)
 		.setStage(vk::PipelineShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eCompute, *shaderModule, "main"));
 
 	pipeline = std::make_shared<Vulkan::ComputePipeline>(createInfo);
 }
-void BloomPass::WriteDescriptorSets()
+void PostProcessPass::WriteDescriptorSets()
 {
 	auto textureSampler = std::make_shared<Vulkan::Sampler>();
 	auto writer = descriptorSet->Writer()
@@ -182,26 +204,10 @@ void BloomPass::WriteDescriptorSets()
 	}
 	writer.Write();
 }
-void BloomPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imageIndex, uint32_t currentFrame)
+void PostProcessPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imageIndex, uint32_t currentFrame)
 {
-	auto barrier = vk::ImageMemoryBarrier2()
-		.setImage(**target->img)
-		.setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1))
-		.setOldLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-		.setNewLayout(vk::ImageLayout::eGeneral)
-		.setSrcStageMask(vk::PipelineStageFlagBits2::eBottomOfPipe)
-		.setDstStageMask(vk::PipelineStageFlagBits2::eComputeShader)
-		.setSrcAccessMask(vk::AccessFlagBits2::eMemoryWrite)
-		.setDstAccessMask(vk::AccessFlagBits2::eShaderStorageRead);
-	cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barrier).setDependencyFlags(vk::DependencyFlagBits::eByRegion));
-
 	cmd.bindPipeline(vk::PipelineBindPoint::eCompute, **pipeline);
 	cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, **pipelineLayout, 0, { **descriptorSet }, {});
-	if (!Settings::Instance().bloom->inlineKernelData) {
-		cmd.pushConstants<uint32_t>(**pipelineLayout, vk::ShaderStageFlagBits::eCompute, sizeof(_PushConstant), KernelSize());
-		cmd.pushConstants<float>(**pipelineLayout, vk::ShaderStageFlagBits::eCompute, sizeof(_PushConstant) + sizeof(uint32_t), CreateKernel());
-	}
-
 	glm::vec2 groupSize(32, 32);
 	auto w = target->img->Width();
 	auto h = target->img->Height();
@@ -214,9 +220,55 @@ void BloomPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imageIn
 		cmd.dispatch(std::ceil((w / (size.x * std::pow(2, pushConstant.srcImgIdx + c)))), (std::ceil(h / (size.y * std::pow(2, pushConstant.srcImgIdx + c)))), 1);
 	};
 
+	if (!Settings::Instance().bloom->inlineThreshold) {
+		auto threshold = Threshold();
+		threshold *= threshold.a;
+		cmd.pushConstants<glm::vec4>(**pipelineLayout, vk::ShaderStageFlagBits::eCompute, sizeof(glm::vec4), threshold);
+	}
 	pushConstant.stage = Stage::Filter;
 	pushConstant.srcImgIdx = 0;
+
+	auto barrier = vk::ImageMemoryBarrier2()
+		.setImage(**target->img).setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1))
+		.setOldLayout(vk::ImageLayout::eShaderReadOnlyOptimal).setNewLayout(vk::ImageLayout::eGeneral)
+		.setSrcStageMask(vk::PipelineStageFlagBits2::eBottomOfPipe).setDstStageMask(vk::PipelineStageFlagBits2::eComputeShader)
+		.setSrcAccessMask(vk::AccessFlagBits2::eMemoryWrite).setDstAccessMask(vk::AccessFlagBits2::eMemoryRead);
+	cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barrier));
+
+	if (!Settings::Instance().postProcess->bloom) { // do only tonemapping
+
+		pushConstant.stage = Stage::Tonemap;
+		dispatchStage();
+
+		barrier
+			.setImage(**target->img)
+			.setOldLayout(vk::ImageLayout::eGeneral).setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+			.setSrcStageMask(vk::PipelineStageFlagBits2::eComputeShader).setDstStageMask(vk::PipelineStageFlagBits2::eFragmentShader)
+			.setSrcAccessMask(vk::AccessFlagBits2::eMemoryWrite).setDstAccessMask(vk::AccessFlagBits2::eShaderRead);
+		cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barrier));
+
+		return;
+	}
+
 	dispatchStage();
+	auto barrier11 = vk::ImageMemoryBarrier2()
+		.setImage(**srcImage->img)
+		.setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1))
+		.setOldLayout(vk::ImageLayout::eGeneral)
+		.setNewLayout(vk::ImageLayout::eGeneral)
+		.setSrcStageMask(vk::PipelineStageFlagBits2::eComputeShader)
+		.setDstStageMask(vk::PipelineStageFlagBits2::eComputeShader)
+		.setSrcAccessMask(vk::AccessFlagBits2::eMemoryWrite)
+		.setDstAccessMask(vk::AccessFlagBits2::eMemoryRead);
+	cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barrier11));
+
+	if (!Settings::Instance().bloom->inlineKernelData) {
+		cmd.pushConstants<uint32_t>(**pipelineLayout, vk::ShaderStageFlagBits::eCompute, 2 * sizeof(glm::vec4), KernelSize());
+		cmd.pushConstants<float>(**pipelineLayout, vk::ShaderStageFlagBits::eCompute, 2 * sizeof(glm::vec4) + sizeof(uint32_t), CreateKernel());
+	}
+	if (!Settings::Instance().postProcess->inlineExposure) {
+		cmd.pushConstants<float>(**pipelineLayout, vk::ShaderStageFlagBits::eCompute, sizeof(pushConstant), Settings::Instance().postProcess->exposure);
+	}
 
 	size_t iter = MipLevels() - 1;
 	for (size_t i = 0; i < iter; i++)
@@ -232,19 +284,10 @@ void BloomPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imageIn
 			.setDstStageMask(vk::PipelineStageFlagBits2::eComputeShader)
 			.setSrcAccessMask(vk::AccessFlagBits2::eMemoryWrite)
 			.setDstAccessMask(vk::AccessFlagBits2::eMemoryRead);
-		cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barrier4).setDependencyFlags(vk::DependencyFlagBits::eByRegion));
+		cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barrier4));
+
 		pushConstant.stage = Stage::GaussianVertical;
 		dispatchStage();
-		auto barrier3 = vk::ImageMemoryBarrier2()
-			.setImage(**srcImage->img)
-			.setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, pushConstant.srcImgIdx, 1, 0, 1))
-			.setOldLayout(vk::ImageLayout::eGeneral)
-			.setNewLayout(vk::ImageLayout::eGeneral)
-			.setSrcStageMask(vk::PipelineStageFlagBits2::eComputeShader)
-			.setDstStageMask(vk::PipelineStageFlagBits2::eComputeShader)
-			.setSrcAccessMask(vk::AccessFlagBits2::eMemoryWrite)
-			.setDstAccessMask(vk::AccessFlagBits2::eMemoryRead);
-		cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barrier3).setDependencyFlags(vk::DependencyFlagBits::eByRegion));
 
 		if (UseBlit()) {
 
@@ -282,10 +325,10 @@ void BloomPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imageIn
 				.setDstStageMask(vk::PipelineStageFlagBits2::eTransfer)
 				.setSrcAccessMask(vk::AccessFlagBits2::eMemoryWrite)
 				.setDstAccessMask(vk::AccessFlagBits2::eTransferRead);
-			std::vector<vk::ImageMemoryBarrier2> barriers { barrier3, barrier4 };
-			cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barriers).setDependencyFlags(vk::DependencyFlagBits::eByRegion));
+			std::vector<vk::ImageMemoryBarrier2> barriers{ barrier3, barrier4 };
+			cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barriers));
 
-			cmd.blitImage(**srcImage->img, vk::ImageLayout::eTransferSrcOptimal, **srcImage->img, vk::ImageLayout::eTransferDstOptimal, blit, 
+			cmd.blitImage(**srcImage->img, vk::ImageLayout::eTransferSrcOptimal, **srcImage->img, vk::ImageLayout::eTransferDstOptimal, blit,
 				BlitLinear() ? vk::Filter::eLinear : vk::Filter::eNearest);
 
 			auto barrier5 = vk::ImageMemoryBarrier2()
@@ -307,11 +350,22 @@ void BloomPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imageIn
 				.setSrcAccessMask(vk::AccessFlagBits2::eTransferRead)
 				.setDstAccessMask(vk::AccessFlagBits2::eMemoryWrite);
 			barriers = { barrier5 , barrier6 };
-			cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barriers).setDependencyFlags(vk::DependencyFlagBits::eByRegion));
+			cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barriers));
 
 			pushConstant.srcImgIdx += 1;
-		} 
+		}
 		else {
+			auto barrier3 = vk::ImageMemoryBarrier2()
+				.setImage(**srcImage->img)
+				.setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, pushConstant.srcImgIdx, 1, 0, 1))
+				.setOldLayout(vk::ImageLayout::eGeneral)
+				.setNewLayout(vk::ImageLayout::eGeneral)
+				.setSrcStageMask(vk::PipelineStageFlagBits2::eComputeShader)
+				.setDstStageMask(vk::PipelineStageFlagBits2::eComputeShader)
+				.setSrcAccessMask(vk::AccessFlagBits2::eMemoryWrite)
+				.setDstAccessMask(vk::AccessFlagBits2::eMemoryRead);
+			cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barrier3));
+
 			pushConstant.stage = Stage::Downsample;
 			dispatchStage();
 			pushConstant.srcImgIdx += 1;
@@ -331,7 +385,7 @@ void BloomPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imageIn
 	{
 		pushConstant.stage = Stage::Upsample;
 		dispatchStage(-1);
-		pushConstant.srcImgIdx -= 1;
+		pushConstant.srcImgIdx--;
 
 		auto barrier2 = vk::ImageMemoryBarrier2()
 			.setImage(**srcImage->img)
@@ -342,22 +396,19 @@ void BloomPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imageIn
 			.setDstStageMask(vk::PipelineStageFlagBits2::eComputeShader)
 			.setSrcAccessMask(vk::AccessFlagBits2::eMemoryWrite)
 			.setDstAccessMask(vk::AccessFlagBits2::eMemoryRead);
-		cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barrier2).setDependencyFlags(vk::DependencyFlagBits::eByRegion));
+		cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barrier2));
 	}
 	pushConstant.stage = Stage::Writeback;
 	dispatchStage();
 
 	barrier
 		.setImage(**target->img)
-		.setOldLayout(vk::ImageLayout::eGeneral)
-		.setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-		.setSrcStageMask(vk::PipelineStageFlagBits2::eComputeShader)
-		.setDstStageMask(vk::PipelineStageFlagBits2::eTopOfPipe)
-		.setSrcAccessMask(vk::AccessFlagBits2::eShaderStorageWrite)
-		.setDstAccessMask(vk::AccessFlagBits2::eMemoryRead);
-	cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barrier).setDependencyFlags(vk::DependencyFlagBits::eByRegion));
+		.setOldLayout(vk::ImageLayout::eGeneral).setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+		.setSrcStageMask(vk::PipelineStageFlagBits2::eComputeShader).setDstStageMask(vk::PipelineStageFlagBits2::eTopOfPipe)
+		.setSrcAccessMask(vk::AccessFlagBits2::eMemoryWrite).setDstAccessMask(vk::AccessFlagBits2::eMemoryRead);
+	cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barrier));
 }
-void BloomPass::RefreshShaders()
+void PostProcessPass::RefreshShaders()
 {
 	if (IsShaderSourceChanged("Source/Shaders/bloom.comp", GetMacros())) {
 		auto pipelineOld = pipeline;

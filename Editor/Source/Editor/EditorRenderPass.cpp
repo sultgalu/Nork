@@ -108,7 +108,6 @@ void EditorPass::OnTransferCommands() {
 }
 void EditorPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imageIndex, uint32_t currentFrame)
 {
-
 	using namespace Vulkan;
 	BeginRenderPass(**renderPassUI, *fbUI, cmd);
 	ImGui::Render();

@@ -10,10 +10,12 @@ layout (local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
 
 layout(push_constant) uniform constants
 {
-	layout(offset = 0) uint stage;
-	layout(offset = 4) uint scrImgIdx;
-	layout(offset = 8) uint KERNEL_SIZE_DYNAMIC;
-	layout(offset = 12) float KERNEL_DYNAMIC[MAX_KERNEL_SIZE];
+	uint stage;
+	uint scrImgIdx;
+  float EXPOSURE_DYNAMIC;
+	vec4 THRESHOLD_DYNAMIC;
+	uint KERNEL_SIZE_DYNAMIC;
+	float KERNEL_DYNAMIC[MAX_KERNEL_SIZE];
 };
 
 const float KERNEL_STATIC[] = float[](KERNEL_ARRAY);
@@ -28,7 +30,10 @@ bool isPixelOutOfBounds2(ivec2 pixelPos, int correction){
   float divider = pow(2, scrImgIdx + correction);
   return pixelPos.x >= RESOLUTION.x / divider || pixelPos.y >= RESOLUTION.y / divider;
 }
-
+vec3 tonemap(vec3 color){
+	  color.rgb = vec3(1.0f) - exp(-color.rgb * EXPOSURE);
+    return color;
+}
 void main() 
 {
   ivec2 pixel_pos = ivec2(gl_GlobalInvocationID.xy);
@@ -63,8 +68,8 @@ void main()
   }
   else if (stage == FILTER){
     vec4 pixelColor = imageLoad(targetImage, pixel_pos);
-    float luminance = dot(pixelColor.rgb, vec3(0.2126, 0.7152, 0.0722));
-    imageStore(srcImg(), pixel_pos, luminance > 0.5 ? pixelColor : vec4(0));
+    float luminance = dot(pixelColor.rgb, THRESHOLD.rgb);
+    imageStore(srcImg(), pixel_pos, luminance > 1.0 ? pixelColor : vec4(0));
   }
   else if (stage == DOWNSAMPLE){
     if (isPixelOutOfBounds2(pixel_pos, 1)) {
@@ -85,7 +90,13 @@ void main()
   else if (stage == WRITEBACK){
     vec4 pixelColor = imageLoad(srcImg(), pixel_pos);
     vec4 originalColor = imageLoad(targetImage, pixel_pos);
-    imageStore(targetImage, pixel_pos, pixelColor + originalColor);
+    vec4 finalColor = vec4(tonemap(originalColor.rgb + pixelColor.rgb), originalColor.a);
+    imageStore(targetImage, pixel_pos, finalColor);
+  }
+  else if (stage == TONEMAP){
+    vec4 pixelColor = imageLoad(targetImage, pixel_pos);
+    pixelColor.rgb = tonemap(pixelColor.rgb);
+    imageStore(targetImage, pixel_pos, pixelColor);
   }
   else if (stage == UPSAMPLE){ // TODO there is a bias for upper pixels
     if (isPixelOutOfBounds2(pixel_pos, -1)) {

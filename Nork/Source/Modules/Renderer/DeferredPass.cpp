@@ -97,20 +97,6 @@ void DeferredPass::CreateGraphicsPipeline()
 		.ColorBlend(1)
 		.RenderPass(**renderPass, 1)
 		.DepthStencil(false));
-
-	ShaderModule vertShaderModule2(LoadShader("Source/Shaders/quad.vert"), vk::ShaderStageFlagBits::eVertex);
-	ShaderModule fragShaderModule2(LoadShader("Source/Shaders/pp.frag"), vk::ShaderStageFlagBits::eFragment);
-	pipelinePP = std::make_shared<Pipeline>(PipelineCreateInfo()
-		.Layout(**pipelineLayout)
-		.AddShader(vertShaderModule2)
-		.AddShader(fragShaderModule2)
-		.VertexInputHardCoded()
-		.InputAssembly(vk::PrimitiveTopology::eTriangleList)
-		.Rasterization(false)
-		.Multisampling()
-		.ColorBlend(1)
-		.RenderPass(**renderPass, 2)
-		.DepthStencil(false));
 }
 void DeferredPass::CreateRenderPass()
 {
@@ -139,8 +125,8 @@ void DeferredPass::CreateRenderPass()
 		.setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
 		.setLoadOp(vk::AttachmentLoadOp::eClear);
 
-	uint32_t gPass = 0, lPass = 1, ppPass = 2;
-	std::vector<SubpassDescription> subPasses(3);
+	uint32_t gPass = 0, lPass = 1;
+	std::vector<SubpassDescription> subPasses(2);
 	subPasses[gPass]
 		.ColorAttachments({
 			{ gPosAttIdx, vk::ImageLayout::eColorAttachmentOptimal },
@@ -157,9 +143,6 @@ void DeferredPass::CreateRenderPass()
 			{ gNormAttIdx, vk::ImageLayout::eShaderReadOnlyOptimal },
 			{ gMRAttIdx, vk::ImageLayout::eShaderReadOnlyOptimal }
 			});
-	subPasses[ppPass]
-		.ColorAttachments({ { lPassAttIdx, vk::ImageLayout::eGeneral } })
-		.InputAttachments({ { lPassAttIdx, vk::ImageLayout::eGeneral } });
 	createInfo.Subpasses(subPasses);
 
 	createInfo.Dependencies({
@@ -168,20 +151,7 @@ void DeferredPass::CreateRenderPass()
 		.setSrcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite)
 		.setDstStageMask(vk::PipelineStageFlagBits::eFragmentShader)
 		.setDstAccessMask(vk::AccessFlagBits::eInputAttachmentRead)
-		.setDependencyFlags(vk::DependencyFlagBits::eByRegion),
-
-		vk::SubpassDependency(lPass, ppPass)
-		.setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
-		.setSrcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite)
-		.setDstStageMask(vk::PipelineStageFlagBits::eFragmentShader)
-		.setDstAccessMask(vk::AccessFlagBits::eInputAttachmentRead)
-		.setDependencyFlags(vk::DependencyFlagBits::eByRegion),
-
-		vk::SubpassDependency(ppPass, VK_SUBPASS_EXTERNAL)
-		.setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
-		.setSrcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite)
-		.setDstStageMask(vk::PipelineStageFlagBits::eFragmentShader)
-		.setDstAccessMask(vk::AccessFlagBits::eShaderRead)
+		.setDependencyFlags(vk::DependencyFlagBits::eByRegion)
 		});
 	renderPass = std::make_shared<Vulkan::RenderPass>(createInfo);
 }
@@ -214,10 +184,6 @@ void DeferredPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imag
 
 	cmd.nextSubpass(vk::SubpassContents::eInline);
 	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, **pipelineLPass);
-	cmd.DrawQuad();
-
-	cmd.nextSubpass(vk::SubpassContents::eInline);
-	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, **pipelinePP);
 	cmd.DrawQuad();
 
 	cmd.endRenderPass();

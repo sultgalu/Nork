@@ -20,7 +20,7 @@ namespace Nork
 	public:
 		Scene scene;
 
-		RenderingSystem renderingSystem = RenderingSystem(scene.registry);
+		RenderingSystem renderingSystem;
 		PhysicsSystem physicsSystem;
 		std::thread* physicsThread;
 		bool physicsUpdate = false;

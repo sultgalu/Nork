@@ -201,7 +201,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Source\Modules\Renderer\BloomPass.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\PostProcessPass.cpp" />
     <ClCompile Include="Source\Modules\Renderer\RendererSettings.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Vulkan\SwapChain.cpp" />
     <ClCompile Include="Source\Scripting\ScriptSystem.cpp" />
@@ -236,7 +236,8 @@
     <ClCompile Include="Source\Core\RenderingSystem.cpp" />
     <ClCompile Include="Source\Modules\Renderer\LoadUtils.cpp" />
     <ClCompile Include="Source\App\Application.cpp" />
-    <ClInclude Include="Source\Modules\Renderer\BloomPass.h" />
+    <ClInclude Include="Source\Core\Project.h" />
+    <ClInclude Include="Source\Modules\Renderer\PostProcessPass.h" />
     <ClInclude Include="Source\Modules\Renderer\RendererSettings.h" />
     <ClInclude Include="Source\Scripting\Nork.h" />
     <ClInclude Include="Source\Scripting\ScriptSystem.h" />
@@ -362,6 +363,7 @@
     <ClInclude Include="Source\Components\Camera.h" />
     <ClInclude Include="Source\Components\Common.h" />
     <ClInclude Include="Source\Components\Lights.h" />
+    <ClInclude Include="Source\Utils\LifeCycle.h" />
     <ClInclude Include="Source\Utils\LiveData.h" />
     <ClInclude Include="Source\Utils\Logger.h" />
     <ClInclude Include="Source\Utils\Observed.h" />

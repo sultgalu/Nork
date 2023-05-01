@@ -180,7 +180,7 @@
     <ClCompile Include="Source\Scripting\ScriptSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Modules\Renderer\BloomPass.cpp">
+    <ClCompile Include="Source\Modules\Renderer\PostProcessPass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Modules\Renderer\RendererSettings.cpp">
@@ -467,13 +467,19 @@
     <ClInclude Include="Source\Scripting\Nork.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Modules\Renderer\BloomPass.h">
+    <ClInclude Include="Source\Modules\Renderer\PostProcessPass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Modules\Renderer\RendererSettings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Utils\LiveData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Project.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Utils\LifeCycle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
