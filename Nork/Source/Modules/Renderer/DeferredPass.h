@@ -13,6 +13,11 @@ public:
 	void CreateGraphicsPipeline();
 	void CreateRenderPass();
 	void RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imageIndex, uint32_t currentFrame) override;
+	void RefreshShaders() override;
+private:
+	void CreateDeferredGPassPipeline();
+	void CreateDeferredLightPassPipeline();
+	void CreateForwardPipeline();
 public:
 
 	std::shared_ptr<Vulkan::RenderPass> renderPass;

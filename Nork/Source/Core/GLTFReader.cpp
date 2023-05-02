@@ -81,6 +81,8 @@ std::shared_ptr<Renderer::Material> GLTFReader::CreateMaterial(const Renderer::G
 		material->SetTextureMap(images[gltf.textures[mat.pbrMetallicRoughness.metallicRoughnessTexture.index].source], Renderer::TextureMap::MetallicRoughness);
 	if (mat.normalTexture.Validate())
 		material->SetTextureMap(images[gltf.textures[mat.normalTexture.index].source], Renderer::TextureMap::Normal);
+	if (mat.occlusionTexture.Validate())
+		material->SetTextureMap(images[gltf.textures[mat.occlusionTexture.index].source], Renderer::TextureMap::Occlusion);
 	return material;
 }
 std::shared_ptr<Renderer::Mesh> GLTFReader::CreateRendererMesh(int idx, int meshIdx)

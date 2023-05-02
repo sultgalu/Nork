@@ -4,20 +4,22 @@
 layout(location = 0) out vec4 position; // 3 used
 layout(location = 1) out vec4 baseColor; // 3 used
 layout(location = 2) out vec3 normal; // 3 used
-layout(location = 3) out vec2 metallicRoughness; // 2 used
+layout(location = 3) out vec3 metallicRoughnessOcclusion; // 3 used
 
 struct Material
 {
 	uint baseColor;
 	uint normal;
 	uint metallicRoughness;
-	float roughnessFactor;
+	uint occlusion;
 
 	vec4 baseColorFactor;
+
+	float roughnessFactor;
 	float metallicFactor;
 	float alphaCutoff;
 
-  float padding[2];
+  float padding[1];
 };
 
 layout(location = 0) in vec3 worldPos;
@@ -34,7 +36,8 @@ void main()
 	if (color.a < material.alphaCutoff)
 		discard;
 	baseColor = color * material.baseColorFactor;
-	metallicRoughness = texture(textures[material.metallicRoughness], texCoord).gb * vec2(material.roughnessFactor, material.metallicFactor);
+	metallicRoughnessOcclusion.rg = texture(textures[material.metallicRoughness], texCoord).gb * vec2(material.roughnessFactor, material.metallicFactor);
+	metallicRoughnessOcclusion.b = texture(textures[material.occlusion], texCoord).r;
 
 	vec3 norm = texture(textures[material.normal], texCoord).rgb;
 	norm = norm * 2.0f - 1.0f; // [0;1] -> [-1;1]

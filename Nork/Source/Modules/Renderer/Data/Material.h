@@ -5,12 +5,13 @@ namespace Nork::Renderer::Data {
 		uint32_t baseColor;
 		uint32_t normal;
 		uint32_t metallicRoughness;
-		float roughnessFactor = 1;
+		uint32_t occlusion;
 
 		glm::vec4 baseColorFactor = { 1, 1, 1, 1 };
 
+		float roughnessFactor = 1;
 		float metallicFactor = 1;
 		float alphaCutoff = -1;
-		glm::vec2 padding_;
+		float padding_;
 	};
 }

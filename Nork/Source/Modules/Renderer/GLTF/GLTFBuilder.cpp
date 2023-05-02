@@ -197,6 +197,9 @@ GLTFBuilder& GLTFBuilder::AddMaterial(const Material& material, std::vector<std:
 			case MetallicRoughness:
 				mat.pbrMetallicRoughness.metallicRoughnessTexture = texInfo;
 				break;
+			case Occlusion:
+				mat.occlusionTexture = texInfo;
+				break;
 			default:
 				break;
 		}

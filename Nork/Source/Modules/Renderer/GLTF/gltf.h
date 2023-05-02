@@ -351,6 +351,7 @@ namespace Nork::Renderer::GLTF {
 		std::string name = "";
 		MaterialRoughnessModel pbrMetallicRoughness;
 		TextureInfo normalTexture;
+		TextureInfo occlusionTexture;
 		std::string alphaMode = OPAQUE;
 		float alphaCutoff = 0.5f;
 		inline static const std::string OPAQUE = "OPAQUE";
@@ -363,6 +364,8 @@ namespace Nork::Renderer::GLTF {
 				.Property("pbrMetallicRoughness", pbrMetallicRoughness.ToJson());
 			if (normalTexture.Validate())
 				json.Property("normalTexture", normalTexture.ToJson());
+			if (occlusionTexture.Validate())
+				json.Property("occlusionTexture", occlusionTexture.ToJson());
 			if (!name.empty())
 				json.Property("name", name);
 			if (alphaMode != OPAQUE)
@@ -378,9 +381,11 @@ namespace Nork::Renderer::GLTF {
 			json.GetIfContains("name", name);
 			json.GetIfContains("alphaMode", alphaMode);
 			json.GetIfContains("alphaCutoff", alphaCutoff);
-			if (json.Contains("normalTexture"))
-			{
+			if (json.Contains("normalTexture")){
 				normalTexture.FromJson(json.Get<JsonObject>("normalTexture"));
+			}
+			if (json.Contains("occlusionTexture")) {
+				occlusionTexture.FromJson(json.Get<JsonObject>("occlusionTexture"));
 			}
 			pbrMetallicRoughness.FromJson(json.Get<JsonObject>("pbrMetallicRoughness"));
 		}

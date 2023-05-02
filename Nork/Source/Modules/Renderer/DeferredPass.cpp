@@ -60,8 +60,6 @@ DeferredPass::DeferredPass()
 void DeferredPass::CreateGraphicsPipeline()
 {
 	using namespace Vulkan;
-	ShaderModule vertShaderModule(LoadShader("Source/Shaders/gPass.vert"), vk::ShaderStageFlagBits::eVertex);
-	ShaderModule fragShaderModule(LoadShader("Source/Shaders/gPass.frag"), vk::ShaderStageFlagBits::eFragment);
 	vk::PushConstantRange vpPush; // gpass
 	vpPush.size = sizeof(glm::mat4);
 	vpPush.stageFlags = vk::ShaderStageFlagBits::eVertex;
@@ -72,45 +70,9 @@ void DeferredPass::CreateGraphicsPipeline()
 	pipelineLayout = std::make_shared<PipelineLayout>(
 		PipelineLayoutCreateInfo({ **Resources::Instance().descriptorSetLayout,
 			**descriptorSetLayoutPP, **Resources::Instance().descriptorSetLayoutLights }, { vpPush, viewPosPush }));
-	pipelineGPass = std::make_shared<Vulkan::Pipeline>(Vulkan::PipelineCreateInfo()
-		.Layout(**pipelineLayout)
-		.AddShader(vertShaderModule)
-		.AddShader(fragShaderModule)
-		.VertexInput<Data::Vertex>()
-		.InputAssembly(vk::PrimitiveTopology::eTriangleList)
-		.Rasterization(true) // TRUE
-		.Multisampling()
-		.ColorBlend(4)
-		.RenderPass(**renderPass, 0)
-		.DepthStencil(true, true, vk::CompareOp::eLess));
-
-	ShaderModule vertShaderModule3(LoadShader("Source/Shaders/quad.vert"), vk::ShaderStageFlagBits::eVertex);
-	ShaderModule fragShaderModule3(LoadShader("Source/Shaders/lightPass.frag", { {"DEFERRED", ""} }), vk::ShaderStageFlagBits::eFragment);
-	pipelineLPass = std::make_shared<Pipeline>(PipelineCreateInfo()
-		.Layout(**pipelineLayout)
-		.AddShader(vertShaderModule3)
-		.AddShader(fragShaderModule3)
-		.VertexInputHardCoded()
-		.InputAssembly(vk::PrimitiveTopology::eTriangleList)
-		.Rasterization(false)
-		.Multisampling()
-		.ColorBlend(1)
-		.RenderPass(**renderPass, 1)
-		.DepthStencil(false));
-
-	ShaderModule vertShaderModule4(LoadShader("Source/Shaders/gPass.vert", {}, 1), vk::ShaderStageFlagBits::eVertex);
-	ShaderModule fragShaderModule4(LoadShader("Source/Shaders/lightPass.frag", { {"FORWARD", ""} }, 1), vk::ShaderStageFlagBits::eFragment);
-	pipelineForward = std::make_shared<Pipeline>(PipelineCreateInfo()
-		.Layout(**pipelineLayout)
-		.AddShader(vertShaderModule4)
-		.AddShader(fragShaderModule4)
-		.VertexInput<Data::Vertex>()
-		.InputAssembly(vk::PrimitiveTopology::eTriangleList)
-		.Rasterization(true)
-		.Multisampling(vk::SampleCountFlagBits::e1) // TODO dynamic??
-		.ColorBlend(1, true) // TODO enable 
-		.RenderPass(**renderPass, 2)
-		.DepthStencil(true, true, vk::CompareOp::eLess));
+	CreateDeferredGPassPipeline();
+	CreateDeferredLightPassPipeline();
+	CreateForwardPipeline();
 }
 void DeferredPass::CreateRenderPass()
 {
@@ -237,5 +199,67 @@ void DeferredPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imag
 	}
 
 	cmd.endRenderPass();
+}
+void DeferredPass::CreateDeferredGPassPipeline()
+{
+	using namespace Vulkan;
+	ShaderModule vertShaderModule(LoadShader("Source/Shaders/gPass.vert"), vk::ShaderStageFlagBits::eVertex);
+	ShaderModule fragShaderModule(LoadShader("Source/Shaders/gPass.frag"), vk::ShaderStageFlagBits::eFragment);
+	pipelineGPass = std::make_shared<Vulkan::Pipeline>(Vulkan::PipelineCreateInfo()
+		.Layout(**pipelineLayout)
+		.AddShader(vertShaderModule)
+		.AddShader(fragShaderModule)
+		.VertexInput<Data::Vertex>()
+		.InputAssembly(vk::PrimitiveTopology::eTriangleList)
+		.Rasterization(true) // TRUE
+		.Multisampling()
+		.ColorBlend(4)
+		.RenderPass(**renderPass, 0)
+		.DepthStencil(true, true, vk::CompareOp::eLess));
+}
+void DeferredPass::CreateDeferredLightPassPipeline()
+{
+	using namespace Vulkan;
+	ShaderModule vertShaderModule3(LoadShader("Source/Shaders/quad.vert"), vk::ShaderStageFlagBits::eVertex);
+	ShaderModule fragShaderModule3(LoadShader("Source/Shaders/lightPass.frag", { {"DEFERRED", ""} }), vk::ShaderStageFlagBits::eFragment);
+	pipelineLPass = std::make_shared<Pipeline>(PipelineCreateInfo()
+		.Layout(**pipelineLayout)
+		.AddShader(vertShaderModule3)
+		.AddShader(fragShaderModule3)
+		.VertexInputHardCoded()
+		.InputAssembly(vk::PrimitiveTopology::eTriangleList)
+		.Rasterization(false)
+		.Multisampling()
+		.ColorBlend(1)
+		.RenderPass(**renderPass, 1)
+		.DepthStencil(false));
+}
+void DeferredPass::CreateForwardPipeline()
+{
+	using namespace Vulkan;
+	ShaderModule vertShaderModule4(LoadShader("Source/Shaders/gPass.vert", {}, 1), vk::ShaderStageFlagBits::eVertex);
+	ShaderModule fragShaderModule4(LoadShader("Source/Shaders/lightPass.frag", { {"FORWARD", ""} }, 1), vk::ShaderStageFlagBits::eFragment);
+	pipelineForward = std::make_shared<Pipeline>(PipelineCreateInfo()
+		.Layout(**pipelineLayout)
+		.AddShader(vertShaderModule4)
+		.AddShader(fragShaderModule4)
+		.VertexInput<Data::Vertex>()
+		.InputAssembly(vk::PrimitiveTopology::eTriangleList)
+		.Rasterization(true)
+		.Multisampling(vk::SampleCountFlagBits::e1) // TODO dynamic??
+		.ColorBlend(1, true) // TODO enable 
+		.RenderPass(**renderPass, 2)
+		.DepthStencil(true, true, vk::CompareOp::eLess));
+}
+void DeferredPass::RefreshShaders()
+{
+	// if (IsShaderSourceChanged("Source/Shaders/bloom.comp", GetMacros())) {
+	// 	CreatePipeline();
+	// }
+	std::vector<std::shared_ptr<Vulkan::Pipeline>> pipelinesOld = { pipelineGPass, pipelineLPass, pipelineForward };
+	Commands::Instance().OnRenderFinished([pipelinesOld]() {});
+	CreateDeferredGPassPipeline();
+	CreateDeferredLightPassPipeline();
+	CreateForwardPipeline();
 }
 }

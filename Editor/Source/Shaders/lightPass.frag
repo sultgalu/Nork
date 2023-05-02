@@ -77,9 +77,10 @@ layout(std140, set = 2, binding = 5) uniform asd6
 }; 
 struct Materials
 {
+	vec4 albedo;
 	float roughness;
 	float metallic;
-	vec4 albedo;
+	float occlusion;
 };
 layout(set = 2, binding = 6) uniform sampler2DShadow[] shadowMaps;
 layout(set = 2, binding = 7) uniform samplerCubeShadow[] shadowMapsCube;
@@ -94,20 +95,22 @@ layout(push_constant) uniform constants
 layout(input_attachment_index = 0, set = 1, binding = 0) uniform subpassInput gPosition;
 layout(input_attachment_index = 1, set = 1, binding = 1) uniform subpassInput gBaseColor;
 layout(input_attachment_index = 2, set = 1, binding = 2) uniform subpassInput gNormal;
-layout(input_attachment_index = 3, set = 1, binding = 3) uniform subpassInput gMetallicRoughness;
+layout(input_attachment_index = 3, set = 1, binding = 3) uniform subpassInput gMetallicRoughnessOcclusion;
 #else // FORWARD
 struct Material
 {
 	uint baseColor;
 	uint normal;
 	uint metallicRoughness;
-	float roughnessFactor;
+	uint occlusion;
 
 	vec4 baseColorFactor;
+
+	float roughnessFactor;
 	float metallicFactor;
 	float alphaCutoff;
 
-  float padding[2];
+  float padding[1];
 };
 
 layout(location = 0) in vec3 worldPos;
@@ -145,9 +148,10 @@ void main()
 	vec3 normal = subpassLoad(gNormal).rgb;
 
 	material.albedo = vec4(subpassLoad(gBaseColor).rgb, 1.0);
-	vec2 metallicRoughness = subpassLoad(gMetallicRoughness).rg;
-	material.roughness = metallicRoughness.r;
-	material.metallic = metallicRoughness.g;
+	vec3 metallicRoughnessOcclusion = subpassLoad(gMetallicRoughnessOcclusion).rgb;
+	material.roughness = metallicRoughnessOcclusion.r;
+	material.metallic = metallicRoughnessOcclusion.g;
+	material.occlusion = metallicRoughnessOcclusion.b;
 #else // FORWARD
 	material.albedo = texture(textures[material_.baseColor], texCoord).rgba;
 	material.albedo = material.albedo * material_.baseColorFactor;
@@ -159,6 +163,7 @@ void main()
 	vec3 normal = texture(textures[material_.normal], texCoord).rgb;
 	normal = normal * 2.0f - 1.0f; // [0;1] -> [-1;1]
 	normal = normalize(TBN * normal); // transforming from tangent-space -> world space
+	material.occlusion = texture(textures[material_.occlusion], texCoord).r;
 #endif // DEFERRED
 
 	vec3 viewDir = normalize(worldPos - PushConstants.viewPos);
@@ -196,17 +201,12 @@ void main()
 	{
 		uint li = pointIdxs[i / 4][i % 4];
 		float distance = length(pLs[li].position - worldPos);
-		float attenuation = 1.0 / (distance * distance); // inverse-square law. More physically correct but gives less manual control
+		float attenuation = 1.0 / (distance * distance);
 		vec3 lightDir = normalize(worldPos - pLs[li].position);
 		Lo += pbr(lightDir, pLs[li].color.rgb, material, worldPos, normal, viewDir, attenuation);
 	}
-	/*for (uint i = 0; i < 1; i++)
-	{
-		uint li = i;
-		Lo += pbr(normalize(dLs[li].direction), dLs[li].color.rgb, material, worldPos, normal, viewDir, 1.0f);
-	}*/
-	vec3 ambient = vec3(0.03) * material.albedo.rgb; // *ao
-	vec3 color = ambient + Lo;
+	vec3 ambient = vec3(0.03) * material.albedo.rgb * material.occlusion;
+	vec3 color = (ambient + Lo);
 	#ifdef DEFERRED
 	fColor = vec4(color, 1.0);
 	#else // FORWARD

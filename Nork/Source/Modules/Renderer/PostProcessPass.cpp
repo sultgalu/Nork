@@ -410,7 +410,7 @@ void PostProcessPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t i
 }
 void PostProcessPass::RefreshShaders()
 {
-	if (IsShaderSourceChanged("Source/Shaders/bloom.comp", GetMacros())) {
+	if (IsShaderSourceChanged("Source/Shaders/postProcess.comp", GetMacros())) {
 		auto pipelineOld = pipeline;
 		Commands::Instance().OnRenderFinished([pipelineOld]() {});
 		CreatePipeline();

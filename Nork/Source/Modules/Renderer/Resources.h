@@ -40,7 +40,7 @@ public:
 		using ImageDescriptorArray::AddImage;
 	public:
 		std::shared_ptr<Vulkan::Sampler> defaultSampler;
-		std::shared_ptr<Texture> diffuse, normal, metallicRoughness; // default textures
+		std::shared_ptr<Texture> diffuse, normal, metallicRoughness, occlusion; // default textures
 	};
 	uint32_t DynamicOffset(const Buffer& buffer)
 	{

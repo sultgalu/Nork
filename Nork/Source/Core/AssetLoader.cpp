@@ -44,6 +44,9 @@ static void ParseMaterial(Renderer::Material& material, const Renderer::GLTF::Ma
 	if (mat.normalTexture.Validate()) {
 		setTexture(mat.normalTexture.index, Renderer::TextureMap::Normal);
 	}
+	if (mat.occlusionTexture.Validate()) {
+		setTexture(mat.occlusionTexture.index, Renderer::TextureMap::Occlusion);
+	}
 }
 
 AssetLoader::AssetLoader() {
@@ -167,6 +170,7 @@ void AssetLoader::SaveModel(const std::shared_ptr<Components::Model>& model, con
 					tryAddTex(BaseColor);
 					tryAddTex(MetallicRoughness);
 					tryAddTex(Normal);
+					tryAddTex(Occlusion);
 					builder.AddMaterial(*primitive.material, imageUris);
 				}
 				builder.AddPrimitive(*primitive.mesh, path.parent_path().string(), materials[primitive.material]);

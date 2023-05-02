@@ -5,7 +5,7 @@ namespace Nork::Renderer {
 	std::array<std::shared_ptr<Texture>, std::to_underlying(TextureMap::COUNT)> GetDefaultTextureMaps()
 	{
 		auto& textures = Resources::Instance().Textures();
-		return { textures.diffuse, textures.normal, textures .metallicRoughness };
+		return { textures.diffuse, textures.normal, textures.metallicRoughness, textures.occlusion };
 	}
 	Material::Material(std::shared_ptr<BufferElement<Data::Material>> deviceData)
 		: DeviceDataProxy<Data::Material>(deviceData)

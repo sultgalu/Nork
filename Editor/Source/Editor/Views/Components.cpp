@@ -311,17 +311,17 @@ template<> bool SceneNodeView::ShowComponent(Components::Drawable& dr)
 							}
 						}
 					};
-					if (ImGui::BeginTabItem("Base Color"))
-					{
+					if (ImGui::BeginTabItem("Base Color")){
 						displayTex(Renderer::TextureMap::BaseColor);
 					}
-					if (ImGui::BeginTabItem("Normal"))
-					{
+					if (ImGui::BeginTabItem("Normal")){
 						displayTex(Renderer::TextureMap::Normal);
 					}
-					if (ImGui::BeginTabItem("Metallic Roughness"))
-					{
+					if (ImGui::BeginTabItem("Metallic Roughness")){
 						displayTex(Renderer::TextureMap::MetallicRoughness);
+					}
+					if (ImGui::BeginTabItem("Occusion")){
+						displayTex(Renderer::TextureMap::Occlusion);
 					}
 					ImGui::EndTabBar();
 				}
