@@ -38,6 +38,7 @@ static std::unique_ptr<Settings> Create() {
 		.inlineExposure = false
 	};
 	settings->shadows = true;
+	settings->deferred = false;
 
 	return settings;
 }

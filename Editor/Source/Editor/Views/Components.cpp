@@ -271,7 +271,11 @@ template<> bool SceneNodeView::ShowComponent(Components::Drawable& dr)
 				auto& subMesh = node.mesh->subMeshes[subMeshIdx];
 
 				auto material = subMesh.material->Data();
-				ImGui::ColorEdit3("Base Color Factor", &material->baseColorFactor.r, ImGuiColorEditFlags_DefaultOptions_ | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
+				bool blend = subMesh.material->shadingMode == Renderer::ShadingMode::Blend;
+				if (ImGui::Checkbox("Blend", &blend)) {
+					subMesh.material->shadingMode = blend ? Renderer::ShadingMode::Blend : Renderer::ShadingMode::Default;
+				}
+				ImGui::ColorEdit4("Base Color Factor", &material->baseColorFactor.r, ImGuiColorEditFlags_DefaultOptions_ | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
 				ImGui::SliderFloat("Roughness Factor", &material->roughnessFactor, 0, 1);
 				ImGui::SliderFloat("Metallic Factor", &material->metallicFactor, 0, 1);
 

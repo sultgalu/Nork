@@ -203,6 +203,7 @@
   <ItemGroup>
     <ClCompile Include="Source\Modules\Renderer\PostProcessPass.cpp" />
     <ClCompile Include="Source\Modules\Renderer\RendererSettings.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\Vulkan\PipelineVulkan.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Vulkan\SwapChain.cpp" />
     <ClCompile Include="Source\Scripting\ScriptSystem.cpp" />
     <ClCompile Include="Source\Core\ColliderPass.cpp" />

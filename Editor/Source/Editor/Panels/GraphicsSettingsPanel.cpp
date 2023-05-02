@@ -11,6 +11,10 @@ namespace Nork::Editor {
 	{
 		Renderer::Settings& settings = Renderer::Settings::Instance();
 		if (ImGui::TreeNodeEx("Renderer", ImGuiTreeNodeFlags_DefaultOpen)) {
+			bool deferred = *settings.deferred;
+			if (ImGui::Checkbox("Deferred", &deferred)) {
+				settings.deferred = deferred;
+			}
 			bool shadows = *settings.shadows;
 			if (ImGui::Checkbox("Shadows", &shadows)) {
 				settings.shadows = shadows;

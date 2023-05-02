@@ -1,6 +1,9 @@
 #version 450
 #extension GL_EXT_nonuniform_qualifier: require // required only if we index samplers non-uniformly
 
+//#define DEFERRED
+//#define FORWARD
+
 layout(location = 0) out vec4 fColor;
 
 // --------- GLOBAL ----------
@@ -76,7 +79,7 @@ struct Materials
 {
 	float roughness;
 	float metallic;
-	vec3 albedo;
+	vec4 albedo;
 };
 layout(set = 2, binding = 6) uniform sampler2DShadow[] shadowMaps;
 layout(set = 2, binding = 7) uniform samplerCubeShadow[] shadowMapsCube;
@@ -84,12 +87,36 @@ layout(set = 2, binding = 7) uniform samplerCubeShadow[] shadowMapsCube;
 layout(push_constant) uniform constants
 {
 	layout(offset = 64) vec3 viewPos;
+	float blend;
 } PushConstants;
 
+#ifdef DEFERRED
 layout(input_attachment_index = 0, set = 1, binding = 0) uniform subpassInput gPosition;
 layout(input_attachment_index = 1, set = 1, binding = 1) uniform subpassInput gBaseColor;
 layout(input_attachment_index = 2, set = 1, binding = 2) uniform subpassInput gNormal;
 layout(input_attachment_index = 3, set = 1, binding = 3) uniform subpassInput gMetallicRoughness;
+#else // FORWARD
+struct Material
+{
+	uint baseColor;
+	uint normal;
+	uint metallicRoughness;
+	float roughnessFactor;
+
+	vec4 baseColorFactor;
+	float metallicFactor;
+	float alphaCutoff;
+
+  float padding[2];
+};
+
+layout(location = 0) in vec3 worldPos;
+layout(location = 1) in vec2 texCoord;
+layout(location = 2) in mat3 TBN;
+layout(location = 5) nonuniformEXT flat in Material material_;
+
+layout(set = 0, binding = 3) uniform sampler2D[] textures;
+#endif // DEFERRED
 
 vec3 dLightShadow(DirLight light, Materials material, vec3 normal, vec3 viewDir, DirShadow shadow, vec3 worldPos);
 
@@ -109,21 +136,34 @@ vec3 F0 = vec3(0.04);
 
 void main()
 {
+	Materials material;
+#ifdef DEFERRED
 	vec4 pos = subpassLoad(gPosition).rgba;
 	if (pos.a == 0.0f)
 		discard;
 	vec3 worldPos = pos.rgb;
 	vec3 normal = subpassLoad(gNormal).rgb;
 
-	Materials material;
-	material.albedo = subpassLoad(gBaseColor).rgb;
+	material.albedo = vec4(subpassLoad(gBaseColor).rgb, 1.0);
 	vec2 metallicRoughness = subpassLoad(gMetallicRoughness).rg;
 	material.roughness = metallicRoughness.r;
 	material.metallic = metallicRoughness.g;
+#else // FORWARD
+	material.albedo = texture(textures[material_.baseColor], texCoord).rgba;
+	material.albedo = material.albedo * material_.baseColorFactor;
+	if (material.albedo.a < material_.alphaCutoff)
+		discard;
+	vec2 metallicRoughness = texture(textures[material_.metallicRoughness], texCoord).gb * vec2(material_.roughnessFactor, material_.metallicFactor);
+	material.roughness = metallicRoughness.r;
+	material.metallic = metallicRoughness.g;
+	vec3 normal = texture(textures[material_.normal], texCoord).rgb;
+	normal = normal * 2.0f - 1.0f; // [0;1] -> [-1;1]
+	normal = normalize(TBN * normal); // transforming from tangent-space -> world space
+#endif // DEFERRED
 
 	vec3 viewDir = normalize(worldPos - PushConstants.viewPos);
 
-	F0 = mix(F0, material.albedo, material.metallic);
+	F0 = mix(F0, material.albedo.rgb, material.metallic);
 
 	vec3 Lo = vec3(0.0);
 	for (uint i = uint(0); i < dShadowCount; i++)
@@ -165,9 +205,13 @@ void main()
 		uint li = i;
 		Lo += pbr(normalize(dLs[li].direction), dLs[li].color.rgb, material, worldPos, normal, viewDir, 1.0f);
 	}*/
-	vec3 ambient = vec3(0.03) * material.albedo; // *ao
+	vec3 ambient = vec3(0.03) * material.albedo.rgb; // *ao
 	vec3 color = ambient + Lo;
-	fColor = vec4(color, 1.0f);
+	#ifdef DEFERRED
+	fColor = vec4(color, 1.0);
+	#else // FORWARD
+	fColor = vec4(color, PushConstants.blend == 0.0 ? 1.0 : material.albedo.a);
+	#endif // DEFERRED
 	// fColor = subpassLoad(gBaseColor);
 }
 
@@ -212,7 +256,7 @@ vec3 pbr(vec3 lightDir, vec3 color, Materials material, vec3 worldPos, vec3 norm
 	// translate ...
 	float roughness = material.roughness;
 	float metallic = material.metallic;
-	vec3 albedo = material.albedo;
+	vec3 albedo = material.albedo.rgb;
 	vec3 N = normal;
 	vec3 V = -viewDir;
 

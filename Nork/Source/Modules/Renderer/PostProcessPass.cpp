@@ -378,7 +378,7 @@ void PostProcessPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t i
 				.setDstStageMask(vk::PipelineStageFlagBits2::eComputeShader)
 				.setSrcAccessMask(vk::AccessFlagBits2::eMemoryWrite)
 				.setDstAccessMask(vk::AccessFlagBits2::eMemoryRead);
-			cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barrier2).setDependencyFlags(vk::DependencyFlagBits::eByRegion));
+			cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barrier2));
 		}
 	}
 	for (size_t i = 0; i < iter; i++)

@@ -11,6 +11,10 @@
 
 namespace Nork::Renderer {
 
+struct DrawCounts {
+	uint32_t defaults = 0;
+	uint32_t blend = 0;
+};
 struct DrawParams
 {
 	uint32_t mmIdx;
@@ -88,7 +92,7 @@ public:
 
 	glm::mat4 vp; // should be put somewhere else
 	glm::vec3 viewPos; // same
-	uint32_t drawCommandCount;
+	DrawCounts drawCommandCount;
 
 	uint32_t currentFrame = 0;
 	static constexpr auto framesInFlight = 2;

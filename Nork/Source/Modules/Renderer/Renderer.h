@@ -8,7 +8,7 @@ namespace Nork::Renderer {
 struct Client
 {
 	// return the number of elements written to 'commands'
-	virtual uint32_t FillDrawBuffers(std::span<DrawParams> params,
+	virtual DrawCounts FillDrawBuffers(std::span<DrawParams> params,
 		std::span<vk::DrawIndexedIndirectCommand> commands) = 0;
 	virtual void FillLightBuffers(std::span<uint32_t> dIdxs, std::span<uint32_t> pIdxs,
 		uint32_t& dlCount, uint32_t& dsCount, uint32_t& plCount, uint32_t& psCount) = 0;

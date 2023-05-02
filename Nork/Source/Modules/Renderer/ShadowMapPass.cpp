@@ -139,7 +139,8 @@ void ShadowMapPass::RecordCmdDirectional(Vulkan::CommandBuffer& cmd, uint32_t im
 		cmd.pushConstants<glm::mat4>(**pipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, shadowMap->vp);
 		cmd.drawIndexedIndirect(**Resources::Instance().drawCommands->Underlying(),
 			Resources::Instance().DynamicOffset(*Resources::Instance().drawCommands),
-			Resources::Instance().drawCommandCount, sizeof(vk::DrawIndexedIndirectCommand));
+			Resources::Instance().drawCommandCount.defaults + Resources::Instance().drawCommandCount.blend,
+			sizeof(vk::DrawIndexedIndirectCommand));
 
 		cmd.endRenderPass();
 	}
@@ -165,7 +166,8 @@ void ShadowMapPass::RecordCmdPoint(Vulkan::CommandBuffer& cmd, uint32_t imageInd
 		cmd.pushConstants<glm::vec3>(**pipelineLayoutCube, vk::ShaderStageFlagBits::eFragment, 16, shadowMap->position);
 		cmd.drawIndexedIndirect(**Resources::Instance().drawCommands->Underlying(),
 			Resources::Instance().DynamicOffset(*Resources::Instance().drawCommands),
-			Resources::Instance().drawCommandCount, sizeof(vk::DrawIndexedIndirectCommand));
+			Resources::Instance().drawCommandCount.defaults + Resources::Instance().drawCommandCount.blend,
+			sizeof(vk::DrawIndexedIndirectCommand));
 
 		cmd.endRenderPass();
 		geomPush++;

@@ -7,11 +7,11 @@ struct LoadShaderResult {
 	bool hashMatched = false;
 };
 
-static fs::path BinaryShaderPath(const fs::path& sourceCodePath) {
-	return fs::path(sourceCodePath).replace_extension(sourceCodePath.extension().string() + "_bin");
+static fs::path BinaryShaderPath(const fs::path& sourceCodePath, int tail) {
+	return fs::path(sourceCodePath).replace_extension(sourceCodePath.extension().string() + "_bin" + (tail == -1 ? "" : std::to_string(tail)));
 }
 
-static LoadShaderResult LoadShader_(const fs::path& srcPath, std::vector<std::array<std::string, 2>> macros) {
+static LoadShaderResult LoadShader_(const fs::path& srcPath, std::vector<std::array<std::string, 2>> macros, int tail) {
 	LoadShaderResult result;
 
 	result.sourceCode = FileUtils::ReadAsString(srcPath.string());
@@ -23,7 +23,7 @@ static LoadShaderResult LoadShader_(const fs::path& srcPath, std::vector<std::ar
 	dataToBeHashed << result.sourceCode;
 	result.hash = std::hash<std::string>()(dataToBeHashed.str());
 
-	fs::path binPath = BinaryShaderPath(srcPath);
+	fs::path binPath = BinaryShaderPath(srcPath, tail);
 	if (fs::exists(binPath) && fs::file_size(binPath) >= sizeof(size_t)) {
 		auto savedHash = FileUtils::ReadBinary<size_t>(binPath, sizeof(size_t)).front();
 		if (result.hash == savedHash) {
@@ -34,17 +34,17 @@ static LoadShaderResult LoadShader_(const fs::path& srcPath, std::vector<std::ar
 	return result;
 }
 
-bool RenderPass::IsShaderSourceChanged(const fs::path& srcPath, std::vector<std::array<std::string, 2>> macros)
+bool RenderPass::IsShaderSourceChanged(const fs::path& srcPath, std::vector<std::array<std::string, 2>> macros, int binaryPathTail)
 {
-	return !LoadShader_(srcPath, macros).hashMatched;
+	return !LoadShader_(srcPath, macros, binaryPathTail).hashMatched;
 }
-std::vector<uint32_t> RenderPass::LoadShader(const fs::path& srcPath, std::vector<std::array<std::string, 2>> macros)
+std::vector<uint32_t> RenderPass::LoadShader(const fs::path& srcPath, std::vector<std::array<std::string, 2>> macros, int binaryPathTail)
 {
 	using namespace Vulkan;
-	LoadShaderResult loadShaderResult = LoadShader_(srcPath, macros);
+	LoadShaderResult loadShaderResult = LoadShader_(srcPath, macros, binaryPathTail);
 
 	if (loadShaderResult.hashMatched) {
-		auto binPath = BinaryShaderPath(srcPath);
+		auto binPath = BinaryShaderPath(srcPath, binaryPathTail);
 		return FileUtils::ReadBinary<uint32_t>(binPath, fs::file_size(binPath) - sizeof(size_t), sizeof(size_t));
 	}
 
@@ -67,7 +67,7 @@ std::vector<uint32_t> RenderPass::LoadShader(const fs::path& srcPath, std::vecto
 	std::vector<std::byte> fileData(sizeof(size_t) + data.size() * sizeof(uint32_t));
 	std::memcpy(&fileData[0], &loadShaderResult.hash, sizeof(size_t));
 	std::memcpy(&fileData[sizeof(size_t)], data.data(), data.size() * sizeof(uint32_t));
-	FileUtils::WriteBinary(fileData, BinaryShaderPath(srcPath));
+	FileUtils::WriteBinary(fileData, BinaryShaderPath(srcPath, binaryPathTail));
 
 	return data;
 }

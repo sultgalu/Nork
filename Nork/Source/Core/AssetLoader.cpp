@@ -22,8 +22,12 @@ static void ParseMaterial(Renderer::Material& material, const Renderer::GLTF::Ma
 	data->baseColorFactor = mat.pbrMetallicRoughness.baseColorFactor;
 	data->roughnessFactor = mat.pbrMetallicRoughness.roughnessFactor;
 	data->metallicFactor = mat.pbrMetallicRoughness.metallicFactor;
-	if (mat.alphaMode == mat.MASK)
+	if (mat.alphaMode == mat.MASK) {
 		data->alphaCutoff = mat.alphaCutoff;
+	}
+	else if (mat.alphaMode == mat.BLEND) {
+		material.shadingMode = Renderer::ShadingMode::Blend;
+	}
 
 	auto gltfFolderUri = AssetLoader::Instance().AbsolutePathToUri(gltfFolder);
 	auto setTexture = [&](int idx, Renderer::TextureMap type) {

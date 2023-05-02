@@ -31,45 +31,9 @@ namespace Nork::Renderer::Vulkan {
     {
     public:
         using Self = PipelineCreateInfo;
-        PipelineCreateInfo()
-        {
-            data->dynamicStates = {
-                vk::DynamicState::eViewport,
-                vk::DynamicState::eScissor
-            };
-
-            data->dynamicState.setDynamicStates(data->dynamicStates);
-            data->viewportState.viewportCount = 1;
-            data->viewportState.scissorCount = 1;
-
-            data->colorBlendState.logicOpEnable = VK_FALSE;
-            data->colorBlendState.logicOp = vk::LogicOp::eCopy; // Optional
-            data->colorBlendState.blendConstants = std::array {0.f, 0.f, 0.f, 0.f}; // Optional
-
-            this->pVertexInputState = &data->vertexInput;
-            this->pInputAssemblyState = &data->inputAssembly;
-            this->pViewportState = &data->viewportState;
-            this->pRasterizationState = &data->rasterization;
-            this->pMultisampleState = &data->multisampling;
-            this->pDepthStencilState = &data->depthStencil;
-            this->pDynamicState = &data->dynamicState;
-            this->pColorBlendState = &data->colorBlendState;
-            UpdateArrayPointers();
-
-            this->basePipelineHandle = nullptr; // Optional, VK_PIPELINE_CREATE_DERIVATIVE_BIT = true
-            this->basePipelineIndex = -1; // Optional, VK_PIPELINE_CREATE_DERIVATIVE_BIT = true
-        }
-        void UpdateArrayPointers()
-        {
-            this->setStages(data->shaderStages);
-            data->colorBlendState.setAttachments(data->colorBlendAttachments);
-        }
-        Self& AddShader(const ShaderModule& shad, const char* entry = "main")
-        {
-            data->shaderStages.push_back(vk::PipelineShaderStageCreateInfo({}, shad.stage, *shad, entry));
-            UpdateArrayPointers();
-            return *this;
-        }
+        PipelineCreateInfo();
+        void UpdateArrayPointers();
+        Self& AddShader(const ShaderModule& shad, const char* entry = "main");
         template<VertexConcept T>
         Self& VertexInput()
         {
@@ -79,94 +43,16 @@ namespace Nork::Renderer::Vulkan {
             data->vertexInput.setVertexBindingDescriptions(data->vertexBindings);
             return *this;
         }
-        Self& VertexInputHardCoded()
-        {
-            data->vertexInput.setVertexAttributeDescriptions({});
-            data->vertexInput.setVertexBindingDescriptions({});
-            return *this;
-        }
-        Self& InputAssembly(vk::PrimitiveTopology topology = vk::PrimitiveTopology::eTriangleList)
-        {
-            data->inputAssembly.topology = topology;
-            data->inputAssembly.primitiveRestartEnable = false;
-            return *this;
-        }
-        Self& Rasterization(bool cullFace, vk::FrontFace frontFace = vk::FrontFace::eCounterClockwise)
-        {
-            data->rasterization.depthClampEnable = false; // clamp frags outside of near/far plane, eg. for shadowmaps 
-            data->rasterization.rasterizerDiscardEnable = false; // disables output to fragment shader
-            data->rasterization.polygonMode = vk::PolygonMode::eFill;
-            data->rasterization.lineWidth = 1.0f;
-            data->rasterization.cullMode = cullFace ? vk::CullModeFlagBits::eBack : vk::CullModeFlagBits::eNone;
-            data->rasterization.frontFace = frontFace;
-            data->rasterization.depthBiasEnable = false;
-            data->rasterization.depthBiasConstantFactor = 0.0f; // Optional
-            data->rasterization.depthBiasClamp = 0.0f; // Optional
-            data->rasterization.depthBiasSlopeFactor = 0.0f; // Optional
-            return *this;
-        }
-        Self& Multisampling()
-        {
-            data->multisampling.sampleShadingEnable = false;
-            data->multisampling.rasterizationSamples = vk::SampleCountFlagBits::e1;
-            data->multisampling.minSampleShading = 1.0f; // Optional
-            data->multisampling.pSampleMask = nullptr; // Optional
-            data->multisampling.alphaToCoverageEnable = false; // Optional
-            data->multisampling.alphaToOneEnable = false; // Optional
-            return *this;
-        }
-        Self& ColorBlend(uint32_t attachmentCount)
-        {
-            vk::PipelineColorBlendAttachmentState colorBlendAttachment;
-            {
-                using enum vk::ColorComponentFlagBits;
-                colorBlendAttachment.colorWriteMask = eR | eG | eB | eA;
-            }
-            colorBlendAttachment.blendEnable = false;
-            colorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eOne; // Optional
-            colorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eZero; // Optional
-            colorBlendAttachment.colorBlendOp = vk::BlendOp::eAdd; // Optional
-            colorBlendAttachment.srcAlphaBlendFactor = vk::BlendFactor::eOne; // Optional
-            colorBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eZero; // Optional
-            colorBlendAttachment.alphaBlendOp = vk::BlendOp::eAdd; // Optional
-            data->colorBlendAttachments = std::vector<vk::PipelineColorBlendAttachmentState>(attachmentCount, colorBlendAttachment);
-
-            UpdateArrayPointers();
-            return *this;
-        }
-        Self& DepthStencil(bool depthTest, vk::CompareOp op = vk::CompareOp::eLess)
-        {
-            return DepthStencil(depthTest, depthTest, op);
-        }
-        Self& DepthStencil(bool depthTest, bool depthWrite, vk::CompareOp op = vk::CompareOp::eLess)
-        {
-            data->depthStencil.depthTestEnable = depthTest;
-            data->depthStencil.depthWriteEnable = depthWrite;
-            data->depthStencil.depthCompareOp = op;
-            data->depthStencil.depthBoundsTestEnable = false;
-            data->depthStencil.minDepthBounds = 0.0f; // Optional
-            data->depthStencil.maxDepthBounds = 1.0f; // Optional
-            data->depthStencil.stencilTestEnable = false;
-            data->depthStencil.front = vk::StencilOpState(); // Optional
-            data->depthStencil.back = vk::StencilOpState(); // Optional
-            return *this;
-        }
-        Self& RenderPass(vk::RenderPass renderPass, uint32_t subpass)
-        {
-            this->renderPass = renderPass;
-            this->subpass = subpass;
-            return *this;
-        }
-        Self& Layout(vk::PipelineLayout layout)
-        {
-            this->layout = layout;
-            return *this;
-        }
-        Self& AdditionalDynamicStates(const std::vector<vk::DynamicState>& val) {
-            data->dynamicStates.insert(data->dynamicStates.end(), val.begin(), val.end());
-            data->dynamicState.setDynamicStates(data->dynamicStates);
-            return *this;
-        }
+        Self& VertexInputHardCoded();
+        Self& InputAssembly(vk::PrimitiveTopology topology = vk::PrimitiveTopology::eTriangleList);
+        Self& Rasterization(bool cullFace, vk::FrontFace frontFace = vk::FrontFace::eCounterClockwise);
+        Self& Multisampling(vk::SampleCountFlagBits count = vk::SampleCountFlagBits::e1);
+        Self& ColorBlend(uint32_t attachmentCount, bool blend = false);
+        Self& DepthStencil(bool depthTest, vk::CompareOp op = vk::CompareOp::eLess);
+        Self& DepthStencil(bool depthTest, bool depthWrite, vk::CompareOp op = vk::CompareOp::eLess);
+        Self& RenderPass(vk::RenderPass renderPass, uint32_t subpass);
+        Self& Layout(vk::PipelineLayout layout);
+        Self& AdditionalDynamicStates(const std::vector<vk::DynamicState>& val);
     public:
         struct Data
         {

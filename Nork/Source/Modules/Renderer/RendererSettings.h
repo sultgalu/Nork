@@ -34,6 +34,7 @@ public:
 	LiveData<Bloom> bloom;
 	LiveData<PostProcess> postProcess;
 	LiveData<bool> shadows;
+	LiveData<bool> deferred;
 
 	static Settings& Instance();
 };

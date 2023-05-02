@@ -157,11 +157,15 @@ GLTFBuilder& GLTFBuilder::AddMaterial(const Material& material, std::vector<std:
 {
 	GLTF::Material mat;
 	mat.name = name;
-	mat.pbrMetallicRoughness.baseColorFactor = glm::vec4(material->baseColorFactor, 1.0f);
+	mat.pbrMetallicRoughness.baseColorFactor = material->baseColorFactor;
 	mat.pbrMetallicRoughness.roughnessFactor = material->roughnessFactor;
+	mat.pbrMetallicRoughness.metallicFactor = material->metallicFactor;
 	if (material->alphaCutoff != -1) {
 		mat.alphaMode = mat.MASK;
 		mat.alphaCutoff = material->alphaCutoff;
+	}
+	if (material.shadingMode == ShadingMode::Blend) {
+		mat.alphaMode = mat.BLEND;
 	}
 
 	for (auto [mapType, uri] : imageUris)

@@ -294,17 +294,22 @@ namespace Nork::Renderer::GLTF {
 
 		JsonObject ToJson() const override
 		{
-			auto json = JsonObject()
-				.Property("baseColorFactor", JsonArray().Elements(&baseColorFactor.r, 4))
-				.Property("metallicFactor", metallicFactor)
-				.Property("roughnessFactor", roughnessFactor)
-				.Property("extras", extras);
-
-			if (baseColorTexture.Validate())
+			auto json = JsonObject();
+			if (baseColorFactor != glm::vec4(1)) {
+				json.Property("baseColorFactor", JsonArray().Elements(&baseColorFactor.r, 4));
+			}
+			if (metallicFactor != 1.0f) {
+				json.Property("metallicFactor", metallicFactor);
+			}
+			if (roughnessFactor != 1.0f) {
+				json.Property("roughnessFactor", roughnessFactor);
+			}
+			if (baseColorTexture.Validate()) {
 				json.Property("baseColorTexture", baseColorTexture.ToJson());
-			if (metallicRoughnessTexture.Validate())
+			}
+			if (metallicRoughnessTexture.Validate()) {
 				json.Property("metallicRoughnessTexture", metallicRoughnessTexture.ToJson());
-
+			}
 			return json;
 		}
 		virtual void FromJson(const JsonObject& json) override

@@ -9,6 +9,9 @@ namespace Nork::Renderer {
 	{
 		BaseColor = 0, Normal, MetallicRoughness, COUNT
 	};
+	enum class ShadingMode {
+		Default, Blend
+	};
 	struct Material: DeviceDataProxy<Data::Material>
 	{
 		Material(std::shared_ptr<BufferElement<Data::Material>>);
@@ -39,6 +42,7 @@ namespace Nork::Renderer {
 		void SetDefaultTexture(TextureMap type);
 	public:
 		std::array<std::shared_ptr<Texture>, std::to_underlying(TextureMap::COUNT)> textureMaps;
+		ShadingMode shadingMode = ShadingMode::Default;
 	};
 
 }

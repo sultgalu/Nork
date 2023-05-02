@@ -123,12 +123,14 @@ struct Client : Renderer::Client
 	void OnCommands() override
 	{
 	}
-	uint32_t FillDrawBuffers(std::span<Renderer::DrawParams> params,
+	Renderer::DrawCounts FillDrawBuffers(std::span<Renderer::DrawParams> params,
 		std::span<vk::DrawIndexedIndirectCommand> commands) override
 	{
+		Renderer::DrawCounts drawCounts;
+
 		auto group = Registry().group<Components::Drawable>(entt::get<Components::Transform>);
 		if (group.size() == 0)
-			return 0;
+			return drawCounts;
 		if (group.size() > params.size())
 			std::unreachable();
 		std::vector<Renderer::Object> objects;
@@ -158,7 +160,9 @@ struct Client : Renderer::Client
 
 		std::sort(objects.begin(), objects.end(), [](const Renderer::Object& left, const Renderer::Object& right)
 		{
-			return left.mesh->vertices->offset < right.mesh->vertices->offset;
+			if (left.material->shadingMode == right.material->shadingMode)
+				return left.mesh->vertices->offset < right.mesh->vertices->offset;
+			return left.material->shadingMode < right.material->shadingMode;
 		});
 
 		uint32_t commandCount = 0;
@@ -185,6 +189,7 @@ struct Client : Renderer::Client
 				commands[commandCount].instanceCount = 1;
 				lastCommand = &commands[commandCount];
 				commandCount++;
+				obj.material->shadingMode == Renderer::ShadingMode::Default ? drawCounts.defaults++ : drawCounts.blend++;
 			}
 			instanceCount++;
 		}
@@ -192,7 +197,7 @@ struct Client : Renderer::Client
 		// { // padding up to a uvec4
 		// 	modelMatIdxs.push_back({ 0, 0 });
 		// }
-		return commandCount;
+		return drawCounts;
 	}
 	void FillLightBuffers(std::span<uint32_t> dIdxs, std::span<uint32_t> pIdxs,
 		uint32_t& dlCount, uint32_t& dsCount, uint32_t& plCount, uint32_t& psCount) override

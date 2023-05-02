@@ -72,6 +72,8 @@ std::shared_ptr<Renderer::Material> GLTFReader::CreateMaterial(const Renderer::G
 	data->metallicFactor = mat.pbrMetallicRoughness.metallicFactor;
 	if (mat.alphaMode == mat.MASK)
 		data->alphaCutoff = mat.alphaCutoff;
+	else if (mat.alphaMode == mat.BLEND)
+		material->shadingMode = Renderer::ShadingMode::Blend;
 	// material->specularExponent = mat.pbrMetallicRoughness.extras.Get<float>("specularExponent"); has official extension
 	if (mat.pbrMetallicRoughness.baseColorTexture.Validate())
 		material->SetTextureMap(images[gltf.textures[mat.pbrMetallicRoughness.baseColorTexture.index].source], Renderer::TextureMap::BaseColor);

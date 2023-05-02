@@ -11,8 +11,8 @@ class RenderPass
 {
 public:
 	virtual void RefreshShaders() {}
-	bool IsShaderSourceChanged(const fs::path& srcPath, std::vector<std::array<std::string, 2>> macros);
-	std::vector<uint32_t> LoadShader(const fs::path& srcPath, std::vector<std::array<std::string, 2>> macros = {});
+	bool IsShaderSourceChanged(const fs::path& srcPath, std::vector<std::array<std::string, 2>> macros, int binaryPathTail = -1);
+	std::vector<uint32_t> LoadShader(const fs::path& srcPath, std::vector<std::array<std::string, 2>> macros = {}, int binaryPathTail = -1);
 	void BeginRenderPass(vk::RenderPass renderPass, Vulkan::Framebuffer& fb, Vulkan::CommandBuffer& cmd);
 	vk::Viewport ViewportFull(const Vulkan::Framebuffer& fb)
 	{

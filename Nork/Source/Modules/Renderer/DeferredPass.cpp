@@ -67,7 +67,7 @@ void DeferredPass::CreateGraphicsPipeline()
 	vpPush.stageFlags = vk::ShaderStageFlagBits::eVertex;
 	vk::PushConstantRange viewPosPush; // lpass
 	viewPosPush.offset = vpPush.size;
-	viewPosPush.size = sizeof(glm::vec3);
+	viewPosPush.size = sizeof(glm::vec3) + sizeof(float);
 	viewPosPush.stageFlags = vk::ShaderStageFlagBits::eFragment;
 	pipelineLayout = std::make_shared<PipelineLayout>(
 		PipelineLayoutCreateInfo({ **Resources::Instance().descriptorSetLayout,
@@ -85,7 +85,7 @@ void DeferredPass::CreateGraphicsPipeline()
 		.DepthStencil(true, true, vk::CompareOp::eLess));
 
 	ShaderModule vertShaderModule3(LoadShader("Source/Shaders/quad.vert"), vk::ShaderStageFlagBits::eVertex);
-	ShaderModule fragShaderModule3(LoadShader("Source/Shaders/lightPass.frag"), vk::ShaderStageFlagBits::eFragment);
+	ShaderModule fragShaderModule3(LoadShader("Source/Shaders/lightPass.frag", { {"DEFERRED", ""} }), vk::ShaderStageFlagBits::eFragment);
 	pipelineLPass = std::make_shared<Pipeline>(PipelineCreateInfo()
 		.Layout(**pipelineLayout)
 		.AddShader(vertShaderModule3)
@@ -97,6 +97,20 @@ void DeferredPass::CreateGraphicsPipeline()
 		.ColorBlend(1)
 		.RenderPass(**renderPass, 1)
 		.DepthStencil(false));
+
+	ShaderModule vertShaderModule4(LoadShader("Source/Shaders/gPass.vert", {}, 1), vk::ShaderStageFlagBits::eVertex);
+	ShaderModule fragShaderModule4(LoadShader("Source/Shaders/lightPass.frag", { {"FORWARD", ""} }, 1), vk::ShaderStageFlagBits::eFragment);
+	pipelineForward = std::make_shared<Pipeline>(PipelineCreateInfo()
+		.Layout(**pipelineLayout)
+		.AddShader(vertShaderModule4)
+		.AddShader(fragShaderModule4)
+		.VertexInput<Data::Vertex>()
+		.InputAssembly(vk::PrimitiveTopology::eTriangleList)
+		.Rasterization(true)
+		.Multisampling(vk::SampleCountFlagBits::e1) // TODO dynamic??
+		.ColorBlend(1, true) // TODO enable 
+		.RenderPass(**renderPass, 2)
+		.DepthStencil(true, true, vk::CompareOp::eLess));
 }
 void DeferredPass::CreateRenderPass()
 {
@@ -116,17 +130,19 @@ void DeferredPass::CreateRenderPass()
 	createInfo.attachments[gNormAttIdx].setFormat(Formats::norm);
 	createInfo.attachments[gMRAttIdx].setFormat(Formats::metRough);
 	createInfo.attachments[lPassAttIdx]
+		.setSamples(vk::SampleCountFlagBits::e1)
 		.setFormat(Formats::final)
 		.setLoadOp(vk::AttachmentLoadOp::eClear)
 		.setFinalLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
 		.setStoreOp(vk::AttachmentStoreOp::eStore);
 	createInfo.attachments[depthAttIdx]
+		.setSamples(vk::SampleCountFlagBits::e1)
 		.setFormat(Format::depth32)
 		.setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
 		.setLoadOp(vk::AttachmentLoadOp::eClear);
 
-	uint32_t gPass = 0, lPass = 1;
-	std::vector<SubpassDescription> subPasses(2);
+	uint32_t gPass = 0, lPass = 1, fPass = 2;
+	std::vector<SubpassDescription> subPasses(3);
 	subPasses[gPass]
 		.ColorAttachments({
 			{ gPosAttIdx, vk::ImageLayout::eColorAttachmentOptimal },
@@ -143,6 +159,9 @@ void DeferredPass::CreateRenderPass()
 			{ gNormAttIdx, vk::ImageLayout::eShaderReadOnlyOptimal },
 			{ gMRAttIdx, vk::ImageLayout::eShaderReadOnlyOptimal }
 			});
+	subPasses[fPass]
+		.ColorAttachments({ { lPassAttIdx, vk::ImageLayout::eColorAttachmentOptimal } })
+		.DepthAttachment(depthAttIdx);
 	createInfo.Subpasses(subPasses);
 
 	createInfo.Dependencies({
@@ -151,12 +170,21 @@ void DeferredPass::CreateRenderPass()
 		.setSrcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite)
 		.setDstStageMask(vk::PipelineStageFlagBits::eFragmentShader)
 		.setDstAccessMask(vk::AccessFlagBits::eInputAttachmentRead)
+		.setDependencyFlags(vk::DependencyFlagBits::eByRegion),
+
+		vk::SubpassDependency(lPass, fPass)
+		.setSrcStageMask(vk::PipelineStageFlagBits::eLateFragmentTests)
+		.setSrcAccessMask(vk::AccessFlagBits::eDepthStencilAttachmentWrite)
+		.setDstStageMask(vk::PipelineStageFlagBits::eEarlyFragmentTests)
+		.setDstAccessMask(vk::AccessFlagBits::eDepthStencilAttachmentWrite)
 		.setDependencyFlags(vk::DependencyFlagBits::eByRegion)
 		});
 	renderPass = std::make_shared<Vulkan::RenderPass>(createInfo);
 }
 void DeferredPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imageIndex, uint32_t currentFrame)
 {
+	bool deferred = *Settings::Instance().deferred;
+
 	using namespace Vulkan;
 	BeginRenderPass(**renderPass, *fb, cmd);
 	cmd.setViewport(0, ViewportFull(*fb));
@@ -164,7 +192,7 @@ void DeferredPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imag
 
 	cmd.pushConstants<glm::mat4>(**pipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, Resources::Instance().vp);
 	cmd.pushConstants<glm::vec3>(**pipelineLayout, vk::ShaderStageFlagBits::eFragment, sizeof(glm::mat4), Resources::Instance().viewPos);
-	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, **pipelineGPass);
+	cmd.pushConstants<float>(**pipelineLayout, vk::ShaderStageFlagBits::eFragment, sizeof(glm::mat4) + sizeof(glm::vec3), 0.0);
 
 	// resource dset binding should happen outside
 	cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, **pipelineLayout, 0,
@@ -178,13 +206,35 @@ void DeferredPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imag
 
 	cmd.bindVertexBuffers(0, **Resources::Instance().vertexBuffer->buffer->Underlying(), { 0 });
 	cmd.bindIndexBuffer(**Resources::Instance().indexBuffer->buffer->Underlying(), 0, vk::IndexType::eUint32);
-	cmd.drawIndexedIndirect(**Resources::Instance().drawCommands->Underlying(),
-		Resources::Instance().DynamicOffset(*Resources::Instance().drawCommands),
-		Resources::Instance().drawCommandCount, sizeof(vk::DrawIndexedIndirectCommand));
+	if (deferred) {
+		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, **pipelineGPass);
+		cmd.drawIndexedIndirect(**Resources::Instance().drawCommands->Underlying(),
+			Resources::Instance().DynamicOffset(*Resources::Instance().drawCommands),
+			Resources::Instance().drawCommandCount.defaults, sizeof(vk::DrawIndexedIndirectCommand));
+	}
 
 	cmd.nextSubpass(vk::SubpassContents::eInline);
-	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, **pipelineLPass);
-	cmd.DrawQuad();
+	if (deferred) {
+		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, **pipelineLPass);
+		cmd.DrawQuad();
+	}
+
+	cmd.nextSubpass(vk::SubpassContents::eInline);
+	if (!deferred) {
+		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, **pipelineForward);
+		cmd.drawIndexedIndirect(**Resources::Instance().drawCommands->Underlying(),
+			Resources::Instance().DynamicOffset(*Resources::Instance().drawCommands),
+			Resources::Instance().drawCommandCount.defaults, sizeof(vk::DrawIndexedIndirectCommand));
+	}
+	if (Resources::Instance().drawCommandCount.blend > 0) {
+		cmd.pushConstants<float>(**pipelineLayout, vk::ShaderStageFlagBits::eFragment, sizeof(glm::mat4) + sizeof(glm::vec3), 1.0);
+		if (deferred) {
+			cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, **pipelineForward);
+		}
+		cmd.drawIndexedIndirect(**Resources::Instance().drawCommands->Underlying(),
+			Resources::Instance().DynamicOffset(*Resources::Instance().drawCommands) + Resources::Instance().drawCommandCount.defaults * sizeof(vk::DrawIndexedIndirectCommand),
+			Resources::Instance().drawCommandCount.blend, sizeof(vk::DrawIndexedIndirectCommand));
+	}
 
 	cmd.endRenderPass();
 }
