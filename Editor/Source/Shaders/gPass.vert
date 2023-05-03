@@ -7,13 +7,15 @@ struct Material
 	uint metallicRoughness;
 	uint occlusion;
 
+	vec3 emissiveFactor;
+  uint emissive;
+
 	vec4 baseColorFactor;
 
 	float roughnessFactor;
 	float metallicFactor;
 	float alphaCutoff;
-
-  float padding[1];
+	float padding;
 };
 
 layout(location = 0) in vec3 vPos;

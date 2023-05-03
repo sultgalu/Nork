@@ -7,11 +7,14 @@ namespace Nork::Renderer::Data {
 		uint32_t metallicRoughness;
 		uint32_t occlusion;
 
+		glm::vec3 emissiveFactor = { 0, 0, 0 };
+		uint32_t emissive;
+
 		glm::vec4 baseColorFactor = { 1, 1, 1, 1 };
 
 		float roughnessFactor = 1;
 		float metallicFactor = 1;
 		float alphaCutoff = -1;
-		float padding_;
+		float padding;
 	};
 }

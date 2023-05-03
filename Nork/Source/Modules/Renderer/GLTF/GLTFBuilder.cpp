@@ -160,6 +160,7 @@ GLTFBuilder& GLTFBuilder::AddMaterial(const Material& material, std::vector<std:
 	mat.pbrMetallicRoughness.baseColorFactor = material->baseColorFactor;
 	mat.pbrMetallicRoughness.roughnessFactor = material->roughnessFactor;
 	mat.pbrMetallicRoughness.metallicFactor = material->metallicFactor;
+	mat.emissiveFactor = material->emissiveFactor;
 	if (material->alphaCutoff != -1) {
 		mat.alphaMode = mat.MASK;
 		mat.alphaCutoff = material->alphaCutoff;
@@ -199,6 +200,9 @@ GLTFBuilder& GLTFBuilder::AddMaterial(const Material& material, std::vector<std:
 				break;
 			case Occlusion:
 				mat.occlusionTexture = texInfo;
+				break;
+			case Emissive:
+				mat.emissiveTexture = texInfo;
 				break;
 			default:
 				break;

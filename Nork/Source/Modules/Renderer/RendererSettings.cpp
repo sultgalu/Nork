@@ -33,7 +33,7 @@ static std::unique_ptr<Settings> Create() {
 		.inlineThreshold = false
 	};
 	settings->postProcess = Settings::PostProcess{
-		.bloom = true,
+		.bloom = false,
 		.exposure = 10,
 		.inlineExposure = false
 	};

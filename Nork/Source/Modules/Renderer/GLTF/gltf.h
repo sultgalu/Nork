@@ -317,16 +317,13 @@ namespace Nork::Renderer::GLTF {
 			json.GetIfContains("metallicFactor", metallicFactor);
 			json.GetIfContains("roughnessFactor", roughnessFactor);
 			json.GetIfContains("extras", extras);
-			if (json.Contains("baseColorFactor"))
-			{
+			if (json.Contains("baseColorFactor")){
 				json.Get<JsonArray>("baseColorFactor").Get<float>(&baseColorFactor.r, 4);
 			}
-			if (json.Contains("baseColorTexture"))
-			{
+			if (json.Contains("baseColorTexture")){
 				baseColorTexture.FromJson(json.Get<JsonObject>("baseColorTexture"));
 			}
-			if (json.Contains("metallicRoughnessTexture"))
-			{
+			if (json.Contains("metallicRoughnessTexture")){
 				metallicRoughnessTexture.FromJson(json.Get<JsonObject>("metallicRoughnessTexture"));
 			}
 		}
@@ -352,6 +349,8 @@ namespace Nork::Renderer::GLTF {
 		MaterialRoughnessModel pbrMetallicRoughness;
 		TextureInfo normalTexture;
 		TextureInfo occlusionTexture;
+		TextureInfo emissiveTexture;
+		glm::vec3 emissiveFactor = glm::vec3(0);
 		std::string alphaMode = OPAQUE;
 		float alphaCutoff = 0.5f;
 		inline static const std::string OPAQUE = "OPAQUE";
@@ -366,6 +365,10 @@ namespace Nork::Renderer::GLTF {
 				json.Property("normalTexture", normalTexture.ToJson());
 			if (occlusionTexture.Validate())
 				json.Property("occlusionTexture", occlusionTexture.ToJson());
+			if (emissiveTexture.Validate())
+				json.Property("emissiveTexture", emissiveTexture.ToJson());
+			if (emissiveFactor != glm::vec3(0))
+				json.Property("emissiveFactor", JsonArray().Elements(emissiveFactor));
 			if (!name.empty())
 				json.Property("name", name);
 			if (alphaMode != OPAQUE)
@@ -386,6 +389,12 @@ namespace Nork::Renderer::GLTF {
 			}
 			if (json.Contains("occlusionTexture")) {
 				occlusionTexture.FromJson(json.Get<JsonObject>("occlusionTexture"));
+			}
+			if (json.Contains("emissiveTexture")) {
+				emissiveTexture.FromJson(json.Get<JsonObject>("emissiveTexture"));
+			}
+			if (json.Contains("emissiveFactor")) {
+				json.Get<JsonArray>("emissiveFactor").Get(emissiveFactor);
 			}
 			pbrMetallicRoughness.FromJson(json.Get<JsonObject>("pbrMetallicRoughness"));
 		}

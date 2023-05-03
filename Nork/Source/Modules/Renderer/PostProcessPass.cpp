@@ -235,6 +235,10 @@ void PostProcessPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t i
 		.setSrcAccessMask(vk::AccessFlagBits2::eMemoryWrite).setDstAccessMask(vk::AccessFlagBits2::eMemoryRead);
 	cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barrier));
 
+	if (!Settings::Instance().postProcess->inlineExposure) {
+		cmd.pushConstants<float>(**pipelineLayout, vk::ShaderStageFlagBits::eCompute, sizeof(pushConstant), Settings::Instance().postProcess->exposure);
+	}
+
 	if (!Settings::Instance().postProcess->bloom) { // do only tonemapping
 
 		pushConstant.stage = Stage::Tonemap;
@@ -265,9 +269,6 @@ void PostProcessPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t i
 	if (!Settings::Instance().bloom->inlineKernelData) {
 		cmd.pushConstants<uint32_t>(**pipelineLayout, vk::ShaderStageFlagBits::eCompute, 2 * sizeof(glm::vec4), KernelSize());
 		cmd.pushConstants<float>(**pipelineLayout, vk::ShaderStageFlagBits::eCompute, 2 * sizeof(glm::vec4) + sizeof(uint32_t), CreateKernel());
-	}
-	if (!Settings::Instance().postProcess->inlineExposure) {
-		cmd.pushConstants<float>(**pipelineLayout, vk::ShaderStageFlagBits::eCompute, sizeof(pushConstant), Settings::Instance().postProcess->exposure);
 	}
 
 	size_t iter = MipLevels() - 1;

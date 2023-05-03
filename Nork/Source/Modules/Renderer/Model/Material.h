@@ -7,7 +7,7 @@
 namespace Nork::Renderer {
 	enum class TextureMap: uint8_t
 	{
-		BaseColor = 0, Normal, MetallicRoughness, Occlusion, COUNT
+		BaseColor = 0, Normal, MetallicRoughness, Occlusion, Emissive, COUNT
 	};
 	enum class ShadingMode {
 		Default, Blend
@@ -37,6 +37,9 @@ namespace Nork::Renderer {
 				break;
 			case Occlusion:
 				hostData.occlusion = tex->descriptorIdx;
+				break;
+			case Emissive:
+				hostData.emissive = tex->descriptorIdx;
 				break;
 			case COUNT:
 				break;

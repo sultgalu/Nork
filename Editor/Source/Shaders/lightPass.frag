@@ -104,13 +104,15 @@ struct Material
 	uint metallicRoughness;
 	uint occlusion;
 
+	vec3 emissiveFactor;
+  uint emissive;
+
 	vec4 baseColorFactor;
 
 	float roughnessFactor;
 	float metallicFactor;
 	float alphaCutoff;
-
-  float padding[1];
+	float padding;
 };
 
 layout(location = 0) in vec3 worldPos;
@@ -210,7 +212,9 @@ void main()
 	#ifdef DEFERRED
 	fColor = vec4(color, 1.0);
 	#else // FORWARD
-	fColor = vec4(color, PushConstants.blend == 0.0 ? 1.0 : material.albedo.a);
+	fColor = vec4(material_.emissiveFactor == vec3(0) ? 
+		color : material_.emissiveFactor * texture(textures[material_.emissive], texCoord).rgb,
+		PushConstants.blend == 0.0 ? 1.0 : material.albedo.a);
 	#endif // DEFERRED
 	// fColor = subpassLoad(gBaseColor);
 }

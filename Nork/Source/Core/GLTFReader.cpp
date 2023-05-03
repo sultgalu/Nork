@@ -70,6 +70,7 @@ std::shared_ptr<Renderer::Material> GLTFReader::CreateMaterial(const Renderer::G
 	data->baseColorFactor = mat.pbrMetallicRoughness.baseColorFactor;
 	data->roughnessFactor = mat.pbrMetallicRoughness.roughnessFactor;
 	data->metallicFactor = mat.pbrMetallicRoughness.metallicFactor;
+	data->emissiveFactor = mat.emissiveFactor;
 	if (mat.alphaMode == mat.MASK)
 		data->alphaCutoff = mat.alphaCutoff;
 	else if (mat.alphaMode == mat.BLEND)
@@ -83,6 +84,8 @@ std::shared_ptr<Renderer::Material> GLTFReader::CreateMaterial(const Renderer::G
 		material->SetTextureMap(images[gltf.textures[mat.normalTexture.index].source], Renderer::TextureMap::Normal);
 	if (mat.occlusionTexture.Validate())
 		material->SetTextureMap(images[gltf.textures[mat.occlusionTexture.index].source], Renderer::TextureMap::Occlusion);
+	if (mat.emissiveTexture.Validate())
+		material->SetTextureMap(images[gltf.textures[mat.emissiveTexture.index].source], Renderer::TextureMap::Emissive);
 	return material;
 }
 std::shared_ptr<Renderer::Mesh> GLTFReader::CreateRendererMesh(int idx, int meshIdx)

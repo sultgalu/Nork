@@ -22,6 +22,7 @@ static void ParseMaterial(Renderer::Material& material, const Renderer::GLTF::Ma
 	data->baseColorFactor = mat.pbrMetallicRoughness.baseColorFactor;
 	data->roughnessFactor = mat.pbrMetallicRoughness.roughnessFactor;
 	data->metallicFactor = mat.pbrMetallicRoughness.metallicFactor;
+	data->emissiveFactor = mat.emissiveFactor;
 	if (mat.alphaMode == mat.MASK) {
 		data->alphaCutoff = mat.alphaCutoff;
 	}
@@ -46,6 +47,9 @@ static void ParseMaterial(Renderer::Material& material, const Renderer::GLTF::Ma
 	}
 	if (mat.occlusionTexture.Validate()) {
 		setTexture(mat.occlusionTexture.index, Renderer::TextureMap::Occlusion);
+	}
+	if (mat.emissiveTexture.Validate()) {
+		setTexture(mat.emissiveTexture.index, Renderer::TextureMap::Emissive);
 	}
 }
 
@@ -171,6 +175,7 @@ void AssetLoader::SaveModel(const std::shared_ptr<Components::Model>& model, con
 					tryAddTex(MetallicRoughness);
 					tryAddTex(Normal);
 					tryAddTex(Occlusion);
+					tryAddTex(Emissive);
 					builder.AddMaterial(*primitive.material, imageUris);
 				}
 				builder.AddPrimitive(*primitive.mesh, path.parent_path().string(), materials[primitive.material]);
