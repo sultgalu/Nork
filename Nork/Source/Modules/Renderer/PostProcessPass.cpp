@@ -3,11 +3,12 @@
 #include "Vulkan/SwapChain.h"
 #include "Data/Vertex.h"
 #include "RendererSettings.h"
+#include "DeferredPass.h"
 
 namespace Nork::Renderer {
 
 enum class Stage : uint32_t {
-	GaussianHorizontal = 0, GaussianVertical, Filter, Downsample, Upsample, Writeback, Tonemap
+	GaussianHorizontal = 0, GaussianVertical, Filter, Downsample, Upsample, Writeback, Tonemap, CopyFiltered
 };
 struct _PushConstant {
 	Stage stage;
@@ -93,6 +94,7 @@ std::vector<std::array<std::string, 2>> GetMacros() {
 		{ "UPSAMPLE", std::to_string(std::to_underlying(Stage::Upsample)) },
 		{ "WRITEBACK", std::to_string(std::to_underlying(Stage::Writeback)) },
 		{ "TONEMAP", std::to_string(std::to_underlying(Stage::Tonemap)) },
+		{ "COPY_FILTERED", std::to_string(std::to_underlying(Stage::CopyFiltered)) },
 		{ "RESOLUTION_X", std::to_string(Resolution().x) },
 		{ "RESOLUTION_Y", std::to_string(Resolution().y) },
 		{ "RESOLUTION", "vec2(RESOLUTION_X, RESOLUTION_Y)" },
@@ -139,7 +141,8 @@ void PostProcessPass::CreateTextures()
 		vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst, MaxMipLevels());
 
 	srcImage = std::make_shared<Image>(imageCreateInfo, vk::ImageAspectFlagBits::eColor, false, vk::PipelineStageFlags2{}, vk::AccessFlags2{}, false);
-	pongImage = std::make_shared<Image>(Vulkan::ImageCreateInfo(Resolution().x, Resolution().y, Vulkan::Format::rgba32f, vk::ImageUsageFlagBits::eStorage), vk::ImageAspectFlagBits::eColor);
+	pongImage = DeferredPass::Instance().emissiveColor;
+		//std::make_shared<Image>(Vulkan::ImageCreateInfo(Resolution().x, Resolution().y, Vulkan::Format::rgba32f, vk::ImageUsageFlagBits::eStorage), vk::ImageAspectFlagBits::eColor);
 
 	auto setImageLayout = [&](vk::Image img, bool mip = true) {
 		Commands::Instance().TransferCommand([&](Vulkan::CommandBuffer& cmd)
@@ -225,8 +228,10 @@ void PostProcessPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t i
 		threshold *= threshold.a;
 		cmd.pushConstants<glm::vec4>(**pipelineLayout, vk::ShaderStageFlagBits::eCompute, sizeof(glm::vec4), threshold);
 	}
-	pushConstant.stage = Stage::Filter;
-	pushConstant.srcImgIdx = 0;
+
+	if (!Settings::Instance().postProcess->inlineExposure) {
+		cmd.pushConstants<float>(**pipelineLayout, vk::ShaderStageFlagBits::eCompute, sizeof(pushConstant), Settings::Instance().postProcess->exposure);
+	}
 
 	auto barrier = vk::ImageMemoryBarrier2()
 		.setImage(**target->img).setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1))
@@ -235,10 +240,7 @@ void PostProcessPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t i
 		.setSrcAccessMask(vk::AccessFlagBits2::eMemoryWrite).setDstAccessMask(vk::AccessFlagBits2::eMemoryRead);
 	cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barrier));
 
-	if (!Settings::Instance().postProcess->inlineExposure) {
-		cmd.pushConstants<float>(**pipelineLayout, vk::ShaderStageFlagBits::eCompute, sizeof(pushConstant), Settings::Instance().postProcess->exposure);
-	}
-
+	pushConstant.srcImgIdx = 0;
 	if (!Settings::Instance().postProcess->bloom) { // do only tonemapping
 
 		pushConstant.stage = Stage::Tonemap;
@@ -254,6 +256,13 @@ void PostProcessPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t i
 		return;
 	}
 
+	auto barrier44 = vk::ImageMemoryBarrier2()
+		.setImage(**pongImage->img).setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1))
+		.setOldLayout(vk::ImageLayout::eGeneral).setNewLayout(vk::ImageLayout::eGeneral)
+		.setSrcStageMask(vk::PipelineStageFlagBits2::eBottomOfPipe).setDstStageMask(vk::PipelineStageFlagBits2::eComputeShader)
+		.setSrcAccessMask(vk::AccessFlagBits2::eMemoryWrite).setDstAccessMask(vk::AccessFlagBits2::eMemoryRead);
+	cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barrier44));
+	pushConstant.stage = Stage::CopyFiltered; // TODO add setting to use pre-filtered vs filter the whole screen
 	dispatchStage();
 	auto barrier11 = vk::ImageMemoryBarrier2()
 		.setImage(**srcImage->img)
@@ -401,7 +410,7 @@ void PostProcessPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t i
 	}
 	pushConstant.stage = Stage::Writeback;
 	dispatchStage();
-
+	
 	barrier
 		.setImage(**target->img)
 		.setOldLayout(vk::ImageLayout::eGeneral).setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal)

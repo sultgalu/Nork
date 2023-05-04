@@ -71,6 +71,9 @@ void main()
     float luminance = dot(pixelColor.rgb, THRESHOLD.rgb);
     imageStore(srcImg(), pixel_pos, luminance > 1.0 ? pixelColor : vec4(0));
   }
+  else if (stage == COPY_FILTERED){
+    imageStore(srcImg(), pixel_pos, imageLoad(pongImage, pixel_pos));
+  }
   else if (stage == DOWNSAMPLE){
     if (isPixelOutOfBounds2(pixel_pos, 1)) {
       return;

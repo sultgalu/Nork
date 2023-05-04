@@ -14,6 +14,16 @@ namespace Nork::Renderer {
 struct DrawCounts {
 	uint32_t defaults = 0;
 	uint32_t blend = 0;
+	uint32_t lightless = 0;
+	uint32_t BlendOffs() {
+		return defaults;
+	}
+	uint32_t LightlessOffs() {
+		return defaults + blend;
+	}
+	uint32_t AllCount() {
+		return defaults + blend + lightless;
+	}
 };
 struct DrawParams
 {

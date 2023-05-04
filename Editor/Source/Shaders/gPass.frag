@@ -8,20 +8,18 @@ layout(location = 3) out vec3 metallicRoughnessOcclusion; // 3 used
 
 struct Material
 {
-	uint baseColor;
-	uint normal;
-	uint metallicRoughness;
-	uint occlusion;
+	uint baseColor_normal;
+	uint metallicRoughness_occlusion;
+	float roughnessFactor;
+	float metallicFactor;
 
 	vec3 emissiveFactor;
   uint emissive;
 
 	vec4 baseColorFactor;
 
-	float roughnessFactor;
-	float metallicFactor;
 	float alphaCutoff;
-	float padding;
+	float padding[3];
 };
 
 layout(location = 0) in vec3 worldPos;
@@ -34,14 +32,14 @@ layout(set = 0, binding = 3) uniform sampler2D[] textures;
 void main()
 {
 	position = vec4(worldPos, 1.0f);
-	vec4 color = texture(textures[material.baseColor], texCoord).rgba;
+	vec4 color = texture(textures[bitfieldExtract(material.baseColor_normal, 0, 16)], texCoord).rgba;
 	if (color.a < material.alphaCutoff)
 		discard;
 	baseColor = color * material.baseColorFactor;
-	metallicRoughnessOcclusion.rg = texture(textures[material.metallicRoughness], texCoord).gb * vec2(material.roughnessFactor, material.metallicFactor);
-	metallicRoughnessOcclusion.b = texture(textures[material.occlusion], texCoord).r;
+	metallicRoughnessOcclusion.rg = texture(textures[bitfieldExtract(material.metallicRoughness_occlusion, 0, 16)], texCoord).gb * vec2(material.roughnessFactor, material.metallicFactor);
+	metallicRoughnessOcclusion.b = texture(textures[bitfieldExtract(material.metallicRoughness_occlusion, 16, 16)], texCoord).r;
 
-	vec3 norm = texture(textures[material.normal], texCoord).rgb;
+	vec3 norm = texture(textures[bitfieldExtract(material.baseColor_normal, 16, 16)], texCoord).rgb;
 	norm = norm * 2.0f - 1.0f; // [0;1] -> [-1;1]
 	normal = normalize(TBN * norm); // transforming from tangent-space -> world space
 	// baseColor = vec4(1.0, 0.0, 1.0, 1.0);

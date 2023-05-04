@@ -13,12 +13,19 @@ static constexpr vk::Format norm = Vulkan::Format::rgba16Snorm;
 
 static constexpr vk::Format baseCol = Vulkan::Format::rgba32f;
 static constexpr vk::Format final = Vulkan::Format::rgba32f;
+static constexpr vk::Format emissive = Vulkan::Format::rgba32f;
 
 static constexpr vk::Format metRough = Vulkan::Format::rgba16f;
 }
 
+static DeferredPass* instance;
+DeferredPass& DeferredPass::Instance(){
+	return *instance;
+}
+
 DeferredPass::DeferredPass()
 {
+	instance = this;
 	CreateRenderPass();
 
 	auto w = Settings::Instance().resolution->x;
@@ -27,12 +34,13 @@ DeferredPass::DeferredPass()
 	depthImage = std::make_shared<Image>(w, h, Formats::depth, eDepthStencilAttachment, vk::ImageAspectFlagBits::eDepth);
 	fbColor = std::make_shared<Image>(w, h, Formats::final, eColorAttachment | eInputAttachment | eTransferSrc | eSampled | eStorage,
 		vk::ImageAspectFlagBits::eColor);
+	emissiveColor = std::make_shared<Image>(w, h, Formats::emissive, eColorAttachment | eStorage, vk::ImageAspectFlagBits::eColor);
 	gPos = std::make_shared<Image>(w, h, Formats::pos, eColorAttachment | eInputAttachment, vk::ImageAspectFlagBits::eColor);
 	gCol = std::make_shared<Image>(w, h, Formats::baseCol, eColorAttachment | eInputAttachment, vk::ImageAspectFlagBits::eColor);
 	gNorm = std::make_shared<Image>(w, h, Formats::norm, eColorAttachment | eInputAttachment, vk::ImageAspectFlagBits::eColor);
 	gMR = std::make_shared<Image>(w, h, Formats::metRough, eColorAttachment | eInputAttachment, vk::ImageAspectFlagBits::eColor);
 	fb = std::make_shared<Vulkan::Framebuffer>(Vulkan::FramebufferCreateInfo(w, h, **renderPass,
-		{ gPos->view, gCol->view, gNorm->view, gMR->view, fbColor->view, depthImage->view }));
+		{ gPos->view, gCol->view, gNorm->view, gMR->view, fbColor->view, depthImage->view, emissiveColor->view }));
 
 	using namespace Vulkan;
 	descriptorSetLayoutPP = std::make_shared<Vulkan::DescriptorSetLayout>(Vulkan::DescriptorSetLayoutCreateInfo()
@@ -73,14 +81,15 @@ void DeferredPass::CreateGraphicsPipeline()
 	CreateDeferredGPassPipeline();
 	CreateDeferredLightPassPipeline();
 	CreateForwardPipeline();
+	CreateLightlessPipeline();
 }
 void DeferredPass::CreateRenderPass()
 {
 	using namespace Vulkan;
 	Vulkan::RenderPassCreateInfo createInfo;
 
-	uint32_t gPosAttIdx = 0, gColAttIdx = 1, gNormAttIdx = 2, gMRAttIdx = 3, lPassAttIdx = 4, depthAttIdx = 5;
-	createInfo.Attachments(std::vector<AttachmentDescription>(6));
+	uint32_t gPosAttIdx = 0, gColAttIdx = 1, gNormAttIdx = 2, gMRAttIdx = 3, lPassAttIdx = 4, depthAttIdx = 5, emissiveAttIdx = 6;
+	createInfo.Attachments(std::vector<AttachmentDescription>(7));
 	createInfo.attachments[gPosAttIdx]
 		.setFormat(Formats::pos)
 		.setFinalLayout(vk::ImageLayout::eColorAttachmentOptimal)
@@ -102,9 +111,14 @@ void DeferredPass::CreateRenderPass()
 		.setFormat(Format::depth32)
 		.setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
 		.setLoadOp(vk::AttachmentLoadOp::eClear);
+	createInfo.attachments[emissiveAttIdx]
+		.setFormat(Formats::emissive)
+		.setLoadOp(vk::AttachmentLoadOp::eClear)
+		.setFinalLayout(vk::ImageLayout::eGeneral)
+		.setStoreOp(vk::AttachmentStoreOp::eStore);
 
-	uint32_t gPass = 0, lPass = 1, fPass = 2;
-	std::vector<SubpassDescription> subPasses(3);
+	uint32_t gPass = 0, lPass = 1, fPass = 2, emissivePass = 3;
+	std::vector<SubpassDescription> subPasses(4);
 	subPasses[gPass]
 		.ColorAttachments({
 			{ gPosAttIdx, vk::ImageLayout::eColorAttachmentOptimal },
@@ -124,6 +138,9 @@ void DeferredPass::CreateRenderPass()
 	subPasses[fPass]
 		.ColorAttachments({ { lPassAttIdx, vk::ImageLayout::eColorAttachmentOptimal } })
 		.DepthAttachment(depthAttIdx);
+	subPasses[emissivePass]
+		.ColorAttachments({ { emissiveAttIdx, vk::ImageLayout::eColorAttachmentOptimal } })
+		.DepthAttachment(depthAttIdx);
 	createInfo.Subpasses(subPasses);
 
 	createInfo.Dependencies({
@@ -135,6 +152,13 @@ void DeferredPass::CreateRenderPass()
 		.setDependencyFlags(vk::DependencyFlagBits::eByRegion),
 
 		vk::SubpassDependency(lPass, fPass)
+		.setSrcStageMask(vk::PipelineStageFlagBits::eLateFragmentTests)
+		.setSrcAccessMask(vk::AccessFlagBits::eDepthStencilAttachmentWrite)
+		.setDstStageMask(vk::PipelineStageFlagBits::eEarlyFragmentTests)
+		.setDstAccessMask(vk::AccessFlagBits::eDepthStencilAttachmentWrite)
+		.setDependencyFlags(vk::DependencyFlagBits::eByRegion),
+
+		vk::SubpassDependency(fPass, emissivePass) // other option would be to overwrite emissive texels to 0 from other passes
 		.setSrcStageMask(vk::PipelineStageFlagBits::eLateFragmentTests)
 		.setSrcAccessMask(vk::AccessFlagBits::eDepthStencilAttachmentWrite)
 		.setDstStageMask(vk::PipelineStageFlagBits::eEarlyFragmentTests)
@@ -194,8 +218,15 @@ void DeferredPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imag
 			cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, **pipelineForward);
 		}
 		cmd.drawIndexedIndirect(**Resources::Instance().drawCommands->Underlying(),
-			Resources::Instance().DynamicOffset(*Resources::Instance().drawCommands) + Resources::Instance().drawCommandCount.defaults * sizeof(vk::DrawIndexedIndirectCommand),
+			Resources::Instance().DynamicOffset(*Resources::Instance().drawCommands) + Resources::Instance().drawCommandCount.BlendOffs() * sizeof(vk::DrawIndexedIndirectCommand),
 			Resources::Instance().drawCommandCount.blend, sizeof(vk::DrawIndexedIndirectCommand));
+	}
+	cmd.nextSubpass(vk::SubpassContents::eInline);
+	if (Resources::Instance().drawCommandCount.lightless > 0) {
+		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, **pipelineLightless);
+		cmd.drawIndexedIndirect(**Resources::Instance().drawCommands->Underlying(),
+			Resources::Instance().DynamicOffset(*Resources::Instance().drawCommands) + Resources::Instance().drawCommandCount.LightlessOffs() * sizeof(vk::DrawIndexedIndirectCommand),
+			Resources::Instance().drawCommandCount.lightless, sizeof(vk::DrawIndexedIndirectCommand));
 	}
 
 	cmd.endRenderPass();
@@ -237,29 +268,47 @@ void DeferredPass::CreateDeferredLightPassPipeline()
 void DeferredPass::CreateForwardPipeline()
 {
 	using namespace Vulkan;
-	ShaderModule vertShaderModule4(LoadShader("Source/Shaders/gPass.vert", {}, 1), vk::ShaderStageFlagBits::eVertex);
-	ShaderModule fragShaderModule4(LoadShader("Source/Shaders/lightPass.frag", { {"FORWARD", ""} }, 1), vk::ShaderStageFlagBits::eFragment);
+	ShaderModule vertShaderModule(LoadShader("Source/Shaders/gPass.vert", {}, 1), vk::ShaderStageFlagBits::eVertex);
+	ShaderModule fragShaderModule(LoadShader("Source/Shaders/lightPass.frag", { {"FORWARD", ""} }, 1), vk::ShaderStageFlagBits::eFragment);
 	pipelineForward = std::make_shared<Pipeline>(PipelineCreateInfo()
 		.Layout(**pipelineLayout)
-		.AddShader(vertShaderModule4)
-		.AddShader(fragShaderModule4)
+		.AddShader(vertShaderModule)
+		.AddShader(fragShaderModule)
 		.VertexInput<Data::Vertex>()
 		.InputAssembly(vk::PrimitiveTopology::eTriangleList)
 		.Rasterization(true)
 		.Multisampling(vk::SampleCountFlagBits::e1) // TODO dynamic??
-		.ColorBlend(1, true) // TODO enable 
+		.ColorBlend(1, true)
 		.RenderPass(**renderPass, 2)
-		.DepthStencil(true, true, vk::CompareOp::eLess));
+		.DepthStencil(true));
+}
+void DeferredPass::CreateLightlessPipeline()
+{
+	using namespace Vulkan;
+	ShaderModule vertShaderModule(LoadShader("Source/Shaders/gPass.vert", { {"LIGHTLESS", ""} }, 2), vk::ShaderStageFlagBits::eVertex);
+	ShaderModule fragShaderModule(LoadShader("Source/Shaders/lightPass.frag", { {"LIGHTLESS", ""} }, 2), vk::ShaderStageFlagBits::eFragment);
+	pipelineLightless = std::make_shared<Pipeline>(PipelineCreateInfo()
+		.Layout(**pipelineLayout)
+		.AddShader(vertShaderModule)
+		.AddShader(fragShaderModule)
+		.VertexInput<Data::Vertex>()
+		.InputAssembly(vk::PrimitiveTopology::eTriangleList)
+		.Rasterization(true)
+		.Multisampling()
+		.ColorBlend(1, false) 
+		.RenderPass(**renderPass, 3)
+		.DepthStencil(true));
 }
 void DeferredPass::RefreshShaders()
 {
 	// if (IsShaderSourceChanged("Source/Shaders/bloom.comp", GetMacros())) {
 	// 	CreatePipeline();
 	// }
-	std::vector<std::shared_ptr<Vulkan::Pipeline>> pipelinesOld = { pipelineGPass, pipelineLPass, pipelineForward };
+	std::vector<std::shared_ptr<Vulkan::Pipeline>> pipelinesOld = { pipelineGPass, pipelineLPass, pipelineForward, pipelineLightless };
 	Commands::Instance().OnRenderFinished([pipelinesOld]() {});
 	CreateDeferredGPassPipeline();
 	CreateDeferredLightPassPipeline();
 	CreateForwardPipeline();
+	CreateLightlessPipeline();
 }
 }

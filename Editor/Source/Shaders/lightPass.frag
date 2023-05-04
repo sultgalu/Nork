@@ -3,6 +3,7 @@
 
 //#define DEFERRED
 //#define FORWARD
+//#define LIGHTLESS
 
 layout(location = 0) out vec4 fColor;
 
@@ -96,23 +97,21 @@ layout(input_attachment_index = 0, set = 1, binding = 0) uniform subpassInput gP
 layout(input_attachment_index = 1, set = 1, binding = 1) uniform subpassInput gBaseColor;
 layout(input_attachment_index = 2, set = 1, binding = 2) uniform subpassInput gNormal;
 layout(input_attachment_index = 3, set = 1, binding = 3) uniform subpassInput gMetallicRoughnessOcclusion;
-#else // FORWARD
+#else // FORWARD, LIGHTLESS
 struct Material
 {
-	uint baseColor;
-	uint normal;
-	uint metallicRoughness;
-	uint occlusion;
+	uint baseColor_normal;
+	uint metallicRoughness_occlusion;
+	float roughnessFactor;
+	float metallicFactor;
 
 	vec3 emissiveFactor;
   uint emissive;
 
 	vec4 baseColorFactor;
 
-	float roughnessFactor;
-	float metallicFactor;
 	float alphaCutoff;
-	float padding;
+	float padding[3];
 };
 
 layout(location = 0) in vec3 worldPos;
@@ -121,7 +120,7 @@ layout(location = 2) in mat3 TBN;
 layout(location = 5) nonuniformEXT flat in Material material_;
 
 layout(set = 0, binding = 3) uniform sampler2D[] textures;
-#endif // DEFERRED
+#endif // DEFERRED, LIGHTLESS
 
 vec3 dLightShadow(DirLight light, Materials material, vec3 normal, vec3 viewDir, DirShadow shadow, vec3 worldPos);
 
@@ -139,7 +138,7 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0);
 
 vec3 F0 = vec3(0.04);
 
-void main()
+void main_light()
 {
 	Materials material;
 #ifdef DEFERRED
@@ -155,17 +154,17 @@ void main()
 	material.metallic = metallicRoughnessOcclusion.g;
 	material.occlusion = metallicRoughnessOcclusion.b;
 #else // FORWARD
-	material.albedo = texture(textures[material_.baseColor], texCoord).rgba;
+	material.albedo = texture(textures[bitfieldExtract(material_.baseColor_normal, 0, 16)], texCoord).rgba;
 	material.albedo = material.albedo * material_.baseColorFactor;
 	if (material.albedo.a < material_.alphaCutoff)
 		discard;
-	vec2 metallicRoughness = texture(textures[material_.metallicRoughness], texCoord).gb * vec2(material_.roughnessFactor, material_.metallicFactor);
+	vec2 metallicRoughness = texture(textures[bitfieldExtract(material_.metallicRoughness_occlusion, 0, 16)], texCoord).gb * vec2(material_.roughnessFactor, material_.metallicFactor);
 	material.roughness = metallicRoughness.r;
 	material.metallic = metallicRoughness.g;
-	vec3 normal = texture(textures[material_.normal], texCoord).rgb;
+	vec3 normal = texture(textures[bitfieldExtract(material_.baseColor_normal, 16, 16)], texCoord).rgb;
 	normal = normal * 2.0f - 1.0f; // [0;1] -> [-1;1]
 	normal = normalize(TBN * normal); // transforming from tangent-space -> world space
-	material.occlusion = texture(textures[material_.occlusion], texCoord).r;
+	material.occlusion = texture(textures[bitfieldExtract(material_.metallicRoughness_occlusion, 16, 16)], texCoord).r;
 #endif // DEFERRED
 
 	vec3 viewDir = normalize(worldPos - PushConstants.viewPos);
@@ -212,9 +211,7 @@ void main()
 	#ifdef DEFERRED
 	fColor = vec4(color, 1.0);
 	#else // FORWARD
-	fColor = vec4(material_.emissiveFactor == vec3(0) ? 
-		color : material_.emissiveFactor * texture(textures[material_.emissive], texCoord).rgb,
-		PushConstants.blend == 0.0 ? 1.0 : material.albedo.a);
+	fColor = vec4(color, PushConstants.blend == 0.0 ? 1.0 : material.albedo.a);
 	#endif // DEFERRED
 	// fColor = subpassLoad(gBaseColor);
 }
@@ -312,4 +309,12 @@ float CalcLuminosity(vec3 fromPos, vec3 toPos, float linear, float quadratic)
 	float distance = length(toPos - fromPos);
 	float attenuation = 1.0f / (1.0f + linear * distance + quadratic * distance * distance);
 	return attenuation;
+}
+
+void main(){
+#ifdef LIGHTLESS
+	fColor = vec4(material_.emissiveFactor * texture(textures[material_.emissive], texCoord).rgb, 1.0);
+#else
+main_light();
+#endif
 }

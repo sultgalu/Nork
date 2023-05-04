@@ -23,7 +23,10 @@ static void ParseMaterial(Renderer::Material& material, const Renderer::GLTF::Ma
 	data->roughnessFactor = mat.pbrMetallicRoughness.roughnessFactor;
 	data->metallicFactor = mat.pbrMetallicRoughness.metallicFactor;
 	data->emissiveFactor = mat.emissiveFactor;
-	if (mat.alphaMode == mat.MASK) {
+	if (mat.emissiveFactor != glm::vec3(0)) {
+		material.shadingMode = Renderer::ShadingMode::Emissive;
+	}
+	else if (mat.alphaMode == mat.MASK) {
 		data->alphaCutoff = mat.alphaCutoff;
 	}
 	else if (mat.alphaMode == mat.BLEND) {
@@ -51,6 +54,42 @@ static void ParseMaterial(Renderer::Material& material, const Renderer::GLTF::Ma
 	if (mat.emissiveTexture.Validate()) {
 		setTexture(mat.emissiveTexture.index, Renderer::TextureMap::Emissive);
 	}
+}
+static std::shared_ptr<Renderer::Image> LoadImage(const fs::path& path)
+{
+	std::string binExt = path.extension() == ".bin" ? ".bin_" : ".bin";
+	auto binPath = path;
+	binPath.replace_extension(binExt);
+
+	std::vector<std::byte> binImageData;
+	std::byte* binImageDataPtr;
+	uint32_t width, height, binImageDataSize;
+	if (!fs::exists(binPath)) {
+		auto imageData = Renderer::LoadUtils::LoadImage(path.string(), true);
+		binImageData.resize(sizeof(uint32_t) * 2 + imageData.data.size());
+		*(uint32_t*)&binImageData[0] = imageData.width;
+		*(uint32_t*)&binImageData[sizeof(uint32_t)] = imageData.height;
+		std::memcpy(binImageData.data() + sizeof(uint32_t) * 2, imageData.data.data(), imageData.data.size());
+		FileUtils::WriteBinary(binImageData, binPath);
+	}
+	else {
+		binImageData = FileUtils::ReadBinary<std::byte>(binPath);
+	}
+	width = *(uint32_t*)&binImageData[0];
+	height = *(uint32_t*)&binImageData[sizeof(uint32_t)];
+	binImageDataPtr = &binImageData[2 * sizeof(uint32_t)];
+	binImageDataSize = binImageData.size() - 2 * sizeof(uint32_t);
+
+	// format: is it linear or sRGB? usually the latter but should be checked
+	uint32_t mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+
+	auto texImg = std::make_shared<Renderer::Image>(width, height, Renderer::Vulkan::Format::rgba8Unorm,
+		vk::ImageUsageFlagBits::eTransferSrc // blit (mipmap)
+		| vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::ImageAspectFlagBits::eColor,
+		vk::PipelineStageFlagBits2::eFragmentShader, vk::AccessFlagBits2::eShaderSampledRead, mipLevels);
+
+	texImg->Write(binImageDataPtr, binImageDataSize, vk::ImageLayout::eShaderReadOnlyOptimal);
+	return texImg;
 }
 
 AssetLoader::AssetLoader() {
@@ -193,7 +232,7 @@ std::shared_ptr<Renderer::Texture> AssetLoader::LoadTexture(const fs::path& uri)
 	fs::path path = UriToAbsolutePath(uri);
 	Logger::Info("Loading texture ", path);
 
-	auto img = RenderingSystem::Instance().LoadImage(path.string());
+	auto img = LoadImage(path.string());
 	return Renderer::Resources::Instance().Textures().AddTexture(img);
 }
 std::vector<fs::path> AssetLoader::ListTemplates() {

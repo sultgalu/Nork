@@ -189,7 +189,9 @@ struct Client : Renderer::Client
 				commands[commandCount].instanceCount = 1;
 				lastCommand = &commands[commandCount];
 				commandCount++;
-				obj.material->shadingMode == Renderer::ShadingMode::Default ? drawCounts.defaults++ : drawCounts.blend++;
+				if (obj.material->shadingMode == Renderer::ShadingMode::Default) drawCounts.defaults++;
+				else if (obj.material->shadingMode == Renderer::ShadingMode::Blend) drawCounts.blend++;
+				else if (obj.material->shadingMode == Renderer::ShadingMode::Emissive) drawCounts.lightless++;
 			}
 			instanceCount++;
 		}
@@ -357,21 +359,6 @@ void RenderingSystem::Update()
 	ColliderPass::Instance().UpdateBuffers(Registry());
 
 	renderer->DrawFrame();
-}
-std::shared_ptr<Renderer::Image> RenderingSystem::LoadImage(const std::string& path)
-{
-	auto data = Renderer::LoadUtils::LoadImage(path, true);
-
-	// format: is it linear or sRGB? usually the latter but should be checked
-	uint32_t mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(data.width, data.height)))) + 1;
-
-	auto texImg = std::make_shared<Renderer::Image>(data.width, data.height, Renderer::Vulkan::Format::rgba8Unorm,
-		vk::ImageUsageFlagBits::eTransferSrc // blit (mipmap)
-		| vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::ImageAspectFlagBits::eColor,
-		vk::PipelineStageFlagBits2::eFragmentShader, vk::AccessFlagBits2::eShaderSampledRead, mipLevels);
-
-	texImg->Write(data.data.data(), data.data.size(), vk::ImageLayout::eShaderReadOnlyOptimal);
-	return texImg;
 }
 RenderingSystem& RenderingSystem::Instance()
 {

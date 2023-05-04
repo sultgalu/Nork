@@ -46,7 +46,6 @@ namespace Nork {
 		{
 			return std::make_shared<Renderer::PointLight>(Renderer::Resources::Instance().pointLights->New());
 		}
-		std::shared_ptr<Renderer::Image> LoadImage(const std::string& path);
 		void Update();
 		void UpdateLights();
 	public:

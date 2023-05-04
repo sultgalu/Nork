@@ -9,6 +9,7 @@ namespace Nork::Renderer {
 class DeferredPass : public RenderPass
 {
 public:
+	static DeferredPass& Instance();
 	DeferredPass();
 	void CreateGraphicsPipeline();
 	void CreateRenderPass();
@@ -18,6 +19,7 @@ private:
 	void CreateDeferredGPassPipeline();
 	void CreateDeferredLightPassPipeline();
 	void CreateForwardPipeline();
+	void CreateLightlessPipeline();
 public:
 
 	std::shared_ptr<Vulkan::RenderPass> renderPass;
@@ -28,6 +30,7 @@ public:
 	std::shared_ptr<Image> gNorm;
 	std::shared_ptr<Image> gMR;
 	std::shared_ptr<Image> fbColor;
+	std::shared_ptr<Image> emissiveColor;
 	std::shared_ptr<Vulkan::Framebuffer> fb;
 
 	std::shared_ptr<Vulkan::DescriptorPool> descriptorPool;
@@ -38,5 +41,6 @@ public:
 	std::shared_ptr<Vulkan::Pipeline> pipelineGPass;
 	std::shared_ptr<Vulkan::Pipeline> pipelineLPass;
 	std::shared_ptr<Vulkan::Pipeline> pipelineForward;
+	std::shared_ptr<Vulkan::Pipeline> pipelineLightless;
 };
 }

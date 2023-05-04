@@ -2,20 +2,18 @@
 
 struct Material
 {
-	uint baseColor;
-	uint normal;
-	uint metallicRoughness;
-	uint occlusion;
+	uint baseColor_normal;
+	uint metallicRoughness_occlusion;
+	float roughnessFactor;
+	float metallicFactor;
 
 	vec3 emissiveFactor;
   uint emissive;
 
 	vec4 baseColorFactor;
 
-	float roughnessFactor;
-	float metallicFactor;
 	float alphaCutoff;
-	float padding;
+	float padding[3];
 };
 
 layout(location = 0) in vec3 vPos;
@@ -56,8 +54,9 @@ void main()
 
 	worldPos = (_model * vec4(vPos, 1.0f)).xyz;
 	gl_Position = PushConstants.VP * vec4(worldPos, 1.0f);
-
 	texCoord = vTexCoord;
+
+#ifndef LIGHTLESS
 	vec3 T = normalize(vec3(_model * vec4(vTangent, 0.0f)));
 	vec3 N = normalize(vec3(_model * vec4(vNormal, 0.0f)));
 	vec3 B = cross(N, T);
@@ -70,4 +69,5 @@ void main()
 #endif 
 
 	TBN = mat3(T, B, N);
+#endif
 }

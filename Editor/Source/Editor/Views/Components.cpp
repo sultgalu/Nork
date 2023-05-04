@@ -323,6 +323,9 @@ template<> bool SceneNodeView::ShowComponent(Components::Drawable& dr)
 					if (ImGui::BeginTabItem("Occusion")){
 						displayTex(Renderer::TextureMap::Occlusion);
 					}
+					if (ImGui::BeginTabItem("Emissive")) {
+						displayTex(Renderer::TextureMap::Emissive);
+					}
 					ImGui::EndTabBar();
 				}
 

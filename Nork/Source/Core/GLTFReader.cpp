@@ -71,7 +71,9 @@ std::shared_ptr<Renderer::Material> GLTFReader::CreateMaterial(const Renderer::G
 	data->roughnessFactor = mat.pbrMetallicRoughness.roughnessFactor;
 	data->metallicFactor = mat.pbrMetallicRoughness.metallicFactor;
 	data->emissiveFactor = mat.emissiveFactor;
-	if (mat.alphaMode == mat.MASK)
+	if (mat.emissiveFactor != glm::vec3(0))
+		material->shadingMode = Renderer::ShadingMode::Emissive;
+	else if (mat.alphaMode == mat.MASK)
 		data->alphaCutoff = mat.alphaCutoff;
 	else if (mat.alphaMode == mat.BLEND)
 		material->shadingMode = Renderer::ShadingMode::Blend;
