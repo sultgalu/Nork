@@ -10,7 +10,7 @@ namespace Nork::Renderer::Data {
 		float metallicFactor = 1;
 
 		glm::vec3 emissiveFactor = { 0, 0, 0 };
-		uint32_t emissive;
+		uint32_t emissive; // union emissive and baseColorFactor (they are never used together) -> save 16 bytes
 
 		glm::vec4 baseColorFactor = { 1, 1, 1, 1 };
 

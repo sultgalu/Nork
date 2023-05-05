@@ -8,24 +8,9 @@ namespace Nork::Renderer
 	struct ImageData
 	{
 		uint32_t width, height, channels;
-		//TextureFormat format;
 		std::vector<char> data;
 	};
 	enum class ImageFormat { JPEG, PNG, BMP };
-	struct MaterialData
-	{
-		std::unordered_map<TextureMap, std::string> textureMaps;
-		glm::vec3 diffuse;
-		float specular;
-		float specularExponent;
-	};
-	struct MeshData
-	{
-		std::string meshName, materialName;
-		std::vector<Data::Vertex> vertices;
-		std::vector<GLuint> indices;
-		MaterialData material;
-	};
 	class LoadUtils
 	{
 	public:

@@ -2,7 +2,7 @@
 #include "Core/RenderingSystem.h"
 
 namespace Nork::Components {
-	void Drawable::SetModel(std::shared_ptr<Model> model_)
+	void Drawable::SetModel(std::shared_ptr<Renderer::Model> model_)
 	{
 		model = model_;
 		transforms.clear();

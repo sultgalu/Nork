@@ -48,7 +48,7 @@ namespace Nork::Renderer {
 		void SetDefaultTexture(TextureMap type);
 	public:
 		std::array<std::shared_ptr<Texture>, std::to_underlying(TextureMap::COUNT)> textureMaps;
-		ShadingMode shadingMode = ShadingMode::Default;
+		bool blending = false; // to keep the gltf blending option
 	};
 
 }

@@ -23,15 +23,10 @@ static void ParseMaterial(Renderer::Material& material, const Renderer::GLTF::Ma
 	data->roughnessFactor = mat.pbrMetallicRoughness.roughnessFactor;
 	data->metallicFactor = mat.pbrMetallicRoughness.metallicFactor;
 	data->emissiveFactor = mat.emissiveFactor;
-	if (mat.emissiveFactor != glm::vec3(0)) {
-		material.shadingMode = Renderer::ShadingMode::Emissive;
-	}
-	else if (mat.alphaMode == mat.MASK) {
+	if (mat.alphaMode == mat.MASK) {
 		data->alphaCutoff = mat.alphaCutoff;
 	}
-	else if (mat.alphaMode == mat.BLEND) {
-		material.shadingMode = Renderer::ShadingMode::Blend;
-	}
+	material.blending = mat.alphaMode == mat.BLEND;
 
 	auto gltfFolderUri = AssetLoader::Instance().AbsolutePathToUri(gltfFolder);
 	auto setTexture = [&](int idx, Renderer::TextureMap type) {
@@ -97,7 +92,7 @@ AssetLoader::AssetLoader() {
 AssetLoaderProxy::AssetLoaderProxy() {
 	SetProjectRoot(fs::current_path().append("Assets"));
 }
-std::shared_ptr<Components::Model> AssetLoader::LoadModel(const fs::path& uri) {
+std::shared_ptr<Renderer::Model> AssetLoader::LoadModel(const fs::path& uri) {
 	fs::path path = UriToAbsolutePath(uri);
 	Logger::Info("Loading model ", path);
 	if (!fs::exists(path)) {
@@ -108,8 +103,8 @@ std::shared_ptr<Components::Model> AssetLoader::LoadModel(const fs::path& uri) {
 		throw Exception(Exception::Code::EmptyModel);
 	}
 
-	// TODO: renderer::meshes (primitives) could also be shared, but it is not possible with gltf
-	std::vector<std::shared_ptr<Components::Model::Mesh>> meshes; 
+	// TODO: Renderer::MeshDataes (primitives) could also be shared, but it is not possible with gltf
+	std::vector<std::shared_ptr<Renderer::Mesh>> meshes; 
 	std::vector<std::shared_ptr<Renderer::Material>> materials;
 
 	for (auto& glMat : gltf.materials) {
@@ -119,39 +114,40 @@ std::shared_ptr<Components::Model> AssetLoader::LoadModel(const fs::path& uri) {
 	}
 
 	for (auto& glMesh : gltf.meshes) {
-		auto mesh = std::make_shared<Components::Model::Mesh>();
+		auto mesh = std::make_shared<Renderer::Mesh>();
 		meshes.push_back(mesh);
 		for (auto& prim : glMesh.primitives)
 		{
 			const auto& indsBuf = gltf.buffers[gltf.bufferViews[gltf.accessors[prim.indices].bufferView].buffer];
 			const auto& vertsBufs = gltf.buffers[gltf.bufferViews[gltf.accessors[prim.attributes.back().accessor].bufferView].buffer]; // all of this primitive's attributes should point to the same buffer (vertices) 
-			Components::Model::SubMesh subMesh{ .mesh = RenderingSystem::Instance().NewMesh(
+			Renderer::Primitive primitive{ .meshData = RenderingSystem::Instance().NewMesh(
 				FileUtils::ReadBinary<Renderer::Data::Vertex>((path.parent_path() / vertsBufs.uri).string()),
 				FileUtils::ReadBinary<uint32_t>((path.parent_path() / indsBuf.uri).string())) };
 
-			subMesh.material = prim.material != -1 ? materials[prim.material] : RenderingSystem::Instance().NewMaterial();
-			mesh->subMeshes.push_back(subMesh);
+			primitive.material = prim.material != -1 ? materials[prim.material] : RenderingSystem::Instance().NewMaterial();
+			prim.extras.GetIfContains("shadingMode", primitive.shadingMode);
+			mesh->primitives.push_back(primitive);
 		}
 	}
 
-	auto model = std::make_shared<Components::Model>();
+	auto model = std::make_shared<Renderer::Model>();
 	for (auto& glNode : gltf.nodes) {
 		if (glNode.mesh == -1) {
 			std::unreachable(); // this could happen in the future, but not now
 		}
-		Components::Model::MeshNode meshNode;
+		Renderer::MeshNode meshNode;
 		meshNode.mesh = meshes[glNode.mesh];
 		if (glNode.HasTransform()) {
 			meshNode.localTransform = glNode.Transform();
 		}
 		model->nodes.push_back(meshNode);
 	}
-	auto& mesh = gltf.meshes.front(); // gltf::Mesh = Components::Model
+	auto& mesh = gltf.meshes.front(); // gltf::Mesh = Renderer::Model
 	
 
 	return model;
 }
-std::shared_ptr<Components::Model> AssetLoader::ImportModel(const fs::path& from, const fs::path& uri)
+std::shared_ptr<Renderer::Model> AssetLoader::ImportModel(const fs::path& from, const fs::path& uri)
 {
 	if (from.extension() != ".gltf") {
 		throw Exception(Exception::Code::NoImporterForAsset);
@@ -179,7 +175,7 @@ std::shared_ptr<Components::Model> AssetLoader::ImportModel(const fs::path& from
 	// here we should save the mesh data
 	return model;
 }
-void AssetLoader::SaveModel(const std::shared_ptr<Components::Model>& model, const fs::path& uri)
+void AssetLoader::SaveModel(const std::shared_ptr<Renderer::Model>& model, const fs::path& uri)
 {
 	fs::path path = UriToAbsolutePath(uri);
 	Logger::Info("Saving Model to ", path);
@@ -188,39 +184,13 @@ void AssetLoader::SaveModel(const std::shared_ptr<Components::Model>& model, con
 		fs::create_directories(path.parent_path()); // make sure the folder for the model's files exists
 	}
 
-	auto builder = Renderer::GLTFBuilder();
-	std::vector<std::pair<Renderer::TextureMap, std::string>> imageUris;
-	int matIdx = 0, meshIdx = 0;
-	std::unordered_map<std::shared_ptr<Components::Model::Mesh>, int> meshes;
-	std::unordered_map<std::shared_ptr<Renderer::Material>, int> materials;
+	auto builder = Renderer::GLTFBuilder([&](auto& tex) {
+		return AssetLoader::Instance().Uri(tex).filename().string();
+	});
 	builder.AddScene(true); //AddNode(path.stem().string());
 	for (auto& node : model->nodes)
 	{
-		if (!meshes.contains(node.mesh)) { // check if we already added this mesh
-			meshes[node.mesh] = meshIdx++;
-			builder.AddMesh();
-
-			for (auto& primitive : node.mesh->subMeshes) {
-				if (!materials.contains(primitive.material)) { // check if we already added this material
-					materials[primitive.material] = matIdx++;
-					auto tryAddTex = [&](Renderer::TextureMap type) {
-						if (!primitive.material->HasDefault(type)) { // don't need to add if it equals the (gltf) default one 
-							// save just the filename, not the whole uri, so it conforms to the standard
-							imageUris.push_back({ type, AssetLoader::Instance().Uri(primitive.material->GetTextureMap(type)).filename().string() });
-						}
-					};
-					using enum Renderer::TextureMap;
-					tryAddTex(BaseColor);
-					tryAddTex(MetallicRoughness);
-					tryAddTex(Normal);
-					tryAddTex(Occlusion);
-					tryAddTex(Emissive);
-					builder.AddMaterial(*primitive.material, imageUris);
-				}
-				builder.AddPrimitive(*primitive.mesh, path.parent_path().string(), materials[primitive.material]);
-			}
-		}
-		builder.AddNode(meshes[node.mesh]);
+		builder.AddNode(node.mesh, path.parent_path().string());
 		if (node.localTransform) {
 			builder.AddTransform(*node.localTransform);
 		}
@@ -300,13 +270,13 @@ std::shared_ptr<Renderer::Texture> AssetLoaderProxy::LoadTexture(const fs::path&
 	}
 	return textures[uri];
 }
-std::shared_ptr<Components::Model> AssetLoaderProxy::LoadModel(const fs::path& uri) {
+std::shared_ptr<Renderer::Model> AssetLoaderProxy::LoadModel(const fs::path& uri) {
 	if (!models.contains(uri)) {
 		models[uri] = AssetLoader::LoadModel(uri);
 	}
 	return models[uri];
 }
-std::shared_ptr<Components::Model> AssetLoaderProxy::ImportModel(const fs::path& from, std::string name) {
+std::shared_ptr<Renderer::Model> AssetLoaderProxy::ImportModel(const fs::path& from, std::string name) {
 	if (name == "") {
 		name = from.stem().string();
 	}
@@ -319,16 +289,16 @@ std::shared_ptr<Components::Model> AssetLoaderProxy::ImportModel(const fs::path&
 	models[uri] = AssetLoader::ImportModel(from, uri);
 	return models[uri];
 }
-void AssetLoaderProxy::SaveModel(const std::shared_ptr<Components::Model>& model) {
+void AssetLoaderProxy::SaveModel(const std::shared_ptr<Renderer::Model>& model) {
 	fs::path uri = Uri(model);
 	AssetLoader::SaveModel(model, uri);
 }
-void AssetLoaderProxy::ReloadModel(const std::shared_ptr<Components::Model>& model) {
+void AssetLoaderProxy::ReloadModel(const std::shared_ptr<Renderer::Model>& model) {
 	auto uri = Uri(model);
 	auto freshModel = AssetLoader::LoadModel(uri);
 	*model = *freshModel;
 }
-fs::path AssetLoaderProxy::Uri(const std::shared_ptr<Components::Model>& of) {
+fs::path AssetLoaderProxy::Uri(const std::shared_ptr<Renderer::Model>& of) {
 	return Uri(models, of);
 }
 fs::path AssetLoaderProxy::Uri(const std::shared_ptr<Renderer::Texture>& of) {
@@ -341,7 +311,7 @@ std::vector<fs::path> AssetLoaderProxy::ListLoadedModels() {
 	}
 	return loaded;
 }
-void AssetLoaderProxy::DeleteFromCache(const std::shared_ptr<Components::Model>& model)
+void AssetLoaderProxy::DeleteFromCache(const std::shared_ptr<Renderer::Model>& model)
 {
 	models.erase(Uri(model));
 }

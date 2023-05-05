@@ -16,13 +16,13 @@ namespace Nork {
 		RenderingSystem();
 		~RenderingSystem();
 	public:
-		std::shared_ptr<Renderer::Mesh> NewMesh(uint32_t vertexCount, uint32_t indexCount)
+		std::shared_ptr<Renderer::MeshData> NewMesh(uint32_t vertexCount, uint32_t indexCount)
 		{
 			auto vertices = Renderer::Resources::Instance().vertexBuffer->New(vertexCount);
 			auto indices = Renderer::Resources::Instance().indexBuffer->New(indexCount);
-			return std::make_shared<Renderer::Mesh>(vertices, indices);
+			return std::make_shared<Renderer::MeshData>(vertices, indices);
 		}
-		std::shared_ptr<Renderer::Mesh> NewMesh(const std::vector<Renderer::Data::Vertex>& vertices, 
+		std::shared_ptr<Renderer::MeshData> NewMesh(const std::vector<Renderer::Data::Vertex>& vertices, 
 			const std::vector<uint32_t> indices)
 		{
 			auto mesh = NewMesh(vertices.size(), indices.size());

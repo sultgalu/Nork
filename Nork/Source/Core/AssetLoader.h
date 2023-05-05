@@ -15,10 +15,10 @@ namespace Nork {
 			fs::path bufUri = fs::path(gltfUri).replace_extension("");
 			if (!ModelResources::Instance().Exists(gltfUri))
 			{
-				ModelResources::Instance().SaveAs(std::make_shared<Components::Model>(
-					Components::Model{
+				ModelResources::Instance().SaveAs(std::make_shared<Renderer::Model>(
+					Renderer::Model{
 						.meshes = { Components::Mesh {
-							.mesh = { RenderingSystem::Instance().NewMesh(Renderer::MeshFactory::CubeVertices(), Renderer::MeshFactory::CubeIndices()) },
+							.mesh = { RenderingSystem::Instance().NewMesh(Renderer::MeshDataFactory::CubeVertices(), Renderer::MeshDataFactory::CubeIndices()) },
 							.material = RenderingSystem::Instance().NewMaterial()
 						}}
 					}), gltfUri);
@@ -63,9 +63,9 @@ namespace Nork {
 	public:
 		AssetLoader();
 		std::shared_ptr<Renderer::Texture> LoadTexture(const fs::path& uri);
-		std::shared_ptr<Components::Model> LoadModel(const fs::path& uri);
-		std::shared_ptr<Components::Model> ImportModel(const fs::path& from, const fs::path& uri);
-		void SaveModel(const std::shared_ptr<Components::Model>& model, const fs::path& uri);
+		std::shared_ptr<Renderer::Model> LoadModel(const fs::path& uri);
+		std::shared_ptr<Renderer::Model> ImportModel(const fs::path& from, const fs::path& uri);
+		void SaveModel(const std::shared_ptr<Renderer::Model>& model, const fs::path& uri);
 		std::vector<fs::path> ListTemplates();
 		static AssetLoaderProxy& Instance();
 		fs::path UriToAbsolutePath(const fs::path& uri);
@@ -82,14 +82,14 @@ namespace Nork {
 	public:
 		AssetLoaderProxy();
 		std::shared_ptr<Renderer::Texture> LoadTexture(const fs::path& uri);
-		std::shared_ptr<Components::Model> LoadModel(const fs::path& uri);
-		std::shared_ptr<Components::Model> ImportModel(const fs::path& from, std::string name = "");
-		void SaveModel(const std::shared_ptr<Components::Model>& model);
-		void ReloadModel(const std::shared_ptr<Components::Model>& model);
-		fs::path Uri(const std::shared_ptr<Components::Model>& of);
+		std::shared_ptr<Renderer::Model> LoadModel(const fs::path& uri);
+		std::shared_ptr<Renderer::Model> ImportModel(const fs::path& from, std::string name = "");
+		void SaveModel(const std::shared_ptr<Renderer::Model>& model);
+		void ReloadModel(const std::shared_ptr<Renderer::Model>& model);
+		fs::path Uri(const std::shared_ptr<Renderer::Model>& of);
 		fs::path Uri(const std::shared_ptr<Renderer::Texture>& of);
 		std::vector<fs::path> ListLoadedModels();
-		void DeleteFromCache(const std::shared_ptr<Components::Model>&);
+		void DeleteFromCache(const std::shared_ptr<Renderer::Model>&);
 		void ClearCache();
 		using AssetLoader::AbsolutePathToUri;
 		using AssetLoader::CubeUri;
@@ -102,7 +102,7 @@ namespace Nork {
 			throw Exception(Exception::Code::AssetNotFoundInCache);
 		}
 	private:
-		std::unordered_map<fs::path, std::shared_ptr<Components::Model>> models;
+		std::unordered_map<fs::path, std::shared_ptr<Renderer::Model>> models;
 		std::unordered_map<fs::path, std::shared_ptr<Renderer::Texture>> textures;
 	};
 }

@@ -4,14 +4,16 @@ class JsonArray;
 class JsonObject;
 
 template<class T>
+concept EnumType = std::is_enum<T>::value;
+template<class T>
 concept NumberType = std::is_arithmetic<T>::value && !std::is_same<T, bool>::value;
 template<class T>
-concept JsonSimpleType = std::is_arithmetic<T>::value || std::is_convertible<T, std::string>::value;
+concept JsonSimpleType = std::is_arithmetic<T>::value || std::is_convertible<T, std::string>::value || std::is_enum<T>::value;
 template<class T>
-concept JsonDataType = std::is_arithmetic<T>::value || std::is_convertible<T, std::string>::value
-						|| std::is_same<T, JsonObject>::value || std::is_same<T, JsonArray>::value;
+concept JsonDataType = std::is_arithmetic<T>::value || std::is_convertible<T, std::string>::value || std::is_enum<T>::value
+|| std::is_same<T, JsonObject>::value || std::is_same<T, JsonArray>::value;
 
-class JsonException: public std::exception
+class JsonException : public std::exception
 {
 public:
 	JsonException(std::string msg) : std::exception(msg.c_str()) {}
@@ -24,6 +26,11 @@ public:
 class JsonParser
 {
 public:
+	template<EnumType T>
+	static std::string Parse(const T& value)
+	{
+		return Parse(std::to_underlying(value));
+	}
 	template<NumberType T>
 	static std::string Parse(const T& value)
 	{
@@ -32,8 +39,6 @@ public:
 	template<std::convertible_to<std::string> T>
 	static std::string Parse(const T& value)
 	{
-		// if constexpr (std::is_same<T, std::string>::value)
-		// 	return "\"" + FormatString(value) + "\"";
 		return "\"" + FormatString(value) + "\"";
 	}
 	static std::string Parse(bool value)
@@ -61,7 +66,9 @@ public:
 		else if constexpr (std::is_signed<T>::value)
 			return std::stoll(str);
 		else if constexpr (std::is_convertible<T, std::string>::value)
-			return UnformatString(str.substr(1, str.size() - 2));	
+			return UnformatString(str.substr(1, str.size() - 2));
+		else if constexpr (std::is_enum<T>::value)
+			return (T)Get<std::underlying_type_t<T>>(str);
 		std::unreachable();
 	}
 	static JsonObject GetObject(const std::string& str);
@@ -123,6 +130,7 @@ public:
 	std::string ToStringFormatted() const;
 	static JsonObject Parse(const std::string& json);
 	static JsonObject ParseFormatted(const std::string& json);
+	bool Empty() const { return properties.empty(); }
 private:
 	std::unordered_map<std::string, std::string> properties;
 	std::vector<std::string> order;
