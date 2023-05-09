@@ -167,10 +167,10 @@ Resources::TextureDescriptors::TextureDescriptors(std::shared_ptr<Vulkan::Descri
 		return AddTexture(texImg);
 	};
 	diffuse = createTexture(Vulkan::Format::rgba32f, { 1.0f, 1.0f, 1.0f, 1.0f });
-	normal = createTexture(Vulkan::Format::rgba32f, { 0.5f, 0.5f, 1.0f, 0.0f }); // 'a' unused
-	metallicRoughness = createTexture(Vulkan::Format::rgba32f, { 0.0f, 1.0f, 1.0f, 0.0f }); // g=roughness, b=metallic
-	occlusion = createTexture(Vulkan::Format::rgba32f, { 1.0f, 0.0f, 0.0f, 0.0f }); // r=occlusion
-	emissive = createTexture(Vulkan::Format::rgba32f, { 1.0f, 1.0f, 1.0f, 0.0f }); // rgb
+	normal = createTexture(Vulkan::Format::rgba32f, { 0.5f, 0.5f, 1.0f, 1.0f }); // 'a' unused
+	metallicRoughness = createTexture(Vulkan::Format::rgba32f, { 0.0f, 1.0f, 1.0f, 1.0f }); // g=roughness, b=metallic
+	occlusion = createTexture(Vulkan::Format::rgba32f, { 1.0f, 0.0f, 0.0f, 1.0f }); // r=occlusion
+	emissive = createTexture(Vulkan::Format::rgba32f, { 1.0f, 1.0f, 1.0f, 1.0f }); // rgb
 }
 std::shared_ptr<Texture> Resources::TextureDescriptors::AddTexture(std::shared_ptr<Image>& img)
 {

@@ -52,9 +52,7 @@ void GLTFReader::AddNodeRecursive(int nodeIdx, const glm::mat4& parentTransform)
                     .material = matIdx == -1 ? defaultMaterial : materials[matIdx]
                 };
                 auto& mat = gltf.materials[matIdx];
-                if (mat.emissiveFactor != glm::vec3(0)) {
-                    primitive.shadingMode = Renderer::ShadingMode::Emissive;
-                } else if (mat.alphaMode == mat.BLEND) {
+                if (mat.alphaMode == mat.BLEND) {
                     primitive.shadingMode = Renderer::ShadingMode::Blend;
                 }
                 model->nodes.back().mesh->primitives.push_back(primitive);

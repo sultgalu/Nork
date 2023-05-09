@@ -16,40 +16,40 @@ struct _PushConstant {
 };
 
 static glm::uvec2 Resolution() {
-	return *Settings::Instance().resolution;
+	return Settings::Instance()->resolution;
 }
 static float Sigma() {
-	return Settings::Instance().bloom->sigma;
+	return Settings::Instance()->bloom.sigma;
 }
 static uint32_t KernelSize() {
-	return Settings::Instance().bloom->gaussianKernelSize;
+	return Settings::Instance()->bloom.gaussianKernelSize;
 }
 static uint32_t MipLevels() {
-	return Settings::Instance().bloom->mipLevels;
+	return Settings::Instance()->bloom.mipLevels;
 }
 static uint32_t MaxKernelSize() {
-	return Settings::Instance().bloom->maxKernelSize;
+	return Settings::Instance()->bloom.maxKernelSize;
 }
 static uint32_t MaxMipLevels() {
-	return Settings::Instance().bloom->maxMipLevels();
+	return Settings::Instance()->bloom.maxMipLevels();
 }
 static bool InlineKernelData() {
-	return Settings::Instance().bloom->inlineKernelData;
+	return Settings::Instance()->bloom.inlineKernelData;
 }
 static bool InlineKernelSize() {
-	return Settings::Instance().bloom->inlineKernelSize;
+	return Settings::Instance()->bloom.inlineKernelSize;
 }
 static bool UseBlit() {
-	return Settings::Instance().bloom->useBlitFromDownsampling;
+	return Settings::Instance()->bloom.useBlitFromDownsampling;
 }
 static bool BlitLinear() {
-	return Settings::Instance().bloom->blitLinear;
+	return Settings::Instance()->bloom.blitLinear;
 }
 static glm::vec4 Threshold() {
-	return Settings::Instance().bloom->threshold;
+	return Settings::Instance()->bloom.threshold;
 }
 static bool InlineThreshold() {
-	return Settings::Instance().bloom->inlineThreshold;
+	return Settings::Instance()->bloom.inlineThreshold;
 }
 std::vector<float> CreateKernel() {
 	if (KernelSize() % 2 == 0) {
@@ -86,7 +86,7 @@ std::vector<std::array<std::string, 2>> GetMacros() {
 	thr *= thr.a;
 	thresholdSS << "vec3(" << thr.r << "," << thr.g << "," << thr.b << ")";
 
-	return std::vector<std::array<std::string, 2>> {
+	std::vector<std::array<std::string, 2>> macros {
 		{ "GAUSSIAN_HORIZONTAL", std::to_string(std::to_underlying(Stage::GaussianHorizontal)) },
 		{ "GAUSSIAN_VERTICAL", std::to_string(std::to_underlying(Stage::GaussianVertical)) },
 		{ "FILTER", std::to_string(std::to_underlying(Stage::Filter)) },
@@ -103,28 +103,26 @@ std::vector<std::array<std::string, 2>> GetMacros() {
 		{ "MAX_KERNEL_SIZE", std::to_string(MaxKernelSize()) },
 		{ "KERNEL_SIZE", InlineKernelSize() ? std::to_string(KernelSize()) : "KERNEL_SIZE_DYNAMIC" },
 		{ "THRESHOLD", InlineThreshold() ? thresholdSS.str() : "THRESHOLD_DYNAMIC" },
-		{ "EXPOSURE", Settings::Instance().postProcess->inlineExposure ? std::to_string(Settings::Instance().postProcess->exposure) : "EXPOSURE_DYNAMIC" },
+		{ "EXPOSURE", Settings::Instance()->postProcess.inlineExposure ? std::to_string(Settings::Instance()->postProcess.exposure) : "EXPOSURE_DYNAMIC" },
 	};
+	if (Settings::Instance()->postProcess.bloom) {
+		macros.push_back({"BLOOM", ""});
+	}
+	return macros;
 }
 
 PostProcessPass::PostProcessPass(const std::shared_ptr<Image>& target)
 	: target(target)
 {
-	Settings::Instance().postProcess.subscribe([&](const Settings::PostProcess& old, const Settings::PostProcess& val) {
+	Settings::Instance().subscribe([&](const Settings& old, const Settings& val) {
 		bool rebuildShader =
-			old.inlineExposure != val.inlineExposure ||
-			val.inlineExposure && (old.exposure != val.exposure)
-			;
-		if (rebuildShader) {
-			RefreshShaders();
-		}
-	}, lifeCycle);
-	Settings::Instance().bloom.subscribe([&](const Settings::Bloom& old, const Settings::Bloom& val) {
-		bool rebuildShader =
-			old.inlineKernelSize != val.inlineKernelSize || old.inlineKernelData != val.inlineKernelData || old.inlineThreshold != val.inlineThreshold ||
-			val.inlineKernelSize && (old.gaussianKernelSize != val.gaussianKernelSize) ||
-			val.inlineKernelData && (old.sigma != val.sigma) ||
-			val.inlineThreshold && (old.threshold != val.threshold)
+			old.postProcess.inlineExposure != val.postProcess.inlineExposure ||
+			val.postProcess.inlineExposure && (old.postProcess.exposure != val.postProcess.exposure) ||
+			old.bloom.inlineKernelSize != val.bloom.inlineKernelSize || old.bloom.inlineKernelData != val.bloom.inlineKernelData || old.bloom.inlineThreshold != val.bloom.inlineThreshold ||
+			val.bloom.inlineKernelSize && (old.bloom.gaussianKernelSize != val.bloom.gaussianKernelSize) ||
+			val.bloom.inlineKernelData && (old.bloom.sigma != val.bloom.sigma) ||
+			val.bloom.inlineThreshold && (old.bloom.threshold != val.bloom.threshold) || 
+			old.postProcess.bloom != val.postProcess.bloom
 			;
 		if (rebuildShader) {
 			RefreshShaders();
@@ -223,14 +221,14 @@ void PostProcessPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t i
 		cmd.dispatch(std::ceil((w / (size.x * std::pow(2, pushConstant.srcImgIdx + c)))), (std::ceil(h / (size.y * std::pow(2, pushConstant.srcImgIdx + c)))), 1);
 	};
 
-	if (!Settings::Instance().bloom->inlineThreshold) {
+	if (!Settings::Instance()->bloom.inlineThreshold) {
 		auto threshold = Threshold();
 		threshold *= threshold.a;
 		cmd.pushConstants<glm::vec4>(**pipelineLayout, vk::ShaderStageFlagBits::eCompute, sizeof(glm::vec4), threshold);
 	}
 
-	if (!Settings::Instance().postProcess->inlineExposure) {
-		cmd.pushConstants<float>(**pipelineLayout, vk::ShaderStageFlagBits::eCompute, sizeof(pushConstant), Settings::Instance().postProcess->exposure);
+	if (!Settings::Instance()->postProcess.inlineExposure) {
+		cmd.pushConstants<float>(**pipelineLayout, vk::ShaderStageFlagBits::eCompute, sizeof(pushConstant), Settings::Instance()->postProcess.exposure);
 	}
 
 	auto barrier = vk::ImageMemoryBarrier2()
@@ -241,7 +239,7 @@ void PostProcessPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t i
 	cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barrier));
 
 	pushConstant.srcImgIdx = 0;
-	if (!Settings::Instance().postProcess->bloom) { // do only tonemapping
+	if (!Settings::Instance()->postProcess.bloom) { // do only tonemapping
 
 		pushConstant.stage = Stage::Tonemap;
 		dispatchStage();
@@ -275,7 +273,7 @@ void PostProcessPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t i
 		.setDstAccessMask(vk::AccessFlagBits2::eMemoryRead);
 	cmd.pipelineBarrier2(vk::DependencyInfo().setImageMemoryBarriers(barrier11));
 
-	if (!Settings::Instance().bloom->inlineKernelData) {
+	if (!Settings::Instance()->bloom.inlineKernelData) {
 		cmd.pushConstants<uint32_t>(**pipelineLayout, vk::ShaderStageFlagBits::eCompute, 2 * sizeof(glm::vec4), KernelSize());
 		cmd.pushConstants<float>(**pipelineLayout, vk::ShaderStageFlagBits::eCompute, 2 * sizeof(glm::vec4) + sizeof(uint32_t), CreateKernel());
 	}

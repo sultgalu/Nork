@@ -479,9 +479,6 @@
     <ClInclude Include="Source\Utils\LiveData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Project.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Utils\LifeCycle.h">
       <Filter>Header Files</Filter>
     </ClInclude>

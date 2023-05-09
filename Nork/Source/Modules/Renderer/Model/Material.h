@@ -10,7 +10,7 @@ namespace Nork::Renderer {
 		BaseColor = 0, Normal, MetallicRoughness, Occlusion, Emissive, COUNT
 	};
 	enum class ShadingMode: uint8_t {
-		Default = 0, Blend, Emissive
+		Default = 0, Blend, Unlit
 	};
 	struct Material: DeviceDataProxy<Data::Material>
 	{

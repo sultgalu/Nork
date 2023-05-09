@@ -19,7 +19,7 @@ private:
 	void CreateDeferredGPassPipeline();
 	void CreateDeferredLightPassPipeline();
 	void CreateForwardPipeline();
-	void CreateLightlessPipeline();
+	void CreateUnlitPipeline();
 public:
 
 	std::shared_ptr<Vulkan::RenderPass> renderPass;
@@ -41,6 +41,6 @@ public:
 	std::shared_ptr<Vulkan::Pipeline> pipelineGPass;
 	std::shared_ptr<Vulkan::Pipeline> pipelineLPass;
 	std::shared_ptr<Vulkan::Pipeline> pipelineForward;
-	std::shared_ptr<Vulkan::Pipeline> pipelineLightless;
+	std::shared_ptr<Vulkan::Pipeline> pipelineUnlit;
 };
 }

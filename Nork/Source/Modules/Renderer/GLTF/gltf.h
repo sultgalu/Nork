@@ -1,6 +1,8 @@
 #pragma once
 
 namespace Nork::Renderer::GLTF {
+#define make_opt(name) inline static const std::string name = #name
+
 static std::string PrecentDecode(const std::string& s)
 {
     std::string result;
@@ -510,6 +512,180 @@ struct Node : Property {
         return mesh >= -1;
     }
 };
+
+struct AnimationSampler : Property {
+    int input = -1; // required
+    int output = -1; // required
+    enum Interpolation {
+        Linear, Step, CubicSpline
+    };
+    Interpolation interpolation = Linear;
+
+private:
+    make_opt(LINEAR); make_opt(STEP); make_opt(CUBICSPLINE);
+public:
+    JsonObject ToJson() const override
+    {
+        auto json = JsonObject()
+            .Property("input", input)
+            .Property("output", output);
+        if (interpolation != Linear) {
+            json.Property("interpolation", interpolation == Step ? STEP : CUBICSPLINE);
+        }
+        return json;
+    }
+    virtual void FromJson(const JsonObject& json) override
+    {
+        json.Get("mesh", input)
+            .Get("name", output);
+        std::string interpol;
+        if (json.GetIfContains("interpolation", interpol)) {
+            if (interpol == STEP) interpolation = Step;
+            else if (interpol == CUBICSPLINE) interpolation = CubicSpline;
+        }
+    }
+    virtual bool Validate() const override
+    {
+        return input != -1 && output != -1;
+    }
+};
+struct AnimationChannelTarget: Property {
+    int node = -1;
+    enum Path {
+        None, Translation, Rotation, Scale, Weights
+    };
+    Path path = None; // required
+
+private:
+    make_opt(translation); make_opt(rotation); make_opt(scale); make_opt(weights);
+public:
+    JsonObject ToJson() const override
+    {
+        auto json = JsonObject();
+        if (node != -1) {
+            json.Property("node", node);
+        }
+        if (path == Translation) json.Property("path", translation);
+        if (path == Rotation) json.Property("path", rotation);
+        if (path == Scale) json.Property("path", scale);
+        if (path == Weights) json.Property("path", weights);
+        return json;
+    }
+    virtual void FromJson(const JsonObject& json) override
+    {
+        json.GetIfContains("node", node);
+        auto p = json.Get<std::string>("path");
+        if (p == translation) path = Translation;
+        if (p == rotation) path = Rotation;
+        if (p == scale) path = Scale;
+        if (p == weights) path = Weights;
+    }
+    virtual bool Validate() const override
+    {
+        return path != None;
+    }
+};
+struct AnimationChannel: Property {
+    int sampler = -1; // required
+    AnimationChannelTarget target; // required
+    JsonObject ToJson() const override
+    {
+        auto json = JsonObject()
+            .Property("sampler", sampler)
+            .Property("target", target.Serialize());
+        return json;
+    }
+    virtual void FromJson(const JsonObject& json) override
+    {
+        json.Get("sampler", sampler);
+        target.Deserialize(json.Get<JsonObject>("target"));
+    }
+    virtual bool Validate() const override
+    {
+        return sampler != -1 && target.Validate();
+    }
+};
+struct Animation: Property {
+    std::vector<AnimationChannel> channels; // required
+    std::vector<AnimationSampler> samplers; // required
+    std::string name;
+    JsonObject ToJson() const override
+    {
+        JsonArray channelsArr;
+        for (auto& channel : channels) {
+            channelsArr.Element(channel.Serialize());
+        }
+        JsonArray samplersArr;
+        for (auto& sampler : samplers) {
+            samplersArr.Element(sampler.Serialize());
+        }
+        auto json = JsonObject()
+            .Property("channels", channelsArr)
+            .Property("samplers", samplersArr);
+        if (!name.empty()) {
+            json.Property("name", name);
+        }
+        return json;
+    }
+    virtual void FromJson(const JsonObject& json) override
+    {
+        channels.clear(); samplers.clear();
+        for (auto& chan : json.Get<JsonArray>("channels").Get<JsonObject>()) {
+            channels.emplace_back().Deserialize(chan);
+        }
+        for (auto& samp : json.Get<JsonArray>("samplers").Get<JsonObject>()) {
+            samplers.emplace_back().Deserialize(samp);
+        }
+        json.GetIfContains("name", name);
+    }
+    virtual bool Validate() const override
+    {
+        if (samplers.empty() || channels.empty())
+            return false;
+        for (auto& c : channels) {
+            if (!c.Validate())
+                return false;
+        }
+        for (auto& s : samplers) {
+            if (!s.Validate())
+                return false;
+        }
+    }
+};
+struct Skin : Property {
+    int inverseBindMatrices = -1;
+    int skeleton = -1;
+    std::vector<int> joints; // required
+    std::string name;
+public:
+    JsonObject ToJson() const override
+    {
+        auto json = JsonObject()
+            .Property("joints", JsonArray().Elements(joints));
+        if (inverseBindMatrices != -1) {
+            json.Property("inverseBindMatrices", inverseBindMatrices);
+        }
+        if (skeleton != -1) {
+            json.Property("skeleton", skeleton);
+        }
+        if (!name.empty()) {
+            json.Property("name", name);
+        }
+        return json;
+    }
+    virtual void FromJson(const JsonObject& json) override
+    {
+        json.Get<JsonArray>("joints").Get(joints);
+        json.GetIfContains("inverseBindMatrices", inverseBindMatrices);
+        json.GetIfContains("skeleton", skeleton);
+        json.GetIfContains("name", name);
+    }
+    virtual bool Validate() const override
+    {
+        return !joints.empty();
+    }
+};
+
 struct Scene : Property {
     std::string name = "";
     std::vector<int> nodes; // root nodes (not referred by any "children" property)
@@ -573,6 +749,9 @@ struct GLTF {
     std::vector<Texture> textures;
     std::vector<Image> images;
 
+    std::vector<Animation> animations;
+    std::vector<Skin> skins;
+
     int scene = 0; // scene to display
 
     template <std::derived_from<Property> T>
@@ -615,6 +794,10 @@ struct GLTF {
             json.Property("nodes", ElementsToJsonArray(nodes));
         if (!scenes.empty())
             json.Property("scenes", ElementsToJsonArray(scenes));
+        if (!animations.empty())
+            json.Property("animations", ElementsToJsonArray(animations));
+        if (!skins.empty())
+            json.Property("skins", ElementsToJsonArray(skins));
 
         return json.Property("scene", scene);
     }
@@ -641,9 +824,15 @@ struct GLTF {
             gltf.ParseJsonArray(gltf.nodes, json.Get<JsonArray>("nodes"));
         if (json.Contains("scenes"))
             gltf.ParseJsonArray(gltf.scenes, json.Get<JsonArray>("scenes"));
+        if (json.Contains("animations"))
+            gltf.ParseJsonArray(gltf.animations, json.Get<JsonArray>("animations"));
+        if (json.Contains("skins"))
+            gltf.ParseJsonArray(gltf.skins, json.Get<JsonArray>("skins"));
 
         gltf.scene = json.Get<int>("scene");
         return gltf;
     }
 };
+
+#undef make_opt
 }

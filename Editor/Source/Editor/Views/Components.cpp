@@ -268,13 +268,18 @@ bool SceneNodeView::ShowComponent(Components::Drawable& dr)
                     primitive.shadingMode = blend ? Renderer::ShadingMode::Blend : Renderer::ShadingMode::Default;
                 }
                 ImGui::SameLine();
-                bool emiss = primitive.shadingMode == Renderer::ShadingMode::Emissive;
-                if (ImGui::Checkbox("Emissive", &emiss)) {
-                    primitive.shadingMode = emiss ? Renderer::ShadingMode::Emissive : Renderer::ShadingMode::Default;
+                bool unlit = primitive.shadingMode == Renderer::ShadingMode::Unlit;
+                if (ImGui::Checkbox("Unlit", &unlit)) {
+                    primitive.shadingMode = unlit ? Renderer::ShadingMode::Unlit : Renderer::ShadingMode::Default;
                 }
                 ImGui::ColorEdit4("Base Color Factor", &material->baseColorFactor.r, ImGuiColorEditFlags_DefaultOptions_ | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
                 ImGui::SliderFloat("Roughness Factor", &material->roughnessFactor, 0, 1);
                 ImGui::SliderFloat("Metallic Factor", &material->metallicFactor, 0, 1);
+                ImGui::ColorEdit3("Emissive Factor", &material->emissiveFactor.r, ImGuiColorEditFlags_DefaultOptions_ | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
+                float emissiveMultiplier = 1.0;
+                if (ImGui::DragFloat("Emissive Multiplier", &emissiveMultiplier, 0.01f, 0.1f, 1.1f)) {
+                    material->emissiveFactor *= emissiveMultiplier;
+                }
 
                 if (ImGui::BeginTabBar("MaterialTexturesTab")) {
                     auto displayTex = [&](Renderer::TextureMap type) {

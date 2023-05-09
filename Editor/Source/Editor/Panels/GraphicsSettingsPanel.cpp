@@ -9,76 +9,75 @@ namespace Nork::Editor {
 
 	void GraphicsSettingsPanel::Content()
 	{
-		Renderer::Settings& settings = Renderer::Settings::Instance();
+		LiveData<Renderer::Settings>& liveSettings = Renderer::Settings::Instance();
+		auto settings = *liveSettings;
 		if (ImGui::TreeNodeEx("Renderer", ImGuiTreeNodeFlags_DefaultOpen)) {
-			bool deferred = *settings.deferred;
-			if (ImGui::Checkbox("Deferred", &deferred)) {
-				settings.deferred = deferred;
+			if (ImGui::Checkbox("Deferred", &settings.deferred)) {
+				liveSettings = settings;
 			}
-			bool shadows = *settings.shadows;
-			if (ImGui::Checkbox("Shadows", &shadows)) {
-				settings.shadows = shadows;
+			if (ImGui::Checkbox("Shadows", &settings.shadows)) {
+				liveSettings = settings;
 			}
-			auto pp = settings.postProcess.get();
-			auto bloom = settings.bloom.get();
+			auto& pp = settings.postProcess;
+			auto& bloom = settings.bloom;
 			if (ImGui::DragFloat("Exposure", &pp.exposure, 0.01f, 0.01f, 100, "%.2f")) {
-				settings.postProcess = pp;
+				liveSettings = settings;
 			}
 			if (ImGui::Checkbox("Inline Exposure", &pp.inlineExposure)) {
-				settings.postProcess = pp;
+				liveSettings = settings;
 			}
 			if (ImGui::Checkbox("Bloom Effect", &pp.bloom)) {
-				settings.postProcess = pp;
+				liveSettings = settings;
 			}
 			if (ImGui::SliderScalar("Mip Levels", ImGuiDataType_::ImGuiDataType_U32, &bloom.mipLevels, &bloom.minMipLevels, &bloom.maxMipLevels())) {
-				settings.bloom = bloom;
+				liveSettings = settings;
 			}
 			if (ImGui::Checkbox("Use Blitting for downsampling instead of Compute Shader", &bloom.useBlitFromDownsampling)) {
-				settings.bloom = bloom;
+				liveSettings = settings;
 			}
 			if (bloom.useBlitFromDownsampling) {
 				ImGui::SameLine();
 				if (ImGui::Checkbox("Linear Filtering", &bloom.blitLinear)) {
-					settings.bloom = bloom;
+					liveSettings = settings;
 				}
 			}
 			int kernelRange = bloom.gaussianKernelSize / 2;
 			if (ImGui::SliderInt("Kernel Range (Size-1)/2", &kernelRange, bloom.minKernelSize / 2, bloom.maxKernelSize / 2)) {
 				bloom.gaussianKernelSize = kernelRange * 2 + 1; // always odd
-				settings.bloom = bloom;
+				liveSettings = settings;
 			}
 			if (ImGui::DragFloat("Kernel Distribution", &bloom.sigma, 0.01f, 0.000001f, 100, "%.6f", ImGuiSliderFlags_::ImGuiSliderFlags_Logarithmic)) {
-				settings.bloom = bloom;
+				liveSettings = settings;
 			}
 			if (!bloom.inlineKernelData) {
 				if (ImGui::Checkbox("Inline Kernel Size", &bloom.inlineKernelSize)) {
-					settings.bloom = bloom;
+					liveSettings = settings;
 				}
 				ImGui::SameLine();
 			}
 			if (ImGui::Checkbox("Inline Kernel", &bloom.inlineKernelData)) {
 				bloom.inlineKernelSize = true;
-				settings.bloom = bloom;
+				liveSettings = settings;
 			}
 			ImGui::SameLine();
 			if (ImGui::Checkbox("Inline Threshold", &bloom.inlineThreshold)) {
-				settings.bloom = bloom;
+				liveSettings = settings;
 			}
 			// if (ImGui::ColorEdit4("Threshold", &bloom.threshold.r, ImGuiColorEditFlags_::ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_::ImGuiColorEditFlags_HDR)) {
 			// 	settings.bloom = bloom;
 			// }
 			if (ImGui::ColorEdit3("Threshold", &bloom.threshold.r)) {
-				settings.bloom = bloom;
+				liveSettings = settings;
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Reset")) {
 				float alpha = bloom.threshold.a; // don't reset the alpha value
 				bloom.threshold = bloom.thresholdDefault;
 				bloom.threshold.a = alpha;
-				settings.bloom = bloom;
+				liveSettings = settings;
 			}
 			if (ImGui::DragFloat("Threshold multiplier", &bloom.threshold.a, 0.001f)) {
-				settings.bloom = bloom;
+				liveSettings = settings;
 			}
 			if (ImGui::Button("Refresh Shaders")) {
 				Renderer::Renderer::Instance().RefreshShaders();

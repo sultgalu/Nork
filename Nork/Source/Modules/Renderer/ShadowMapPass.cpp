@@ -111,7 +111,7 @@ void ShadowMapPass::CreateRenderPass()
 }
 void ShadowMapPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imageIndex, uint32_t currentFrame)
 {
-	if (!*Settings::Instance().shadows) {
+	if (!Settings::Instance()->shadows) {
 		return;
 	}
 	cmd.bindVertexBuffers(0, **Resources::Instance().vertexBuffer->buffer->Underlying(), { 0 });

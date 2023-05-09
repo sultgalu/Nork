@@ -184,7 +184,7 @@ struct Client : Renderer::Client {
                 commandCount++;
                 if (obj.shadingMode == Renderer::ShadingMode::Default) drawCounts.defaults++;
                 else if (obj.shadingMode == Renderer::ShadingMode::Blend) drawCounts.blend++;
-                else if (obj.shadingMode == Renderer::ShadingMode::Emissive) drawCounts.lightless++;
+                else if (obj.shadingMode == Renderer::ShadingMode::Unlit) drawCounts.unlit++;
             }
             instanceCount++;
         }

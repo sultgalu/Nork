@@ -237,7 +237,6 @@
     <ClCompile Include="Source\Core\RenderingSystem.cpp" />
     <ClCompile Include="Source\Modules\Renderer\LoadUtils.cpp" />
     <ClCompile Include="Source\App\Application.cpp" />
-    <ClInclude Include="Source\Core\Project.h" />
     <ClInclude Include="Source\Modules\Renderer\PostProcessPass.h" />
     <ClInclude Include="Source\Modules\Renderer\RendererSettings.h" />
     <ClInclude Include="Source\Scripting\Nork.h" />

@@ -56,7 +56,7 @@ void main()
 	gl_Position = PushConstants.VP * vec4(worldPos, 1.0f);
 	texCoord = vTexCoord;
 
-#ifndef LIGHTLESS
+#ifndef UNLIT
 	vec3 T = normalize(vec3(_model * vec4(vTangent, 0.0f)));
 	vec3 N = normalize(vec3(_model * vec4(vNormal, 0.0f)));
 	vec3 B = cross(N, T);

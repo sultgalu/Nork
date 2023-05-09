@@ -6,7 +6,7 @@ namespace Nork::Renderer {
 
 class Settings {
 public:
-	LiveData<glm::uvec2> resolution;
+	glm::uvec2 resolution;
 	struct Bloom {
 		uint32_t mipLevels;
 		const uint32_t& maxMipLevels() const; // const& -> directly usable with imgui widgets
@@ -31,11 +31,11 @@ public:
 		float exposure;
 		bool inlineExposure;
 	};
-	LiveData<Bloom> bloom;
-	LiveData<PostProcess> postProcess;
-	LiveData<bool> shadows;
-	LiveData<bool> deferred;
+	Bloom bloom;
+	PostProcess postProcess;
+	bool shadows;
+	bool deferred;
 
-	static Settings& Instance();
+	static LiveData<Settings>& Instance();
 };
 }

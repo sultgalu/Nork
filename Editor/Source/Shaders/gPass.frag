@@ -5,6 +5,7 @@ layout(location = 0) out vec4 position; // 3 used
 layout(location = 1) out vec4 baseColor; // 3 used
 layout(location = 2) out vec3 normal; // 3 used
 layout(location = 3) out vec3 metallicRoughnessOcclusion; // 3 used
+layout(location = 4) out vec4 emissive; // 3 used
 
 struct Material
 {
@@ -38,6 +39,7 @@ void main()
 	baseColor = color * material.baseColorFactor;
 	metallicRoughnessOcclusion.rg = texture(textures[bitfieldExtract(material.metallicRoughness_occlusion, 0, 16)], texCoord).gb * vec2(material.roughnessFactor, material.metallicFactor);
 	metallicRoughnessOcclusion.b = texture(textures[bitfieldExtract(material.metallicRoughness_occlusion, 16, 16)], texCoord).r;
+	emissive.rgb = material.emissiveFactor * texture(textures[material.emissive], texCoord).rgb;
 
 	vec3 norm = texture(textures[bitfieldExtract(material.baseColor_normal, 16, 16)], texCoord).rgb;
 	norm = norm * 2.0f - 1.0f; // [0;1] -> [-1;1]

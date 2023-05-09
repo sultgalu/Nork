@@ -3,9 +3,12 @@
 
 //#define DEFERRED
 //#define FORWARD
-//#define LIGHTLESS
+//#define UNLIT
 
 layout(location = 0) out vec4 fColor;
+#ifndef DEFERRED
+layout(location = 1) out vec4 fEmissive; // 3 used
+#endif
 
 // --------- GLOBAL ----------
 
@@ -97,7 +100,7 @@ layout(input_attachment_index = 0, set = 1, binding = 0) uniform subpassInput gP
 layout(input_attachment_index = 1, set = 1, binding = 1) uniform subpassInput gBaseColor;
 layout(input_attachment_index = 2, set = 1, binding = 2) uniform subpassInput gNormal;
 layout(input_attachment_index = 3, set = 1, binding = 3) uniform subpassInput gMetallicRoughnessOcclusion;
-#else // FORWARD, LIGHTLESS
+#else // FORWARD, UNLIT
 struct Material
 {
 	uint baseColor_normal;
@@ -120,7 +123,7 @@ layout(location = 2) in mat3 TBN;
 layout(location = 5) nonuniformEXT flat in Material material_;
 
 layout(set = 0, binding = 3) uniform sampler2D[] textures;
-#endif // DEFERRED, LIGHTLESS
+#endif // DEFERRED, UNLIT
 
 vec3 dLightShadow(DirLight light, Materials material, vec3 normal, vec3 viewDir, DirShadow shadow, vec3 worldPos);
 
@@ -212,6 +215,7 @@ void main_light()
 	fColor = vec4(color, 1.0);
 	#else // FORWARD
 	fColor = vec4(color, PushConstants.blend == 0.0 ? 1.0 : material.albedo.a);
+	fEmissive = vec4(material_.emissiveFactor * texture(textures[material_.emissive], texCoord).rgb, 1.0);
 	#endif // DEFERRED
 	// fColor = subpassLoad(gBaseColor);
 }
@@ -303,17 +307,13 @@ float pShadow(PointShadow shadow, vec3 normal, vec3 lightDir, vec3 distance)
 	float bias = max(shadow.bias * distanceLen * (1.0f - dot(normal, -lightDir)), shadow.biasMin); // for huge angle, bias = 0.05f (perpendicular)
 	return texture(shadowMapsCube[shadow.shadMap], vec4(distance.xyz, distanceLen / shadow.far - bias));
 }
-// can be used instead of inverse-square for better manual control
-float CalcLuminosity(vec3 fromPos, vec3 toPos, float linear, float quadratic)
-{
-	float distance = length(toPos - fromPos);
-	float attenuation = 1.0f / (1.0f + linear * distance + quadratic * distance * distance);
-	return attenuation;
-}
 
 void main(){
-#ifdef LIGHTLESS
-	fColor = vec4(material_.emissiveFactor * texture(textures[material_.emissive], texCoord).rgb, 1.0);
+#ifdef UNLIT
+	vec4 albedo = texture(textures[bitfieldExtract(material_.baseColor_normal, 0, 16)], texCoord).rgba;
+	albedo *= material_.baseColorFactor;
+	fColor = vec4(albedo.rgb, PushConstants.blend == 0.0 ? 1.0 : albedo.a);
+	fEmissive.rgb = material_.emissiveFactor * texture(textures[material_.emissive], texCoord).rgb;
 #else
 main_light();
 #endif
