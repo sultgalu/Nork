@@ -46,10 +46,6 @@ namespace Nork::Renderer {
 				break;
 		}
 	}
-	bool Material::HasNormalMap()
-	{
-		return textureMaps[std::to_underlying(TextureMap::Normal)] != Resources::Instance().Textures().normal;
-	}
 	bool Material::HasDefault(TextureMap type) const
 	{
 		return textureMaps[std::to_underlying(type)] == GetDefaultTextureMaps()[std::to_underlying(type)];

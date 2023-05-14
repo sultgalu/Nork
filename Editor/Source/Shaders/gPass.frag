@@ -25,9 +25,7 @@ struct Material
 
 layout(location = 0) in vec3 worldPos;
 layout(location = 1) in vec2 texCoord;
-#ifdef NORMAL_MAP
 layout(location = 2) in mat3 TBN;
-#endif
 layout(location = 5) nonuniformEXT flat in Material material;
 
 layout(set = 0, binding = 3) uniform sampler2D[] textures;
@@ -45,10 +43,6 @@ void main()
 
 	vec3 norm = texture(textures[bitfieldExtract(material.baseColor_normal, 16, 16)], texCoord).rgb;
 	norm = norm * 2.0f - 1.0f; // [0;1] -> [-1;1]
-#ifdef NORMAL_MAP
 	normal = normalize(TBN * norm); // transforming from tangent-space -> world space
-#else
-	normal = norm;
-#endif
 	// baseColor = vec4(1.0, 0.0, 1.0, 1.0);
 }

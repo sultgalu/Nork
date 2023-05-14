@@ -29,7 +29,6 @@ struct Material : DeviceDataProxy<Data::Material>
 	bool HasDefault(TextureMap type) const;
 	void SetTextureMap(const std::shared_ptr<Texture>& tex, TextureMap type);
 	void SetDefaultTexture(TextureMap type);
-	bool HasNormalMap();
 public:
 	std::array<std::shared_ptr<Texture>, std::to_underlying(TextureMap::COUNT)> textureMaps;
 	bool blending = false; // to keep the gltf blending option

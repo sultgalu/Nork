@@ -196,9 +196,6 @@ void Renderer::SetupDrawBuffers(std::vector<Object>&& objects, std::span<DrawPar
 
 	std::sort(tbdrawn.begin(), tbdrawn.end(), [](const ToBeDrawn& left, const ToBeDrawn& right) {
 		if (left.shadingMode == right.shadingMode) {
-			if (left.shadingMode == ShadingMode::Default && left.material->HasNormalMap() != right.material->HasNormalMap()) { // normal map decides
-				return left.material->HasNormalMap() && !right.material->HasNormalMap();
-			}
 			return left.mesh->vertices->offset < right.mesh->vertices->offset;
 		}
 		return left.shadingMode < right.shadingMode;
@@ -231,13 +228,14 @@ void Renderer::SetupDrawBuffers(std::vector<Object>&& objects, std::span<DrawPar
 			lastCommand = &commands[commandCount];
 			commandCount++;
 			if (tbd.shadingMode == ShadingMode::Default) {
-				if (tbd.material->HasNormalMap())
-					drawCounts.defaults++; 
-				else 
-					drawCounts.normalMapless++;
+				drawCounts.defaults++;
 			}
-			else if (tbd.shadingMode == ShadingMode::Blend) drawCounts.blend++;
-			else if (tbd.shadingMode == ShadingMode::Unlit) drawCounts.unlit++;
+			else if (tbd.shadingMode == ShadingMode::Blend) {
+				drawCounts.blend++;
+			}
+			else if (tbd.shadingMode == ShadingMode::Unlit) {
+				drawCounts.unlit++;
+			}
 		}
 		instanceCount++;
 	}

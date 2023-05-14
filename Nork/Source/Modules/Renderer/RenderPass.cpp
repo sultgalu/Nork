@@ -10,7 +10,6 @@ struct LoadShaderResult {
 };
 
 static fs::path BinaryShaderPath(const fs::path& sourceCodePath, int tail) {
-	// return fs::path(sourceCodePath).replace_extension(sourceCodePath.extension().string() + "_bin" + (tail == -1 ? "" : std::to_string(tail)));
 	fs::create_directory(binaryShadersFolder);
 	return binaryShadersFolder / sourceCodePath.filename().replace_extension(sourceCodePath.extension().string() + (tail == -1 ? "" : std::to_string(tail)));
 }

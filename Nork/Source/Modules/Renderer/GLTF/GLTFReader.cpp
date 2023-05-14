@@ -154,7 +154,17 @@ std::shared_ptr<MeshData> GLTFReader::CreateRendererMesh(int idx, int meshIdx)
     else if (idxAcc.componentType == GL_UNSIGNED_BYTE)
         indices = GetIndices<uint8_t>(prim);
     for (size_t i = 0; i < indices.size(); i += 3) {
+        if (hasTex) {
         SetTangent(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]);
+    }
+        else { // find any perpendicular vector and use that as tangent 
+            auto& norm = vertices[indices[i]].normal;
+            glm::vec3 other(norm.z, norm.x, norm.y);
+            auto tangent = glm::cross(norm, other);
+            vertices[indices[i]].tangent = tangent;
+            vertices[indices[i + 1]].tangent = tangent;
+            vertices[indices[i + 2]].tangent = tangent;
+        }
     }
     return Resources::Instance().CreateMesh(vertices, indices);
 }

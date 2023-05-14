@@ -89,7 +89,6 @@ void DeferredPass::CreateGraphicsPipeline()
 	CreateDeferredLightPassPipeline();
 	CreateForwardPipeline();
 	CreateUnlitPipeline();
-	CreateNormalMaplessPipeline();
 }
 void DeferredPass::CreateRenderPass()
 {
@@ -214,12 +213,6 @@ void DeferredPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imag
 			Resources::Instance().DynamicOffset(*Resources::Instance().drawCommands),
 			Resources::Instance().drawCommandCount.defaults, sizeof(vk::DrawIndexedIndirectCommand));
 	}
-	if (Resources::Instance().drawCommandCount.normalMapless > 0) {
-		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, **pipelineFNormalMapless);
-		cmd.drawIndexedIndirect(**Resources::Instance().drawCommands->Underlying(),
-			Resources::Instance().DynamicOffset(*Resources::Instance().drawCommands) + Resources::Instance().drawCommandCount.NormalMaplessOffs() * sizeof(vk::DrawIndexedIndirectCommand),
-			Resources::Instance().drawCommandCount.normalMapless, sizeof(vk::DrawIndexedIndirectCommand));
-	}
 	if (Resources::Instance().drawCommandCount.blend > 0) {
 		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, **pipelineForward);
 		cmd.pushConstants<float>(**pipelineLayout, vk::ShaderStageFlagBits::eFragment, sizeof(glm::mat4) + sizeof(glm::vec3), 1.0);
@@ -239,7 +232,7 @@ void DeferredPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imag
 void DeferredPass::CreateDeferredGPassPipeline()
 {
 	using namespace Vulkan;
-	std::vector<std::array<std::string, 2>> macros = { {"NORMAL_MAP", ""} };
+	std::vector<std::array<std::string, 2>> macros = {};
 	ShaderModule vertShaderModule(LoadShader("Source/Shaders/gPass.vert", macros), vk::ShaderStageFlagBits::eVertex);
 	ShaderModule fragShaderModule(LoadShader("Source/Shaders/gPass.frag", macros), vk::ShaderStageFlagBits::eFragment);
 	pipelineGPass = std::make_shared<Vulkan::Pipeline>(Vulkan::PipelineCreateInfo()
@@ -275,7 +268,7 @@ void DeferredPass::CreateDeferredLightPassPipeline()
 void DeferredPass::CreateForwardPipeline()
 {
 	using namespace Vulkan;
-	std::vector<std::array<std::string, 2>> macros = { {"FORWARD", ""}, {"NORMAL_MAP", ""} };
+	std::vector<std::array<std::string, 2>> macros = { {"FORWARD", ""} };
 	ShaderModule vertShaderModule(LoadShader("Source/Shaders/gPass.vert", macros, 1), vk::ShaderStageFlagBits::eVertex);
 	ShaderModule fragShaderModule(LoadShader("Source/Shaders/lightPass.frag", macros, 1), vk::ShaderStageFlagBits::eFragment);
 	pipelineForward = std::make_shared<Pipeline>(PipelineCreateInfo()
@@ -307,35 +300,16 @@ void DeferredPass::CreateUnlitPipeline()
 		.RenderPass(**renderPass, 2)
 		.DepthStencil(true));
 }
-void DeferredPass::CreateNormalMaplessPipeline()
-{
-	using namespace Vulkan;
-	std::vector<std::array<std::string, 2>> macros = { {"FORWARD", ""} };
-	ShaderModule vertShaderModule(LoadShader("Source/Shaders/gPass.vert", {}, 3), vk::ShaderStageFlagBits::eVertex);
-	ShaderModule fragShaderModule(LoadShader("Source/Shaders/lightPass.frag", macros, 3), vk::ShaderStageFlagBits::eFragment);
-	pipelineFNormalMapless = std::make_shared<Pipeline>(PipelineCreateInfo()
-		.Layout(**pipelineLayout)
-		.AddShader(vertShaderModule)
-		.AddShader(fragShaderModule)
-		.VertexInput<Data::Vertex>()
-		.InputAssembly(vk::PrimitiveTopology::eTriangleList)
-		.Rasterization(true)
-		.Multisampling(vk::SampleCountFlagBits::e1)
-		.ColorBlend(2, true)
-		.RenderPass(**renderPass, 2)
-		.DepthStencil(true));
-}
 void DeferredPass::RefreshShaders()
 {
 	// if (IsShaderSourceChanged("Source/Shaders/bloom.comp", GetMacros())) {
 	// 	CreatePipeline();
 	// }
-	std::vector<std::shared_ptr<Vulkan::Pipeline>> pipelinesOld = { pipelineGPass, pipelineLPass, pipelineForward, pipelineUnlit, pipelineFNormalMapless };
+	std::vector<std::shared_ptr<Vulkan::Pipeline>> pipelinesOld = { pipelineGPass, pipelineLPass, pipelineForward, pipelineUnlit };
 	Commands::Instance().OnRenderFinished([pipelinesOld]() {});
 	CreateDeferredGPassPipeline();
 	CreateDeferredLightPassPipeline();
 	CreateForwardPipeline();
 	CreateUnlitPipeline();
-	CreateNormalMaplessPipeline();
 }
 }
