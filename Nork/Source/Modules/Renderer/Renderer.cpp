@@ -178,8 +178,10 @@ void Renderer::SetupDrawBuffers(std::vector<Object>&& objects, std::span<DrawPar
 	auto add = [&](const Object& obj, std::vector<ToBeDrawn>& to) {
 		for (size_t i = 0; i < obj.model->nodes.size(); i++) {
 			auto& node = obj.model->nodes[i];
-			for (auto& prim : node.mesh->primitives) {
-				to.push_back(ToBeDrawn{ .mesh = prim.meshData, .material = prim.material, .modelMatrix = obj.childTransforms[i], .shadingMode = prim.shadingMode });
+			if (node.mesh) {
+				for (auto& prim : node.mesh->primitives) {
+					to.push_back(ToBeDrawn{ .mesh = prim.meshData, .material = prim.material, .modelMatrix = obj.childTransforms[i], .shadingMode = prim.shadingMode });
+				}
 			}
 		}
 	};

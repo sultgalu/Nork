@@ -222,6 +222,19 @@ bool SceneNodeView::ShowComponent(Components::Drawable& dr)
     ChangeObserver observer;
     static int imgSize = 100;
     const auto model = dr.object->GetModel();
+
+    if (!model->animations.empty()) {
+        bool anim = dr.object->isAnimating;
+        if (ImGui::Checkbox("Animation", &anim)) {
+            if (anim) {
+                dr.object->StartAnimation();
+            }
+            else {
+                dr.object->StopAnimation();
+            }
+        }
+    }
+
     if (!model->nodes.empty()) {
         if (ImGui::TreeNode("Meshes##1234")) {
             static int meshIdx = 0;
@@ -253,7 +266,7 @@ bool SceneNodeView::ShowComponent(Components::Drawable& dr)
                 node.localTransform.emplace(glm::identity<glm::mat4>());
             }
 
-            if (ImGui::TreeNode("Materials##1234")) {
+            if (node.mesh && ImGui::TreeNode("Materials##1234")) {
                 ImGui::Unindent();
                 static int subMeshIdx = 0;
                 auto subMeshCount = node.mesh->primitives.size();

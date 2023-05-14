@@ -16,7 +16,7 @@ static constexpr auto dlp_size = MemoryAllocator::poolSize / 8; // TODO: should 
 static constexpr auto plp_size = MemoryAllocator::poolSize / 8;
 static constexpr auto dps_size = MemoryAllocator::poolSize / 4;
 static constexpr auto dcs_size = MemoryAllocator::poolSize / 4;
-static constexpr auto textures_count = 100;
+static constexpr auto textures_count = 500;
 Texture::~Texture()
 {
 	Resources::Instance().textureDescriptors->RemoveImage(descriptorIdx);

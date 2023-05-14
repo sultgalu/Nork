@@ -258,6 +258,16 @@ void RenderingSystem::UpdateLights()
 void RenderingSystem::Update()
 {
     UpdateLights();
+
+    static Timer deltaTimer(-20);
+    float delta = deltaTimer.ElapsedSeconds();
+    deltaTimer.Restart();
+    for (auto [ent, dr] : Scene::Current().registry.view<Components::Drawable>().each()) {
+        if (dr.object->isAnimating) {
+            dr.object->UpdateAnimation(delta);
+        }
+    }
+
     for (auto& ent : transformObserver) {
         auto& dr = Registry().get<Components::Drawable>(ent);
         const auto& modelMatrix = Registry().get<Components::Transform>(ent).modelMatrix;

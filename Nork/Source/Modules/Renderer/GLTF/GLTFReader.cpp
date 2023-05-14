@@ -3,6 +3,61 @@
 #include "../AssetLoader.h"
 
 namespace Nork::Renderer {
+
+template <class S, class T>
+class AccessorReader {
+public:
+    AccessorReader(const GLTF::GLTF& gltf, const std::vector<std::vector<char>>& buffers, const GLTF::Accessor& accessor) : gltf(gltf), buffers(buffers) {
+        stride = glm::max<int>(gltf.bufferViews[accessor.bufferView].byteStride, GetElementSize(accessor)) / sizeof(T);
+        view = BufferView(accessor);
+    }
+    AccessorReader(const GLTF::GLTF& gltf, const std::vector<std::vector<char>>& buffers, const S& constant) : gltf(gltf), buffers(buffers), constant(constant) {
+        returnConstant = true;
+    }
+    const S& operator[](size_t idx) const {
+        return returnConstant ? constant : *((S*)&view[idx * stride]);
+    }
+    size_t Count() const { return view.size(); }
+    const std::span<T>& GetView() const {
+        return view;
+    }
+private:
+    std::span<T> BufferView(const GLTF::Accessor& accessor)
+    {
+        auto bufferView = gltf.bufferViews[accessor.bufferView];
+        auto start = buffers[bufferView.buffer].data() + bufferView.byteOffset + accessor.byteOffset;
+        auto sizeBytes = accessor.count * glm::max<int>(bufferView.byteStride, GetElementSize(accessor)); // if bytestride is not 0, it should not be less than sizeof(T)
+        return std::span<T>((T*)start, sizeBytes / sizeof(T));
+    }
+    size_t GetElementSize(const GLTF::Accessor& accessor) {
+        return GetTypeSize(accessor) * GetComponentSize(accessor);
+    }
+    size_t GetTypeSize(const GLTF::Accessor& accessor) {
+        if (accessor.type == GLTF::Accessor::SCALAR) return 1;
+        if (accessor.type == GLTF::Accessor::VEC2) return 2;
+        if (accessor.type == GLTF::Accessor::VEC3) return 3;
+        if (accessor.type == GLTF::Accessor::VEC4) return 4;
+        if (accessor.type == GLTF::Accessor::MAT2) return 8;
+        if (accessor.type == GLTF::Accessor::MAT3) return 12;
+        if (accessor.type == GLTF::Accessor::MAT4) return 16;
+    }
+    size_t GetComponentSize(const GLTF::Accessor& accessor) {
+        if (accessor.componentType == GL_BYTE) return 1;
+        if (accessor.componentType == GL_UNSIGNED_BYTE) return 1;
+        if (accessor.componentType == GL_SHORT) return 2;
+        if (accessor.componentType == GL_UNSIGNED_SHORT) return 2;
+        if (accessor.componentType == GL_UNSIGNED_INT) return 4;
+        if (accessor.componentType == GL_FLOAT) return 4;
+    }
+private:
+    const GLTF::GLTF& gltf;
+    const std::vector<std::vector<char>>& buffers;
+    std::span<T> view = std::span<T>();
+    uint32_t stride = 0; // in sizeof(T)
+    bool returnConstant = false;
+    S constant;
+};
+
 GLTFReader::GLTFReader(const fs::path& path)
 {
     srcFolder = path.parent_path();
@@ -27,9 +82,32 @@ std::shared_ptr<Model> GLTFReader::Read()
             meshDatas.back().push_back(mesh);
         }
     }
+    model->nodes.resize(gltf.nodes.size());
     for (auto nodeIdx : gltf.scenes.back().nodes)
         AddNodeRecursive(nodeIdx);
 
+    for (auto& glAnim : gltf.animations) {
+        Animation& animation = model->animations.emplace_back();
+        animation.name = glAnim.name;
+        animation.samplers.reserve(glAnim.samplers.size());
+        animation.channels.reserve(glAnim.channels.size());
+
+        for (auto& glSamp : glAnim.samplers) {
+            Animation::Sampler& sampler = animation.samplers.emplace_back();
+            sampler.interpolation = (Animation::Interpolation)(glSamp.interpolation - GLTF::AnimationSampler::Linear);
+            auto tsReader = AccessorReader<float, float>(gltf, buffers, gltf.accessors[glSamp.input]);
+            auto kfReader = AccessorReader<float, float>(gltf, buffers, gltf.accessors[glSamp.output]);
+
+            sampler.timestamps.insert(sampler.timestamps.end(), tsReader.GetView().begin(), tsReader.GetView().end());
+            sampler.keyFrameData.insert(sampler.keyFrameData.end(), kfReader.GetView().begin(), kfReader.GetView().end());
+        }
+        for (auto& glChan : glAnim.channels) {
+            Animation::Channel& channel = animation.channels.emplace_back();
+            channel.node = glChan.target.node;
+            channel.path = (Animation::Path)(glChan.target.path - GLTF::AnimationChannelTarget::Translation);
+            channel.samplerIdx = glChan.sampler;
+        }
+    }
     return model;
 }
 void GLTFReader::AddNodeRecursive(int nodeIdx, const glm::mat4& parentTransform)
@@ -43,10 +121,15 @@ void GLTFReader::AddNodeRecursive(int nodeIdx, const glm::mat4& parentTransform)
         AddNodeRecursive(i, transform);
     }
 
+    MeshNode& node = model->nodes[nodeIdx];
+    node.children = glNode.children;
+    if (transform != parentTransform) {
+        node.localTransform = transform;
+    }
+
     if (glNode.mesh != -1) {
         auto& glMesh = gltf.meshes[glNode.mesh];
-        model->nodes.push_back(MeshNode { .mesh = std::make_shared<Mesh>() });
-        model->nodes.back().children = glNode.children;
+        node.mesh = std::make_shared<Mesh>();
         for (size_t i = 0; i < glMesh.primitives.size(); i++) {
             auto& mesh = meshDatas[glNode.mesh][i];
             if (mesh) {
@@ -59,11 +142,8 @@ void GLTFReader::AddNodeRecursive(int nodeIdx, const glm::mat4& parentTransform)
                 if (mat.alphaMode == mat.BLEND) {
                     primitive.shadingMode = ShadingMode::Blend;
                 }
-                model->nodes.back().mesh->primitives.push_back(primitive);
+                node.mesh->primitives.push_back(primitive);
             }
-        }
-        if (transform != glm::identity<glm::mat4>()) {
-            model->nodes.back().localTransform = transform;
         }
     }
 }
@@ -103,42 +183,38 @@ std::shared_ptr<MeshData> GLTFReader::CreateRendererMesh(int idx, int meshIdx)
     int posAccIdx = prim.Accessor(GLTF::Attribute::position);
     int normAccIdx = prim.Accessor(GLTF::Attribute::normal);
     int texAccIdx = prim.Accessor(GLTF::Attribute::texcoord0);
-    bool hasNorm = normAccIdx != -1;
     bool hasTex = texAccIdx != -1;
-    if (posAccIdx == -1 || !hasNorm) {
+    if (posAccIdx == -1 || normAccIdx == -1) {
         Logger::Warning("skipping primitive ", idx, " of mesh ", meshIdx, ", incorrect vertex accessors (missing position or normal accessor)");
         return nullptr;
     }
     auto posAcc = gltf.accessors[posAccIdx];
-    auto normAcc = hasNorm ? gltf.accessors[normAccIdx] : GLTF::Accessor{};
+    auto normAcc = gltf.accessors[normAccIdx];
     auto texAcc = hasTex ? gltf.accessors[texAccIdx] : GLTF::Accessor{};
     auto idxAcc = gltf.accessors[prim.indices];
-    if (idxAcc.type != GLTF::Accessor::SCALAR || posAcc.type != GLTF::Accessor::VEC3 || (hasNorm && normAcc.type != GLTF::Accessor::VEC3) || (hasTex && texAcc.type != GLTF::Accessor::VEC2)) {
+    if (idxAcc.type != GLTF::Accessor::SCALAR || posAcc.type != GLTF::Accessor::VEC3 || normAcc.type != GLTF::Accessor::VEC3 || (hasTex && texAcc.type != GLTF::Accessor::VEC2)) {
         Logger::Warning("skipping primitive ", idx, " of mesh ", meshIdx, ", incorrect vertex accessors (bad type)");
         return nullptr;
     }
-    if (posAcc.componentType != GL_FLOAT || (hasNorm && normAcc.componentType != GL_FLOAT) || (hasTex && texAcc.componentType != GL_FLOAT)) {
+    if (posAcc.componentType != GL_FLOAT || normAcc.componentType != GL_FLOAT || (hasTex && texAcc.componentType != GL_FLOAT)) {
         Logger::Warning("skipping primitive ", idx, " of mesh ", meshIdx, ", incorrect vertex accessors (bad componentType)");
         return nullptr;
     }
-    if (posAcc.count != normAcc.count || (hasNorm && normAcc.count != posAcc.count) || (hasTex && texAcc.count != posAcc.count)) {
+    if (posAcc.count != normAcc.count || (hasTex && texAcc.count != posAcc.count)) {
         Logger::Warning("skipping primitive ", idx, " of mesh ", meshIdx, ", incorrect vertex accessors (counts not equal)");
         return nullptr;
     }
-    auto posStride = glm::max<int>(gltf.bufferViews[posAcc.bufferView].byteStride, sizeof(glm::vec3)) / sizeof(float);
-    auto normStride = hasNorm ? glm::max<int>(gltf.bufferViews[normAcc.bufferView].byteStride, sizeof(glm::vec3)) / sizeof(float) : 0;
-    auto texStride = hasTex ? glm::max<int>(gltf.bufferViews[texAcc.bufferView].byteStride, sizeof(glm::vec2)) / sizeof(float) : 0;
-    std::span<float> posData = BufferView<glm::vec3>(posAcc);
-    std::span<float> normData = hasNorm ? BufferView<glm::vec3>(normAcc) : std::span<float>();
-    std::span<float> texData = hasTex ? BufferView<glm::vec2>(texAcc) : std::span<float>();
+    auto posReader = AccessorReader<glm::vec3, float>(gltf, buffers, posAcc);
+    auto normReader = AccessorReader<glm::vec3, float>(gltf, buffers, normAcc);
+    auto texReader = hasTex ? AccessorReader<glm::vec2, float>(gltf, buffers, texAcc) : AccessorReader<glm::vec2, float>(gltf, buffers, glm::vec2(0.5));
 
     std::vector<Data::Vertex> vertices;
     vertices.reserve(posAcc.count);
     for (size_t i = 0; i < posAcc.count; i++) {
         vertices.push_back(Data::Vertex {
-            .position = *((glm::vec3*)&posData[i * posStride]),
-            .normal = hasNorm ? *((glm::vec3*)&normData[i * normStride]) : glm::vec3(0),
-            .texCoords = hasTex ? *((glm::vec2*)&texData[i * texStride]) : glm::vec2(0.5),
+            .position = posReader[i], // *((glm::vec3*)&posData[i * posStride]),
+            .normal = normReader[i], // *((glm::vec3*)&normData[i * normStride]),
+            .texCoords = texReader[i] // hasTex ? *((glm::vec2*)&texData[i * texStride]) : glm::vec2(0.5),
         });
     }
     std::vector<uint32_t> indices;
@@ -147,7 +223,8 @@ std::shared_ptr<MeshData> GLTFReader::CreateRendererMesh(int idx, int meshIdx)
         indices.resize(vertices.size());
         uint32_t n = 0;
         std::ranges::generate(indices, [&n]() mutable { return n++; });
-    } else if (idxAcc.componentType == GL_UNSIGNED_INT)
+    } 
+    else if (idxAcc.componentType == GL_UNSIGNED_INT)
         indices = GetIndices<uint32_t>(prim);
     else if (idxAcc.componentType == GL_UNSIGNED_SHORT)
         indices = GetIndices<uint16_t>(prim);
@@ -155,8 +232,8 @@ std::shared_ptr<MeshData> GLTFReader::CreateRendererMesh(int idx, int meshIdx)
         indices = GetIndices<uint8_t>(prim);
     for (size_t i = 0; i < indices.size(); i += 3) {
         if (hasTex) {
-        SetTangent(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]);
-    }
+            SetTangent(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]);
+        } 
         else { // find any perpendicular vector and use that as tangent 
             auto& norm = vertices[indices[i]].normal;
             glm::vec3 other(norm.z, norm.x, norm.y);
@@ -206,4 +283,5 @@ std::span<T> GLTFReader::BufferView(const GLTF::Accessor& accessor)
     auto size = accessor.count * glm::max<int>(bufferView.byteStride, sizeof(S)); // if bytestride is not 0, it should not be less that sizeof(T)
     return std::span<T>((T*)start, size / sizeof(T));
 }
+
 }
