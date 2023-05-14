@@ -62,9 +62,9 @@ void LoadUtils::WriteImage(const ImageData& image, const std::string& path, Imag
 	if (WriteImage_stb(image, path, format) == 0)
 		Logger::Error("Failed to write image to ", path);
 }
-/*void LoadUtils::WriteTexture(const Renderer::Texture2D& tex, const std::string& path, Renderer::ImageFormat format)
+/*void LoadUtils::WriteTexture(const Texture2D& tex, const std::string& path, ImageFormat format)
 {
-	Renderer::Image image;
+	Image image;
 	image.format = tex.GetAttributes().format;
 	image.width = tex.GetWidth();
 	image.height = tex.GetHeight();

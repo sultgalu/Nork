@@ -2,14 +2,14 @@
 
 #include "Resources.h"
 #include "RenderPass.h"
+#include "Model/Mesh.h"
 
 namespace Nork::Renderer {
 
 struct Client
 {
 	// return the number of elements written to 'commands'
-	virtual DrawCounts FillDrawBuffers(std::span<DrawParams> params,
-		std::span<vk::DrawIndexedIndirectCommand> commands) = 0;
+	virtual std::vector<Object> GetObjectsToDraw() = 0;
 	virtual void FillLightBuffers(std::span<uint32_t> dIdxs, std::span<uint32_t> pIdxs,
 		uint32_t& dlCount, uint32_t& dsCount, uint32_t& plCount, uint32_t& psCount) = 0;
 	virtual void ProvideShadowMapsForUpdate(std::vector<std::shared_ptr<DirShadowMap>>&, std::vector<std::shared_ptr<PointShadowMap>>&) = 0;
@@ -27,6 +27,9 @@ public:
 	void DrawFrame();
 	void RefreshShaders();
 	void CreateSyncObjects();
+private:
+	void SetupDrawBuffers(std::vector<Object>&& objects, std::span<DrawParams> params,
+		std::span<vk::DrawIndexedIndirectCommand> commands);
 public:
 	MemoryAllocator allocator;
 	Commands commands = Commands(MAX_FRAMES_IN_FLIGHT);

@@ -112,7 +112,7 @@ uint32_t Renderer::BeginFrame()
 		auto commandsOffs = resources->DynamicOffset(*resources->drawCommands);
 		auto commandsPtr = (vk::DrawIndexedIndirectCommand*)getPtr(*resources->drawCommands);
 		auto commands = std::span(commandsPtr, resources->DynamicSize(*resources->drawCommands) / sizeof(vk::DrawIndexedIndirectCommand));
-		resources->drawCommandCount = client->FillDrawBuffers(params, commands);
+		SetupDrawBuffers(client->GetObjectsToDraw(), params, commands);
 	}
 	for (auto& pass : renderPasses) {
 		pass->OnTransferCommands();
@@ -167,6 +167,82 @@ void Renderer::DrawFrame()
 	}
 	Commands::Instance().EndRenderCommandBuffer();
 	EndFrame(imgIdx);
+}
+void Renderer::SetupDrawBuffers(std::vector<Object>&& objects, std::span<DrawParams> params,
+	std::span<vk::DrawIndexedIndirectCommand> commands)
+{
+	DrawCounts drawCounts;
+
+	static std::vector<ToBeDrawn> tbdrawn;
+
+	auto add = [&](const Object& obj, std::vector<ToBeDrawn>& to) {
+		for (size_t i = 0; i < obj.model->nodes.size(); i++) {
+			auto& node = obj.model->nodes[i];
+			for (auto& prim : node.mesh->primitives) {
+				to.push_back(ToBeDrawn{ .mesh = prim.meshData, .material = prim.material, .modelMatrix = obj.childTransforms[i], .shadingMode = prim.shadingMode });
+			}
+		}
+	};
+	for (auto obj : objects) {
+		if (true) // eg.: its material has a deferredShader
+		{
+			add(obj, tbdrawn);
+		}
+		if (true) // eg.: not opaque
+		{
+			// add(dr, shadowedObjects);
+		}
+	}
+
+	std::sort(tbdrawn.begin(), tbdrawn.end(), [](const ToBeDrawn& left, const ToBeDrawn& right) {
+		if (left.shadingMode == right.shadingMode) {
+			if (left.shadingMode == ShadingMode::Default && left.material->HasNormalMap() != right.material->HasNormalMap()) { // normal map decides
+				return left.material->HasNormalMap() && !right.material->HasNormalMap();
+			}
+			return left.mesh->vertices->offset < right.mesh->vertices->offset;
+		}
+		return left.shadingMode < right.shadingMode;
+	});
+
+	if (params.size() < tbdrawn.size()) {
+		std::unreachable();
+	}
+
+	uint32_t commandCount = 0;
+	uint32_t instanceCount = 0;
+	vk::DrawIndexedIndirectCommand* lastCommand = nullptr;
+	for (auto& tbd : tbdrawn) {
+		params[instanceCount].mmIdx = tbd.modelMatrix->offset;
+		params[instanceCount].matIdx = tbd.material->deviceData->offset;
+
+		auto& mesh = tbd.mesh;
+
+		if (commandCount > 0 && lastCommand->vertexOffset == mesh->vertices->offset
+			&& lastCommand->firstIndex == mesh->indices->offset) // test if it is the same mesh reference (could expand it to vertex/index counts)
+		{
+			lastCommand->instanceCount++;
+		}
+		else {
+			commands[commandCount].vertexOffset = mesh->vertices->offset;
+			commands[commandCount].firstIndex = mesh->indices->offset;
+			commands[commandCount].firstInstance = instanceCount;
+			commands[commandCount].indexCount = mesh->indices->count;
+			commands[commandCount].instanceCount = 1;
+			lastCommand = &commands[commandCount];
+			commandCount++;
+			if (tbd.shadingMode == ShadingMode::Default) {
+				if (tbd.material->HasNormalMap())
+					drawCounts.defaults++; 
+				else 
+					drawCounts.normalMapless++;
+			}
+			else if (tbd.shadingMode == ShadingMode::Blend) drawCounts.blend++;
+			else if (tbd.shadingMode == ShadingMode::Unlit) drawCounts.unlit++;
+		}
+		instanceCount++;
+	}
+	resources->drawCommandCount = drawCounts;
+	tbdrawn.clear(); // let go of resource references
 }
 void Renderer::RefreshShaders()
 {

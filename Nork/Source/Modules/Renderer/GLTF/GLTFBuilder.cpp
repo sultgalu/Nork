@@ -9,12 +9,13 @@ GLTFBuilder& GLTFBuilder::AddScene(bool setDefault)
 
     return *this;
 }
-GLTFBuilder& GLTFBuilder::AddNode(std::shared_ptr<Mesh> mesh, const std::filesystem::path& buffersPath)
+GLTFBuilder& GLTFBuilder::AddNode(MeshNode& node, const std::filesystem::path& buffersPath)
 {
-    AddMesh(mesh, buffersPath);
+    AddMesh(node.mesh, buffersPath);
     gltf.scenes.back().nodes.push_back(gltf.nodes.size());
     gltf.nodes.push_back(GLTF::Node());
-    gltf.nodes.back().mesh = meshes[mesh];
+    gltf.nodes.back().mesh = meshes[node.mesh];
+    gltf.nodes.back().children = node.children;
     return *this;
 }
 GLTFBuilder& GLTFBuilder::AddTransform(const glm::mat4& tr)
@@ -53,13 +54,13 @@ GLTFBuilder& GLTFBuilder::AddMesh(std::shared_ptr<Mesh> mesh, const std::filesys
     for (auto& primitive : mesh->primitives) {
         if (!materials.contains(primitive.material)) { // check if we already added this material
             materials[primitive.material] = materials.size();
-            auto tryAddTex = [&](Renderer::TextureMap type) {
+            auto tryAddTex = [&](TextureMap type) {
                 if (!primitive.material->HasDefault(type)) { // don't need to add if it equals the (gltf) default one
                     // save just the filename, not the whole uri, so it conforms to the standard
                     imageUris.push_back({ type, textureUriProvider(primitive.material->GetTextureMap(type)) });
                 }
             };
-            using enum Renderer::TextureMap;
+            using enum TextureMap;
             tryAddTex(BaseColor);
             tryAddTex(MetallicRoughness);
             tryAddTex(Normal);

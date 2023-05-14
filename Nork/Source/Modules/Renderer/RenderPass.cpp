@@ -1,6 +1,8 @@
 #include "RenderPass.h"
 namespace Nork::Renderer {
 
+static fs::path binaryShadersFolder = "Source/Shaders/bin";
+
 struct LoadShaderResult {
 	std::string sourceCode;
 	size_t hash;
@@ -8,7 +10,9 @@ struct LoadShaderResult {
 };
 
 static fs::path BinaryShaderPath(const fs::path& sourceCodePath, int tail) {
-	return fs::path(sourceCodePath).replace_extension(sourceCodePath.extension().string() + "_bin" + (tail == -1 ? "" : std::to_string(tail)));
+	// return fs::path(sourceCodePath).replace_extension(sourceCodePath.extension().string() + "_bin" + (tail == -1 ? "" : std::to_string(tail)));
+	fs::create_directory(binaryShadersFolder);
+	return binaryShadersFolder / sourceCodePath.filename().replace_extension(sourceCodePath.extension().string() + (tail == -1 ? "" : std::to_string(tail)));
 }
 
 static LoadShaderResult LoadShader_(const fs::path& srcPath, std::vector<std::array<std::string, 2>> macros, int tail) {

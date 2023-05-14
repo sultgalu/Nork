@@ -307,7 +307,7 @@ namespace Nork {
 	template<> JsonObject JsonComponentSerializer<Drawable>::Serialize(const Drawable& component)
 	{
 		return JsonObject()
-			.Property("uri", AssetLoader::Instance().Uri(component.GetModel()).string());
+			.Property("uri", Renderer::AssetLoader::Instance().Uri(component.object->GetModel()).string());
 	}
 	template<> Drawable& JsonComponentDeserializer<Drawable>::Deserialize(const JsonObject& json)
 	{
@@ -315,7 +315,7 @@ namespace Nork {
 			{
 				auto uri = json.Get<std::string>("uri");
 				try {
-					comp.SetModel(AssetLoader::Instance().LoadModel(uri));
+					comp.object->SetModel(Renderer::AssetLoader::Instance().LoadModel(uri));
 				} catch (std::exception& e) {
 					Logger::Error("Failed to set drawable model to uri ", uri, "\n\t", e.what());
 				}

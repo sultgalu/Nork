@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Scene/Scene.h"
-#include "Core/AssetLoader.h"
+#include "Modules/Renderer/AssetLoader.h"
 #include "Modules/Renderer/Renderer.h"
 #include "Modules/Renderer/Model/Mesh.h"
 #include "Modules/Renderer/Model/Material.h"
@@ -22,7 +22,7 @@ namespace Nork {
 			auto indices = Renderer::Resources::Instance().indexBuffer->New(indexCount);
 			return std::make_shared<Renderer::MeshData>(vertices, indices);
 		}
-		std::shared_ptr<Renderer::MeshData> NewMesh(const std::vector<Renderer::Data::Vertex>& vertices, 
+		std::shared_ptr<Renderer::MeshData> NewMesh(const std::vector<Renderer::Data::Vertex>& vertices,
 			const std::vector<uint32_t> indices)
 		{
 			auto mesh = NewMesh(vertices.size(), indices.size());
@@ -33,10 +33,6 @@ namespace Nork {
 		std::shared_ptr<Renderer::Material> NewMaterial()
 		{
 			return std::make_shared<Renderer::Material>(Renderer::Resources::Instance().materials->New());
-		}
-		std::shared_ptr<Renderer::BufferElement<glm::mat4>> NewModelMatrix()
-		{
-			return Renderer::Resources::Instance().modelMatrices->New();
 		}
 		std::shared_ptr<Renderer::DirLight> NewDirLight()
 		{

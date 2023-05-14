@@ -201,6 +201,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Modules\Renderer\Model\Mesh.cpp" />
     <ClCompile Include="Source\Modules\Renderer\PostProcessPass.cpp" />
     <ClCompile Include="Source\Modules\Renderer\RendererSettings.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Vulkan\PipelineVulkan.cpp" />
@@ -208,7 +209,7 @@
     <ClCompile Include="Source\Scripting\ScriptSystem.cpp" />
     <ClCompile Include="Source\Core\ColliderPass.cpp" />
     <ClCompile Include="Source\Components\Impl\Drawable.cpp" />
-    <ClCompile Include="Source\Core\GLTFReader.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\GLTF\GLTFReader.cpp" />
     <ClCompile Include="Source\Core\StaticInstances.cpp" />
     <ClCompile Include="Source\Modules\Physics\Data\Collider.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Buffer.cpp" />
@@ -232,7 +233,7 @@
     <ClCompile Include="Source\Components\Impl\Common.cpp" />
     <ClCompile Include="Source\Components\Impl\Lights.cpp" />
     <ClCompile Include="Source\Core\PhysicsSystem.cpp" />
-    <ClCompile Include="Source\Core\AssetLoader.cpp" />
+    <ClCompile Include="Source\Modules\Renderer\AssetLoader.cpp" />
     <ClCompile Include="Source\Modules\Renderer\Model\Material.cpp" />
     <ClCompile Include="Source\Core\RenderingSystem.cpp" />
     <ClCompile Include="Source\Modules\Renderer\LoadUtils.cpp" />
@@ -242,7 +243,7 @@
     <ClInclude Include="Source\Scripting\Nork.h" />
     <ClInclude Include="Source\Scripting\ScriptSystem.h" />
     <ClInclude Include="Source\Core\ColliderPass.h" />
-    <ClInclude Include="Source\Core\GLTFReader.h" />
+    <ClInclude Include="Source\Modules\Renderer\GLTF\GLTFReader.h" />
     <ClInclude Include="Source\Modules\Renderer\Buffer.h" />
     <ClInclude Include="Source\Modules\Renderer\BufferCopy.h" />
     <ClInclude Include="Source\Modules\Renderer\Commands.h" />
@@ -290,7 +291,7 @@
     <ClInclude Include="Source\Modules\Renderer\Data\Material.h" />
     <ClInclude Include="Source\Modules\Renderer\Data\Vertex.h" />
     <ClInclude Include="Source\Core\PhysicsSystem.h" />
-    <ClInclude Include="Source\Core\AssetLoader.h" />
+    <ClInclude Include="Source\Modules\Renderer\AssetLoader.h" />
     <ClInclude Include="Source\Modules\Renderer\Model\Material.h" />
     <ClInclude Include="Source\Core\RenderingSystem.h" />
     <ClInclude Include="Source\Modules\Renderer\LoadUtils.h" />

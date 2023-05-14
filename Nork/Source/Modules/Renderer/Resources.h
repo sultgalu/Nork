@@ -1,40 +1,38 @@
 ﻿#pragma once
 
 #include "DeviceData.h"
-#include "Image.h"
 
 #include "Data/Material.h"
 #include "Data/Vertex.h"
 #include "Data/Lights.h"
 #include "Model/ShadowMap.h"
+#include "Model/Object.h"
 #include "ImageDescriptorArray.h"
 
 namespace Nork::Renderer {
 
 struct DrawCounts {
 	uint32_t defaults = 0;
+	uint32_t normalMapless = 0;
 	uint32_t blend = 0;
 	uint32_t unlit = 0;
-	uint32_t BlendOffs() {
+	uint32_t NormalMaplessOffs() {
 		return defaults;
 	}
+	uint32_t BlendOffs() {
+		return defaults + normalMapless;
+	}
 	uint32_t UnlitOffs() {
-		return defaults + blend;
+		return defaults + blend + normalMapless;
 	}
 	uint32_t AllCount() {
-		return defaults + blend + unlit;
+		return defaults + blend + unlit + normalMapless;
 	}
 };
 struct DrawParams
 {
 	uint32_t mmIdx;
 	uint32_t matIdx;
-};
-struct Texture
-{
-	std::shared_ptr<Image> image;
-	const uint32_t descriptorIdx;
-	~Texture();
 };
 
 class Resources
@@ -67,6 +65,10 @@ public:
 	}
 	std::shared_ptr<DirShadowMap> CreateShadowMap2D(uint32_t width, uint32_t height);
 	std::shared_ptr<PointShadowMap> CreateShadowMapCube(uint32_t size);
+	std::shared_ptr<MeshData> CreateMesh(uint32_t vertexCount, uint32_t indexCount);
+	std::shared_ptr<MeshData> CreateMesh(const std::vector<Data::Vertex>& vertices, const std::vector<uint32_t> indices);
+	std::shared_ptr<Material> CreateMaterial();
+	std::shared_ptr<Object> CreateObject();
 public:
 	// make type Descriptor, in it store params passed to desclayout, store these in descSet, 
 	// write them through descSet, then flush writes just like in Buffer
@@ -93,6 +95,7 @@ public:
 	std::unique_ptr<ImageDescriptorArray> pointShadowDescriptors;
 	std::vector<std::shared_ptr<DirShadowMap>> shadowMaps; // should be elsewhere, it gets filled by r.system every frame
 	std::vector<std::shared_ptr<PointShadowMap>> shadowMapsCube; // same
+	std::vector<std::shared_ptr<Object>> objects;
 
 	std::shared_ptr<Vulkan::DescriptorPool> descriptorPool;
 	std::shared_ptr<Vulkan::DescriptorSetLayout> descriptorSetLayout;

@@ -367,10 +367,4 @@ Assets/
 /vcpkg_repo
 *.jpg
 imgui.ini
-*.*_bin
-/Editor/Source/Shaders/lightPass.frag_bin3
-/Editor/Source/Shaders/lightPass.frag_bin2
-/Editor/Source/Shaders/lightPass.frag_bin1
-/Editor/Source/Shaders/gPass.vert_bin3
-/Editor/Source/Shaders/gPass.vert_bin2
-/Editor/Source/Shaders/gPass.vert_bin1
+Shaders/bin/

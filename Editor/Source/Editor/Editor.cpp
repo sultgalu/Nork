@@ -337,7 +337,7 @@ void Editor::CreateProject()
 	if (dir.empty()) {
 		return;
 	}
-	AssetLoader::Instance().SetProjectRoot(dir);
+	Renderer::AssetLoader::Instance().SetProjectRoot(dir);
 
 	std::ofstream projectFile(dir / "project.nork");
 	projectFile << JsonObject()
@@ -357,7 +357,7 @@ void Editor::OpenProject(const fs::path& projectFilePath)
 	auto startScene = JsonObject::ParseFormatted(projectFile)
 		.Get<std::string>("startScene");
 
-	AssetLoader::Instance().SetProjectRoot(projectFilePath.parent_path()); // clears cache, put before scene load
+	Renderer::AssetLoader::Instance().SetProjectRoot(projectFilePath.parent_path()); // clears cache, put before scene load
 	Engine::Get().scene.Load(projectFilePath.parent_path() / "scenes" / startScene);
 
 	data.projectPath = projectFilePath.parent_path();

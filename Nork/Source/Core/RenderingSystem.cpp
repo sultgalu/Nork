@@ -21,16 +21,16 @@ void RenderingSystem::OnDrawableRemoved(entt::registry& reg, entt::entity id)
 void RenderingSystem::OnDrawableAdded(entt::registry& reg, entt::entity id)
 {
     auto& dr = reg.get<Components::Drawable>(id);
+    dr.object = Renderer::Resources::Instance().CreateObject();
     auto tr = reg.try_get<Components::Transform>(id);
-    dr.sharedTransform = NewModelMatrix();
     if (tr)
-        *dr.sharedTransform = tr->RecalcModelMatrix();
-    if (dr.GetModel() == nullptr || dr.GetModel()->nodes.empty())
-        dr.SetModel(AssetLoader::Instance().LoadModel(AssetLoader::Instance().CubeUri()));
+        *dr.object->transform = tr->RecalcModelMatrix();
+    if (dr.object->model == nullptr || dr.object->model->nodes.empty())
+        dr.object->SetModel(Renderer::AssetLoader::Instance().LoadModel(Renderer::AssetLoader::Instance().CubeUri()));
 }
 void RenderingSystem::UpdateDirLightShadows()
 {
-    // Renderer::LightShadowIndices idxs;
+    // LightShadowIndices idxs;
     // shadowMapProvider.dShadMaps.clear();
     //
     // auto ls = registry.view<Components::DirShadowMap>();
@@ -50,7 +50,7 @@ void RenderingSystem::UpdateDirLightShadows()
 }
 void RenderingSystem::UpdatePointLightShadows()
 {
-    // Renderer::LightShadowIndices idxs;
+    // LightShadowIndices idxs;
     // shadowMapProvider.pShadMaps.clear();
     //
     // auto ls = registry.view<Components::PointShadowMap>();
@@ -123,76 +123,16 @@ struct Client : Renderer::Client {
     void OnCommands() override
     {
     }
-    Renderer::DrawCounts FillDrawBuffers(std::span<Renderer::DrawParams> params,
-        std::span<vk::DrawIndexedIndirectCommand> commands) override
+    std::vector<Renderer::Object> GetObjectsToDraw() override
     {
-        Renderer::DrawCounts drawCounts;
-
         auto group = Registry().group<Components::Drawable>(entt::get<Components::Transform>);
-        if (group.size() == 0)
-            return drawCounts;
-        if (group.size() > params.size())
-            std::unreachable();
         std::vector<Renderer::Object> objects;
         objects.reserve(group.size());
 
-        auto add = [&](const Components::Drawable& dr, std::vector<Renderer::Object>& to) {
-            for (size_t i = 0; i < dr.GetModel()->nodes.size(); i++) {
-                auto& node = dr.GetModel()->nodes[i];
-                for (auto& prim : node.mesh->primitives) {
-                    to.push_back(Renderer::Object { .mesh = prim.meshData, .material = prim.material, .modelMatrix = dr.transforms[i], .shadingMode = prim.shadingMode });
-                }
-            }
-        };
         for (auto [id, dr, tr] : group.each()) {
-            if (true) // eg.: its material has a deferredShader
-            {
-                add(dr, objects);
-            }
-            if (true) // eg.: not opaque
-            {
-                // add(dr, shadowedObjects);
-            }
+            objects.push_back(*dr.object);
         }
-
-        std::sort(objects.begin(), objects.end(), [](const Renderer::Object& left, const Renderer::Object& right) {
-            if (left.shadingMode == right.shadingMode)
-                return left.mesh->vertices->offset < right.mesh->vertices->offset;
-            return left.shadingMode < right.shadingMode;
-        });
-
-        uint32_t commandCount = 0;
-        uint32_t instanceCount = 0;
-        vk::DrawIndexedIndirectCommand* lastCommand = nullptr;
-        for (auto& obj : objects) {
-            params[instanceCount].mmIdx = obj.modelMatrix->offset;
-            params[instanceCount].matIdx = obj.material->deviceData->offset;
-
-            auto& mesh = obj.mesh;
-
-            if (commandCount > 0 && lastCommand->vertexOffset == mesh->vertices->offset
-                && lastCommand->firstIndex == mesh->indices->offset) // test if it is the same mesh reference (could expand it to vertex/index counts)
-            {
-                lastCommand->instanceCount++;
-            } else {
-                commands[commandCount].vertexOffset = mesh->vertices->offset;
-                commands[commandCount].firstIndex = mesh->indices->offset;
-                commands[commandCount].firstInstance = instanceCount;
-                commands[commandCount].indexCount = mesh->indices->count;
-                commands[commandCount].instanceCount = 1;
-                lastCommand = &commands[commandCount];
-                commandCount++;
-                if (obj.shadingMode == Renderer::ShadingMode::Default) drawCounts.defaults++;
-                else if (obj.shadingMode == Renderer::ShadingMode::Blend) drawCounts.blend++;
-                else if (obj.shadingMode == Renderer::ShadingMode::Unlit) drawCounts.unlit++;
-            }
-            instanceCount++;
-        }
-        // if (instanceCount % 2 != 0)
-        // { // padding up to a uvec4
-        // 	modelMatIdxs.push_back({ 0, 0 });
-        // }
-        return drawCounts;
+        return objects;
     }
     void FillLightBuffers(std::span<uint32_t> dIdxs, std::span<uint32_t> pIdxs,
         uint32_t& dlCount, uint32_t& dsCount, uint32_t& plCount, uint32_t& psCount) override
@@ -241,7 +181,7 @@ static RenderingSystem* instance;
 RenderingSystem::~RenderingSystem()
 {
     // clear every reference to renderer objects before deleting it
-    AssetLoader::Instance().ClearCache();
+    Renderer::AssetLoader::Instance().ClearCache();
 
     Registry().clear<Components::Drawable, Components::DirLight, Components::PointLight>();
     renderer = nullptr;
@@ -321,12 +261,7 @@ void RenderingSystem::Update()
     for (auto& ent : transformObserver) {
         auto& dr = Registry().get<Components::Drawable>(ent);
         const auto& modelMatrix = Registry().get<Components::Transform>(ent).modelMatrix;
-        *dr.sharedTransform = modelMatrix;
-        for (size_t i = 0; i < dr.GetModel()->nodes.size(); i++) {
-            auto& node = dr.GetModel()->nodes[i];
-            if (node.localTransform.has_value())
-                *dr.transforms[i] = modelMatrix * *node.localTransform;
-        }
+        dr.object->SetTransform(modelMatrix);
     }
     transformObserver.clear();
     if (camera) {

@@ -1,16 +1,18 @@
 #include "GLTFReader.h"
-#include "Core/AssetLoader.h"
+#include "../Resources.h"
+#include "../AssetLoader.h"
 
-namespace Nork {
+namespace Nork::Renderer {
 GLTFReader::GLTFReader(const fs::path& path)
 {
     srcFolder = path.parent_path();
     dstFolder = path.stem();
-    gltf = Renderer::GLTF::GLTF::FromJson(JsonObject::ParseFormatted(FileUtils::ReadAsString(path.string())));
+    gltf = GLTF::GLTF::FromJson(JsonObject::ParseFormatted(FileUtils::ReadAsString(path.string())));
+    defaultMaterial = Resources::Instance().CreateMaterial();
 }
-std::shared_ptr<Renderer::Model> GLTFReader::Read()
+std::shared_ptr<Model> GLTFReader::Read()
 {
-    model = std::make_shared<Renderer::Model>();
+    model = std::make_shared<Model>();
 
     for (auto& buf : gltf.buffers)
         buffers.push_back(FileUtils::ReadBinary<char>(AbsolutePath(buf.uri).string()));
@@ -32,28 +34,30 @@ std::shared_ptr<Renderer::Model> GLTFReader::Read()
 }
 void GLTFReader::AddNodeRecursive(int nodeIdx, const glm::mat4& parentTransform)
 {
-    const Renderer::GLTF::Node& glNode = gltf.nodes[nodeIdx];
+    const GLTF::Node& glNode = gltf.nodes[nodeIdx];
     glm::mat4 transform = parentTransform;
     if (glNode.HasTransform()) // "The global transformation matrix of a node is the product of the global transformation matrix of its parent node and its own local transformation matrix"
         transform = parentTransform * glNode.Transform();
 
-    for (auto i : glNode.children)
+    for (auto i : glNode.children) {
         AddNodeRecursive(i, transform);
+    }
 
     if (glNode.mesh != -1) {
         auto& glMesh = gltf.meshes[glNode.mesh];
-        model->nodes.push_back(Renderer::MeshNode { .mesh = std::make_shared<Renderer::Mesh>() });
+        model->nodes.push_back(MeshNode { .mesh = std::make_shared<Mesh>() });
+        model->nodes.back().children = glNode.children;
         for (size_t i = 0; i < glMesh.primitives.size(); i++) {
             auto& mesh = meshDatas[glNode.mesh][i];
             if (mesh) {
                 auto matIdx = glMesh.primitives[i].material;
-                auto primitive = Renderer::Primitive {
+                auto primitive = Primitive {
                     .meshData = mesh,
                     .material = matIdx == -1 ? defaultMaterial : materials[matIdx]
                 };
                 auto& mat = gltf.materials[matIdx];
                 if (mat.alphaMode == mat.BLEND) {
-                    primitive.shadingMode = Renderer::ShadingMode::Blend;
+                    primitive.shadingMode = ShadingMode::Blend;
                 }
                 model->nodes.back().mesh->primitives.push_back(primitive);
             }
@@ -63,9 +67,9 @@ void GLTFReader::AddNodeRecursive(int nodeIdx, const glm::mat4& parentTransform)
         }
     }
 }
-std::shared_ptr<Renderer::Material> GLTFReader::CreateMaterial(const Renderer::GLTF::Material& mat)
+std::shared_ptr<Material> GLTFReader::CreateMaterial(const GLTF::Material& mat)
 {
-    auto material = RenderingSystem::Instance().NewMaterial();
+    auto material = Resources::Instance().CreateMaterial();
     auto data = material->Data();
     data->baseColorFactor = mat.pbrMetallicRoughness.baseColorFactor;
     data->roughnessFactor = mat.pbrMetallicRoughness.roughnessFactor;
@@ -76,18 +80,18 @@ std::shared_ptr<Renderer::Material> GLTFReader::CreateMaterial(const Renderer::G
     material->blending = mat.alphaMode == mat.BLEND;
     // material->specularExponent = mat.pbrMetallicRoughness.extras.Get<float>("specularExponent"); has official extension
     if (mat.pbrMetallicRoughness.baseColorTexture.Validate())
-        material->SetTextureMap(images[gltf.textures[mat.pbrMetallicRoughness.baseColorTexture.index].source], Renderer::TextureMap::BaseColor);
+        material->SetTextureMap(images[gltf.textures[mat.pbrMetallicRoughness.baseColorTexture.index].source], TextureMap::BaseColor);
     if (mat.pbrMetallicRoughness.metallicRoughnessTexture.Validate())
-        material->SetTextureMap(images[gltf.textures[mat.pbrMetallicRoughness.metallicRoughnessTexture.index].source], Renderer::TextureMap::MetallicRoughness);
+        material->SetTextureMap(images[gltf.textures[mat.pbrMetallicRoughness.metallicRoughnessTexture.index].source], TextureMap::MetallicRoughness);
     if (mat.normalTexture.Validate())
-        material->SetTextureMap(images[gltf.textures[mat.normalTexture.index].source], Renderer::TextureMap::Normal);
+        material->SetTextureMap(images[gltf.textures[mat.normalTexture.index].source], TextureMap::Normal);
     if (mat.occlusionTexture.Validate())
-        material->SetTextureMap(images[gltf.textures[mat.occlusionTexture.index].source], Renderer::TextureMap::Occlusion);
+        material->SetTextureMap(images[gltf.textures[mat.occlusionTexture.index].source], TextureMap::Occlusion);
     if (mat.emissiveTexture.Validate())
-        material->SetTextureMap(images[gltf.textures[mat.emissiveTexture.index].source], Renderer::TextureMap::Emissive);
+        material->SetTextureMap(images[gltf.textures[mat.emissiveTexture.index].source], TextureMap::Emissive);
     return material;
 }
-std::shared_ptr<Renderer::MeshData> GLTFReader::CreateRendererMesh(int idx, int meshIdx)
+std::shared_ptr<MeshData> GLTFReader::CreateRendererMesh(int idx, int meshIdx)
 {
     using namespace Renderer;
 
@@ -99,40 +103,42 @@ std::shared_ptr<Renderer::MeshData> GLTFReader::CreateRendererMesh(int idx, int 
     int posAccIdx = prim.Accessor(GLTF::Attribute::position);
     int normAccIdx = prim.Accessor(GLTF::Attribute::normal);
     int texAccIdx = prim.Accessor(GLTF::Attribute::texcoord0);
-    if (posAccIdx == -1 || normAccIdx == -1 || texAccIdx == -1) {
-        Logger::Warning("skipping primitive ", idx, " of mesh ", meshIdx, ", incorrect vertex accessors (missing accessor)");
+    bool hasNorm = normAccIdx != -1;
+    bool hasTex = texAccIdx != -1;
+    if (posAccIdx == -1 || !hasNorm) {
+        Logger::Warning("skipping primitive ", idx, " of mesh ", meshIdx, ", incorrect vertex accessors (missing position or normal accessor)");
         return nullptr;
     }
     auto posAcc = gltf.accessors[posAccIdx];
-    auto normAcc = gltf.accessors[normAccIdx];
-    auto texAcc = gltf.accessors[texAccIdx];
+    auto normAcc = hasNorm ? gltf.accessors[normAccIdx] : GLTF::Accessor{};
+    auto texAcc = hasTex ? gltf.accessors[texAccIdx] : GLTF::Accessor{};
     auto idxAcc = gltf.accessors[prim.indices];
-    if (idxAcc.type != GLTF::Accessor::SCALAR || posAcc.type != GLTF::Accessor::VEC3 || normAcc.type != GLTF::Accessor::VEC3 || texAcc.type != GLTF::Accessor::VEC2) {
+    if (idxAcc.type != GLTF::Accessor::SCALAR || posAcc.type != GLTF::Accessor::VEC3 || (hasNorm && normAcc.type != GLTF::Accessor::VEC3) || (hasTex && texAcc.type != GLTF::Accessor::VEC2)) {
         Logger::Warning("skipping primitive ", idx, " of mesh ", meshIdx, ", incorrect vertex accessors (bad type)");
         return nullptr;
     }
-    if (posAcc.componentType != GL_FLOAT || normAcc.componentType != GL_FLOAT || texAcc.componentType != GL_FLOAT) {
+    if (posAcc.componentType != GL_FLOAT || (hasNorm && normAcc.componentType != GL_FLOAT) || (hasTex && texAcc.componentType != GL_FLOAT)) {
         Logger::Warning("skipping primitive ", idx, " of mesh ", meshIdx, ", incorrect vertex accessors (bad componentType)");
         return nullptr;
     }
-    if (posAcc.count != normAcc.count || normAcc.count != texAcc.count) {
+    if (posAcc.count != normAcc.count || (hasNorm && normAcc.count != posAcc.count) || (hasTex && texAcc.count != posAcc.count)) {
         Logger::Warning("skipping primitive ", idx, " of mesh ", meshIdx, ", incorrect vertex accessors (counts not equal)");
         return nullptr;
     }
     auto posStride = glm::max<int>(gltf.bufferViews[posAcc.bufferView].byteStride, sizeof(glm::vec3)) / sizeof(float);
-    auto normStride = glm::max<int>(gltf.bufferViews[normAcc.bufferView].byteStride, sizeof(glm::vec3)) / sizeof(float);
-    auto texStride = glm::max<int>(gltf.bufferViews[texAcc.bufferView].byteStride, sizeof(glm::vec2)) / sizeof(float);
+    auto normStride = hasNorm ? glm::max<int>(gltf.bufferViews[normAcc.bufferView].byteStride, sizeof(glm::vec3)) / sizeof(float) : 0;
+    auto texStride = hasTex ? glm::max<int>(gltf.bufferViews[texAcc.bufferView].byteStride, sizeof(glm::vec2)) / sizeof(float) : 0;
     std::span<float> posData = BufferView<glm::vec3>(posAcc);
-    std::span<float> normData = BufferView<glm::vec3>(normAcc);
-    std::span<float> texData = BufferView<glm::vec2>(texAcc);
+    std::span<float> normData = hasNorm ? BufferView<glm::vec3>(normAcc) : std::span<float>();
+    std::span<float> texData = hasTex ? BufferView<glm::vec2>(texAcc) : std::span<float>();
 
     std::vector<Data::Vertex> vertices;
     vertices.reserve(posAcc.count);
     for (size_t i = 0; i < posAcc.count; i++) {
         vertices.push_back(Data::Vertex {
             .position = *((glm::vec3*)&posData[i * posStride]),
-            .normal = *((glm::vec3*)&normData[i * normStride]),
-            .texCoords = *((glm::vec2*)&texData[i * texStride]),
+            .normal = hasNorm ? *((glm::vec3*)&normData[i * normStride]) : glm::vec3(0),
+            .texCoords = hasTex ? *((glm::vec2*)&texData[i * texStride]) : glm::vec2(0.5),
         });
     }
     std::vector<uint32_t> indices;
@@ -150,10 +156,10 @@ std::shared_ptr<Renderer::MeshData> GLTFReader::CreateRendererMesh(int idx, int 
     for (size_t i = 0; i < indices.size(); i += 3) {
         SetTangent(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]);
     }
-    return RenderingSystem::Instance().NewMesh(vertices, indices);
+    return Resources::Instance().CreateMesh(vertices, indices);
 }
 template <class T>
-std::vector<uint32_t> GLTFReader::GetIndices(const Renderer::GLTF::Primitive& prim)
+std::vector<uint32_t> GLTFReader::GetIndices(const GLTF::Primitive& prim)
 {
     auto idxAcc = gltf.accessors[prim.indices];
     auto idxStride = glm::max<int>(gltf.bufferViews[idxAcc.bufferView].byteStride / sizeof(T), 1);
@@ -165,7 +171,7 @@ std::vector<uint32_t> GLTFReader::GetIndices(const Renderer::GLTF::Primitive& pr
     }
     return indices;
 }
-void GLTFReader::SetTangent(Renderer::Data::Vertex& v1, Renderer::Data::Vertex& v2, Renderer::Data::Vertex& v3)
+void GLTFReader::SetTangent(Data::Vertex& v1, Data::Vertex& v2, Data::Vertex& v3)
 {
     glm::vec3 edge1 = v2.position - v1.position;
     glm::vec3 edge2 = v3.position - v1.position;
@@ -183,7 +189,7 @@ void GLTFReader::SetTangent(Renderer::Data::Vertex& v1, Renderer::Data::Vertex& 
     v3.tangent = tangent;
 }
 template <class S, class T>
-std::span<T> GLTFReader::BufferView(const Renderer::GLTF::Accessor& accessor)
+std::span<T> GLTFReader::BufferView(const GLTF::Accessor& accessor)
 {
     auto bufferView = gltf.bufferViews[accessor.bufferView];
     auto start = buffers[bufferView.buffer].data() + bufferView.byteOffset + accessor.byteOffset;

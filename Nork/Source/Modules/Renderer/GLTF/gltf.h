@@ -536,8 +536,8 @@ public:
     }
     virtual void FromJson(const JsonObject& json) override
     {
-        json.Get("mesh", input)
-            .Get("name", output);
+        json.Get("input", input)
+            .Get("output", output);
         std::string interpol;
         if (json.GetIfContains("interpolation", interpol)) {
             if (interpol == STEP) interpolation = Step;

@@ -145,6 +145,29 @@ std::shared_ptr<PointShadowMap> Resources::CreateShadowMapCube(uint32_t size)
 
 	return shadowMap;
 }
+std::shared_ptr<MeshData> Resources::CreateMesh(const std::vector<Data::Vertex>& vertices, const std::vector<uint32_t> indices)
+{
+	auto mesh = CreateMesh(vertices.size(), indices.size());
+	mesh->vertices->Write(vertices.data(), vertices.size());
+	mesh->indices->Write(indices.data(), indices.size());
+	return mesh;
+}
+std::shared_ptr<MeshData> Resources::CreateMesh(uint32_t vertexCount, uint32_t indexCount)
+{
+	auto vertices = Resources::Instance().vertexBuffer->New(vertexCount);
+	auto indices = Resources::Instance().indexBuffer->New(indexCount);
+	return std::make_shared<MeshData>(vertices, indices);
+}
+std::shared_ptr<Material> Resources::CreateMaterial()
+{
+	return std::make_shared<Material>(Resources::Instance().materials->New());
+}
+std::shared_ptr<Object> Resources::CreateObject()
+{
+	auto obj = std::make_shared<Object>();
+	obj->transform = modelMatrices->New();
+	return obj;
+}
 
 // ----------------- TEXTURES ----------------
 

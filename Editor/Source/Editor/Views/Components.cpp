@@ -221,7 +221,7 @@ bool SceneNodeView::ShowComponent(Components::Drawable& dr)
 {
     ChangeObserver observer;
     static int imgSize = 100;
-    const auto model = dr.GetModel();
+    const auto model = dr.object->GetModel();
     if (!model->nodes.empty()) {
         if (ImGui::TreeNode("Meshes##1234")) {
             static int meshIdx = 0;
@@ -305,8 +305,8 @@ bool SceneNodeView::ShowComponent(Components::Drawable& dr)
                         if (ImGui::Button("Load texture")) {
                             std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::Image, L"Load Texture", L"Load");
                             if (!p.empty()) {
-                                auto uri = AssetLoader::Instance().AbsolutePathToUri(p);
-                                auto newTex = AssetLoader::Instance().LoadTexture(uri);
+                                auto uri = Renderer::AssetLoader::Instance().AbsolutePathToUri(p);
+                                auto newTex = Renderer::AssetLoader::Instance().LoadTexture(uri);
                                 if (newTex != nullptr) {
                                     primitive.material->SetTextureMap(newTex, type);
                                 }
@@ -355,24 +355,24 @@ bool SceneNodeView::ShowComponent(Components::Drawable& dr)
             ImGui::TreePop();
         }
     }
-    auto src = AssetLoader::Instance().Uri(model).filename().string();
+    auto src = Renderer::AssetLoader::Instance().Uri(model).filename().string();
     ImGui::Text(src.c_str());
     static char modelNamebuf[100] = { 0 };
     if (ImGui::Button("Save##Model")) {
-        AssetLoader::Instance().SaveModel(model);
+        Renderer::AssetLoader::Instance().SaveModel(model);
     }
     if (ImGui::Button("Load##Model")) {
         std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::glTF, L"Load model", L"Load");
         if (observer(!p.empty())) {
-            auto uri = AssetLoader::Instance().AbsolutePathToUri(p);
-            dr.SetModel(AssetLoader::Instance().LoadModel(uri));
+            auto uri = Renderer::AssetLoader::Instance().AbsolutePathToUri(p);
+            dr.object->SetModel(Renderer::AssetLoader::Instance().LoadModel(uri));
         }
     }
     if (ImGui::Button("Delete From Cache##Model")) {
-        AssetLoader::Instance().DeleteFromCache(dr.GetModel());
+        Renderer::AssetLoader::Instance().DeleteFromCache(dr.object->GetModel());
     }
     if (observer(ImGui::Button("Reload##Model"))) {
-        AssetLoader::Instance().ReloadModel(dr.GetModel());
+        Renderer::AssetLoader::Instance().ReloadModel(dr.object->GetModel());
     }
     static fs::path selected;
     if (ImGui::Button("Switch")) {
@@ -380,12 +380,12 @@ bool SceneNodeView::ShowComponent(Components::Drawable& dr)
         ImGui::OpenPopup("SwitchPopup");
     }
     if (ImGui::BeginPopup("SwitchPopup")) {
-        for (auto& uri : AssetLoader::Instance().ListLoadedModels()) {
+        for (auto& uri : Renderer::AssetLoader::Instance().ListLoadedModels()) {
             if (ImGui::Selectable(uri.string().c_str(), selected == uri, ImGuiSelectableFlags_::ImGuiSelectableFlags_DontClosePopups))
                 selected = uri;
         }
         if (observer(ImGui::Button("Switch##Accept"))) {
-            dr.SetModel(AssetLoader::Instance().LoadModel(selected));
+            dr.object->SetModel(Renderer::AssetLoader::Instance().LoadModel(selected));
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
@@ -393,7 +393,7 @@ bool SceneNodeView::ShowComponent(Components::Drawable& dr)
     if (ImGui::Button("Import##Model")) {
         std::string p = FileDialog::OpenFile(FileDialog::EngineFileTypes::_3D, L"Import model", L"Import");
         if (observer(!p.empty())) {
-            dr.SetModel(AssetLoader::Instance().ImportModel(p));
+            dr.object->SetModel(Renderer::AssetLoader::Instance().ImportModel(p));
         }
     }
     return observer.changed;

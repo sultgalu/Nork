@@ -93,7 +93,7 @@
     <ClCompile Include="Source\Components\Impl\Lights.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\AssetLoader.cpp">
+    <ClCompile Include="Source\Modules\Renderer\AssetLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Modules\Renderer\Model\Material.cpp">
@@ -156,7 +156,7 @@
     <ClCompile Include="Source\Modules\Renderer\Vulkan\Device.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\GLTFReader.cpp">
+    <ClCompile Include="Source\Modules\Renderer\GLTF\GLTFReader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Modules\Renderer\Commands.cpp">
@@ -190,6 +190,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Modules\Renderer\Vulkan\PipelineVulkan.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Modules\Renderer\Model\Mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -302,7 +305,7 @@
     <ClInclude Include="Source\Utils\Observed.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\AssetLoader.h">
+    <ClInclude Include="Source\Modules\Renderer\AssetLoader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Modules\Renderer\Model\Material.h">
@@ -353,7 +356,7 @@
     <ClInclude Include="Source\Modules\Renderer\MeshFactory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\GLTFReader.h">
+    <ClInclude Include="Source\Modules\Renderer\GLTF\GLTFReader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Modules\Renderer\Vulkan\VulkanContext.h">

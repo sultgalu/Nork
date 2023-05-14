@@ -119,7 +119,9 @@ struct Material
 
 layout(location = 0) in vec3 worldPos;
 layout(location = 1) in vec2 texCoord;
+#ifdef NORMAL_MAP
 layout(location = 2) in mat3 TBN;
+#endif
 layout(location = 5) nonuniformEXT flat in Material material_;
 
 layout(set = 0, binding = 3) uniform sampler2D[] textures;
@@ -166,7 +168,9 @@ void main_light()
 	material.metallic = metallicRoughness.g;
 	vec3 normal = texture(textures[bitfieldExtract(material_.baseColor_normal, 16, 16)], texCoord).rgb;
 	normal = normal * 2.0f - 1.0f; // [0;1] -> [-1;1]
+#ifdef NORMAL_MAP
 	normal = normalize(TBN * normal); // transforming from tangent-space -> world space
+#endif
 	material.occlusion = texture(textures[bitfieldExtract(material_.metallicRoughness_occlusion, 16, 16)], texCoord).r;
 #endif // DEFERRED
 

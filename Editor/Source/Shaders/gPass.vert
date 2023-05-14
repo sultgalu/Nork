@@ -23,7 +23,9 @@ layout(location = 3) in vec3 vTangent;
 
 layout(location = 0) out vec3 worldPos;
 layout(location = 1) out vec2 texCoord;
+#ifdef NORMAL_MAP
 layout(location = 2) out mat3 TBN;
+#endif
 layout(location = 5) flat out Material material;
 
 layout(push_constant) uniform constants
@@ -56,16 +58,14 @@ void main()
 	gl_Position = PushConstants.VP * vec4(worldPos, 1.0f);
 	texCoord = vTexCoord;
 
-#ifndef UNLIT
-	vec3 T = normalize(vec3(_model * vec4(vTangent, 0.0f)));
-	vec3 N = normalize(vec3(_model * vec4(vNormal, 0.0f)));
+#ifdef NORMAL_MAP
+	vec3 T = normalize(vec3(_model * vec4(vTangent, 0.0)));
+	vec3 N = normalize(vec3(_model * vec4(vNormal, 0.0)));
 	vec3 B = cross(N, T);
 
 #ifdef REORTHOGONALIZE
-	// re-orthogonalize T with respect to N
-	T = normalize(T - dot(T, N) * N);
-	// then retrieve perpendicular vector B with the cross product of T and N
-	B = cross(N, T);
+	T = normalize(T - dot(T, N) * N);// re-orthogonalize T with respect to N
+	B = cross(N, T);// then retrieve perpendicular vector B with the cross product of T and N
 #endif 
 
 	TBN = mat3(T, B, N);
