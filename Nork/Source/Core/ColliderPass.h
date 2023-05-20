@@ -13,7 +13,7 @@ public:
 	struct Vertex {
 		glm::vec3 position;
 
-		static const std::vector<vk::VertexInputBindingDescription> getBindingDescription()
+		static const std::vector<vk::VertexInputBindingDescription> GetBindingDescription()
 		{
 			std::vector<vk::VertexInputBindingDescription> bindingDescriptions(1);
 			bindingDescriptions[0].binding = 0;
@@ -22,7 +22,7 @@ public:
 
 			return bindingDescriptions;
 		}
-		static const std::vector<vk::VertexInputAttributeDescription> getAttributeDescriptions()
+		static const std::vector<vk::VertexInputAttributeDescription> GetAttributeDescriptions()
 		{
 			std::vector<vk::VertexInputAttributeDescription> attributeDescriptions(1);
 

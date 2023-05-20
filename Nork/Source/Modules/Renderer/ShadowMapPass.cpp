@@ -17,7 +17,7 @@ ShadowMapPass::ShadowMapPass()
 		Vulkan::DescriptorPoolCreateInfo({ descriptorSetLayout }, 1));
 	descriptorSet = std::make_shared<Vulkan::DescriptorSet>(Vulkan::DescriptorSetAllocateInfo(descriptorPool, descriptorSetLayout));
 	descriptorSet->Writer()
-		.Buffer(0, *Resources::Instance().pShadowVps->Underlying(), 0, 
+		.Buffer(0, *Resources::Instance().pShadowVps->Underlying(), 0,
 			Resources::Instance().DynamicSize(*Resources::Instance().pShadowVps), vk::DescriptorType::eUniformBufferDynamic)
 		.Write();
 	CreateGraphicsPipelineCube();
@@ -45,7 +45,7 @@ void ShadowMapPass::CreateGraphicsPipeline()
 		.AddShader(vertShaderModule)
 		.VertexInput<Data::Vertex>() // could only indlude vertex.pos
 		.InputAssembly(vk::PrimitiveTopology::eTriangleList)
-		.Rasterization(true) 
+		.Rasterization(true)
 		.Multisampling()
 		.ColorBlend(0)
 		.RenderPass(**renderPass, 0)
@@ -60,7 +60,7 @@ void ShadowMapPass::CreateGraphicsPipelineCube()
 	auto fragPush = vk::PushConstantRange(vk::ShaderStageFlagBits::eFragment, idxPush.size, sizeof(float) * 3 + sizeof(glm::vec3));
 
 	pipelineLayoutCube = std::make_shared<Vulkan::PipelineLayout>(
-		Vulkan::PipelineLayoutCreateInfo({ **Resources::Instance().descriptorSetLayout, **descriptorSetLayout }, 
+		Vulkan::PipelineLayoutCreateInfo({ **Resources::Instance().descriptorSetLayout, **descriptorSetLayout },
 			{ idxPush, fragPush }));
 	pipelineCube = std::make_shared<Vulkan::Pipeline>(Vulkan::PipelineCreateInfo()
 		.Layout(**pipelineLayoutCube)
@@ -114,7 +114,9 @@ void ShadowMapPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t ima
 	if (!Settings::Instance()->shadows) {
 		return;
 	}
-	cmd.bindVertexBuffers(0, **Resources::Instance().vertexBuffer->buffer->Underlying(), { 0 });
+	cmd.bindVertexBuffers(0,
+		{ **Resources::Instance().vertexBuffer->buffer->Underlying(), **Resources::Instance().drawParams->Underlying() },
+		{ 0, Resources::Instance().DynamicOffset(*Resources::Instance().drawParams) });
 	cmd.bindIndexBuffer(**Resources::Instance().indexBuffer->buffer->Underlying(), 0, vk::IndexType::eUint32);
 
 	RecordCmdDirectional(cmd, imageIndex, currentFrame);
@@ -126,7 +128,7 @@ void ShadowMapPass::RecordCmdDirectional(Vulkan::CommandBuffer& cmd, uint32_t im
 	cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, **pipelineLayout, 0,
 		{ **Resources::Instance().descriptorSet }, // resource dset binding should happen outside
 			{
-				Resources::Instance().DynamicOffset(*Resources::Instance().drawParams)
+				// Resources::Instance().DynamicOffset(*Resources::Instance().drawParams)
 			});
 
 	for (auto& shadowMap : Resources::Instance().shadowMaps)
@@ -149,8 +151,9 @@ void ShadowMapPass::RecordCmdPoint(Vulkan::CommandBuffer& cmd, uint32_t imageInd
 {
 	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, **pipelineCube);
 	cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, **pipelineLayoutCube, 0,
-		{ **Resources::Instance().descriptorSet, **descriptorSet }, 
-		{ Resources::Instance().DynamicOffset(*Resources::Instance().drawParams),
+		{ **Resources::Instance().descriptorSet, **descriptorSet },
+		{
+			// Resources::Instance().DynamicOffset(*Resources::Instance().drawParams),
 		Resources::Instance().DynamicOffset(*Resources::Instance().pShadowVps) });
 
 	uint32_t geomPush = 0;

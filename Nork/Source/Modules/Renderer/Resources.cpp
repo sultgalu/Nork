@@ -73,17 +73,17 @@ Resources::Resources()
 		{ .required = eHostVisible | eHostCoherent | eDeviceLocal });
 
 	drawParams = Buffer::CreateHostVisible(
-		vk::BufferUsageFlagBits::eUniformBuffer, dps_size,
+		vk::BufferUsageFlagBits::eVertexBuffer, dps_size,
 		{ .required = eHostVisible | eHostCoherent | eDeviceLocal });
 	drawCommands = Buffer::CreateHostVisible(
 		vk::BufferUsageFlagBits::eIndirectBuffer, dcs_size,
 		{ .required = eHostVisible | eHostCoherent | eDeviceLocal });
 
 	descriptorSetLayout = std::make_shared<Vulkan::DescriptorSetLayout>(Vulkan::DescriptorSetLayoutCreateInfo()
-		.Binding(0, vk::DescriptorType::eUniformBufferDynamic, vk::ShaderStageFlagBits::eVertex)
+		// .Binding(0, vk::DescriptorType::eUniformBufferDynamic, vk::ShaderStageFlagBits::eVertex)
+		.Binding(0, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eVertex)
 		.Binding(1, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eVertex)
-		.Binding(2, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eVertex)
-		.Binding(3, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, textures_count, true));
+		.Binding(2, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, textures_count, true));
 	descriptorSetLayoutLights = std::make_shared<Vulkan::DescriptorSetLayout>(Vulkan::DescriptorSetLayoutCreateInfo()
 		.Binding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment)
 		.Binding(1, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment)
@@ -102,9 +102,9 @@ Resources::Resources()
 		Vulkan::DescriptorSetAllocateInfo(descriptorPool, descriptorSetLayoutLights));
 
 	descriptorSet->Writer()
-		.Buffer(0, *drawParams->Underlying(), 0, DynamicSize(*drawParams), vk::DescriptorType::eUniformBufferDynamic)
-		.Buffer(1, *modelMatrices->buffer->Underlying(), 0, modelMatrices->buffer->memory.Size(), vk::DescriptorType::eStorageBuffer)
-		.Buffer(2, *materials->buffer->Underlying(), 0, materials->buffer->memory.Size(), vk::DescriptorType::eStorageBuffer)
+		// .Buffer(0, *drawParams->Underlying(), 0, DynamicSize(*drawParams), vk::DescriptorType::eUniformBufferDynamic)
+		.Buffer(0, *modelMatrices->buffer->Underlying(), 0, modelMatrices->buffer->memory.Size(), vk::DescriptorType::eStorageBuffer)
+		.Buffer(1, *materials->buffer->Underlying(), 0, materials->buffer->memory.Size(), vk::DescriptorType::eStorageBuffer)
 		.Write();
 
 	descriptorSetLights->Writer()
@@ -172,7 +172,7 @@ std::shared_ptr<Object> Resources::CreateObject()
 // ----------------- TEXTURES ----------------
 
 Resources::TextureDescriptors::TextureDescriptors(std::shared_ptr<Vulkan::DescriptorSet>& descriptorSet)
-	: ImageDescriptorArray(descriptorSet, 3, textures_count)
+	: ImageDescriptorArray(descriptorSet, 2, textures_count)
 {
 	Vulkan::SamplerCreateInfo samplerCreateInfo;
 	samplerCreateInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;

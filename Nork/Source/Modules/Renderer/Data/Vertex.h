@@ -7,7 +7,14 @@ namespace Nork::Renderer::Data {
 		glm::vec2 texCoords;
 		glm::vec3 tangent;
 
-		static const std::vector<vk::VertexInputBindingDescription> getBindingDescription();
-		static const std::vector<vk::VertexInputAttributeDescription> getAttributeDescriptions();
+		static const std::vector<vk::VertexInputBindingDescription> GetBindingDescription();
+		static const std::vector<vk::VertexInputAttributeDescription> GetAttributeDescriptions();
+	};
+	struct VertexSkinned : Vertex
+	{
+		glm::vec4 joints, weights;
+
+		static const std::vector<vk::VertexInputBindingDescription> GetBindingDescription();
+		static const std::vector<vk::VertexInputAttributeDescription> GetAttributeDescriptions();
 	};
 }

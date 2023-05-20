@@ -19,7 +19,7 @@ static constexpr vk::Format metRough = Vulkan::Format::rgba16f;
 }
 
 static DeferredPass* instance;
-DeferredPass& DeferredPass::Instance(){
+DeferredPass& DeferredPass::Instance() {
 	return *instance;
 }
 
@@ -144,8 +144,8 @@ void DeferredPass::CreateRenderPass()
 			{ gMRAttIdx, vk::ImageLayout::eShaderReadOnlyOptimal }
 			});
 	subPasses[fPass]
-		.ColorAttachments({ 
-			{ lPassAttIdx, vk::ImageLayout::eColorAttachmentOptimal }, 
+		.ColorAttachments({
+			{ lPassAttIdx, vk::ImageLayout::eColorAttachmentOptimal },
 			{ emissiveAttIdx, vk::ImageLayout::eColorAttachmentOptimal }
 			})
 		.DepthAttachment(depthAttIdx);
@@ -185,13 +185,15 @@ void DeferredPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t imag
 	cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, **pipelineLayout, 0,
 		{ **Resources::Instance().descriptorSet, **descriptorSetPP, **Resources::Instance().descriptorSetLights },
 			{
-				Resources::Instance().DynamicOffset(*Resources::Instance().drawParams),
+				// Resources::Instance().DynamicOffset(*Resources::Instance().drawParams),
 				Resources::Instance().DynamicOffset(*Resources::Instance().dirLightParams),
 				Resources::Instance().DynamicOffset(*Resources::Instance().pointLightParams),
 			}
 			);
 
-	cmd.bindVertexBuffers(0, **Resources::Instance().vertexBuffer->buffer->Underlying(), { 0 });
+	cmd.bindVertexBuffers(0,
+		{ **Resources::Instance().vertexBuffer->buffer->Underlying(), **Resources::Instance().drawParams->Underlying() },
+		{ 0, Resources::Instance().DynamicOffset(*Resources::Instance().drawParams) });
 	cmd.bindIndexBuffer(**Resources::Instance().indexBuffer->buffer->Underlying(), 0, vk::IndexType::eUint32);
 	if (deferred) {
 		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, **pipelineGPass);
@@ -296,7 +298,7 @@ void DeferredPass::CreateUnlitPipeline()
 		.InputAssembly(vk::PrimitiveTopology::eTriangleList)
 		.Rasterization(true)
 		.Multisampling()
-		.ColorBlend(2, false) 
+		.ColorBlend(2, false)
 		.RenderPass(**renderPass, 2)
 		.DepthStencil(true));
 }

@@ -28,7 +28,7 @@ layout(location = 1) in vec2 texCoord;
 layout(location = 2) in mat3 TBN;
 layout(location = 5) nonuniformEXT flat in Material material;
 
-layout(set = 0, binding = 3) uniform sampler2D[] textures;
+layout(set = 0, binding = 2) uniform sampler2D[] textures;
 
 void main()
 {

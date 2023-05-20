@@ -20,6 +20,8 @@ layout(location = 0) in vec3 vPos;
 layout(location = 1) in vec3 vNormal;
 layout(location = 2) in vec2 vTexCoord;
 layout(location = 3) in vec3 vTangent;
+layout(location = 4) in uint modelIdx;
+layout(location = 5) in uint matIdx;
 
 layout(location = 0) out vec3 worldPos;
 layout(location = 1) out vec2 texCoord;
@@ -31,24 +33,17 @@ layout(push_constant) uniform constants
 	mat4 VP;
 } PushConstants;
 
-layout(set = 0, binding = 1) readonly buffer asd5
+layout(set = 0, binding = 0) readonly buffer asd5
 {
 	mat4 models[10];
 }; 
-layout(set = 0, binding = 2) readonly buffer asd6
+layout(set = 0, binding = 1) readonly buffer asd6
 {
 	Material materials[10];
-};
-layout(set = 0, binding = 0) uniform asd8
-{
-	uvec4 modelMatIndexes[10]; // uvec2 and uvec4 have the same stride, so using the latter is more memory efficient, just a little more complicated in indexing
 };
 
 void main()
 {
-	uint drawIdx = gl_InstanceIndex; // gl_BaseInstance + gl_InstanceID;
-	uint modelIdx = modelMatIndexes[drawIdx / 2][(drawIdx % 2) * 2];
-	uint matIdx = modelMatIndexes[drawIdx / 2][(drawIdx % 2) * 2 + 1];
 	material = materials[matIdx];
 	mat4 _model = models[modelIdx];
 

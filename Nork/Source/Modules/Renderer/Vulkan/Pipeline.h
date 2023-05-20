@@ -7,8 +7,8 @@ namespace Nork::Renderer::Vulkan {
     template<class T>
     concept VertexConcept = requires()
     {
-        T::getBindingDescription();
-        T::getAttributeDescriptions();
+        T::GetBindingDescription();
+        T::GetAttributeDescriptions();
     };
 
     struct PipelineLayoutCreateInfo : vk::PipelineLayoutCreateInfo
@@ -37,8 +37,8 @@ namespace Nork::Renderer::Vulkan {
         template<VertexConcept T>
         Self& VertexInput()
         {
-            data->vertexBindings = T::getBindingDescription();
-            data->vertexAttributes = T::getAttributeDescriptions();
+            data->vertexBindings = T::GetBindingDescription();
+            data->vertexAttributes = T::GetAttributeDescriptions();
             data->vertexInput.setVertexAttributeDescriptions(data->vertexAttributes);
             data->vertexInput.setVertexBindingDescriptions(data->vertexBindings);
             return *this;

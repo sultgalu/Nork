@@ -122,7 +122,7 @@ layout(location = 1) in vec2 texCoord;
 layout(location = 2) in mat3 TBN;
 layout(location = 5) nonuniformEXT flat in Material material_;
 
-layout(set = 0, binding = 3) uniform sampler2D[] textures;
+layout(set = 0, binding = 2) uniform sampler2D[] textures;
 #endif // DEFERRED, UNLIT
 
 vec3 dLightShadow(DirLight light, Materials material, vec3 normal, vec3 viewDir, DirShadow shadow, vec3 worldPos);
