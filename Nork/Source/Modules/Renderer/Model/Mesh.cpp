@@ -48,7 +48,7 @@ void Object::SetTransform(const glm::mat4& modelMatrix) {
 	this->modelMatrix = modelMatrix;
 	*transform = modelMatrix;
 	for (size_t i = 0; i < model->nodes.size(); i++) {
-		SetTransformRecursive(0, modelMatrix); // TODO: should traverse it as a tree instead (start from root)
+		SetTransformRecursive(i, modelMatrix); // TODO: should traverse it as a tree instead (start from root)
 	}
 }
 void Object::StartAnimation() {
