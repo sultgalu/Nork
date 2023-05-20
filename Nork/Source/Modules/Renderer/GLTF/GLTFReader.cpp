@@ -113,18 +113,18 @@ std::shared_ptr<Model> GLTFReader::Read()
 void GLTFReader::AddNodeRecursive(int nodeIdx, const glm::mat4& parentTransform)
 {
     const GLTF::Node& glNode = gltf.nodes[nodeIdx];
-    glm::mat4 transform = parentTransform;
-    if (glNode.HasTransform()) // "The global transformation matrix of a node is the product of the global transformation matrix of its parent node and its own local transformation matrix"
-        transform = parentTransform * glNode.Transform();
+    // glm::mat4 transform = parentTransform;
+    //if (glNode.HasTransform()) // "The global transformation matrix of a node is the product of the global transformation matrix of its parent node and its own local transformation matrix"
+    //    transform = parentTransform * glNode.Transform();
 
     for (auto i : glNode.children) {
-        AddNodeRecursive(i, transform);
+        AddNodeRecursive(i, glm::identity<glm::mat4>());
     }
 
     MeshNode& node = model->nodes[nodeIdx];
     node.children = glNode.children;
-    if (transform != parentTransform) {
-        node.localTransform = transform;
+    if (glNode.HasTransform()) {
+        node.localTransform = glNode.Transform();
     }
 
     if (glNode.mesh != -1) {

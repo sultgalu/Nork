@@ -10,7 +10,6 @@ namespace Nork::Renderer {
 		GLTFBuilder(std::function<std::string(const std::shared_ptr<Texture>&)> textureUriProvider) : textureUriProvider(textureUriProvider) {}
 		GLTFBuilder& AddScene(bool defaultScene = false);
 		GLTFBuilder& AddNode(MeshNode& node, const std::filesystem::path& buffersPath); // adds it to current scene
-		GLTFBuilder& AddTransform(const glm::mat4&); // adds it to current node
 		GLTFBuilder& AddMesh(std::shared_ptr<Mesh>, const std::filesystem::path& buffersPath, const std::string& name = "");
 		GLTFBuilder& AddPrimitive(const MeshData& mesh, const std::filesystem::path& buffersPath, int matIdx, ShadingMode shaderMode); // adds it to current mesh
 		GLTFBuilder& AddMaterial(const Material& material, std::vector<std::pair<TextureMap, std::string>> imageUris, const std::string& name = "");

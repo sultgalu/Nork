@@ -9,31 +9,33 @@ GLTFBuilder& GLTFBuilder::AddScene(bool setDefault)
 
     return *this;
 }
-GLTFBuilder& GLTFBuilder::AddNode(MeshNode& node, const std::filesystem::path& buffersPath)
+static void AddTransform(const glm::mat4& tr, GLTF::Node& node)
 {
-    AddMesh(node.mesh, buffersPath);
-    gltf.scenes.back().nodes.push_back(gltf.nodes.size());
-    gltf.nodes.push_back(GLTF::Node());
-    gltf.nodes.back().mesh = meshes[node.mesh];
-    gltf.nodes.back().children = node.children;
-    return *this;
-}
-GLTFBuilder& GLTFBuilder::AddTransform(const glm::mat4& tr)
-{
-    /*glm::vec3 scale, translation, skew; glm::vec4 persp;
+    glm::vec3 scale, translation, skew; glm::vec4 persp;
     glm::quat quat;
     glm::decompose(tr, scale, quat, translation, skew, persp);
     quat = glm::conjugate(quat);
     if (quat != glm::identity<glm::quat>()) {
-            gltf.nodes.back().rotation = quat;
+        node.rotation = quat;
     }
     if (scale != glm::vec3(1)) {
-            gltf.nodes.back().scale = scale;
+        node.scale = scale;
     }
     if (translation != glm::vec3(0)) {
-            gltf.nodes.back().translation = translation;
-    }*/
-    gltf.nodes.back().matrix = tr; // the other way
+        node.translation = translation;
+    }
+    // gltf.nodes.back().matrix = tr; // the other way
+}
+GLTFBuilder& GLTFBuilder::AddNode(MeshNode& node, const std::filesystem::path& buffersPath)
+{
+    AddMesh(node.mesh, buffersPath);
+    gltf.scenes.back().nodes.push_back(gltf.nodes.size());
+    auto& glNode = gltf.nodes.emplace_back(GLTF::Node());
+    glNode.mesh = meshes[node.mesh];
+    glNode.children = node.children;
+    if (node.localTransform) {
+        AddTransform(*node.localTransform, glNode);
+    }
     return *this;
 }
 

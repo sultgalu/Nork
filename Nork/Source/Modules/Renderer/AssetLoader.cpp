@@ -144,7 +144,6 @@ std::shared_ptr<Model> AssetLoader::LoadModel(const fs::path& uri) {
 	}
 	auto& mesh = gltf.meshes.front(); // gltf::Mesh = Model
 	
-
 	return model;
 }
 std::shared_ptr<Model> AssetLoader::ImportModel(const fs::path& from, const fs::path& uri)
@@ -191,9 +190,6 @@ void AssetLoader::SaveModel(const std::shared_ptr<Model>& model, const fs::path&
 	for (auto& node : model->nodes)
 	{
 		builder.AddNode(node, path.parent_path().string());
-		if (node.localTransform) {
-			builder.AddTransform(*node.localTransform);
-		}
 	}
 
 	SaveGLTF(builder.Get(), path);

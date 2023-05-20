@@ -47,9 +47,8 @@ void Object::SetTransform(const glm::mat4& modelMatrix) {
 	processed.clear();
 	this->modelMatrix = modelMatrix;
 	*transform = modelMatrix;
-	int nodeIdx = 0;
 	for (size_t i = 0; i < model->nodes.size(); i++) {
-		SetTransformRecursive(i, modelMatrix);
+		SetTransformRecursive(0, modelMatrix); // TODO: should traverse it as a tree instead (start from root)
 	}
 }
 void Object::StartAnimation() {
@@ -118,12 +117,15 @@ void Object::UpdateAnimation(float delta) {
 				if (channel.path == Animation::Path::Translation) {
 					tr.translation = sampler.KeyFrame<glm::vec3>()[begin] * (1 - ratio) + sampler.KeyFrame<glm::vec3>()[end] * ratio;
 				}
-				if (channel.path == Animation::Path::Scale) {
+				else if (channel.path == Animation::Path::Scale) {
 					tr.scale = sampler.KeyFrame<glm::vec3>()[begin] * (1 - ratio) + sampler.KeyFrame<glm::vec3>()[end] * ratio;
 				}
-				if (channel.path == Animation::Path::Rotation) {
+				else if (channel.path == Animation::Path::Rotation) {
 					tr.rotation = sampler.KeyFrame<glm::quat>()[begin] * (1 - ratio) + sampler.KeyFrame<glm::quat>()[end] * ratio;
 					tr.rotation = glm::normalize(tr.rotation);
+				}
+				else {
+					std::unreachable();
 				}
 			}
 		}
@@ -135,7 +137,7 @@ void Object::UpdateAnimation(float delta) {
 }
 void Object::StopAnimation() {
 	isAnimating = false;
-	SetModel(model);
+	//SetModel(model);
 	for (size_t i = 0; i < model->nodes.size(); i++) {
 		model->nodes[i].localTransform = defaultTransforms[i];
 	}
