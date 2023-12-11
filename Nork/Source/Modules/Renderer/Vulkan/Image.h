@@ -87,12 +87,12 @@ namespace Nork::Renderer::Vulkan {
     struct ImageViewCreateInfo : vk::ImageViewCreateInfo
     {
         ImageViewCreateInfo() = delete;
-        ImageViewCreateInfo(std::shared_ptr<Image> img_, vk::ImageAspectFlagBits aspect, bool cube = false)
+        ImageViewCreateInfo(std::shared_ptr<Image> img_, vk::ImageAspectFlags aspect, bool cube = false)
             : ImageViewCreateInfo(**img_, img_->Format(), aspect, img_->createInfo.mipLevels, 0, cube)
         {
             img = img_;
         }
-        ImageViewCreateInfo(vk::Image img, vk::Format format_, vk::ImageAspectFlagBits aspect, uint32_t mipLevelCount, uint32_t baseMipLevel = 0, bool cube = false)
+        ImageViewCreateInfo(vk::Image img, vk::Format format_, vk::ImageAspectFlags aspect, uint32_t mipLevelCount, uint32_t baseMipLevel = 0, bool cube = false)
         {
             // this->components = 
             this->image = img;

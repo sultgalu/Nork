@@ -20,6 +20,7 @@ private:
 	void CreateDeferredLightPassPipeline();
 	void CreateForwardPipeline();
 	void CreateUnlitPipeline();
+	void CreateSkinnedPipeline();
 public:
 
 	std::shared_ptr<Vulkan::RenderPass> renderPass;
@@ -42,5 +43,6 @@ public:
 	std::shared_ptr<Vulkan::Pipeline> pipelineLPass;
 	std::shared_ptr<Vulkan::Pipeline> pipelineForward;
 	std::shared_ptr<Vulkan::Pipeline> pipelineUnlit;
+	std::shared_ptr<Vulkan::Pipeline> pipelineSkinned;
 };
 }

@@ -16,24 +16,6 @@ namespace Nork {
 		RenderingSystem();
 		~RenderingSystem();
 	public:
-		std::shared_ptr<Renderer::MeshData> NewMesh(uint32_t vertexCount, uint32_t indexCount)
-		{
-			auto vertices = Renderer::Resources::Instance().vertexBuffer->New(vertexCount);
-			auto indices = Renderer::Resources::Instance().indexBuffer->New(indexCount);
-			return std::make_shared<Renderer::MeshData>(vertices, indices);
-		}
-		std::shared_ptr<Renderer::MeshData> NewMesh(const std::vector<Renderer::Data::Vertex>& vertices,
-			const std::vector<uint32_t> indices)
-		{
-			auto mesh = NewMesh(vertices.size(), indices.size());
-			mesh->vertices->Write(vertices.data(), vertices.size());
-			mesh->indices->Write(indices.data(), indices.size());
-			return mesh;
-		}
-		std::shared_ptr<Renderer::Material> NewMaterial()
-		{
-			return std::make_shared<Renderer::Material>(Renderer::Resources::Instance().materials->New());
-		}
 		std::shared_ptr<Renderer::DirLight> NewDirLight()
 		{
 			return std::make_shared<Renderer::DirLight>(Renderer::Resources::Instance().dirLights->New());

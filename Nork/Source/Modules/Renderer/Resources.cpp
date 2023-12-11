@@ -3,8 +3,8 @@
 
 namespace Nork::Renderer {
 // these are maximum values.
-static constexpr auto vb_count = MemoryAllocator::poolSize / sizeof(Data::Vertex);
-static constexpr auto ib_count = MemoryAllocator::poolSize / sizeof(uint32_t);
+static constexpr auto vb_size = MemoryAllocator::poolSize;
+static constexpr auto ib_size = MemoryAllocator::poolSize;
 static constexpr auto mm_count = MemoryAllocator::poolSize / sizeof(glm::mat4);
 static constexpr auto mat_count = MemoryAllocator::poolSize / sizeof(Data::Material);
 static constexpr auto dl_count = 10; // !account for the number of frames too!
@@ -25,13 +25,13 @@ Resources::Resources()
 {
 	instance = this;
 
-	vertexBuffer = std::make_shared<DeviceArrays<Data::Vertex>>(
+	vertexBuffer = std::make_shared<DeviceArrays>(
 		vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst,
-		MemoryFlags{ .required = MemoryFlags::eDeviceLocal }, vb_count, framesInFlight,
+		MemoryFlags{ .required = MemoryFlags::eDeviceLocal }, vb_size, framesInFlight,
 		vk::PipelineStageFlagBits2::eVertexInput, vk::AccessFlagBits2::eVertexAttributeRead);
-	indexBuffer = std::make_shared<DeviceArrays<uint32_t>>(
+	indexBuffer = std::make_shared<DeviceArrays>(
 		vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst,
-		MemoryFlags{ .required = MemoryFlags::eDeviceLocal }, ib_count, framesInFlight,
+		MemoryFlags{ .required = MemoryFlags::eDeviceLocal }, ib_size, framesInFlight,
 		vk::PipelineStageFlagBits2::eIndexInput, vk::AccessFlagBits2::eIndexRead);
 
 	modelMatrices = std::make_shared<DeviceElements<glm::mat4>>(
@@ -73,7 +73,7 @@ Resources::Resources()
 		{ .required = eHostVisible | eHostCoherent | eDeviceLocal });
 
 	drawParams = Buffer::CreateHostVisible(
-		vk::BufferUsageFlagBits::eVertexBuffer, dps_size,
+		vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eUniformBuffer, dps_size,
 		{ .required = eHostVisible | eHostCoherent | eDeviceLocal });
 	drawCommands = Buffer::CreateHostVisible(
 		vk::BufferUsageFlagBits::eIndirectBuffer, dcs_size,
@@ -82,8 +82,9 @@ Resources::Resources()
 	descriptorSetLayout = std::make_shared<Vulkan::DescriptorSetLayout>(Vulkan::DescriptorSetLayoutCreateInfo()
 		// .Binding(0, vk::DescriptorType::eUniformBufferDynamic, vk::ShaderStageFlagBits::eVertex)
 		.Binding(0, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eVertex)
-		.Binding(1, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eVertex)
-		.Binding(2, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, textures_count, true));
+		// .Binding(1, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eVertex)
+		.Binding(2, vk::DescriptorType::eUniformBufferDynamic, vk::ShaderStageFlagBits::eVertex)
+		.Binding(3, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, textures_count, true));
 	descriptorSetLayoutLights = std::make_shared<Vulkan::DescriptorSetLayout>(Vulkan::DescriptorSetLayoutCreateInfo()
 		.Binding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment)
 		.Binding(1, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment)
@@ -93,6 +94,7 @@ Resources::Resources()
 		.Binding(5, vk::DescriptorType::eUniformBufferDynamic, vk::ShaderStageFlagBits::eFragment)
 		.Binding(6, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, ds_count, true)
 		.Binding(7, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, ps_count, true)
+		.Binding(8, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eFragment)
 	);
 	descriptorPool = std::make_shared<Vulkan::DescriptorPool>(
 		Vulkan::DescriptorPoolCreateInfo({ descriptorSetLayout, descriptorSetLayoutLights }, 2));
@@ -102,9 +104,9 @@ Resources::Resources()
 		Vulkan::DescriptorSetAllocateInfo(descriptorPool, descriptorSetLayoutLights));
 
 	descriptorSet->Writer()
-		// .Buffer(0, *drawParams->Underlying(), 0, DynamicSize(*drawParams), vk::DescriptorType::eUniformBufferDynamic)
 		.Buffer(0, *modelMatrices->buffer->Underlying(), 0, modelMatrices->buffer->memory.Size(), vk::DescriptorType::eStorageBuffer)
-		.Buffer(1, *materials->buffer->Underlying(), 0, materials->buffer->memory.Size(), vk::DescriptorType::eStorageBuffer)
+		// .Buffer(1, *materials->buffer->Underlying(), 0, materials->buffer->memory.Size(), vk::DescriptorType::eStorageBuffer)
+		.Buffer(2, *drawParams->Underlying(), 0, DynamicSize(*drawParams) / 2, vk::DescriptorType::eUniformBufferDynamic)
 		.Write();
 
 	descriptorSetLights->Writer()
@@ -114,6 +116,7 @@ Resources::Resources()
 		.Buffer(3, *pointShadows->buffer->Underlying(), 0, pointShadows->buffer->memory.Size(), vk::DescriptorType::eUniformBuffer)
 		.Buffer(4, *dirLightParams->Underlying(), 0, DynamicSize(*dirLightParams), vk::DescriptorType::eUniformBufferDynamic)
 		.Buffer(5, *pointLightParams->Underlying(), 0, DynamicSize(*pointLightParams), vk::DescriptorType::eUniformBufferDynamic)
+		.Buffer(8, *materials->buffer->Underlying(), 0, materials->buffer->memory.Size(), vk::DescriptorType::eStorageBuffer)
 		.Write();
 
 	textureDescriptors = std::make_unique<TextureDescriptors>(descriptorSet);
@@ -145,19 +148,6 @@ std::shared_ptr<PointShadowMap> Resources::CreateShadowMapCube(uint32_t size)
 
 	return shadowMap;
 }
-std::shared_ptr<MeshData> Resources::CreateMesh(const std::vector<Data::Vertex>& vertices, const std::vector<uint32_t> indices)
-{
-	auto mesh = CreateMesh(vertices.size(), indices.size());
-	mesh->vertices->Write(vertices.data(), vertices.size());
-	mesh->indices->Write(indices.data(), indices.size());
-	return mesh;
-}
-std::shared_ptr<MeshData> Resources::CreateMesh(uint32_t vertexCount, uint32_t indexCount)
-{
-	auto vertices = Resources::Instance().vertexBuffer->New(vertexCount);
-	auto indices = Resources::Instance().indexBuffer->New(indexCount);
-	return std::make_shared<MeshData>(vertices, indices);
-}
 std::shared_ptr<Material> Resources::CreateMaterial()
 {
 	return std::make_shared<Material>(Resources::Instance().materials->New());
@@ -172,7 +162,7 @@ std::shared_ptr<Object> Resources::CreateObject()
 // ----------------- TEXTURES ----------------
 
 Resources::TextureDescriptors::TextureDescriptors(std::shared_ptr<Vulkan::DescriptorSet>& descriptorSet)
-	: ImageDescriptorArray(descriptorSet, 2, textures_count)
+	: ImageDescriptorArray(descriptorSet, 3, textures_count)
 {
 	Vulkan::SamplerCreateInfo samplerCreateInfo;
 	samplerCreateInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
@@ -201,4 +191,8 @@ std::shared_ptr<Texture> Resources::TextureDescriptors::AddTexture(std::shared_p
 		img->sampler = defaultSampler;
 	return std::make_shared<Texture>(img, AddImage(img));
 }
+
+// Explicit specializations
+// template<> std::shared_ptr<MeshDataImpl<Data::Vertex>> Resources::CreateMesh(const std::vector<Data::Vertex>& vertices, const std::vector<uint32_t>& indices);
+// template<> std::shared_ptr<MeshDataImpl<Data::VertexSkinned>> Resources::CreateMesh(const std::vector<Data::VertexSkinned>& vertices, const std::vector<uint32_t>& indices);
 }

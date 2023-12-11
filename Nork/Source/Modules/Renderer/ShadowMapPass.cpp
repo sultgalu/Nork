@@ -114,10 +114,11 @@ void ShadowMapPass::RecordCommandBuffer(Vulkan::CommandBuffer& cmd, uint32_t ima
 	if (!Settings::Instance()->shadows) {
 		return;
 	}
+
+	cmd.bindIndexBuffer(**Resources::Instance().indexBuffer->buffer->Underlying(), 0, vk::IndexType::eUint32);
 	cmd.bindVertexBuffers(0,
 		{ **Resources::Instance().vertexBuffer->buffer->Underlying(), **Resources::Instance().drawParams->Underlying() },
 		{ 0, Resources::Instance().DynamicOffset(*Resources::Instance().drawParams) });
-	cmd.bindIndexBuffer(**Resources::Instance().indexBuffer->buffer->Underlying(), 0, vk::IndexType::eUint32);
 
 	RecordCmdDirectional(cmd, imageIndex, currentFrame);
 	RecordCmdPoint(cmd, imageIndex, currentFrame);
@@ -126,10 +127,7 @@ void ShadowMapPass::RecordCmdDirectional(Vulkan::CommandBuffer& cmd, uint32_t im
 {
 	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, **pipeline);
 	cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, **pipelineLayout, 0,
-		{ **Resources::Instance().descriptorSet }, // resource dset binding should happen outside
-			{
-				// Resources::Instance().DynamicOffset(*Resources::Instance().drawParams)
-			});
+		{ **Resources::Instance().descriptorSet }, { Resources::Instance().jointDataOffset });
 
 	for (auto& shadowMap : Resources::Instance().shadowMaps)
 	{
@@ -139,10 +137,10 @@ void ShadowMapPass::RecordCmdDirectional(Vulkan::CommandBuffer& cmd, uint32_t im
 		cmd.setScissor(0, ScissorFull(*shadowMap->fb));
 
 		cmd.pushConstants<glm::mat4>(**pipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, shadowMap->vp);
+
 		cmd.drawIndexedIndirect(**Resources::Instance().drawCommands->Underlying(),
 			Resources::Instance().DynamicOffset(*Resources::Instance().drawCommands),
-			Resources::Instance().drawCommandCount.AllCount(),
-			sizeof(vk::DrawIndexedIndirectCommand));
+			Resources::Instance().drawCommandCount.AllCount(), sizeof(vk::DrawIndexedIndirectCommand));
 
 		cmd.endRenderPass();
 	}
@@ -152,9 +150,7 @@ void ShadowMapPass::RecordCmdPoint(Vulkan::CommandBuffer& cmd, uint32_t imageInd
 	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, **pipelineCube);
 	cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, **pipelineLayoutCube, 0,
 		{ **Resources::Instance().descriptorSet, **descriptorSet },
-		{
-			// Resources::Instance().DynamicOffset(*Resources::Instance().drawParams),
-		Resources::Instance().DynamicOffset(*Resources::Instance().pShadowVps) });
+		{ Resources::Instance().jointDataOffset, Resources::Instance().DynamicOffset(*Resources::Instance().pShadowVps) });
 
 	uint32_t geomPush = 0;
 	for (auto& shadowMap : Resources::Instance().shadowMapsCube)
@@ -167,11 +163,11 @@ void ShadowMapPass::RecordCmdPoint(Vulkan::CommandBuffer& cmd, uint32_t imageInd
 		cmd.pushConstants<uint32_t>(**pipelineLayoutCube, vk::ShaderStageFlagBits::eGeometry, 0, geomPush);
 		cmd.pushConstants<float>(**pipelineLayoutCube, vk::ShaderStageFlagBits::eFragment, 4, shadowMap->Shadow()->far);
 		cmd.pushConstants<glm::vec3>(**pipelineLayoutCube, vk::ShaderStageFlagBits::eFragment, 16, shadowMap->position);
+
 		cmd.drawIndexedIndirect(**Resources::Instance().drawCommands->Underlying(),
 			Resources::Instance().DynamicOffset(*Resources::Instance().drawCommands),
-			Resources::Instance().drawCommandCount.AllCount(),
-			sizeof(vk::DrawIndexedIndirectCommand));
-
+			Resources::Instance().drawCommandCount.AllCount(), sizeof(vk::DrawIndexedIndirectCommand));
+		
 		cmd.endRenderPass();
 		geomPush++;
 	}

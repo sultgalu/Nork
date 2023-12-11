@@ -8,12 +8,12 @@ namespace Nork::Renderer {
 class Image
 {
 public:
-	Image(uint32_t width, uint32_t height, vk::Format format, vk::ImageUsageFlagBits usage, vk::ImageAspectFlagBits aspect,
+	Image(uint32_t width, uint32_t height, vk::Format format, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspect,
 		vk::PipelineStageFlags2 syncStages = {}, vk::AccessFlags2 syncAccess = {}, uint32_t mipLevels = 1, bool createView = true,
 		const MemoryFlags& memFlags = { .required = MemoryFlags::eDeviceLocal })
 		: Image(Vulkan::ImageCreateInfo(width, height, format, usage, mipLevels), aspect, false, syncStages, syncAccess, createView, memFlags)
 	{}
-	Image(const Vulkan::ImageCreateInfo& createInfo, vk::ImageAspectFlagBits aspect, bool cube = false,
+	Image(const Vulkan::ImageCreateInfo& createInfo, vk::ImageAspectFlags aspect, bool cube = false,
 		vk::PipelineStageFlags2 syncStages = {}, vk::AccessFlags2 syncAccess = {}, bool createView = true,
 		const MemoryFlags& memFlags = { .required = MemoryFlags::eDeviceLocal })
 		: syncStages(syncStages), syncAccess(syncAccess)

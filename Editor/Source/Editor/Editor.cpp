@@ -55,7 +55,7 @@ static void ReadImGuiIniFile(ImGuiContext* ctx, ImGuiSettingsHandler* handler, v
 	if ((const char*)entry == std::string("project")) {
 		auto projectPath = fs::path(line);
 		if (!projectPath.empty() || fs::exists(projectPath)) {
-			Editor::Get().OpenProject(projectPath);
+			// Editor::Get().OpenProject(projectPath);
 		}
 	}
 	else if ((const char*)entry == std::string("camera")) {
@@ -236,7 +236,22 @@ void Editor::BuildFrame()
 		auto delta = t.Reset();
 		ImGui::Spacing();
 		ImGui::Separator();
-		ImGui::Text(("Delta: " + std::to_string(delta) + " ms (" + std::to_string(1.0f / (delta / 1000.0f)) + " fps)").c_str());
+		static Timer timer;
+		static float actualDelta = 0;
+		static float deltaSum;
+		static float deltaCount = 0;
+		deltaCount++;
+		deltaSum += delta;
+		if (timer.ElapsedSeconds() > 0.2f) {
+			timer.Restart();
+			actualDelta = deltaSum / deltaCount;
+			deltaSum = deltaCount = 0;
+		}
+		// ImGui::Text(("Delta: " + std::to_string(actualDelta) + " ms (" + std::to_string(1.0f / (actualDelta / 1000.0f)) + " fps)").c_str());
+		ImGui::Text(("Delta: " + std::to_string(actualDelta) + " ms").c_str());
+		// ImGui::Spacing();
+		ImGui::Indent(300);
+		ImGui::Text((std::to_string(1.0f / (actualDelta / 1000.0f)) + " fps").c_str());
 		ImGui::EndMainMenuBar();
 	}
 

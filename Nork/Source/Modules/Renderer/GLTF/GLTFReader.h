@@ -12,10 +12,9 @@ namespace Nork::Renderer {
 		// eg. if gltf contains a complex scene, the while scene will be loaded as a singular model
 		void AddNodeRecursive(int nodeIdx, const glm::mat4& parentTransform = glm::identity<glm::mat4>());
 		std::shared_ptr<Material> CreateMaterial(const GLTF::Material& mat);
-		std::shared_ptr<MeshData> CreateRendererMesh(int idx, int meshIdx);
+		template<class VertexType> std::shared_ptr<MeshData> CreateMeshData(int idx, int meshIdx);
 		template<class T> std::vector<uint32_t> GetIndices(const GLTF::Primitive& prim);
 		void SetTangent(Data::Vertex& v1, Data::Vertex& v2, Data::Vertex& v3);
-		template<class S, class T = float> std::span<T> BufferView(const GLTF::Accessor& accessor);
 		fs::path AbsolutePath(std::string uri) { return srcFolder / uri; }
 	public:
 		GLTF::GLTF gltf;

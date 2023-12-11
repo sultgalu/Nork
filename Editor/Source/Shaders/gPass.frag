@@ -26,12 +26,17 @@ struct Material
 layout(location = 0) in vec3 worldPos;
 layout(location = 1) in vec2 texCoord;
 layout(location = 2) in mat3 TBN;
-layout(location = 5) nonuniformEXT flat in Material material;
+layout(location = 5) nonuniformEXT flat in uint materialIdx;
 
-layout(set = 0, binding = 2) uniform sampler2D[] textures;
+layout(set = 0, binding = 3) uniform sampler2D[] textures;
+layout(set = 2, binding = 8) readonly buffer asd7
+{
+	Material materials[1];
+};
 
 void main()
 {
+	Material material = materials[materialIdx];
 	position = vec4(worldPos, 1.0f);
 	vec4 color = texture(textures[bitfieldExtract(material.baseColor_normal, 0, 16)], texCoord).rgba;
 	if (color.a < material.alphaCutoff)

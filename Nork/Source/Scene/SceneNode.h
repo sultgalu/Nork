@@ -18,7 +18,7 @@ namespace Nork {
 		bool RemoveChild(SceneNode& node);
 		void ForEachDescendants(std::function<void(SceneNode&)> f);
 
-		bool operator==(const SceneNode& other)
+		bool operator==(const SceneNode& other) const
 		{
 			return other.entity.Id() == entity.Id();
 		}

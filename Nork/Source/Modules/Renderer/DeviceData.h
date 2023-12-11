@@ -10,16 +10,15 @@ public:
 	virtual void OnNewFrame() = 0;
 };
 
-template<class T>
 class DeviceArrays: public DeviceData
 {
 public:
 	DeviceArrays(vk::BufferUsageFlags usage, const MemoryFlags& memFlags, uint32_t capacity,
 	uint32_t maxFramesInFlight, vk::PipelineStageFlags2 syncStages, vk::AccessFlags2 syncAccess)
 		: usage(usage |= vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst),
-		memFlags(memFlags), capacity(capacity), syncStages(syncStages), syncAccess(syncAccess)
+		memFlags(memFlags), capacityBytes(capacity), syncStages(syncStages), syncAccess(syncAccess)
 	{
-		buffer = Buffer::Create(usage, CapacityBytes(), memFlags);
+		buffer = Buffer::Create(usage, capacityBytes, memFlags);
 	}
 	void FlushWrites() override
 	{
@@ -28,20 +27,23 @@ public:
 	void OnNewFrame() override {
 
 	}
-	std::shared_ptr<BufferView<T>> New(uint32_t count)
+	template<class T> std::shared_ptr<BufferView<T>> New(uint32_t count)
 	{
+		if (capacityBytes < count * sizeof(T) + sizeBytes)
+			std::unreachable();
+
+		auto padding = sizeof(T) - sizeBytes % sizeof(T);
+		sizeBytes += padding;
+
 		auto arr = std::make_shared<BufferView<T>>(count);
 		arr->buffer = buffer.get();
-		arr->offset = size;
+		arr->offset = sizeBytes / sizeof(T);
 
-		size += count;
+		sizeBytes += count * sizeof(T);
 		return arr;
 	}
 public:
-	vk::DeviceSize CapacityBytes() { return capacity * sizeof(T); }
-	vk::DeviceSize SizeBytes() { return size * sizeof(T); }
-public:
-	std::vector<std::weak_ptr<BufferView<T>>> arrays;
+	// std::vector<std::weak_ptr<BufferView<T>>> arrays;
 
 	std::shared_ptr<Buffer> buffer;
 	std::shared_ptr<Buffer> oldBuffer = nullptr;
@@ -50,8 +52,8 @@ public:
 	vk::AccessFlags2 syncAccess;
 
 	MemoryFlags memFlags;
-	uint32_t capacity;
-	uint32_t size = 0;
+	uint32_t capacityBytes;
+	uint32_t sizeBytes = 0;
 	vk::BufferUsageFlags usage;
 };
 

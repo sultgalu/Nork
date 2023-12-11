@@ -7,19 +7,9 @@
 
 using namespace Nork;
 
-int main()
-{
-	Logger::PushStream(std::cout);
+void InitScene(Engine& engine) {
 
-	auto window = Renderer::Vulkan::Window(1920 * 0.8f, 1080 * 0.8f);
-	std::unique_ptr<Nork::Input> input = std::make_unique<Nork::Input>(window.glfwWindow);
-	Engine engine;
-
-	Renderer::Commands::Instance().BeginTransferCommandBuffer();
-	Editor::Editor editor; // needs to record to transfer command buffer
-	//editor.SetDisplayTexture(engine.renderingSystem.deferredPipeline.lightFb->Color());
-
-	/*int dim = 10;
+	int dim = 16;
 	int sep = 3;
 	int start = -dim / 2;
 	int end = dim / 2 + dim % 2;
@@ -31,71 +21,66 @@ int main()
 			for (int k = start; k < end; k++)
 			{
 				auto ent = engine.scene.CreateNode()->GetEntity();
-				ent.AddComponent<Components::Drawable>().model->meshes[0].material = engine.resourceManager.GetMaterial("a");
+				ent.AddComponent<Components::Drawable>(); // .object->SetModel(Renderer::AssetLoader::Instance().LoadModel("models\\Suzanne\\Suzanne.gltf")); //.object->GetModel()->meshes[0].material = engine.resourceManager.GetMaterial("a");
 				ent.AddComponent<Components::Transform>([&](auto& tr) { tr.localPosition = glm::vec3(i * sep, j * sep, k * sep); });
 				ent.AddComponent<Components::Physics>().Kinem().mass = 0.1f;
 				ent.AddComponent<Components::Tag>().tag = std::to_string(i).append("-").append(std::to_string(j)).append("-").append(std::to_string(k));
 			}
 		}
-	}*/
-
-	auto pl = engine.scene.CreateNode()->GetEntity();
-	pl.AddComponent<Components::Transform>([&](auto& tr)
-	{
-		tr.position.y = 5;
-	}); //{ tr.localPosition = { -8.0, -8.6, -4.7 }; tr.localScale = glm::vec3(0.1f); });
-	pl.AddComponent<Components::Drawable>();
-	pl.AddComponent<Components::PointLight>([&](Components::PointLight& l)
-	{
-		l.Data()->color *= 100.0f;
-	});
-	pl.AddComponent<Components::PointShadowMap>();
-	constexpr int levels = 4; //20;
-	constexpr int size = 4; // * 4 = one level
-	float sep = 2.1f;
-	constexpr float height = -10;
-	int start = -size / 2;
-	constexpr auto allCount = levels * 4 * size;
-
-	auto add = [&](int i, int j, int k)
-	{
-		auto ent = engine.scene.CreateNode()->GetEntity();
-		ent.AddComponent<Components::Transform>([&](auto& tr) { tr.localPosition = glm::vec3(i * sep, height + 2 + j * sep, k * sep); });
-		ent.AddComponent<Components::Drawable>(); //.model->meshes[0].material = MaterialResources::Instance().GetById("a");
-		ent.AddComponent<Components::Physics>().Kinem().applyGravity = true;
-		ent.AddComponent<Components::Tag>().tag = std::to_string(i).append("-").append(std::to_string(j)).append("-").append(std::to_string(k));
-	};
-
-	auto bullet = engine.scene.CreateNode()->GetEntity();
-	bullet.AddComponent<Components::Drawable>(); // .model->meshes[0].material = MaterialResources::Instance().GetById("a");
-	bullet.AddComponent<Components::Transform>([&](auto& tr)
-	{
-		tr.localPosition = glm::vec3(start - 30, levels * sep / 2 + 10, 0);
-		tr.localScale = glm::vec3(1, 15, 5);
-		tr.UpdateGlobalWithoutParent();
-	});
-	bullet.AddComponent<Components::Physics>([&](Components::Physics& phx)
-	{
-		auto& kinem = phx.Kinem();
-		kinem.mass = 1000.0f;
-		kinem.velocity.x = 20.0f;
-		// kinem.applyGravity = false;
-		kinem.w.z = -1.0f;
-	});
-	bullet.AddComponent<Components::Tag>().tag = "bullet";
-
-	for (int level = 0; level < levels; level++)
-	{
-		int i = -1, j = 0;
-		for (size_t _ = 0; _ < size; _++)
-			add(start + ++i, level, start + j);
-		for (size_t _ = 0; _ < size; _++)
-			add(start + i, level, start + ++j);
-		for (size_t _ = 0; _ < size; _++)
-			add(start + --i, level, start + j);
-		for (size_t _ = 0; _ < size; _++)
-			add(start + i, level, start + --j);
 	}
+
+	// auto pl = engine.scene.CreateNode()->GetEntity();
+	// pl.AddComponent<Components::Transform>([&](auto& tr) {
+	// 	tr.position.y = 5;
+	// }); //{ tr.localPosition = { -8.0, -8.6, -4.7 }; tr.localScale = glm::vec3(0.1f); });
+	// pl.AddComponent<Components::Drawable>();
+	// pl.AddComponent<Components::PointLight>([&](Components::PointLight& l) {
+	// 	l.Data()->color *= 100.0f;
+	// });
+	// 
+	// pl.AddComponent<Components::PointShadowMap>();
+	// constexpr int levels = 4; //20;
+	// constexpr int size = 4; // * 4 = one level
+	// float sep = 2.1f;
+	// constexpr float height = -10;
+	// int start = -size / 2;
+	// constexpr auto allCount = levels * 4 * size;
+	// 
+	// auto add = [&](int i, int j, int k) {
+	// 	auto ent = engine.scene.CreateNode()->GetEntity();
+	// 	ent.AddComponent<Components::Transform>([&](auto& tr) { tr.localPosition = glm::vec3(i * sep, height + 2 + j * sep, k * sep); });
+	// 	ent.AddComponent<Components::Drawable>(); //.model->meshes[0].material = MaterialResources::Instance().GetById("a");
+	// 	ent.AddComponent<Components::Physics>().Kinem().applyGravity = true;
+	// 	ent.AddComponent<Components::Tag>().tag = std::to_string(i).append("-").append(std::to_string(j)).append("-").append(std::to_string(k));
+	// };
+
+	// auto bullet = engine.scene.CreateNode()->GetEntity();
+	// bullet.AddComponent<Components::Drawable>(); // .model->meshes[0].material = MaterialResources::Instance().GetById("a");
+	// bullet.AddComponent<Components::Transform>([&](auto& tr) {
+	// 	tr.localPosition = glm::vec3(start - 30, levels * sep / 2 + 10, 0);
+	// 	tr.localScale = glm::vec3(1, 15, 5);
+	// 	tr.UpdateGlobalWithoutParent();
+	// });
+	// bullet.AddComponent<Components::Physics>([&](Components::Physics& phx) {
+	// 	auto& kinem = phx.Kinem();
+	// 	kinem.mass = 1000.0f;
+	// 	kinem.velocity.x = 20.0f;
+	// 	// kinem.applyGravity = false;
+	// 	kinem.w.z = -1.0f;
+	// });
+	// bullet.AddComponent<Components::Tag>().tag = "bullet";
+
+	// for (int level = 0; level < levels; level++) {
+	// 	int i = -1, j = 0;
+	// 	for (size_t _ = 0; _ < size; _++)
+	// 		add(start + ++i, level, start + j);
+	// 	for (size_t _ = 0; _ < size; _++)
+	// 		add(start + i, level, start + ++j);
+	// 	for (size_t _ = 0; _ < size; _++)
+	// 		add(start + --i, level, start + j);
+	// 	for (size_t _ = 0; _ < size; _++)
+	// 		add(start + i, level, start + --j);
+	// }
 
 	// SINGLE
 	// auto ent = engine.scene.CreateNode()->GetEntity();
@@ -121,19 +106,17 @@ int main()
 	// ent2.AddComponent<Components::Collider>() = Components::Collider::Cube();
 	// ent2.AddComponent<Components::Tag>().tag = "SINGLE2";
 
-	glm::vec3 scale = glm::vec3(100, 1, 100);
+	glm::vec3 scale = glm::vec3(100, 20, 100);
 	auto ground = engine.scene.CreateNode()->GetEntity();
 	ground.AddComponent<Components::Drawable>(); // .model->meshes[0].material = MaterialResources::Instance().GetById("a");
-	ground.AddComponent<Components::Transform>([&](auto& tr)
-	{
-		tr.localPosition = glm::vec3(0, -10, 0);
-	tr.localScale = scale;
-	tr.UpdateGlobalWithoutParent();
+	ground.AddComponent<Components::Transform>([&](auto& tr) {
+		tr.localPosition = glm::vec3(0, -30, 0);
+		tr.localScale = scale;
+		tr.UpdateGlobalWithoutParent();
 	});
-	ground.AddComponent<Components::Physics>([&](Components::Physics& phx)
-	{
+	ground.AddComponent<Components::Physics>([&](Components::Physics& phx) {
 		phx.Kinem().isStatic = true;
-	phx.Kinem().mass = 1.0f;
+		phx.Kinem().mass = 1.0f;
 	});
 	ground.AddComponent<Components::Tag>().tag = "GROUND";
 
@@ -151,16 +134,21 @@ int main()
 	engine.scene.AddComponent<Components::Tag>(node2).tag = "NODE 2";*/
 
 	auto sun = engine.scene.CreateNode()->GetEntity();
-	sun.AddComponent<Components::DirLight>([](Components::DirLight& l)
-	{
+	sun.AddComponent<Components::DirLight>([](Components::DirLight& l) {
 		auto writer = l.Data();
-		writer->direction = { -0.05f, -0.08f, -0.05f };
-		writer->color = glm::vec4(1, 1, 1, 1);
+		writer->direction = { -0.14f, -0.08f, -0.05f };
+		writer->color = glm::vec4(1, 0.8f, 0.5f, 1);
 		l.position = { 0, 0, -100 };
 		l.rectangle = { 200, 200, 200 };
 		l.sun = true;
 	});
-	sun.AddComponent<Components::DirShadowMap>();
+	sun.AddComponent<Components::DirShadowMap>([](Components::DirShadowMap& s)
+	{
+		auto writer = s.shadowMap->shadow->Data();
+		writer->bias = 0.003;
+		writer->biasMin = 0.001;
+		s.shadowMap->CreateTexture(1000, 1000);
+	});
 	sun.AddComponent<Components::Tag>().tag = "SUN";
 
 	//auto sun2 = engine.scene.CreateNode()->GetEntity();
@@ -181,22 +169,32 @@ int main()
 	int endP = dimP / 2 + dimP % 2;
 	int shadows = 8;
 
-	for (int i = startP; i < endP; i++)
-	{
-		for (int j = 0; j < dimP; j++)
-		{
-			for (int k = startP; k < endP; k++)
-			{
-				auto pl = engine.scene.CreateNode()->GetEntity();
-				pl.AddComponent<Components::Transform>([&](auto& tr) { tr.localPosition = { i * sepP + offsX, j * sepP, k * sepP }; });
-				pl.AddComponent<Components::Drawable>();
-				pl.AddComponent<Components::PointLight>().SetIntensity(10);
-				//if (shadows-- > 0)
-				pl.AddComponent<Components::PointShadowMap>();
-				pl.AddComponent<Components::Tag>().tag = "pointLight" + std::to_string((k - startP) + j * dimP + (i - startP) * dimP * dimP);
-			}
-		}
-	}
+	// for (int i = startP; i < endP; i++) {
+	// 	for (int j = 0; j < dimP; j++) {
+	// 		for (int k = startP; k < endP; k++) {
+	// 			auto pl = engine.scene.CreateNode()->GetEntity();
+	// 			pl.AddComponent<Components::Transform>([&](auto& tr) { tr.localPosition = { i * sepP + offsX, j * sepP, k * sepP }; });
+	// 			pl.AddComponent<Components::Drawable>();
+	// 			pl.AddComponent<Components::PointLight>().SetIntensity(10);
+	// 			//if (shadows-- > 0)
+	// 			pl.AddComponent<Components::PointShadowMap>();
+	// 			pl.AddComponent<Components::Tag>().tag = "pointLight" + std::to_string((k - startP) + j * dimP + (i - startP) * dimP * dimP);
+	// 		}
+	// 	}
+	// }
+}
+
+int main()
+{
+	Logger::PushStream(std::cout);
+
+	Engine engine;
+
+	Renderer::Commands::Instance().BeginTransferCommandBuffer();
+	Editor::Editor editor; // needs to record to transfer command buffer
+	//editor.SetDisplayTexture(engine.renderingSystem.deferredPipeline.lightFb->Color());
+
+	InitScene(engine);
 
 	Renderer::Vulkan::Window::Instance().SetupCallbacks();
 	engine.physicsUpdate = false;

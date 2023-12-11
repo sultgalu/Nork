@@ -18,6 +18,8 @@ namespace Nork
 		void StartPhysics(bool startScript = true);
 		void StopPhysics();
 	public:
+		Renderer::Vulkan::Window window;
+		Nork::Input input;
 		Scene scene;
 
 		RenderingSystem renderingSystem;

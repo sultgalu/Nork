@@ -18,16 +18,17 @@ namespace Nork::Editor {
 		else
 			str = name->tag;
 
-		auto flags = ImGuiTreeNodeFlags_DefaultOpen;
+		int flags = ImGuiTreeNodeFlags_DefaultOpen;
 		if (node->GetChildren().empty())
-			flags |= ImGuiTreeNodeFlags_Leaf;
+			flags |= ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_Leaf;
 		
 		if (node == GetCommonData().selectedNode)
-			flags |= ImGuiTreeNodeFlags_Selected;
-		if (true)
-			flags |= ImGuiTreeNodeFlags_OpenOnArrow
-			| ImGuiTreeNodeFlags_OpenOnDoubleClick;
+			flags |= flags | ImGuiTreeNodeFlags_Selected;
+		if (true) {
+			flags |= ImGuiTreeNodeFlags_OpenOnArrow;
+			flags |= ImGuiTreeNodeFlags_OpenOnDoubleClick;
 			//| ImGuiTreeNodeFlags_NoTreePushOnOpen;
+		}
 
 		bool open = ImGui::TreeNodeEx(str.c_str(), flags);
 		constexpr int dragDrogVerifier = 24234;

@@ -45,6 +45,9 @@ struct Attribute {
     constexpr static const char* normal = "NORMAL";
     constexpr static const char* tangent = "TANGENT";
     constexpr static const char* texcoord0 = "TEXCOORD_0";
+    constexpr static const char* joints0 = "JOINTS_0";
+    constexpr static const char* weights0 = "WEIGHTS_0";
+
     std::string key;
     int accessor;
 
@@ -52,7 +55,8 @@ struct Attribute {
     static Attribute NORMAL(int accessor) { return Attribute(normal, accessor); }
     static Attribute TANGENT(int accessor) { return Attribute(tangent, accessor); }
     static Attribute TEXCOORD_0(int accessor) { return Attribute(texcoord0, accessor); }
-
+    static Attribute JOINTS_0(int accessor) { return Attribute(joints0, accessor); }
+    static Attribute WEIGHTS_0(int accessor) { return Attribute(weights0, accessor); }
 private:
     Attribute(const std::string& key, int accessor)
         : key(key)
@@ -105,6 +109,10 @@ struct Primitive : Property {
             attributes.push_back(Attribute::TANGENT(attribsJson.Get<int>(Attribute::tangent)));
         if (attribsJson.Contains(Attribute::texcoord0))
             attributes.push_back(Attribute::TEXCOORD_0(attribsJson.Get<int>(Attribute::texcoord0)));
+        if (attribsJson.Contains(Attribute::joints0))
+            attributes.push_back(Attribute::JOINTS_0(attribsJson.Get<int>(Attribute::joints0)));
+        if (attribsJson.Contains(Attribute::weights0))
+            attributes.push_back(Attribute::WEIGHTS_0(attribsJson.Get<int>(Attribute::weights0)));
     }
     bool Validate() const override
     {
@@ -655,7 +663,7 @@ struct Animation: Property {
 struct Skin : Property {
     int inverseBindMatrices = -1;
     int skeleton = -1;
-    std::vector<int> joints; // required
+    std::vector<uint16_t> joints; // required
     std::string name;
 public:
     JsonObject ToJson() const override

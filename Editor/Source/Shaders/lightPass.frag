@@ -50,7 +50,21 @@ struct CullConfig
 	uint atomicCounter;
 	uvec2 cullRes;
 };
+struct Material
+{
+	uint baseColor_normal;
+	uint metallicRoughness_occlusion;
+	float roughnessFactor;
+	float metallicFactor;
 
+	vec3 emissiveFactor;
+  uint emissive;
+
+	vec4 baseColorFactor;
+
+	float alphaCutoff;
+	float padding[3];
+};
 layout(std140, set = 2, binding = 0) uniform asd1
 {
 	DirLight dLs[10];
@@ -70,7 +84,7 @@ layout(std140, set = 2, binding = 3) uniform asd4
 layout(std140, set = 2, binding = 4) uniform asd5
 {
 	uint dLightCount, dShadowCount;
-	uint pad0, pad1;
+	uint pad0, pad1; // TODO use point light indexes here not separately
 	uvec4 dirIdxs[1];
 };
 layout(std140, set = 2, binding = 5) uniform asd6
@@ -78,7 +92,7 @@ layout(std140, set = 2, binding = 5) uniform asd6
 	uint pLightCount, pShadowCount;
 	uint pad2, pad3;
 	uvec4 pointIdxs[1];
-}; 
+};
 struct Materials
 {
 	vec4 albedo;
@@ -88,7 +102,10 @@ struct Materials
 };
 layout(set = 2, binding = 6) uniform sampler2DShadow[] shadowMaps;
 layout(set = 2, binding = 7) uniform samplerCubeShadow[] shadowMapsCube;
-
+layout(set = 2, binding = 8) readonly buffer asd7
+{
+	Material materials[1];
+};
 layout(push_constant) uniform constants
 {
 	layout(offset = 64) vec3 viewPos;
@@ -101,28 +118,12 @@ layout(input_attachment_index = 1, set = 1, binding = 1) uniform subpassInput gB
 layout(input_attachment_index = 2, set = 1, binding = 2) uniform subpassInput gNormal;
 layout(input_attachment_index = 3, set = 1, binding = 3) uniform subpassInput gMetallicRoughnessOcclusion;
 #else // FORWARD, UNLIT
-struct Material
-{
-	uint baseColor_normal;
-	uint metallicRoughness_occlusion;
-	float roughnessFactor;
-	float metallicFactor;
-
-	vec3 emissiveFactor;
-  uint emissive;
-
-	vec4 baseColorFactor;
-
-	float alphaCutoff;
-	float padding[3];
-};
-
 layout(location = 0) in vec3 worldPos;
 layout(location = 1) in vec2 texCoord;
 layout(location = 2) in mat3 TBN;
-layout(location = 5) nonuniformEXT flat in Material material_;
+layout(location = 5) nonuniformEXT flat in uint materialIdx;
 
-layout(set = 0, binding = 2) uniform sampler2D[] textures;
+layout(set = 0, binding = 3) uniform sampler2D[] textures;
 #endif // DEFERRED, UNLIT
 
 vec3 dLightShadow(DirLight light, Materials material, vec3 normal, vec3 viewDir, DirShadow shadow, vec3 worldPos);
@@ -157,6 +158,7 @@ void main_light()
 	material.metallic = metallicRoughnessOcclusion.g;
 	material.occlusion = metallicRoughnessOcclusion.b;
 #else // FORWARD
+	Material material_ = materials[materialIdx];
 	material.albedo = texture(textures[bitfieldExtract(material_.baseColor_normal, 0, 16)], texCoord).rgba;
 	material.albedo = material.albedo * material_.baseColorFactor;
 	if (material.albedo.a < material_.alphaCutoff)
@@ -310,6 +312,7 @@ float pShadow(PointShadow shadow, vec3 normal, vec3 lightDir, vec3 distance)
 
 void main(){
 #ifdef UNLIT
+	Material material_ = materials[materialIdx];
 	vec4 albedo = texture(textures[bitfieldExtract(material_.baseColor_normal, 0, 16)], texCoord).rgba;
 	albedo *= material_.baseColorFactor;
 	fColor = vec4(albedo.rgb, PushConstants.blend == 0.0 ? 1.0 : albedo.a);

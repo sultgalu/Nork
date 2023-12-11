@@ -52,10 +52,16 @@ const std::vector<vk::VertexInputAttributeDescription> Vertex::GetAttributeDescr
 }
 const std::vector<vk::VertexInputBindingDescription> Data::VertexSkinned::GetBindingDescription()
 {
-	std::vector<vk::VertexInputBindingDescription> bindingDescriptions(1);
+	std::vector<vk::VertexInputBindingDescription> bindingDescriptions(3);
 	bindingDescriptions[0].binding = 0;
 	bindingDescriptions[0].stride = sizeof(VertexSkinned);
 	bindingDescriptions[0].inputRate = vk::VertexInputRate::eVertex;
+	bindingDescriptions[1].binding = 1;
+	bindingDescriptions[1].stride = sizeof(uint32_t) * 2;
+	bindingDescriptions[1].inputRate = vk::VertexInputRate::eInstance;
+	bindingDescriptions[2].binding = 2; // THIS IS PROBABLY WRONG BC INDEX BUFFER WILL NOT POINT TO THE RIGHT ATTRIB? 
+	bindingDescriptions[2].stride = sizeof(uint32_t);
+	bindingDescriptions[2].inputRate = vk::VertexInputRate::eInstance;
 
 	return bindingDescriptions;
 }
@@ -66,7 +72,7 @@ const std::vector<vk::VertexInputAttributeDescription> Data::VertexSkinned::GetA
 	auto& descJoints = attributeDescriptions.emplace_back();
 	descJoints.binding = 0;
 	descJoints.location = attributeDescriptions.size() - 1;
-	descJoints.format = vk::Format::eR32G32B32A32Sfloat;
+	descJoints.format = vk::Format::eR32G32B32A32Uint;
 	descJoints.offset = offsetof(VertexSkinned, joints);
 
 	auto& descWeights = attributeDescriptions.emplace_back();
@@ -74,6 +80,12 @@ const std::vector<vk::VertexInputAttributeDescription> Data::VertexSkinned::GetA
 	descWeights.location = attributeDescriptions.size() - 1;
 	descWeights.format = vk::Format::eR32G32B32A32Sfloat;
 	descWeights.offset = offsetof(VertexSkinned, weights);
+
+	auto& descJointOffs = attributeDescriptions.emplace_back();
+	descJointOffs.binding = 2;
+	descJointOffs.location = attributeDescriptions.size() - 1;
+	descJointOffs.format = vk::Format::eR32Uint;
+	descJointOffs.offset = 0;
 
 	return attributeDescriptions;
 }

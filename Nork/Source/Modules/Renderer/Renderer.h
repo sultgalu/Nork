@@ -28,7 +28,7 @@ public:
 	void RefreshShaders();
 	void CreateSyncObjects();
 private:
-	void SetupDrawBuffers(std::vector<Object>&& objects, std::span<DrawParams> params,
+	void SetupDrawBuffers(const std::vector<Object>& objects, std::span<DrawParams> params,
 		std::span<vk::DrawIndexedIndirectCommand> commands);
 public:
 	MemoryAllocator allocator;

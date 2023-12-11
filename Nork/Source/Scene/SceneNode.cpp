@@ -28,7 +28,7 @@ namespace Nork {
 	{
 		for (size_t i = 0; i < children.size(); i++)
 		{
-			if (*children[i] == node)
+			if ((*children[i]) == node)
 			{
 				children.erase(children.begin() + i);
 				return true;

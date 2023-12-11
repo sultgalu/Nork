@@ -12,7 +12,8 @@ namespace Nork::Renderer::Data {
 	};
 	struct VertexSkinned : Vertex
 	{
-		glm::vec4 joints, weights;
+		std::array<uint32_t, 4> joints;
+		std::array<float, 4> weights;
 
 		static const std::vector<vk::VertexInputBindingDescription> GetBindingDescription();
 		static const std::vector<vk::VertexInputAttributeDescription> GetAttributeDescriptions();

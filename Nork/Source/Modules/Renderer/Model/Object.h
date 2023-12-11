@@ -9,5 +9,6 @@ struct ToBeDrawn {
     std::shared_ptr<Material> material;
     std::shared_ptr<BufferElement<glm::mat4>> modelMatrix;
     ShadingMode shadingMode;
+    int jointIndexesOffset;
 };
 }

@@ -50,6 +50,12 @@ void Object::SetTransform(const glm::mat4& modelMatrix) {
 	for (size_t i = 0; i < model->nodes.size(); i++) {
 		SetTransformRecursive(i, modelMatrix); // TODO: should traverse it as a tree instead (start from root)
 	}
+	processed.clear();
+	for (auto& skin : model->skins) {
+		if (skin.skeletonNode != -1) {
+			SetTransformRecursive(skin.skeletonNode, glm::identity<glm::mat4>()); // do not apply modelMatrix to skeleton
+		}
+	}
 }
 void Object::StartAnimation() {
 	animationTime = 0.0;
@@ -137,7 +143,7 @@ void Object::UpdateAnimation(float delta) {
 }
 void Object::StopAnimation() {
 	isAnimating = false;
-	//SetModel(model);
+	SetModel(model);
 	for (size_t i = 0; i < model->nodes.size(); i++) {
 		model->nodes[i].localTransform = defaultTransforms[i];
 	}

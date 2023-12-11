@@ -74,6 +74,25 @@ GLTFBuilder& GLTFBuilder::AddMesh(std::shared_ptr<Mesh> mesh, const std::filesys
     }
     return *this;
 }
+template<class VType> static void SaveMeshData2(const MeshDataImpl<VType>& mesh, const fs::path& vPath, const fs::path& iPath) {
+    mesh.vertices->ReadAll([=](std::span<VType> vertices) {
+        FileUtils::WriteBinary(vertices.data(), vertices.size_bytes(), vPath);
+    });
+    mesh.indices->ReadAll([=](std::span<uint32_t> indices) {
+        FileUtils::WriteBinary(indices.data(), indices.size_bytes(), iPath);
+    });
+}
+static void SaveMeshData(const MeshData& mesh, const fs::path& vPath, const fs::path& iPath) {
+    if (auto meshImpl = dynamic_cast<const MeshDataImpl<Data::Vertex>*>(&mesh)) {
+        SaveMeshData2(*meshImpl, vPath, iPath);
+    }
+    else if (auto meshImpl = dynamic_cast<const MeshDataImpl<Data::VertexSkinned>*>(&mesh)) {
+        SaveMeshData2(*meshImpl, vPath, iPath);
+    }
+    else {
+        std::unreachable();
+    }
+}
 GLTFBuilder& GLTFBuilder::AddPrimitive(const MeshData& mesh, const std::filesystem::path& buffersPath, int matIdx, ShadingMode shaderMode)
 {
     if (buffersPath.empty()) {
@@ -129,17 +148,12 @@ GLTFBuilder& GLTFBuilder::AddPrimitive(const MeshData& mesh, const std::filesyst
     indicesBuffer.uri = "indices_" + std::to_string(meshIdx) + "_" + std::to_string(primIdx) + ".bin";
     gltf.meshes.back().primitives.push_back(prim);
 
-    verticesBuffer.byteLength = mesh.vertices->SizeBytes();
-    indicesBuffer.byteLength = mesh.indices->SizeBytes();
-    mesh.vertices->ReadAll([=](std::span<Data::Vertex> vertices) {
-        FileUtils::WriteBinary(vertices.data(), vertices.size_bytes(), std::filesystem::path(buffersPath).append(verticesBuffer.uri).string());
-    });
-    mesh.indices->ReadAll([=](std::span<uint32_t> indices) {
-        FileUtils::WriteBinary(indices.data(), indices.size_bytes(), std::filesystem::path(buffersPath).append(indicesBuffer.uri).string());
-    });
+    verticesBuffer.byteLength = mesh.VertexSizeBytes();
+    indicesBuffer.byteLength = mesh.IndexSizeBytes();
+    SaveMeshData(mesh, buffersPath / verticesBuffer.uri, buffersPath / indicesBuffer.uri);
 
     vertView.buffer = bufIdx(0);
-    vertView.byteLength = mesh.vertices->SizeBytes();
+    vertView.byteLength = mesh.VertexSizeBytes();
     vertView.byteOffset = 0;
     vertView.byteStride = sizeof(Data::Vertex);
     vertView.target = GLTF::BufferView::ARRAY_BUFFER;
@@ -155,7 +169,7 @@ GLTFBuilder& GLTFBuilder::AddPrimitive(const MeshData& mesh, const std::filesyst
         accessor.byteOffset = offset;
         accessor.type = type;
         accessor.componentType = comp;
-        accessor.count = mesh.vertices->count;
+        accessor.count = mesh.VertexCount();
     };
     using Vertex = Data::Vertex;
     setAccessor(posAcc, bufViewIdx(0), GLTF::Accessor::VEC3, offsetof(Vertex, position));
@@ -169,7 +183,7 @@ GLTFBuilder& GLTFBuilder::AddPrimitive(const MeshData& mesh, const std::filesyst
     indAcc.byteOffset = 0;
     indAcc.type = GLTF::Accessor::SCALAR;
     indAcc.componentType = GL_UNSIGNED_INT;
-    indAcc.count = mesh.indices->count;
+    indAcc.count = mesh.IndexCount();
 
     gltf.buffers.push_back(verticesBuffer);
     gltf.buffers.push_back(indicesBuffer);

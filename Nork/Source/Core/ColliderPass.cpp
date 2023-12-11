@@ -11,16 +11,16 @@ ColliderPass::ColliderPass(const std::shared_ptr<Renderer::Image>& target)
 
 	using MemoryFlags = Renderer::MemoryFlags;
 	constexpr uint32_t maxVertexCount = 10000, maxIndexCount = 10000, framesInFlight = 2;
-	vertexBuffer = std::make_shared<Renderer::DeviceArrays<Vertex>>(
+	vertexBuffer = std::make_shared<Renderer::DeviceArrays>(
 		vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst,
-		MemoryFlags{ .required = MemoryFlags::eDeviceLocal }, maxVertexCount, framesInFlight,
+		MemoryFlags{ .required = MemoryFlags::eDeviceLocal }, maxVertexCount * sizeof(Vertex), framesInFlight,
 		vk::PipelineStageFlagBits2::eVertexInput, vk::AccessFlagBits2::eVertexAttributeRead);
-	indexBuffer = std::make_shared<Renderer::DeviceArrays<uint32_t>>(
+	indexBuffer = std::make_shared<Renderer::DeviceArrays>(
 		vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst,
-		MemoryFlags{ .required = MemoryFlags::eDeviceLocal }, maxIndexCount, framesInFlight,
+		MemoryFlags{ .required = MemoryFlags::eDeviceLocal }, maxIndexCount * sizeof(uint32_t), framesInFlight,
 		vk::PipelineStageFlagBits2::eIndexInput, vk::AccessFlagBits2::eIndexRead);
-	vertices = vertexBuffer->New(maxVertexCount);
-	indices = indexBuffer->New(maxIndexCount);
+	vertices = vertexBuffer->New<Vertex>(maxVertexCount);
+	indices = indexBuffer->New<uint32_t>(maxIndexCount);
 
 	CreateRenderPass();
 

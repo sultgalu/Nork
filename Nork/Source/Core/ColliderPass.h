@@ -46,8 +46,8 @@ public:
 
 	void UpdateBuffers(const entt::registry& registry);
 public:
-	std::shared_ptr<Renderer::DeviceArrays<Vertex>> vertexBuffer;
-	std::shared_ptr<Renderer::DeviceArrays<uint32_t>> indexBuffer;
+	std::shared_ptr<Renderer::DeviceArrays> vertexBuffer;
+	std::shared_ptr<Renderer::DeviceArrays> indexBuffer;
 	std::shared_ptr<Renderer::BufferView<Vertex>> vertices;
 	std::shared_ptr<Renderer::BufferView<uint32_t>> indices;
 	uint32_t drawIndexCount = 0;

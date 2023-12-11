@@ -162,7 +162,7 @@ namespace Nork
 	concept EnumType = std::is_enum<T>::value;
 
 	// For enum classes: Automatic implementation of bitwise operations
-	template<EnumType T>
+	/*template<EnumType T>
 	constexpr T operator|(const T bit1, const T bit2)
 	{
 		return static_cast<T>(std::to_underlying(bit1) | std::to_underlying(bit2));
@@ -171,9 +171,9 @@ namespace Nork
 	constexpr T operator&(const T bit1, const T bit2)
 	{
 		return static_cast<T>(std::to_underlying(bit1) & std::to_underlying(bit2));
-	}
+	}*/
 
-	template<EnumType T>
+	/*template<EnumType T>
 	constexpr T& operator|=(T& bit1, const T bit2)
 	{
 		return bit1 = bit1 | bit2;
@@ -198,5 +198,5 @@ namespace Nork
 	constexpr T operator~(const T bit1)
 	{
 		return static_cast<T>(~std::to_underlying(bit1));
-	}
+	}*/
 }

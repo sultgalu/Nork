@@ -6,15 +6,39 @@
 
 namespace Nork::Renderer {
 
-class MeshData
-{
-public:
-	MeshData() = default;
-	MeshData(std::shared_ptr<BufferView<Data::Vertex>> vertices, std::shared_ptr<BufferView<uint32_t>> indices)
+struct MeshData {
+	enum VertexDataType {
+		Default, Skinned
+	};
+
+	virtual Buffer& VertexBuffer() = 0;
+	virtual Buffer& IndexBuffer() = 0;
+	virtual uint32_t VertexBufferOffset() const = 0;
+	virtual uint32_t IndexBufferOffset() const = 0;
+	virtual uint32_t VertexCount() const = 0;
+	virtual uint32_t IndexCount() const = 0;
+	virtual uint32_t VertexSizeBytes() const = 0;
+	virtual uint32_t IndexSizeBytes() const = 0;
+	virtual VertexDataType VertexType() const = 0;
+};
+
+template<class VT>
+struct MeshDataImpl: MeshData { // TODO: template index buffer by uint32_t/uint16_t/uint8_t
+	MeshDataImpl() = default;
+	MeshDataImpl(std::shared_ptr<BufferView<VT>> vertices, std::shared_ptr<BufferView<uint32_t>> indices)
 		: vertices(vertices), indices(indices)
-	{}
-public:
-	std::shared_ptr<BufferView<Data::Vertex>> vertices;
+	{
+	}
+	Buffer& VertexBuffer() override { return *vertices->buffer; }
+	Buffer& IndexBuffer() override { return *indices->buffer; }
+	uint32_t VertexBufferOffset() const override { return vertices->offset; }
+	uint32_t IndexBufferOffset() const override { return indices->offset; }
+	uint32_t VertexCount() const override { return vertices->count; }
+	uint32_t IndexCount() const override { return indices->count; }
+	uint32_t VertexSizeBytes() const override { return vertices->SizeBytes(); }
+	uint32_t IndexSizeBytes() const override { return indices->SizeBytes(); }
+	VertexDataType VertexType() const override { return std::is_same_v<VT, Data::VertexSkinned> ? Skinned : Default; }
+	std::shared_ptr<BufferView<VT>> vertices;
 	std::shared_ptr<BufferView<uint32_t>> indices;
 };
 
@@ -31,6 +55,7 @@ struct MeshNode { // a mesh with local transform information (local to model)
 	std::shared_ptr<Mesh> mesh = nullptr; // can be empty
 	std::optional<glm::mat4> localTransform;
 	std::vector<int> children;
+	bool bone = false; // what to do when bone's children has a mesh? gltf spec says some stuff
 };
 
 struct Animation {
@@ -56,13 +81,22 @@ struct Animation {
 	std::vector<Channel> channels;
 };
 
+struct Skin {
+	std::string name;
+	int skeletonNode;
+	bool HasSkeleton() { return skeletonNode != -1; }
+	std::vector<uint16_t> joints;
+	std::vector<std::shared_ptr<BufferElement<glm::mat4>>> inverseBindMatrices;
+};
+
 struct Model // sharable across entities (not linked with entity specific data eg. Transform)
 {
 	std::vector<MeshNode> nodes;
 	std::vector<Animation> animations;
+	std::vector<Skin> skins;
 };
 
-struct Object // sharable across entities (not linked with entity specific data eg. Transform)
+struct Object
 {
 	void SetModel(std::shared_ptr<Model> model_);
 	void SetBufferElementRecursive(int nodeIdx, std::shared_ptr<BufferElement<glm::mat4>>& parentMM);

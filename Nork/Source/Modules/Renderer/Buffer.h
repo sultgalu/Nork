@@ -83,7 +83,6 @@ namespace Nork::Renderer {
 		}
 	};
 
-
 	template<class T>
 	struct BufferPointer
 	{

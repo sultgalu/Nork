@@ -120,8 +120,8 @@ std::shared_ptr<Model> AssetLoader::LoadModel(const fs::path& uri) {
 			const auto& indsBuf = gltf.buffers[gltf.bufferViews[gltf.accessors[prim.indices].bufferView].buffer];
 			const auto& vertsBufs = gltf.buffers[gltf.bufferViews[gltf.accessors[prim.attributes.back().accessor].bufferView].buffer]; // all of this primitive's attributes should point to the same buffer (vertices) 
 			Primitive primitive{ .meshData = Resources::Instance().CreateMesh(
-				FileUtils::ReadBinary<Data::Vertex>((path.parent_path() / vertsBufs.uri).string()),
-				FileUtils::ReadBinary<uint32_t>((path.parent_path() / indsBuf.uri).string())) };
+				FileUtils::ReadBinary<Data::Vertex>((path.parent_path() / vertsBufs.uri)),
+				FileUtils::ReadBinary<uint32_t>((path.parent_path() / indsBuf.uri))) };
 
 			primitive.material = prim.material != -1 ? materials[prim.material] : Resources::Instance().CreateMaterial();
 			prim.extras.GetIfContains("shadingMode", primitive.shadingMode);
