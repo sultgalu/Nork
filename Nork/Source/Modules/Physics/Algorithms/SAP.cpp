@@ -48,12 +48,15 @@ std::vector<std::pair<ColliderIndex, ColliderIndex>> SAP::Get()
 	});
 
 	// aabbs sorted now by x axis
-	std::vector<uint32_t> currentInterval = { 0 };
+	static std::vector<uint32_t> currentInterval;
+	currentInterval.clear();
+	currentInterval.push_back(0);
 	for (uint32_t i = 1; i < aabbs.size(); i++)
 	{
 		AABB& aabb1 = aabbs[i].second;
-		std::vector<uint32_t> newInterval = { i };
-		newInterval.reserve(currentInterval.size() * 1.5f);
+		static std::vector<uint32_t> newInterval;
+		newInterval.clear();
+		newInterval.push_back(i);
 
 		for (uint32_t j = 0; j < currentInterval.size(); j++)
 		{
@@ -87,7 +90,7 @@ std::vector<std::pair<ColliderIndex, ColliderIndex>> SAP::Get()
 				res.push_back(std::pair(aabbs[i].first, aabbs[currentInterval[j]].first));
 			}
 		}
-		currentInterval = newInterval;
+		std::swap(currentInterval, newInterval);
 	}
 	return res;
 }
