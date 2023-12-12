@@ -11,7 +11,7 @@ public:
 	{
 
 	}
-	std::vector<std::pair<ColliderIndex, AABB>> GetAABBs();
+	std::vector<std::pair<ColliderIndex, AABB>>& GetAABBs();
 	std::vector<std::pair<ColliderIndex, ColliderIndex>> Get();
 	const std::span<Object> objs;
 };

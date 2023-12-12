@@ -183,6 +183,9 @@
     <ProjectReference Include="..\Nork\Nork.vcxproj">
       <Project>{f3bd8d82-a67d-4c72-9a00-d04012c88a1a}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\Scripts\Scripts.vcxproj">
+      <Project>{972b9fa7-4db6-49d0-9160-75e3d151dace}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

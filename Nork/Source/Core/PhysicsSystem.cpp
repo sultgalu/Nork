@@ -19,20 +19,47 @@ void PhysicsSystem::Download()
 	using namespace Components;
 	uint32_t i = 0;
 
-	Registry().group<Components::Physics, Components::Transform>()
-		.each([&](entt::entity id, Components::Physics& phx, Components::Transform& tra)
+	// Registry().group<Components::Physics, Components::Transform>()
+	// 	.each([&](entt::entity id, Components::Physics& phx, Components::Transform& tra)
+	// {
+	// 	bool posChanged = phx.Kinem().position != tra.Position();
+	// 	bool quatChanged = phx.Kinem().quaternion != tra.Quaternion();
+	// 	if (posChanged || quatChanged)
+	// 	{
+	// 		Registry().patch<Components::Transform>(id, [&](Components::Transform& tr)
+	// 		{
+	// 			if (posChanged)
+	// 				tr.localPosition += phx.Kinem().position - tr.Position();
+	// 			if (quatChanged)
+	// 				tr.localQuaternion += phx.Kinem().quaternion - tr.Quaternion();
+	// 		});
+	// 	}
+	// });
+	auto group = Registry().group<Components::Physics, Components::Transform>();
+	std::mutex mutex;
+	std::for_each(std::execution::par_unseq, group.begin(), group.end(), [&](entt::entity id)
 	{
+		auto& phx = group.get<Components::Physics>(id);
+		auto& tra = group.get<Components::Transform>(id);
 		bool posChanged = phx.Kinem().position != tra.Position();
 		bool quatChanged = phx.Kinem().quaternion != tra.Quaternion();
+
 		if (posChanged || quatChanged)
 		{
-			Registry().patch<Components::Transform>(id, [&](Components::Transform& tr)
-			{
-				if (posChanged)
-					tr.localPosition += phx.Kinem().position - tr.Position();
-				if (quatChanged)
-					tr.localQuaternion += phx.Kinem().quaternion - tr.Quaternion();
-			});
+			if (posChanged)
+				tra.localPosition += phx.Kinem().position - tra.Position();
+			if (quatChanged)
+				tra.localQuaternion += phx.Kinem().quaternion - tra.Quaternion();
+			// Registry().patch<Components::Transform>(id, [&](Components::Transform& tr)
+			// {
+			// 	if (posChanged)
+			// 		tr.localPosition += phx.Kinem().position - tr.Position();
+			// 	if (quatChanged)
+			// 		tr.localQuaternion += phx.Kinem().quaternion - tr.Quaternion();
+			// });
+			const std::lock_guard<std::mutex> lock(mutex); // EnTT is not thread safe
+			Registry().patch<Components::Transform>(id); // notify observers
+			//Registry().replace<Components::Transform>(id, tra);
 		}
 	});
 	// reg.view<Components::Physics>()
@@ -53,14 +80,14 @@ void PhysicsSystem::Upload()
 {
 	using namespace Components;
 
-	for (auto ent : transformObserver)
+	std::for_each(std::execution::par_unseq, transformObserver.begin(), transformObserver.end(), [&](entt::entity id)
 	{
-		auto& tr = Registry().get<Components::Transform>(ent);
-		auto& phx = Registry().get<Components::Physics>(ent);
+		auto& tr = Registry().get<Components::Transform>(id);
+		auto& phx = Registry().get<Components::Physics>(id);
 		phx.handle.Get().size = tr.Scale();
 		phx.Kinem().position = tr.Position();
 		phx.Kinem().quaternion = tr.Quaternion();
-	}
+	});
 	transformObserver.clear();
 }
 

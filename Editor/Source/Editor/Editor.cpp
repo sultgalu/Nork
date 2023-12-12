@@ -252,6 +252,8 @@ void Editor::BuildFrame()
 		// ImGui::Spacing();
 		ImGui::Indent(300);
 		ImGui::Text((std::to_string(1.0f / (actualDelta / 1000.0f)) + " fps").c_str());
+		ImGui::Indent(500);
+		ImGui::Text(("Physics: " + std::to_string(PhysicsSystem::Instance().pipeline.executionTime) + " ms").c_str());
 		ImGui::EndMainMenuBar();
 	}
 

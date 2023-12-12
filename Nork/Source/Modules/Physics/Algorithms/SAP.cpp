@@ -7,7 +7,7 @@ static void gen(uint32_t n)
 {
 	std::ranges::generate(counter, [&n]() mutable { return n++; });
 }
-std::vector<std::pair<ColliderIndex, AABB>> SAP::GetAABBs()
+std::vector<std::pair<ColliderIndex, AABB>>& SAP::GetAABBs()
 {
 	static std::vector<std::pair<ColliderIndex, AABB>> res;
 	static std::vector<uint32_t> offsets;
@@ -39,10 +39,11 @@ std::vector<std::pair<ColliderIndex, AABB>> SAP::GetAABBs()
 // Right now it produces out-of sync jumping bc of the random order of pairs it gives back (y-collision order)
 std::vector<std::pair<ColliderIndex, ColliderIndex>> SAP::Get()
 {
-	std::vector<std::pair<ColliderIndex, ColliderIndex>> res;
+	static std::vector<std::pair<ColliderIndex, ColliderIndex>> res;
+	res.clear();
 
 	auto aabbs = GetAABBs();
-	std::sort(std::execution::par_unseq, aabbs.begin(), aabbs.end(), [](auto& a, auto& b)
+	std::sort(std::execution::par_unseq, aabbs.begin(), aabbs.end(), [](const auto& a, const auto& b)
 	{
 		return a.second.min.x < b.second.min.x;
 	});

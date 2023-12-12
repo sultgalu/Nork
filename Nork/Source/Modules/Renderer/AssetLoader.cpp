@@ -89,7 +89,7 @@ static std::shared_ptr<Image> LoadImage(const fs::path& path, bool sRgbSpace)
 AssetLoader::AssetLoader() {
 }
 AssetLoaderProxy::AssetLoaderProxy() {
-	SetProjectRoot(fs::current_path().append("Assets"));
+	SetProjectRoot(fs::current_path() / "Assets");
 }
 std::shared_ptr<Model> AssetLoader::LoadModel(const fs::path& uri) {
 	fs::path path = UriToAbsolutePath(uri);
@@ -234,25 +234,25 @@ fs::path AssetLoader::ModelsPath() {
 	return projectAssetsRoot / "models";
 }
 fs::path AssetLoader::TemplatesPath() {
-	return fs::current_path() / "Assets" / "templates";
+	return projectAssetsRoot / "templates";
 }
 fs::path AssetLoader::CubeUri() {
-	return AbsolutePathToUri(ModelsPath() / "cube" / "cube.gltf");
+	return AbsolutePathToUri(TemplatesPath() / "cube" / "cube.gltf");
 }
 
 void AssetLoader::SetProjectRoot(const fs::path& newRoot)
 {
+	fs::create_directories(newRoot);
 	projectAssetsRoot = newRoot;
 	fs::create_directory(ModelsPath());
-
+	if (fs::create_directory(TemplatesPath())) { // new root is not installation root
+		fs::copy(fs::current_path() / "Assets" / "templates", TemplatesPath(), fs::copy_options::skip_existing | fs::copy_options::recursive);
+	}
 }
 void AssetLoaderProxy::SetProjectRoot(const fs::path& newRoot)
 {
 	AssetLoader::SetProjectRoot(newRoot);
 	ClearCache();
-	if (!fs::exists(UriToAbsolutePath(CubeUri()))) {
-		ImportModel(TemplatesPath() / "cube" / "cube.gltf", "cube");
-	}
 }
 
 AssetLoaderProxy& AssetLoader::Instance() {

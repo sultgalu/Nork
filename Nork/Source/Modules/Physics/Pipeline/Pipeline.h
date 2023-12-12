@@ -28,5 +28,6 @@ namespace Nork::Physics
 		void RotationUpdate(Object& kinem, float delta);
 
 		World world;
+		float executionTime = 0;
 	};
 }

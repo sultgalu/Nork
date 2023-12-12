@@ -11,7 +11,8 @@ namespace Nork::Physics
 
 	void Pipeline::Update(float delta)
 	{
-		std::for_each(std::execution::par, world.objs.begin(), world.objs.end(), [&](auto& obj)
+		Timer t;
+		std::for_each(std::execution::par_unseq, world.objs.begin(), world.objs.end(), [&](Object& obj)
 			{
 				obj.OnMassChanged();
 				VelocityUpdate(obj, delta);
@@ -27,7 +28,7 @@ namespace Nork::Physics
 		}
 		collisions.resize(broadResults.size());
 
-		std::for_each_n(std::execution::par, counter.begin(), broadResults.size(), [&](auto i)
+		std::for_each_n(std::execution::par_unseq, counter.begin(), broadResults.size(), [&](int i)
 			{
 				collisions[i] = Collision(world, broadResults[i].first, broadResults[i].second);
 				collisions[i]._1NarrowPhase();
@@ -35,11 +36,12 @@ namespace Nork::Physics
 			});
 
 		// works faster with ::par, but in theory data-races can occour
-		std::for_each_n(std::execution::seq, counter.begin(), broadResults.size(), [&](auto i)
+		std::for_each_n(std::execution::unseq, counter.begin(), broadResults.size(), [&](int i)
 			{
 				collisions[i]._3CalculateForces(); // should be called together with _4 (resolve as soon as calculated)
 				collisions[i]._4ResolveAll();
 			});
+		executionTime = t.Elapsed();
 	}
 
 	void Pipeline::VelocityUpdate(Object& obj, float delta)
