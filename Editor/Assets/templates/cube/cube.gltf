@@ -1,0 +1,104 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "Nork glTF"
+  },
+  "accessors": [
+    {
+      "count": 36,
+      "type": "SCALAR",
+      "componentType": 5125,
+      "bufferView": 1
+    },
+    {
+      "count": 24,
+      "type": "VEC3",
+      "componentType": 5126,
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "count": 24,
+      "type": "VEC3",
+      "componentType": 5126,
+      "bufferView": 0,
+      "byteOffset": 12
+    },
+    {
+      "count": 24,
+      "type": "VEC2",
+      "componentType": 5126,
+      "bufferView": 0,
+      "byteOffset": 24
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 1056,
+      "byteStride": 44,
+      "byteOffset": 0,
+      "target": 34962
+    },
+    {
+      "buffer": 1,
+      "byteLength": 144,
+      "byteOffset": 0,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 1056,
+      "uri": "vertices.bin"
+    },
+    {
+      "byteLength": 144,
+      "uri": "indices.bin"
+    }
+  ],
+  "materials": [
+    {
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.000000,
+          1.000000,
+          1.000000,
+          1.000000
+        ],
+        "metallicFactor": 1.000000,
+        "roughnessFactor": 1.000000,
+        "extras": {}
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "primitives": [
+        {
+          "mode": 4,
+          "indices": 0,
+          "material": 0,
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0
+}
